@@ -1,0 +1,111 @@
+/* LAB toolbar styles. Scoped to `.debug-panel.lab` so the legacy debug-panel rules in
+   style.css stay harmless. No external fonts or images: Space Grotesk is already loaded. */
+
+.debug-panel.lab[hidden]{display:none!important}
+
+.debug-panel.lab{
+  position:fixed;
+  /* Above the gameplay modal/backdrop (`.modal-backdrop` is z-index:10) so the lab stays
+     clickable after Detonate/Arrest; the player can Repair/Reset/run a scenario without
+     paying any tow or bail fee. */
+  z-index:50;
+  left:50%;
+  bottom:70px;
+  transform:translateX(-50%);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  width:min(92vw,540px);
+  padding:6px 8px;
+  background:#0d1c22f2;
+  border:1px solid #a3ddc233;
+  border-radius:10px;
+  box-shadow:0 12px 34px #00000080;
+  color:#d9e4dd;
+  font:11px/1.45 'Space Grotesk',system-ui,sans-serif;
+  white-space:normal;
+  pointer-events:auto;
+}
+
+/* Expanded: dock to the top-right and keep the game visible. */
+.debug-panel.lab.lab-open{
+  left:auto;
+  right:14px;
+  bottom:auto;
+  top:98px;
+  transform:none;
+  width:min(520px,calc(100vw - 28px));
+  max-height:min(600px,calc(100vh - 130px));
+}
+
+.debug-panel.lab .lab-bar{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.debug-panel.lab.lab-open .lab-toggle{display:none}
+.debug-panel.lab .lab-brand{font-weight:700;letter-spacing:2px;color:#a3ddc2}
+.debug-panel.lab .lab-pill{
+  padding:1px 7px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:1px;
+  border:1px solid #a3ddc244;color:#b9c9c1;background:#a3ddc20f;
+}
+.debug-panel.lab .lab-pill.is-live{color:#a3ddc2;border-color:#a3ddc266;background:#a3ddc21f}
+.debug-panel.lab .lab-pill.is-fixed{color:#f7ce55;border-color:#f7ce5566;background:#f7ce551f}
+.debug-panel.lab .lab-quick{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:#9fb3ac;font-size:10px}
+
+.debug-panel.lab .lab-body{display:none;flex-direction:column;gap:9px;overflow:auto;padding:2px 4px 2px 0}
+.debug-panel.lab.lab-open .lab-body{display:flex}
+
+.debug-panel.lab .lab-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:6px;border-bottom:1px solid #ffffff14}
+.debug-panel.lab .lab-head strong{font-size:12px;letter-spacing:.5px}
+.debug-panel.lab .lab-tele{flex:1;min-width:140px;color:#9fb3ac;font-size:10px}
+
+.debug-panel.lab .lab-sec{display:flex;flex-direction:column;gap:6px}
+.debug-panel.lab .lab-sec h4{margin:0;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#7f9691}
+.debug-panel.lab .lab-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.debug-panel.lab .lab-label{color:#9fb3ac;font-size:10px}
+.debug-panel.lab .lab-hint{margin:0;color:#7f9691;font-size:9px;line-height:1.5}
+.debug-panel.lab .lab-desc{margin:0;color:#9fb3ac;font-size:10px;line-height:1.5;min-height:2.6em}
+
+.debug-panel.lab select,
+.debug-panel.lab input[type=range],
+.debug-panel.lab button{font:inherit}
+
+.debug-panel.lab select{
+  background:#12262d;color:#dce7e0;border:1px solid #a3ddc233;border-radius:6px;
+  padding:4px 6px;min-width:130px;
+}
+
+.debug-panel.lab button{
+  padding:4px 9px;border-radius:6px;border:1px solid #a3ddc233;background:#a3ddc20f;
+  color:#c9d9d1;letter-spacing:.3px;
+}
+.debug-panel.lab button:hover{background:#a3ddc226;color:#eaf3ee}
+.debug-panel.lab button:active{transform:translateY(1px)}
+.debug-panel.lab button.lab-primary{background:#a3ddc226;border-color:#a3ddc266;color:#dff2e8;font-weight:600}
+.debug-panel.lab button.lab-primary:hover{background:#a3ddc240}
+.debug-panel.lab button.lab-danger{background:#e8735a1f;border-color:#e8735a66;color:#ffc7ba}
+.debug-panel.lab button.lab-danger:hover{background:#e8735a38}
+.debug-panel.lab button.is-active{background:#f7ce5533;border-color:#f7ce5599;color:#ffe9a8;font-weight:600}
+
+.debug-panel.lab .lab-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px}
+.debug-panel.lab .lab-checks label{display:flex;align-items:center;gap:5px;color:#c9d9d1;font-size:10px;cursor:pointer}
+.debug-panel.lab input[type=checkbox]{accent-color:#a3ddc2;cursor:pointer}
+
+.debug-panel.lab .lab-field{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#c9d9d1;font-size:10px}
+.debug-panel.lab input[type=range]{flex:1;min-width:120px;accent-color:#a3ddc2}
+.debug-panel.lab .lab-field output{min-width:24px;text-align:right;color:#a3ddc2;font-variant-numeric:tabular-nums}
+
+.debug-panel.lab .lab-ups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+.debug-panel.lab .lab-up{display:flex;align-items:center;gap:7px;font-size:10px;color:#c9d9d1}
+.debug-panel.lab .lab-up span{flex:0 0 96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9fb3ac}
+.debug-panel.lab .lab-up output{min-width:12px;text-align:center;color:#a3ddc2}
+
+.debug-panel.lab .lab-scales{display:inline-flex;gap:4px}
+.debug-panel.lab .lab-scales button{min-width:38px}
+body:has(.debug-panel.lab.lab-closed) .toast{bottom:125px}
+
+@media (max-width:700px){
+  .debug-panel.lab.lab-open{
+    left:8px;right:8px;top:auto;bottom:8px;width:auto;
+    max-height:min(70vh,520px);
+  }
+  .debug-panel.lab .lab-checks{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .debug-panel.lab .lab-ups{grid-template-columns:1fr}
+}

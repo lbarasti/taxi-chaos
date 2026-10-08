@@ -1,0 +1,93 @@
+import { describe, expect, it, vi } from 'vitest';
+// Lifecycle tests use tiny fake buffers; real sample decoding/output is browser-tested.
+vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
+import { AudioFX, audioPreferences } from './audio';
+import { Game } from './game';
+import { vec } from './physics';
+
+function fakeContext() {
+  const buffer = { duration: 1, getChannelData: () => new Float32Array(20000) };
+  const param = () => ({ value: 0, setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn() });
+  const node = () => ({ connect: vi.fn(), disconnect: vi.fn() });
+  const ctx = {
+    currentTime: 1, state: 'suspended', sampleRate: 22050, destination: node(),
+    resume: vi.fn(async () => { ctx.state = 'running'; }),
+    decodeAudioData: vi.fn(async () => buffer), createBuffer: vi.fn(() => buffer),
+    createGain: () => ({ ...node(), gain: param() }), createStereoPanner: () => ({ ...node(), pan: param() }),
+    createBiquadFilter: () => ({ ...node(), frequency: param(), Q: param() }),
+    createDynamicsCompressor: () => ({ ...node(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param() }),
+    createAnalyser: () => ({ ...node(), fftSize: 0, getFloatTimeDomainData: vi.fn() }),
+    createBufferSource: vi.fn(() => ({ ...node(), playbackRate: param(), start: vi.fn(), stop: vi.fn(), onended: null })),
+  };
+  return ctx;
+}
+
+describe('audio lifecycle and bounded mixer', () => {
+  it('creates no context on construction/update or while saved mute is enabled', async () => {
+    const create = vi.fn(() => fakeContext() as unknown as AudioContext), audio = new AudioFX(create), game = new Game();
+    game.start(); audio.update(game, true, true); expect(create).not.toHaveBeenCalled();
+    audio.configure({ muted: true }); expect(await audio.unlock()).toBe(false); expect(create).not.toHaveBeenCalled();
+    audio.configure({ muted: false }); await Promise.all([audio.unlock(), audio.unlock()]);
+    expect(create).toHaveBeenCalledTimes(1); expect(audio.state().status).toBe('ready');
+  });
+  it('silences world loops for pause, fixed clock, background and mute', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); audio.update(game, true, true); expect(audio.state().loops).toContain('engine');
+    game.setMode('paused'); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+    game.setMode('playing'); audio.update(game, false, true); expect(audio.state().loops).toEqual([]);
+    audio.update(game, true, false); expect(audio.state().loops).toEqual([]);
+    audio.update(game, true, true); audio.configure({ muted: true }); expect(audio.state().loops).toEqual([]);
+  });
+  it('discards fixed-step cues instead of replaying them when Live resumes', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); audio.update(game, false, true);
+    game.sounds.emit('payment', game.time); game.sounds.emit('explosion', game.time);
+    audio.update(game, false, true); audio.update(game, true, true);
+    expect(audio.state().played).toEqual({});
+  });
+  it('keeps ongoing wreck fires audible and allows garage confirmations without engines', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.setMode('wrecked'); game.vehicles[1].damage.status = 'burning'; game.vehicles[1].body.position = { ...game.player.body.position };
+    audio.update(game, true, true); expect(audio.state().loops).toEqual([`car-fire:${game.vehicles[1].id}`]);
+    game.setMode('garage'); game.sounds.emit('purchase', game.time); audio.update(game, true, true);
+    expect(audio.state().loops).toEqual([]); expect(audio.state().played.purchase).toBe(1);
+  });
+  it('stops the cab engine after bailing out while keeping its fire audible', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); audio.update(game, true, true); expect(audio.state().loops).toContain('engine');
+    game.player.damage.status = 'burning'; expect(game.interact()).toBe(true); audio.update(game, true, true);
+    expect(audio.state().loops).not.toContain('engine'); expect(audio.state().loops).toContain(`car-fire:${game.player.id}`);
+  });
+  it('limits dense explosions to twenty one-shots and culls inaudible events', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start();
+    for (let i = 0; i < 64; i++) game.sounds.emit('explosion', game.time);
+    audio.update(game, true, true); expect(audio.state().voices).toBeLessThanOrEqual(20);
+    expect(audio.state().dropped).toBeGreaterThan(0);
+    game.sounds.emit('crash', game.time, { position: vec(1000, 1000) }); audio.update(game, true, true);
+    expect(audio.state().played.crash).toBeUndefined();
+  });
+  it('isolates auditions and cancels previews on Stop or scenario reset', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); audio.update(game, true, true);
+    expect(await audio.preview('engine')).toBe(true); audio.update(game, true, true);
+    expect(audio.state().preview).toBe(true); expect(audio.state().loops).toEqual([]);
+    audio.stopPreview(); expect(audio.state().voices).toBe(0);
+    const pending = audio.preview('skid'); audio.stopPreview(); expect(await pending).toBe(false);
+    await audio.preview('fire'); game.resetRun(); audio.update(game, true, true); expect(audio.state().preview).toBe(false);
+  });
+  it('degrades gracefully when audio is unsupported or sample decoding fails', async () => {
+    const unsupported = new AudioFX(() => { throw new Error('unsupported'); }); expect(await unsupported.unlock()).toBe(false);
+    expect(unsupported.state().status).toBe('unavailable');
+    const ctx = fakeContext(); ctx.decodeAudioData.mockRejectedValue(new Error('bad codec'));
+    const audio = new AudioFX(() => ctx as unknown as AudioContext); expect(await audio.unlock()).toBe(false);
+    expect(audio.state().failures).toHaveLength(audio.state().total);
+  });
+  it('validates persisted settings and lets zero siren volume disable siren loops', async () => {
+    expect(audioPreferences({ volume: Infinity, sirens: -3 })).toEqual({ muted: false, volume: 0.65, sirens: 0 });
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); const cop = game.vehicle('police', 5, 32, 0, '#fff');
+    audio.update(game, true, true); expect(audio.state().loops).toContain(`siren:${cop.id}`);
+    audio.configure({ sirens: 0 }); audio.update(game, true, true); expect(audio.state().loops).not.toContain(`siren:${cop.id}`);
+  });
+});
