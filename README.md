@@ -41,6 +41,8 @@ npm run preview
 
 Touch steering, pedals, drift and boost are shown on small screens; desktop is the primary target. Pulp gore and **Cruise / Street / Chaos** difficulty can be changed on the welcome or pause screen as well as in the lab.
 
+**Pause → Shift stats** shows earnings, completed fares, smashed objects and pedestrian fatalities for the current shift. The fatality count is kept off the driving HUD.
+
 - Slow down in a **yellow ring** to pick up; deliver to the **green ring** for base fare plus time/comfort tips.
 - Late delivery still pays: the timer affects the bonus, not whether a job can finish.
 - Drifts and near-misses earn small skill bonuses. Boost recharges automatically.

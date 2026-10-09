@@ -45,21 +45,25 @@ const K = (hour: number, tint: [number, number, number], tintStrength: number, d
   hour, tint, tintStrength, darkness, artificialLight, sunDirection: { x: sunX, y: sunY }, shadowLength, shadowOpacity,
 });
 
+// Night keyframes are tuned toward photographed blue-hour/neon cities rather than pitch black:
+// a readable cool-blue ambient film keeps roads and facades legible while warm/neon local
+// sources (see collectLights/ambientPass) do the dramatic lighting. `darkness` therefore tops
+// out near 0.56 instead of ~0.68, and the tint is a touch more saturated blue.
 const KEYFRAMES: readonly Keyframe[] = [
-  K(0, [16, 24, 58], 0.62, 0.68, 1, -0.55, -0.83, 1.1, 0.12),
-  K(4.5, [24, 34, 70], 0.6, 0.62, 1, -0.75, -0.66, 1.4, 0.14),
-  K(5, [60, 48, 80], 0.52, 0.5, 0.9, -0.95, -0.3, 1.9, 0.2),
-  K(5.5, [110, 66, 74], 0.42, 0.36, 0.65, -1, -0.1, 2.3, 0.3),
-  K(6, [190, 120, 90], 0.3, 0.24, 0.4, -0.95, -0.05, 2.5, 0.4),
+  K(0, [22, 34, 88], 0.52, 0.56, 1, -0.55, -0.83, 1.1, 0.12),
+  K(4.5, [30, 44, 96], 0.5, 0.52, 1, -0.75, -0.66, 1.4, 0.14),
+  K(5, [70, 58, 100], 0.44, 0.44, 0.9, -0.95, -0.3, 1.9, 0.2),
+  K(5.5, [110, 66, 74], 0.4, 0.32, 0.65, -1, -0.1, 2.3, 0.3),
+  K(6, [190, 120, 90], 0.3, 0.22, 0.4, -0.95, -0.05, 2.5, 0.4),
   K(7, [255, 205, 150], 0.18, 0.1, 0.12, -0.75, -0.2, 2, 0.5),
   K(9, [255, 240, 215], 0.06, 0.02, 0, -0.4, -0.5, 1.1, 0.55),
   K(12, [255, 250, 240], 0, 0, 0, 0, -1, 0.35, 0.6),
   K(15, [255, 238, 210], 0.05, 0.02, 0, 0.45, -0.55, 1, 0.55),
   K(17, [255, 205, 150], 0.16, 0.08, 0.06, 0.75, -0.3, 1.9, 0.5),
-  K(18, [245, 150, 95], 0.3, 0.22, 0.3, 0.95, -0.1, 2.4, 0.55),
-  K(19.5, [140, 90, 110], 0.46, 0.42, 0.7, 0.9, 0.2, 2, 0.3),
-  K(21, [40, 44, 84], 0.58, 0.6, 1, 0.55, -0.83, 1.3, 0.14),
-  K(22.5, [22, 30, 66], 0.61, 0.66, 1, 0.2, -0.98, 1.1, 0.12),
+  K(18, [245, 150, 95], 0.3, 0.2, 0.3, 0.95, -0.1, 2.4, 0.55),
+  K(19.5, [140, 90, 110], 0.44, 0.38, 0.7, 0.9, 0.2, 2, 0.3),
+  K(21, [46, 58, 110], 0.5, 0.5, 1, 0.55, -0.83, 1.3, 0.14),
+  K(22.5, [30, 44, 98], 0.51, 0.55, 1, 0.2, -0.98, 1.1, 0.12),
 ];
 
 function lerpLighting(a: Keyframe, b: Keyframe, t: number): LightingState {

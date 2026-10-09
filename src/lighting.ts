@@ -8,8 +8,10 @@
 //   3. cached radial/cone gradient sprites add a restrained coloured glow on top.
 //
 // Only pure helpers and `collectLights` touch game data; the offscreen canvases and gradient cache
-// live in `LightingLayer`, which keeps the renderer's hot path allocation-free. Per-light occlusion
-// is intentionally out of scope for this first version.
+// live in `LightingLayer`. Street-level beams are clipped against nearby raised structures;
+// soft lamps/storefront lights retain their broad atmospheric spill.
+
+import { nearbyOccluders, shadowVolume, shouldOcclude, type Occluder } from './lighting-occlusion';
 
 export type RGB = [number, number, number];
 
@@ -48,13 +50,23 @@ export type LightSource = {
   spread?: number;
   /** Radial core fraction (0 = soft centre, 0.4 = flatter pool). */
   inner?: number;
+  /**
+   * Opt this light into building occlusion. Cones are always occluded (they read as street-level
+   * beams); radial lamps leave this off so storefront/awning spill stays soft.
+   */
+  occlude?: boolean;
 };
 
 export type Viewport = { minX: number; minY: number; maxX: number; maxY: number };
 
-export const LIGHT_GLOW = 0.5;
+// Halation strength for the additive glow pass. Raised from 0.5 so warm pools and neon read as
+// photographed night light rather than flat cut-outs.
+export const LIGHT_GLOW = 0.58;
 const MAX_SPRITES = 120;
 const RADIUS_STEP = 8;
+// Cache normalized gradients at one resolution, then scale to the exact projected radius.
+// Camera zoom must never change a lamp's world-space footprint or rebuild its falloff.
+const SPRITE_RADIUS = 64;
 
 export const clamp01 = (value: number): number => {
   const v = Number.isFinite(value) ? value : 0;
@@ -103,13 +115,18 @@ export function ambientPass(state: AmbientLighting): AmbientParams {
   const darkness = clamp01(state.darkness);
   const tintStrength = clamp01(state.tintStrength);
   const daylight = clamp01(1 - darkness);
+  const night = 1 - daylight;
   return {
     daylight,
-    lift: Math.pow(daylight, 1.35) * 0.22,
+    // Daylight opens the night-authored palette with a warm neutral; night keeps a faint cool
+    // screen lift so deep shadows stay blue-grey (blue-hour sky fill) instead of crushing to black.
+    lift: Math.pow(daylight, 1.35) * 0.22 + night * 0.06,
     liftColor: mixRgb(state.tint, [255, 248, 235], 0.4),
-    maskTint: clamp01(tintStrength) * 0.8,
-    maskDark: clamp01(darkness) * 0.94,
-    darkColor: mixRgb(scaleRgb(state.tint, 0.18), [4, 8, 18], 0.65),
+    // Slightly weaker tint/darkness than the original near-black mask, and a lifted cool shadow
+    // colour, translate the references' "deep indigo, not black" night into the compositor params.
+    maskTint: tintStrength * 0.72,
+    maskDark: darkness * 0.8,
+    darkColor: mixRgb(scaleRgb(state.tint, 0.5), [24, 36, 72], 0.55),
     tint: state.tint,
     glow: LIGHT_GLOW,
   };
@@ -118,11 +135,11 @@ export function ambientPass(state: AmbientLighting): AmbientParams {
 export const bucketRadius = (radius: number): number =>
   Math.max(8, Math.round((Number.isFinite(radius) ? radius : 8) / RADIUS_STEP) * RADIUS_STEP);
 
-/** Cache key: colour/radius are coarsened so small zoom fluctuations reuse the same sprite. */
-export function spriteKey(color: RGB, radius: number, profile: LightProfile, spread: number): string {
-  const c = `${Math.round(roundChannel(color[0]) / 16) * 16},${Math.round(roundChannel(color[1]) / 16) * 16},${Math.round(roundChannel(color[2]) / 16) * 16}`;
+/** Include every gradient parameter so different colours/core fractions cannot share falloff. */
+export function spriteKey(color: RGB, radius: number, profile: LightProfile, shape: number): string {
+  const c = `${roundChannel(color[0])},${roundChannel(color[1])},${roundChannel(color[2])}`;
   const r = bucketRadius(radius);
-  const s = profile === 'cone' ? Math.round(clamp01(spread / 1.2) * 8) : 0;
+  const s = Number.isFinite(shape) ? shape : 0;
   return `${profile}:${c}:${r}:${s}`;
 }
 
@@ -178,9 +195,23 @@ export type LightScene = {
   blasts: SceneBlast[];
 };
 
-const LAMP: RGB = [255, 214, 150];
-const WINDOW: RGB = [255, 198, 128];
+// Warm sodium/amber local light, matching the reference photographs' dominant streetlamp cast.
+const LAMP: RGB = [255, 208, 142];
+// Storefront/awning wash, a slightly deeper amber than the bare lamp so shopfronts read as lit.
+const WINDOW: RGB = [255, 190, 122];
 const HEADLIGHT: RGB = [255, 240, 196];
+// Cool neutral-white canopy light for the service station.
+const STATION_LIGHT: RGB = [255, 216, 158];
+// Sparse neon accents (magenta/cyan/red/green/blue/amber) sampled deterministically per storefront.
+// A small fixed palette keeps the sprite cache bounded, unlike id-derived arbitrary colours.
+const NEON: readonly RGB[] = [
+  [255, 92, 150],
+  [96, 210, 255],
+  [255, 120, 84],
+  [120, 235, 170],
+  [150, 150, 255],
+  [255, 180, 92],
+];
 const FIRE: RGB = [255, 138, 52];
 const EXPLOSION: RGB = [255, 186, 96];
 const POLICE_RED: RGB = [255, 74, 74];
@@ -205,18 +236,42 @@ export function collectLights(scene: LightScene): LightSource[] {
     const pos = prop.body.position;
     if (prop.alive) {
       if (prop.kind === 'lamp') {
-        const intensity = artificial * 0.95;
-        if (intensity > 0.02) out.push({ x: pos.x, y: pos.y, radius: 5.5, color: LAMP, intensity, artificial: true, inner: 0.16 });
+        // Broad, flatter warm pool: the larger radius + inner core reads as sodium light spilling
+        // across the pavement instead of a small white dot.
+        const intensity = artificial;
+        if (intensity > 0.02) out.push({ x: pos.x, y: pos.y, radius: 8.5, color: LAMP, intensity, artificial: true, inner: 0.32 });
       } else if (prop.kind === 'building' && prop.body.w <= 12) {
-        // Storefront/awning wash with a narrow lit window band.
-        const intensity = artificial * 0.7;
+        // Storefront/awning wash with a wide lit window band. Most shops are warm amber; a third
+        // of them also carry a saturated neon sign to echo the reference signage clusters.
+        const intensity = artificial * 0.8;
         if (intensity > 0.02) {
-          const front = localToWorld(pos, prop.body.angle, 0, 4.2);
-          out.push({ x: front.x, y: front.y, radius: 5, color: WINDOW, intensity, artificial: true, inner: 0.22 });
+          const front = localToWorld(pos, prop.body.angle, 0, 4);
+          out.push({ x: front.x, y: front.y, radius: 6.5, color: WINDOW, intensity, artificial: true, inner: 0.34 });
+          if (prop.id % 3 === 0) {
+            const sign = localToWorld(pos, prop.body.angle, -2.4, 4.8);
+            out.push({ x: sign.x, y: sign.y, radius: 3.4, color: NEON[Math.floor(prop.id / 3) % NEON.length], intensity: artificial * 0.5, artificial: true, inner: 0.18 });
+          }
         }
       } else if (prop.kind === 'kiosk') {
-        const intensity = artificial * 0.32;
-        if (intensity > 0.02) out.push({ x: pos.x, y: pos.y, radius: 2.4, color: WINDOW, intensity, artificial: true, inner: 0.25 });
+        const intensity = artificial * 0.4;
+        if (intensity > 0.02) out.push({ x: pos.x, y: pos.y, radius: 3, color: WINDOW, intensity, artificial: true, inner: 0.3 });
+      } else if (prop.kind === 'pump') {
+        const intensity = artificial * 0.5;
+        if (intensity > 0.02) out.push({ x: pos.x, y: pos.y, radius: 2.6, color: STATION_LIGHT, intensity, artificial: true, inner: 0.3 });
+      } else if (prop.kind === 'station') {
+        // Warm canopy wash on the forecourt between the shop and the pumps.
+        const intensity = artificial * 0.65;
+        if (intensity > 0.02) {
+          const canopy = localToWorld(pos, prop.body.angle, 0, -5.2);
+          out.push({ x: canopy.x, y: canopy.y, radius: 5.5, color: STATION_LIGHT, intensity, artificial: true, inner: 0.32 });
+        }
+      } else if (prop.kind === 'barracks' || prop.kind === 'shed') {
+        // A pair of lit windows keeps the large civic/industrial structures present at night.
+        const intensity = artificial * 0.45;
+        if (intensity > 0.02) for (const lx of [-6, 6]) {
+          const window = localToWorld(pos, prop.body.angle, lx, -5.4);
+          out.push({ x: window.x, y: window.y, radius: 3.2, color: WINDOW, intensity, artificial: true, inner: 0.28 });
+        }
       }
     }
     if (prop.fire > 0) {
@@ -235,7 +290,11 @@ export function collectLights(scene: LightScene): LightSource[] {
       const intensity = artificial * (vehicle.kind === 'police' ? 0.85 : 0.75);
       if (intensity > 0.02) {
         const nose = vehicle.body.toWorld({ x: 2.1, y: 0 });
-        out.push({ x: nose.x, y: nose.y, radius: 15, color: HEADLIGHT, intensity, artificial: true, profile: 'cone', angle: vehicle.body.angle, spread: 0.5 });
+        out.push({ x: nose.x, y: nose.y, radius: 16, color: HEADLIGHT, intensity, artificial: true, profile: 'cone', angle: vehicle.body.angle, spread: 0.5 });
+        // Short warm pool just ahead of the bumper so the road surface under the beam reads.
+        // Tagged as a street-level headlight so it is masked by raised buildings too.
+        const pool = vehicle.body.toWorld({ x: 4.2, y: 0 });
+        out.push({ x: pool.x, y: pool.y, radius: 4.5, color: HEADLIGHT, intensity: clamp01(intensity * 0.7), artificial: true, inner: 0.3, occlude: true });
       }
     }
     if (vehicle.kind === 'police' && !wreck) {
@@ -285,6 +344,8 @@ export type LightingRenderOptions = {
   zoom: number;
   /** World point -> CSS-pixel screen point (the renderer's `screen`). */
   project: (point: { x: number; y: number }) => { x: number; y: number };
+  /** Raised-building footprints that mask/clip occluded beams. Empty/omitted keeps old behavior. */
+  occluders?: Occluder[];
 };
 
 /**
@@ -382,25 +443,57 @@ export class LightingLayer {
     const intensity = clamp01(light.intensity);
     const alpha = mode === 'mask' ? intensity * 0.9 : intensity * params.glow;
     if (alpha <= 0.004) return;
+    const occluders = opts.occluders;
+    const masked = !!occluders && occluders.length > 0 && shouldOcclude(light);
+    if (masked) {
+      target.save();
+      this.applyOcclusion(target, light, opts, occluders!);
+    }
     if (light.profile === 'cone') {
       const spread = Math.max(0.08, Math.min(1.2, Number.isFinite(light.spread) ? (light.spread as number) : 0.5));
-      const key = spriteKey(light.color, rpx, 'cone', spread);
-      const sprite = this.sprite(key, () => this.coneSprite(light.color, bucketRadius(rpx), spread));
-      const r = bucketRadius(rpx);
+      const key = spriteKey(light.color, SPRITE_RADIUS, 'cone', spread);
+      const sprite = this.sprite(key, () => this.coneSprite(light.color, SPRITE_RADIUS, spread));
       target.save();
       target.translate(cx, cy);
       target.rotate(Number.isFinite(light.angle) ? (light.angle as number) : 0);
       target.globalAlpha = alpha;
-      target.drawImage(sprite, -r, -r, r * 2, r * 2);
+      target.drawImage(sprite, -rpx, -rpx, rpx * 2, rpx * 2);
       target.restore();
     } else {
       const inner = Math.max(0, Math.min(0.6, Number.isFinite(light.inner) ? (light.inner as number) : 0.16));
-      const key = spriteKey(light.color, rpx, 'radial', inner);
-      const sprite = this.sprite(key, () => this.radialSprite(light.color, bucketRadius(rpx), inner));
-      const r = bucketRadius(rpx);
+      const key = spriteKey(light.color, SPRITE_RADIUS, 'radial', inner);
+      const sprite = this.sprite(key, () => this.radialSprite(light.color, SPRITE_RADIUS, inner));
       target.globalAlpha = alpha;
-      target.drawImage(sprite, cx - r, cy - r, r * 2, r * 2);
+      target.drawImage(sprite, cx - rpx, cy - rpx, rpx * 2, rpx * 2);
       target.globalAlpha = 1;
+    }
+    if (masked) target.restore();
+  }
+
+  /**
+   * Intersect the current clip with "everything except" each nearby shadow volume. One clip call
+   * per occluder means overlapping shadows union correctly (intersection is idempotent) instead of
+   * leaking or double-darkening the way a single multi-hole nonzero path would.
+   */
+  private applyOcclusion(target: CanvasRenderingContext2D, light: LightSource, opts: LightingRenderOptions, occluders: Occluder[]): void {
+    const nearby = nearbyOccluders(light, occluders);
+    if (!nearby.length) return;
+    const scale = this.resolution;
+    // Extrude just past the sprite so the shadow covers the sprite's far side.
+    const extend = Math.max(2, light.radius) + 32;
+    for (const occluder of nearby) {
+      const volume = shadowVolume(light, occluder, extend);
+      if (volume.length < 3) continue;
+      target.beginPath();
+      target.rect(0, 0, this.maskWidth, this.maskHeight);
+      for (let i = 0; i < volume.length; i++) {
+        const screen = opts.project(volume[i]);
+        const x = screen.x * scale, y = screen.y * scale;
+        if (i === 0) target.moveTo(x, y);
+        else target.lineTo(x, y);
+      }
+      target.closePath();
+      target.clip('evenodd');
     }
   }
 

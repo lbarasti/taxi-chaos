@@ -37,7 +37,6 @@ document.querySelector('#app')!.innerHTML = `
     <div class="job-progress"><i id="job-progress"></i></div>
   </aside>
   <div class="heat-panel panel" id="heat-panel"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div>
-  <div class="world-tag"><span class="live-dot"></span> A LIVING, BREAKABLE CITY <span id="world-mode">STREET / DAY SHIFT</span></div>
   <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div></section>
   <div class="critical-status panel" id="critical-status" hidden><strong id="condition">ENGINE DAMAGE</strong><span id="components"></span><button id="interact" class="escape-button">E · Get out</button></div>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="wreck-exit">E · Get out</button><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
@@ -52,6 +51,7 @@ const game = new Game();
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 let helpOpen = false;
+let statsOpen = false;
 let lab: LabAPI | undefined;
 function settingsMarkup() {
   return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio)}`;
@@ -63,7 +63,8 @@ function modal() {
   const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing' || game.mode === 'wrecked';
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
   if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
-  else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>FARES COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-help">How to play</button>`;
+  else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>FARES COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
+  else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>FARES COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-stats">Shift stats</button><button class="secondary" id="show-help">How to play</button>`;
   else if (game.mode === 'garage') {
     const upgrades = (Object.entries(upgradeInfo) as [Upgrade, typeof upgradeInfo.engine][]).map(([key, u]) => { const level = game.save.upgrades[key], price = game.price(key); return `<div class="upgrade"><div><span class="upgrade-number">0${Object.keys(upgradeInfo).indexOf(key) + 1}</span><h3>${u.name}</h3><p>${u.subtitle}</p><small>${u.detail}</small><div class="level">${[1, 2, 3].map(i => `<i class="${i <= level ? 'filled' : ''}"></i>`).join('')}<span>LEVEL ${level} / 3</span></div></div><button class="buy" data-upgrade="${key}" ${level >= 3 || game.save.cash < price ? 'disabled' : ''}>${level >= 3 ? 'MAXED' : `$${price}`}</button></div>`; }).join('');
     const repairPrice = game.repairPrice;
@@ -72,20 +73,22 @@ function modal() {
     const fee = Math.min(game.save.cash, 75 + game.stars * 45);
     card.innerHTML = `<div class="eyebrow danger">BUSTED / CITY POLICE</div><h2 id="modal-title">End of the chase.</h2><p>They caught the cab. They couldn’t catch the spirit.</p><div class="bill"><span>BAIL & IMPOUND</span><strong>$${fee}</strong><small>Cab repaired. Boost refilled. Fresh start in Old Town.</small></div><button class="primary" id="recover">Pay bail & get back out ${icon('arrow')}</button>`;
   }
-  if (game.mode === 'paused' && !helpOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
+  if (game.mode === 'paused' && !helpOpen && !statsOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.').replace('Or pay the bail.', 'Or pay the bail. Cab on fire? Press E to get out, run clear with WASD, then E beside a parked car to get in.');
   $('start')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
-  $('resume')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; game.setMode('playing'); $('city').focus(); });
+  $('resume')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; statsOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.player.body.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
   $('difficulty-option')?.addEventListener('change', e => game.configure({ difficulty: (e.target as HTMLSelectElement).value as Difficulty }));
   $('show-help')?.addEventListener('click', showHelp);
+  $('show-stats')?.addEventListener('click', () => { statsOpen = true; modal(); });
+  $('stats-back')?.addEventListener('click', () => { statsOpen = false; modal(); $('show-stats').focus(); });
   $('repair')?.addEventListener('click', () => game.repair());
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => game.buy(button.dataset.upgrade as Upgrade)));
   bindAudioControls(card, audio);
   if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
-function showHelp() { helpOpen = true; game.setMode('paused'); }
+function showHelp() { statsOpen = false; helpOpen = true; game.setMode('paused'); }
 game.onModeChange = () => { modal(); hud(); }; game.onChange = () => { modal(); hud(); };
 function hud() {
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237);
@@ -97,12 +100,12 @@ function hud() {
   $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
   $('job-status').textContent = pickup ? 'PICKUP' : 'ON BOARD'; $('job-status').classList.toggle('green', !pickup);
   $('mission-title').textContent = pickup ? `Meet ${job.name}.` : `${job.destination}.`;
-  $('mission-description').textContent = pickup ? `${job.name} needs a lift. Follow the yellow route.` : `${job.name} is riding with you. Make it a good one.`;
+  $('mission-description').textContent = pickup ? `${job.name} needs a lift. Follow the yellow route on the radar.` : `${job.name} is riding with you. Make it a good one.`;
   $('fare').innerHTML = `$${job.fare} <span>+ tips</span>`; $('distance-label').textContent = pickup ? 'TO PICKUP' : 'TO DROP-OFF'; $('distance').innerHTML = `${Math.round(dist(g.actor.position, g.target))} <span>m</span>`;
   $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in the yellow ring to pick up.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Still earning your base fare'} <span class="comfort">${Math.round(job.comfort)}% comfort</span>`;
   $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
-  if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
-  if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'Walk with WASD / arrows. Blue cars on the radar are available.'; $('distance-label').textContent = 'TO NEXT CAR'; $('mission-footer').textContent = g.enterableCar ? 'Press E to get in. Wallet & upgrades carry over.' : 'Follow the blue route. Press E beside a parked car.'; }
+  if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
+  if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'Walk with WASD / arrows. Blue cars on the radar are available.'; $('distance-label').textContent = 'TO NEXT CAR'; $('mission-footer').textContent = g.enterableCar ? 'Press E to get in. Wallet & upgrades carry over.' : 'Follow the blue radar route. Press E beside a parked car.'; }
   $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? 'ON FOOT' : g.player.damage.status === 'wreck' ? 'CAB DOWN' : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? 'SLIDING' : speed < 2 ? 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : 'ON THE MOVE';
   document.querySelector('.dashboard')!.classList.toggle('boosting', !!g.controls.boost);
   $('health').textContent = `${Math.ceil(g.health)}%`; $('health-bar').style.width = `${g.health}%`; $('health-bar').style.background = g.health < 30 ? '#ee8675' : '#a3ddc2';
@@ -126,7 +129,6 @@ function hud() {
   $('roadside').hidden = !wreck || g.time - g.player.wreckAt < 0.65;
   $('wreck-exit').hidden = g.onFoot; ($('tow') as HTMLButtonElement).disabled = g.time - g.player.wreckAt < 1.2;
   $('tow-price').textContent = `Optional tow & repair: $${Math.min(g.save.cash, 60)} · or take another car for free`;
-  $('world-mode').textContent = g.settings.gore ? `PULP MODE / ${g.kills} DOWN` : `${g.rules.name.toUpperCase()} / ${dayNight.period.toUpperCase()} SHIFT`;
   lab?.refreshUI();
   refreshAudioControls(audio);
   const muted = audio.preferences.muted;
@@ -142,7 +144,7 @@ $('interact').addEventListener('click', interact); $('wreck-exit').addEventListe
 $('sound-toggle').addEventListener('click', toggleSound);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
-function pause() { if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') { lab?.realtime(); externalClock = false; helpOpen = false; game.setMode('playing'); } }
+function pause() { if (game.mode === 'playing') { statsOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { lab?.realtime(); externalClock = false; helpOpen = false; statsOpen = false; game.setMode('playing'); } }
 $('pause').addEventListener('click', pause); $('garage').addEventListener('click', () => game.garage()); $('help').addEventListener('click', showHelp);
 $('lab-button').addEventListener('click', () => { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); });
 document.querySelector('.brand')!.addEventListener('click', e => { e.preventDefault(); showHelp(); });

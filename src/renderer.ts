@@ -3,6 +3,7 @@ import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from './p
 import { GARAGE, district, roadPath, type Prop } from './world';
 import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
+import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
@@ -42,7 +43,7 @@ export class Renderer {
     this.daylight = clamp(1 - lighting.darkness, 0, 1);
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.fillStyle = mixHex('#183139', '#86a4ad', this.daylight * 0.5); c.fillRect(0, 0, this.width, this.height);
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
-    this.ground(); this.route();
+    this.ground();
     g.fx.drawGround(c, g.settings.gore);
     for (const s of g.skids) { if (s.blood && !g.settings.gore) continue; c.globalAlpha = Math.min(0.6, s.life / 18); c.strokeStyle = s.blood ? '#7c1726' : '#11191b'; c.lineWidth = s.blood ? 0.32 : 0.23; c.beginPath(); c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); c.stroke(); } c.globalAlpha = 1;
     for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
@@ -69,11 +70,10 @@ export class Renderer {
     c.restore();
     this.lightingPass(lighting);
     // Navigation, labels and debug feedback are redrawn above the lighting pass so night never
-    // buries the route or hides the player's read-outs.
+    // hides the destination markers or the player's read-outs.
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
     this.marker(GARAGE, '#a7bcca', 'PIT STOP', true);
     const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
-    this.route();
     for (const person of g.world.people) if (person.alive && !person.aboard && person.panic > 0 && this.visible(person.position, 2)) this.label('!', person.position.x, person.position.y - 1, 1.1, GOLD, '700');
     if (g.job.stage === 'pickup') {
       const person = g.world.people.find(p => p.id === g.job.customerId), waiting = person?.position ?? add(g.job.pickup, vec(3.4, 0));
@@ -104,6 +104,10 @@ export class Renderer {
     const top = this.camera.y + (0 - this.height * 0.54) / this.zoom, bottom = this.camera.y + (this.height - this.height * 0.54) / this.zoom;
     return { minX: left, minY: top, maxX: right, maxY: bottom };
   }
+  /** Alive raised structures visible (plus a small margin) that mask/clip street-level beams. */
+  private worldOccluders(): Occluder[] {
+    return collectOccluders(this.game.world.props, this.worldViewport());
+  }
   private lightingPass(lighting: LightingState) {
     const g = this.game;
     const scene: LightScene = {
@@ -111,8 +115,10 @@ export class Renderer {
       playerBoosting: !g.onFoot && g.mode === 'playing' && g.controls.boost === true && g.boost > 1, arrest: g.arrest,
       vehicles: g.vehicles, props: g.world.props, blasts: g.fx.blasts,
     };
-    const lights = cullLights(collectLights(scene), this.worldViewport());
-    const options: LightingRenderOptions = { width: this.width, height: this.height, dpr: this.dpr, state: lighting, lights, zoom: this.zoom, project: point => this.screen(point) };
+    const viewport = this.worldViewport();
+    const lights = cullLights(collectLights(scene), viewport);
+    const occluders = this.worldOccluders();
+    const options: LightingRenderOptions = { width: this.width, height: this.height, dpr: this.dpr, state: lighting, lights, zoom: this.zoom, project: point => this.screen(point), occluders };
     this.lightLayer.render(this.ctx, options);
   }
   ground() {
@@ -167,11 +173,6 @@ export class Renderer {
     // Workshop's apron, immediately beside the starting cab.
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
   }
-  route() {
-    const g = this.game, c = this.ctx, route = g.onFoot && g.clearWalk(g.actor.position, g.target) ? [g.target] : roadPath(g.actor.position, g.target);
-    c.strokeStyle = g.onFoot ? '#8edbe870' : g.navToGarage ? '#a7bcca70' : g.job.stage === 'pickup' ? '#f7ce5538' : '#a3ddc248'; c.lineWidth = 0.65; c.lineJoin = 'round'; c.setLineDash([1, 1.8]); c.lineDashOffset = -g.time * 2;
-    c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of route) c.lineTo(p.x, p.y); c.stroke(); c.setLineDash([]);
-  }
   marker(p: Vec, color: string, label: string, garage = false) {
     if (!this.visible(p, 10)) return; const c = this.ctx, g = this.game;
     c.save(); c.translate(p.x, p.y); c.strokeStyle = color; c.fillStyle = color + '12'; c.lineWidth = 0.15;
@@ -206,6 +207,15 @@ export class Renderer {
         for (let i = -3.6; i < 4; i += 1) this.rect(i, 4.4, 0.15, 0.9, '#182d3855');
         for (let i = -3; i < 4; i += 2) this.rect(i, -5.1, 0.9, 0.28, '#c4c69a90');
         this.label(prop.label, 0, 3.1, Math.min(0.82, 9 / (prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#d8ded1', '600');
+        // Warm upper-floor windows and, for every third shopfront, a saturated neon sign strip.
+        for (let wi = 0; wi < 4; wi++) {
+          const wx = -3.7 + wi * 2.35;
+          this.rect(wx, -3.9, 1.4, 1.5, '#ffd0894a'); this.rect(wx + 0.2, -3.7, 0.95, 0.95, '#fff0c86e');
+        }
+        if (prop.id % 3 === 0) {
+          const neon = ['#ff5c96', '#60d2ff', '#ff7854', '#78ebaa', '#9696ff', '#ffb45c'][Math.floor(prop.id / 3) % 6];
+          this.rect(-4, 4.15, 3.2, 0.55, neon + 'dd'); this.rect(-3.85, 4.28, 2.9, 0.18, '#ffffff8c');
+        }
         this.rect(-5.3, 0, 0.5, 3, '#758488'); for (let y = 0; y < 3; y += 0.5) this.rect(-5.3, y, 0.5, 0.12, '#2c3b43');
       }
     } else if (['shed', 'barracks', 'station'].includes(prop.kind)) {
@@ -214,6 +224,13 @@ export class Renderer {
       for (let x = -b.w / 2 + 0.5; x < b.w / 2; x += 1) this.rect(x, -b.h / 2, 0.1, b.h, '#222f3440');
       this.rect(-b.w / 2, -0.3, b.w, 0.6, '#8c95816a');
       this.label(prop.label, 0, 2, Math.min(1, b.w / (prop.label.length * 0.65)), '#e2ddbe', '700');
+      // Lit fascia/canopy for the service yard, and warm windows on the large civic structures.
+      if (prop.kind === 'station') {
+        this.rect(-b.w / 2, -b.h / 2 + 1.15, b.w, 0.55, '#e0ad63');
+        for (let lx = -3.5; lx <= 3.5; lx += 2.3) this.circle(vec(lx, -b.h / 2 + 1.6), 0.5, '#ffe4a8');
+      } else {
+        for (const lx of [-6, 6]) { this.rect(lx - 0.7, -4.7, 1.4, 0.9, '#ffd08945'); this.rect(lx - 0.55, -4.55, 1.1, 0.7, '#fff0c86b'); }
+      }
       this.rect(-2, b.h / 2 - 0.5, 4, 0.6, '#25353b');
       const ratio = clamp(prop.hp / prop.maxHp, 0, 1);
       if (ratio < 0.98) {
@@ -225,6 +242,7 @@ export class Renderer {
     } else if (prop.kind === 'pump') {
       this.shadowRect(-0.75 + so.x, -1.35 + so.y, 1.5, 2.7, '#1b2d3250'); this.rect(-0.6, -1.2, 1.2, 2.4, prop.color, '#e5c691');
       this.rect(-0.4, -0.8, 0.8, 0.65, '#233d44'); this.rect(-0.3, -0.7, 0.6, 0.3, '#a7ccb6');
+      this.circle(vec(0, -1.35), 0.3, '#ffe4a8');
       c.strokeStyle = '#26383c'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(0.6, 0); c.lineTo(1.2, 0); c.lineTo(1.2, 0.8); c.lineTo(0.6, 0.8); c.stroke();
       if (prop.fire > 0) drawFire(c, vec(), 1.4, this.game.time, prop.id);
     } else if (prop.kind === 'tree') {
@@ -232,7 +250,10 @@ export class Renderer {
     } else if (prop.kind === 'hydrant') {
       this.shadowCircle(vec(0.15 + so.x, 0.2 + so.y), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
     } else if (prop.kind === 'lamp') {
-      this.circle(vec(), 2.5, '#e8d69a09'); this.circle(vec(), 0.4, '#59706d'); this.rect(-0.06, -0.7, 0.12, 0.9, '#8a9a96'); this.rect(-0.3, -0.9, 0.6, 0.4, '#e3dbad');
+      // Warm lamp head with a soft halo; the lighting pass adds the pool on the ground.
+      this.circle(vec(), 3.6, '#ffd9a00f'); this.circle(vec(), 1.15, '#ffdf9a14');
+      this.circle(vec(), 0.42, '#59706d'); this.rect(-0.06, -0.7, 0.12, 0.9, '#8a9a96');
+      this.rect(-0.34, -1.02, 0.68, 0.42, '#ffe9b0'); this.rect(-0.28, -0.62, 0.56, 0.1, '#fff6d8');
     } else if (prop.kind === 'kiosk') {
       this.shadowRect(-b.w / 2 + 0.3 + so.x, -b.h / 2 + 0.4 + so.y, b.w, b.h, '#17272e80'); this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#d5bba0');
       this.rect(-b.w / 2, -b.h / 2, b.w, 0.4, '#ded4b5'); this.label(prop.label, 0, 0, 0.55, '#f1e3ca', '700');

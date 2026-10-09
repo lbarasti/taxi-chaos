@@ -149,6 +149,24 @@ describe('day/night lighting', () => {
     expect(noon.shadowLength).toBeLessThan(midnight.shadowLength);
   });
 
+  it('keeps the whole night readable instead of pitch black', () => {
+    // References show blue-hour/neon cities with legible streets, not crushed blacks. Hold every
+    // night hour below a readability ceiling and keep a cool, blue-dominant ambient film.
+    for (let hour = 21; hour < 24; hour += 0.25) {
+      const light = lightAt(hour);
+      expect(light.darkness).toBeLessThanOrEqual(0.6);
+      expect(light.artificialLight).toBeGreaterThan(0.5);
+      expect(light.tint[2]).toBeGreaterThan(light.tint[0]);
+      expect(light.tint[2]).toBeGreaterThan(light.tint[1]);
+    }
+    for (let hour = 0; hour < 5; hour += 0.25) {
+      const light = lightAt(hour);
+      expect(light.darkness).toBeLessThanOrEqual(0.6);
+      expect(light.darkness).toBeGreaterThan(0.3);
+      expect(light.tint[2]).toBeGreaterThan(light.tint[0]);
+    }
+  });
+
   it('interpolates continuously through midnight and every period boundary', () => {
     for (const boundary of [0, 5, 12, 17, 21]) {
       const before = lightAt(boundary - 0.0001), after = lightAt(boundary + 0.0001);
