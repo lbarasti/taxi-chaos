@@ -57,6 +57,16 @@ Touch steering, pedals, drift and boost are shown on small screens; desktop is t
 - Gore is off by default. With it enabled, fast impacts and severe blast exposure can kill pedestrians, including a waiting customer. Dispatch replaces a lost customer without awarding a fare. With gore disabled, street hits are nonfatal. Blood/effects are bounded and old off-screen corpses are cleared; civilian population replenishes off-screen.
 - Buy engine, grip, armor and boost upgrades at **Pit Stop** in Old Town. Wallet, upgrades and completed-fare count persist. Repairs and bail return you to the driving loop.
 
+## Day/night cycle
+
+- New runs start at **07:00** on day 1. One simulated second advances one in-game minute, so a full day lasts **24 minutes** at the normal rate.
+- Periods: morning 05:00–12:00, afternoon 12:00–17:00, evening 17:00–21:00, night 21:00–05:00. Labels change at those boundaries; lighting, moving sun shadows and local lights interpolate smoothly across every transition, including midnight.
+- Time advances only while the world advances (playing/wrecked). It freezes in intro/pause/garage/arrest and follows fixed lab stepping. Changing the hour never alters existing fare/fire timers and never consumes gameplay RNG.
+- The top-bar HUD clock shows zero-padded **HH:MM**, the period name and a sun/moon icon, and stays visible on tablet/mobile widths.
+- Lab controls (F2): an hour slider, morning/afternoon/evening/night presets (07:00/14:00/19:00/23:00), a cycle-rate slider and a cycle-only freeze. These affect the day/night clock only; the simulation speed and Step controls are unchanged.
+
+Automation defaults and API: `__taxi.dayNight(options)` accepts `{ hour?, rate?, frozen? }`. `hour` is fractional 0–24 (wrapped; default 07:00), `rate` is in-game minutes per simulated second (default `1`; `0` pauses the cycle, capped at `240`), and `frozen` pauses the cycle without pausing the world. It returns the refreshed `LabSnapshot`, whose `dayNight` field is `{ hour, minutes, day, time, period, rate, frozen }`.
+
 ## Sound FX
 
 Audio starts only after a click/tap or keyboard interaction; loading the page creates no
@@ -98,6 +108,7 @@ Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. Th
 
 - **16 fixtures:** first fare, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
 - **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
+- **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
 - **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.
 - **Debug views:** collider outlines, AI paths/roles/recovery phases, density 0–40, and live damage/police/kill/blast/recovery telemetry.
 - **Difficulty and gore:** change during a run. Scenario presets may enable gore/God mode for their test; the preset's description explains its setup.
@@ -144,6 +155,10 @@ __taxi.people();                   // pedestrian state, including alive/aboard
 __taxi.audio();                    // audio readiness, sample failures, loops, voice counts, output peak
 await __taxi.sound('explosion');    // isolated audition; requires browser audio activation
 __taxi.stopSound();                // stop audition; world sound resumes if Live
+__taxi.dayNight({hour: 19});        // world clock: 19:00 evening; lighting updates immediately
+__taxi.dayNight({rate: 4});         // 4× cycle speed (in-game minutes per simulated second)
+__taxi.dayNight({frozen: true});    // freeze the cycle only; simulation clocks keep running
+__taxi.dayNight();                  // refreshed LabSnapshot, including .dayNight
 __taxi.teleport(4, 14);             // isolate a specific location/contact
 __taxi.garage();                   // open garage for UI testing
 __taxi.realtime();                 // return to keyboard/touch play

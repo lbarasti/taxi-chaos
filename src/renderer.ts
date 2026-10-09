@@ -2,10 +2,24 @@ import { Game, type Vehicle } from './game';
 import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from './physics';
 import { GARAGE, district, roadPath, type Prop } from './world';
 import { drawCorpse, drawFire, drawSmoke } from './effects';
+import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
+import type { LightingState } from './day-night';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
+
+function mixHex(a: string, b: string, t: number): string {
+  const parse = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] as [number, number, number]; };
+  const A = parse(a), B = parse(b), k = clamp(t, 0, 1);
+  return `rgb(${Math.round(A[0] + (B[0] - A[0]) * k)},${Math.round(A[1] + (B[1] - A[1]) * k)},${Math.round(A[2] + (B[2] - A[2]) * k)})`;
+}
+
 export class Renderer {
   ctx: CanvasRenderingContext2D; mapCtx: CanvasRenderingContext2D; width = 0; height = 0; dpr = 1; camera = vec(4, 25); zoom = 9; frames = 0; fps = 60; debugColliders = false; debugAI = false;
+  lightLayer = new LightingLayer(0.5);
+  private sun: Vec = vec(0, 0.5);
+  private shadowT = 0;
+  private shadowAlpha = 0.4;
+  private daylight = 0;
   constructor(public canvas: HTMLCanvasElement, public map: HTMLCanvasElement, public game: Game) {
     this.ctx = canvas.getContext('2d')!; this.mapCtx = map.getContext('2d')!; this.resize(); window.addEventListener('resize', () => this.resize());
   }
@@ -21,28 +35,26 @@ export class Renderer {
     this.zoom += (targetZoom - this.zoom) * Math.min(1, dt * 3);
     const wanted = add(p.position, scale(p.velocity, 0.65));
     this.camera = add(this.camera, scale(sub(wanted, this.camera), Math.min(1, dt * 5)));
-    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.fillStyle = '#183139'; c.fillRect(0, 0, this.width, this.height);
+    const lighting = g.dayNight.lighting;
+    this.sun = scale(lighting.sunDirection, Math.max(0, lighting.shadowLength));
+    this.shadowT = clamp(lighting.shadowOpacity * 1.4, 0, 1);
+    this.shadowAlpha = clamp(0.25 + 0.75 * lighting.shadowOpacity, 0, 1);
+    this.daylight = clamp(1 - lighting.darkness, 0, 1);
+    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.fillStyle = mixHex('#183139', '#86a4ad', this.daylight * 0.5); c.fillRect(0, 0, this.width, this.height);
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
     this.ground(); this.route();
     g.fx.drawGround(c, g.settings.gore);
     for (const s of g.skids) { if (s.blood && !g.settings.gore) continue; c.globalAlpha = Math.min(0.6, s.life / 18); c.strokeStyle = s.blood ? '#7c1726' : '#11191b'; c.lineWidth = s.blood ? 0.32 : 0.23; c.beginPath(); c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); c.stroke(); } c.globalAlpha = 1;
-    this.marker(GARAGE, '#a7bcca', 'PIT STOP', true);
-    const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
     for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
       if (person.aboard) continue;
       if (!person.alive) { if (g.settings.gore && person.deathTime >= 0) drawCorpse(c, person); continue; }
-      const pp = person.position;
-      this.circle(add(pp, vec(0.18, 0.22)), 0.4, '#0d1a2280');
+      const pp = person.position, so = this.shadowOffset();
+      c.globalAlpha = this.shadowAlpha; this.circle(add(pp, add(vec(0.18, 0.22), so)), 0.4, '#0d1a2280'); c.globalAlpha = 1;
       c.save(); c.translate(pp.x, pp.y); c.rotate(Math.sin(g.time * 3 + person.phase) * 0.2);
       this.rect(-0.22, -0.1, 0.44, 0.6, person.color); this.circle(vec(0, -0.22), 0.23, '#dfc4ab');
       this.rect(-0.33, 0.05, 0.14, 0.36, person.color); this.rect(0.2, person.panic > 0 ? -0.35 : 0.05, 0.14, 0.36, person.color);
-      if (person.panic > 0) this.label('!', 0, -1, 1.1, GOLD, '700'); c.restore();
-    }
-    if (g.job.stage === 'pickup') {
-      const person = g.world.people.find(p => p.id === g.job.customerId), waiting = person?.position ?? add(g.job.pickup, vec(3.4, 0));
-      const waving = add(waiting, vec(0.6, -0.3 - Math.sin(g.time * 6) * 0.2)); this.circle(waving, 0.18, GOLD);
-      this.label(g.job.name.toUpperCase(), waiting.x, waiting.y - 1.8, 0.8, GOLD, '700');
+      c.restore();
     }
     for (const v of g.vehicles) if (v.alive && this.visible(v.body.position)) this.car(v);
     if (g.onFoot) {
@@ -52,10 +64,27 @@ export class Renderer {
       const stride = Math.sin(g.time * 17) * Math.min(g.speed / 5.5, 1) * 0.15;
       this.rect(-0.24, -0.05, 0.48, 0.6, GOLD); this.circle(vec(0, -0.23), 0.24, '#dfc4ab');
       this.rect(-0.26, 0.42 + stride, 0.18, 0.32, '#273c44'); this.rect(0.08, 0.42 - stride, 0.18, 0.32, '#273c44'); c.restore();
+    }
+    g.fx.drawAir(c, g.time, g.settings.gore);
+    c.restore();
+    this.lightingPass(lighting);
+    // Navigation, labels and debug feedback are redrawn above the lighting pass so night never
+    // buries the route or hides the player's read-outs.
+    c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
+    this.marker(GARAGE, '#a7bcca', 'PIT STOP', true);
+    const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
+    this.route();
+    for (const person of g.world.people) if (person.alive && !person.aboard && person.panic > 0 && this.visible(person.position, 2)) this.label('!', person.position.x, person.position.y - 1, 1.1, GOLD, '700');
+    if (g.job.stage === 'pickup') {
+      const person = g.world.people.find(p => p.id === g.job.customerId), waiting = person?.position ?? add(g.job.pickup, vec(3.4, 0));
+      const waving = add(waiting, vec(0.6, -0.3 - Math.sin(g.time * 6) * 0.2)); this.circle(waving, 0.18, GOLD);
+      this.label(g.job.name.toUpperCase(), waiting.x, waiting.y - 1.8, 0.8, GOLD, '700');
+    }
+    if (g.onFoot) {
+      const p = g.driver.position;
       this.label('YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
       const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? 'E · GET IN' : 'REPLACEMENT CAR');
     }
-    g.fx.drawAir(c, g.time, g.settings.gore);
     this.debug();
     for (const feedback of g.feedback) {
       if (!this.visible(feedback.position, 3)) continue;
@@ -63,11 +92,36 @@ export class Renderer {
     }
     c.globalAlpha = 1; c.restore(); this.edgePointer(); this.minimap();
   }
+  private shadowOffset(angle = 0): Vec {
+    const contact = vec(0.16, 0.22);
+    const world = add(scale(contact, 1 - this.shadowT), scale(this.sun, -this.shadowT));
+    return angle ? rotate(world, -angle) : world;
+  }
+  private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.ctx.globalAlpha = this.shadowAlpha; this.rect(x, y, w, h, color); this.ctx.globalAlpha = 1; }
+  private shadowCircle(p: Vec, r: number, color: string) { this.ctx.globalAlpha = this.shadowAlpha; this.circle(p, r, color); this.ctx.globalAlpha = 1; }
+  private worldViewport(): Viewport {
+    const left = this.camera.x + (0 - this.width * 0.53) / this.zoom, right = this.camera.x + (this.width - this.width * 0.53) / this.zoom;
+    const top = this.camera.y + (0 - this.height * 0.54) / this.zoom, bottom = this.camera.y + (this.height - this.height * 0.54) / this.zoom;
+    return { minX: left, minY: top, maxX: right, maxY: bottom };
+  }
+  private lightingPass(lighting: LightingState) {
+    const g = this.game;
+    const scene: LightScene = {
+      time: g.time, artificial: clamp(lighting.artificialLight, 0, 1), playerId: g.player.id, playerOnFoot: g.onFoot,
+      playerBoosting: !g.onFoot && g.mode === 'playing' && g.controls.boost === true && g.boost > 1, arrest: g.arrest,
+      vehicles: g.vehicles, props: g.world.props, blasts: g.fx.blasts,
+    };
+    const lights = cullLights(collectLights(scene), this.worldViewport());
+    const options: LightingRenderOptions = { width: this.width, height: this.height, dpr: this.dpr, state: lighting, lights, zoom: this.zoom, project: point => this.screen(point) };
+    this.lightLayer.render(this.ctx, options);
+  }
   ground() {
     const c = this.ctx, g = this.game;
-    this.rect(-14, -14, 268, 268, '#29383e');
+    // The base palette was authored for a night city; lift it toward daylight so morning/afternoon
+    // do not read as a darker night before the ambient lighting pass is applied.
+    this.rect(-14, -14, 268, 268, mixHex('#29383e', '#84938a', this.daylight * 0.45));
     // Waterfront: graphic waves, not textures.
-    c.strokeStyle = '#31505a'; c.lineWidth = 0.12;
+    c.strokeStyle = mixHex('#31505a', '#9bc0c6', this.daylight * 0.5); c.lineWidth = 0.12;
     for (let y = -70; y < 320; y += 7) { c.beginPath(); for (let x = -100; x < 350; x += 2) { if (x > -17 && x < 257 && y > -17 && y < 257) continue; const yy = y + Math.sin(x * 0.5 + g.time * 0.3) * 0.3; c.lineTo(x, yy); } c.stroke(); }
     for (const b of g.world.blocks) {
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
@@ -126,7 +180,7 @@ export class Renderer {
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
   prop(prop: Prop) {
-    const c = this.ctx, b = prop.body;
+    const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (!prop.alive) {
       if (prop.kind === 'hydrant') { this.circle(vec(), 1.7, '#6ba2b63c'); this.circle(vec(), 0.3, '#343d41'); }
@@ -140,7 +194,7 @@ export class Renderer {
       c.restore(); return;
     }
     if (prop.kind === 'building') {
-      this.rect(-b.w / 2 + 0.8, -b.h / 2 + 1.3, b.w + 0.5, b.h + 0.5, '#13212870');
+      this.shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1.3 + so.y, b.w + 0.5, b.h + 0.5, '#13212870');
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#202f37');
       this.rect(-b.w / 2 - 0.25, -b.h / 2 - 0.6, b.w, b.h, prop.color, '#84938c50');
       if (b.w <= 12) {
@@ -155,7 +209,7 @@ export class Renderer {
         this.rect(-5.3, 0, 0.5, 3, '#758488'); for (let y = 0; y < 3; y += 0.5) this.rect(-5.3, y, 0.5, 0.12, '#2c3b43');
       }
     } else if (['shed', 'barracks', 'station'].includes(prop.kind)) {
-      this.rect(-b.w / 2 + 0.8, -b.h / 2 + 1, b.w, b.h, '#13212870');
+      this.shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1 + so.y, b.w, b.h, '#13212870');
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#a1a18a80');
       for (let x = -b.w / 2 + 0.5; x < b.w / 2; x += 1) this.rect(x, -b.h / 2, 0.1, b.h, '#222f3440');
       this.rect(-b.w / 2, -0.3, b.w, 0.6, '#8c95816a');
@@ -169,18 +223,18 @@ export class Renderer {
       }
       if (prop.fire > 0) { drawFire(c, vec(), 2.8, this.game.time, prop.id); drawSmoke(c, vec(0, -2), 3, this.game.time, prop.id); }
     } else if (prop.kind === 'pump') {
-      this.rect(-0.75, -1.35, 1.5, 2.7, '#1b2d3250'); this.rect(-0.6, -1.2, 1.2, 2.4, prop.color, '#e5c691');
+      this.shadowRect(-0.75 + so.x, -1.35 + so.y, 1.5, 2.7, '#1b2d3250'); this.rect(-0.6, -1.2, 1.2, 2.4, prop.color, '#e5c691');
       this.rect(-0.4, -0.8, 0.8, 0.65, '#233d44'); this.rect(-0.3, -0.7, 0.6, 0.3, '#a7ccb6');
       c.strokeStyle = '#26383c'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(0.6, 0); c.lineTo(1.2, 0); c.lineTo(1.2, 0.8); c.lineTo(0.6, 0.8); c.stroke();
       if (prop.fire > 0) drawFire(c, vec(), 1.4, this.game.time, prop.id);
     } else if (prop.kind === 'tree') {
-      this.circle(vec(0.5, 0.5), 2.1, '#172c2d80'); this.circle(vec(), 1.9, '#294c43'); this.circle(vec(-0.25, -0.3), 1.6, prop.color); this.circle(vec(-0.6, -0.7), 0.8, '#6b92724a');
+      this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80'); this.circle(vec(), 1.9, '#294c43'); this.circle(vec(-0.25, -0.3), 1.6, prop.color); this.circle(vec(-0.6, -0.7), 0.8, '#6b92724a');
     } else if (prop.kind === 'hydrant') {
-      this.circle(vec(0.15, 0.2), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
+      this.shadowCircle(vec(0.15 + so.x, 0.2 + so.y), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
     } else if (prop.kind === 'lamp') {
       this.circle(vec(), 2.5, '#e8d69a09'); this.circle(vec(), 0.4, '#59706d'); this.rect(-0.06, -0.7, 0.12, 0.9, '#8a9a96'); this.rect(-0.3, -0.9, 0.6, 0.4, '#e3dbad');
     } else if (prop.kind === 'kiosk') {
-      this.rect(-b.w / 2 + 0.3, -b.h / 2 + 0.4, b.w, b.h, '#17272e80'); this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#d5bba0');
+      this.shadowRect(-b.w / 2 + 0.3 + so.x, -b.h / 2 + 0.4 + so.y, b.w, b.h, '#17272e80'); this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#d5bba0');
       this.rect(-b.w / 2, -b.h / 2, b.w, 0.4, '#ded4b5'); this.label(prop.label, 0, 0, 0.55, '#f1e3ca', '700');
     } else if (prop.kind === 'crate') {
       this.rect(-0.7, -0.7, 1.4, 1.4, prop.color, '#725744'); this.rect(-0.65, -0.12, 1.3, 0.24, '#796346'); c.strokeStyle = '#796346'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(-0.5, -0.5); c.lineTo(0.5, 0.5); c.stroke();
@@ -192,7 +246,7 @@ export class Renderer {
     c.restore();
   }
   car(v: Vehicle) {
-    const c = this.ctx, b = v.body, police = v.kind === 'police', taxi = v.kind === 'taxi', wreck = v.damage.status === 'wreck';
+    const c = this.ctx, b = v.body, police = v.kind === 'police', taxi = v.kind === 'taxi', wreck = v.damage.status === 'wreck', so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (v === this.game.player && !this.game.onFoot && this.game.mode === 'playing' && this.game.controls.boost) {
       const pulse = 0.5 + Math.sin(this.game.time * 43) * 0.12;
@@ -203,7 +257,7 @@ export class Renderer {
       c.strokeStyle = '#8ee8f78a'; c.lineWidth = 0.1;
       for (const side of [-1.35, 1.35]) { c.beginPath(); c.moveTo(-1.8, side); c.lineTo(-5.5 - pulse * 2, side); c.stroke(); }
     }
-    this.rect(-2 + 0.25, -1 + 0.35, 4.2, 2.1, '#0e1a2270');
+    this.shadowRect(-2 + 0.25 + so.x, -1 + 0.35 + so.y, 4.2, 2.1, '#0e1a2270');
     for (const t of v.dynamics.tyres) { c.save(); c.translate(t.position.x, t.position.y * 1.44); c.rotate(t.angle); this.rect(-0.48, -0.16, 0.96, 0.32, '#101b20'); c.restore(); }
     c.fillStyle = wreck ? '#34393b' : v.color; c.beginPath(); c.roundRect(-2.1, -1.02, 4.2, 2.04, 0.35); c.fill();
     this.rect(-1.15, -0.89, 2.45, 1.78, wreck ? '#252c2f' : police ? '#273945' : taxi ? '#e4b747' : v.color);

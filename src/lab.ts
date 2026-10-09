@@ -19,8 +19,11 @@ import { createVehicleDamage, igniteVehicle, tickVehicleDamage, type VehicleDama
 import type { AudioFX } from './audio';
 import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
 import { isSoundCue, soundLabels, type SoundCue } from './sound';
+import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 
 const STEP = 1 / 120;
+/** Representative hour for each day/night period; presets set the hour only. */
+const DAY_PRESETS: Record<DayPeriod, number> = { morning: 7, afternoon: 14, evening: 19, night: 23 };
 const SOUTH = Math.PI / 2;
 const NORTH = -Math.PI / 2;
 const EAST = 0;
@@ -135,6 +138,7 @@ export type LabAPI = {
   traffic(count: number): void;
   props(): PropSummary[];
   people(): PersonSummary[];
+  dayNight(options?: DayNightOptions): LabSnapshot;
   refreshUI(): void;
   audio(): ReturnType<AudioFX['state']> | null;
   sound(cue: SoundCue): Promise<boolean>;
@@ -395,6 +399,26 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
         <p class="lab-hint">FIXED freezes the wall clock so Step is deterministic. Live restores realtime play.</p>
       </section>
 
+      <section class="lab-sec" aria-label="Day and night">
+        <h4>Day / night</h4>
+        <label class="lab-field">Hour <output data-lab="dn-hour-value">07:00</output>
+          <input id="lab-dn-hour" name="lab-dn-hour" type="range" min="0" max="${DAY_MINUTES - 1}" step="1" value="${DAY_PRESETS.morning * 60}" data-lab="dn-hour" aria-label="Hour of day">
+        </label>
+        <div class="lab-row lab-presets" data-lab="dn-presets" role="group" aria-label="Day period presets">
+          <button type="button" data-dn-preset="morning">Morning 07:00</button>
+          <button type="button" data-dn-preset="afternoon">Afternoon 14:00</button>
+          <button type="button" data-dn-preset="evening">Evening 19:00</button>
+          <button type="button" data-dn-preset="night">Night 23:00</button>
+        </div>
+        <label class="lab-field">Rate <output data-lab="dn-rate-value">1×</output>
+          <input id="lab-dn-rate" name="lab-dn-rate" type="range" min="0" max="8" step="0.25" value="1" data-lab="dn-rate" aria-label="Cycle rate, in-game minutes per simulated second">
+        </label>
+        <div class="lab-checks">
+          <label><input id="lab-dn-freeze" name="lab-dn-freeze" type="checkbox" data-lab="dn-freeze"> Freeze cycle</label>
+        </div>
+        <p class="lab-hint">Cycle only: rate is in-game minutes per simulated second. Freeze pauses the day/night clock without stopping fares, fires or the simulation clock.</p>
+      </section>
+
       ${hooks.audio ? `<section class="lab-sec" aria-label="Sound FX audition">
         <h4>Sound FX audition</h4>
         ${audioMarkup(hooks.audio)}
@@ -464,6 +488,13 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   const tele = q<HTMLSpanElement>('tele')!;
   const expandButton = q<HTMLButtonElement>('expand')!;
   const igniteButton = q<HTMLButtonElement>('ignite')!;
+  const dnHour = q<HTMLInputElement>('dn-hour')!;
+  const dnHourValue = q<HTMLOutputElement>('dn-hour-value')!;
+  const dnRate = q<HTMLInputElement>('dn-rate')!;
+  const dnRateValue = q<HTMLOutputElement>('dn-rate-value')!;
+  const dnFreeze = q<HTMLInputElement>('dn-freeze')!;
+  const presetHost = q<HTMLDivElement>('dn-presets')!;
+  const presetButtons = qa<HTMLButtonElement>('dn-preset');
 
   scenarioSelect.innerHTML = scenarioInfo.map(s => `<option value="${s.name}">${s.label}</option>`).join('');
   scenarioSelect.value = scenarioNames[0];
@@ -507,6 +538,14 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     updateSelect(difficultySelect, game.settings.difficulty);
     updateInput(trafficInput, String(desiredTraffic));
     trafficValue.textContent = String(desiredTraffic);
+
+    const dn = game.dayNight.snapshot();
+    updateInput(dnHour, String(Math.round(dn.minutes)));
+    dnHourValue.textContent = dn.time;
+    updateInput(dnRate, String(dn.rate));
+    dnRateValue.textContent = `${dn.rate}×`;
+    updateChecked(dnFreeze, dn.frozen);
+    for (const button of presetButtons) button.classList.toggle('is-active', button.dataset.dnPreset === dn.period);
 
     for (const input of qa<HTMLInputElement>('cheat')) {
       const key = input.dataset.cheat as 'gore' | 'invincible' | 'infiniteBoost' | 'noPolice';
@@ -676,6 +715,13 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       setTraffic(game, desiredTraffic);
       hooks.refresh(); refreshUI();
     },
+    dayNight: (options = {}) => {
+      // Day/night options only touch the world clock; fare/fire timers and the simulation
+      // clock are untouched. Re-render immediately so a preset shows its lighting at once.
+      game.dayNight.configure(options);
+      hooks.refresh(); refreshUI();
+      return snapshot();
+    },
     props: () => game.world.props.filter(p => Number.isFinite(p.maxHp)).map(p => ({
       id: p.id, kind: p.kind, position: { ...p.body.position }, hp: p.hp, maxHp: p.maxHp,
       alive: p.alive, fire: p.fire, fuelSpent: p.fuelSpent, blamed: p.blamed,
@@ -735,6 +781,19 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   trafficInput.addEventListener('input', () => {
     desiredTraffic = clamp(Math.floor(Number(trafficInput.value) || 0), 0, MAX_TRAFFIC);
     api.traffic(desiredTraffic);
+  });
+  dnHour.addEventListener('input', () => {
+    const minutes = clamp(Number(dnHour.value) || 0, 0, DAY_MINUTES - 1);
+    api.dayNight({ hour: minutes / 60 });
+  });
+  dnRate.addEventListener('input', () => api.dayNight({ rate: Number(dnRate.value) }));
+  dnFreeze.addEventListener('change', () => api.dayNight({ frozen: dnFreeze.checked }));
+  presetHost.addEventListener('click', event => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-dn-preset]');
+    if (!button) return;
+    const hour = DAY_PRESETS[button.dataset.dnPreset as DayPeriod];
+    if (hour === undefined) return;
+    api.dayNight({ hour });
   });
   upgradeHost.addEventListener('input', event => {
     const input = (event.target as HTMLElement).closest<HTMLInputElement>('input[data-upgrade]');

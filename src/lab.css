@@ -99,6 +99,9 @@
 
 .debug-panel.lab .lab-scales{display:inline-flex;gap:4px}
 .debug-panel.lab .lab-scales button{min-width:38px}
+/* Day/night presets: equal-width grid so all four fit without wrapping oddly. */
+.debug-panel.lab .lab-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.debug-panel.lab .lab-presets button{padding:4px 5px;font-size:9px;width:100%}
 body:has(.debug-panel.lab.lab-closed) .toast{bottom:125px}
 
 @media (max-width:700px){
@@ -108,4 +111,5 @@ body:has(.debug-panel.lab.lab-closed) .toast{bottom:125px}
   }
   .debug-panel.lab .lab-checks{grid-template-columns:repeat(2,minmax(0,1fr))}
   .debug-panel.lab .lab-ups{grid-template-columns:1fr}
+  .debug-panel.lab .lab-presets{grid-template-columns:repeat(2,minmax(0,1fr))}
 }

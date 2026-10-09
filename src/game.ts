@@ -6,6 +6,7 @@ import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEf
 import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
+import { DayNight } from './day-night';
 
 export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -34,6 +35,7 @@ export class Game {
   time = 0; boost = 100; heat = 0; escape = 0; arrest = 0; combo = 0; comboTimer = 0; smashed = 0; shiftEarnings = 0;
   fx = new Effects(); blasts: Blast[] = []; kills = 0; explosions = 0; buildingsSmashed = 0; offer = 0; trafficTarget = 23; recoveryBudget = { used: 0, rejoin: 0 }; private serial = 0; private pedestrianClock = 0; private maintenanceClock = 0;
   sounds = new SoundEvents();
+  dayNight = new DayNight();
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
@@ -59,6 +61,7 @@ export class Game {
     this.time = 0; this.health = 100; this.boost = 100; this.heat = 0; this.escape = 0; this.arrest = 0; this.combo = 0; this.comboTimer = 0;
     this.smashed = 0; this.shiftEarnings = 0; this.jobsDone = 0; this.crashCooldown = 0; this.speedingTime = 0; this.driftMeter = 0; this.lastDrift = 0; this.nearMiss.clear(); this.navToGarage = false;
     this.kills = 0; this.explosions = 0; this.buildingsSmashed = 0; this.offer = 0; this.pedestrianClock = 0; this.maintenanceClock = 0; this.policeIntel = { position: vec(4, 32), velocity: vec(), seenAt: -100 };
+    this.dayNight.reset();
     this.eventLog = []; this.newJob(true); this.applyUpgrades(); this.setMode('playing');
   }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string) {
@@ -306,9 +309,9 @@ export class Game {
     return true;
   }
   update(dt: number) {
-    if (this.mode === 'wrecked') { this.time += dt; this.hazards(dt); this.effects(dt); return; }
+    if (this.mode === 'wrecked') { this.time += dt; this.dayNight.update(dt); this.hazards(dt); this.effects(dt); return; }
     if (this.mode !== 'playing') return;
-    this.time += dt; this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
+    this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
     const boosting = !this.onFoot && has('ShiftLeft', 'ShiftRight', 'boost') && this.boost > 1 && has('KeyW', 'ArrowUp', 'up');
@@ -452,6 +455,6 @@ export class Game {
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
-      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, navigation: this.onFoot ? 'replacement' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target), settings: this.settings, events: [...this.eventLog] });
+      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, navigation: this.onFoot ? 'replacement' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }
 }
