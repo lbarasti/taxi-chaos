@@ -86,7 +86,7 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'flammable-cargo', label: 'Flammable cargo / impact', description: 'A god-mode cab hits a fuel truck cargo bed at speed. A hard cargo impact starts a readable fire, then a larger blast can ignite the nearby parked car. Commercial vehicles remain NPC only.' },
   { name: 'coastal-rails', label: 'Coast / guardrail crash', description: 'A cab heads north into a guardrail at 26 m/s. Step or let it run to see the panel break, metal scatter and the cab splash into the ocean. Try 8 m/s with teleport for a deflection instead.' },
   { name: 'coastal-gap', label: 'Coast / open gap', description: 'A cab heads north at 26 m/s through an unguarded shore. Watch its momentum carry it offshore before sinking and hospital respawn.' },
-  { name: 'coastal-bike', label: 'Coast / motorbike crash', description: 'A courier bike hits a guardrail at 26 m/s, breaks through and splashes into the ocean. The rider gets Wasted after sinking.' },
+  { name: 'coastal-bike', label: 'Coast / motorbike crash', description: 'A courier bike hits a guardrail at 26 m/s. The impact throws its rider off, the bike tips over and skids toward the open ocean. Watch where each one ends up.' }
   { name: 'coastal-walk', label: 'Coast / walk into ocean', description: 'On foot beside an open shore. Walk north with W into the ocean to get Wasted. Intact rails to your left stop walkers and cannot be broken on foot.' },
   { name: 'hydrant', label: 'Hydrant', description: 'Cab rolls south at (7.5, 3) into the kerbside hydrant at 12 m/s.' },
   { name: 'alley', label: 'Alley', description: 'Aim through the alley at (20.5, 4): barrier first, then stacked crates, at 16 m/s.' },
