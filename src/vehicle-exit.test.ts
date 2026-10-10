@@ -111,6 +111,7 @@ describe('moving vehicle exit / ground contact', () => {
     g.interact(); run(g, 0.55);
     expect(g.tumble?.grounded).toBe(true);
     expect(g.driverHealth).toBe(100);
+    expect(g.feedback.some(feedback => feedback.text.startsWith('LANDING -'))).toBe(false);
   });
 });
 
