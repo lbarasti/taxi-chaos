@@ -1,6 +1,6 @@
 import { Body, CarDynamics, add, angleDiff, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
 import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
-import { countryAccess, countryNeighbours } from './countryside';
+import { countryAccess, countryNeighbours, isCountry } from './countryside';
 import type { Vehicle } from './game';
 import { difficulties, type Difficulty } from './rules';
 
@@ -32,7 +32,7 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
 
 function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: number } | undefined {
   const node = roadNode(body.position), points: Vec[] = [];
-  if (body.position.x > SIZE + 6) {
+  if (isCountry(body.position)) {
     for (const point of countryAccess(body.position).road.points) if (dist(point, body.position) >= 5 && dist(point, body.position) <= 24) points.push(point);
   } else {
     // Alley exits preserve the open channel rather than cutting through a building.
@@ -96,7 +96,7 @@ function nextTrafficRoad(v: Vehicle, c: AIContext) {
   const straight = choices.find(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > 0.85);
   const p = straight && c.world.random() < 0.6 ? straight : choices[Math.floor(c.world.random() * choices.length)];
   const heading = Math.atan2(p.y - node.y, p.x - node.x);
-  v.path = roadPath(v.body.position, node.x > SIZE || p.x > SIZE ? p : add(p, rotate(vec(0, 3), heading))).slice(1);
+  v.path = roadPath(v.body.position, isCountry(node) || isCountry(p) ? p : add(p, rotate(vec(0, 3), heading))).slice(1);
 }
 
 function policeGoal(v: Vehicle, c: AIContext): Vec {
@@ -118,7 +118,7 @@ function policeGoal(v: Vehicle, c: AIContext): Vec {
   if (dist(v.body.position, v.ai.lastSeen) < 10) {
     const n = roadNode(v.ai.lastSeen), turn = v.id % 2 ? 40 : -40;
     const neighbours = countryNeighbours(n);
-    v.ai.lastSeen = n.x > SIZE ? neighbours[v.id % neighbours.length] : vec(clamp(n.x + turn, 0, SIZE), n.y);
+    v.ai.lastSeen = isCountry(n) ? neighbours[v.id % neighbours.length] : vec(clamp(n.x + turn, 0, SIZE), n.y);
   }
   return v.ai.lastSeen;
 }
