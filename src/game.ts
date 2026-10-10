@@ -45,6 +45,7 @@ export class Game {
   dayNight = new DayNight();
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
+  touchMove: Vec | null = null;
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
   constructor() {
     this.populateVehicles(); this.newJob(true); this.applyUpgrades();
@@ -75,7 +76,7 @@ export class Game {
     }
   }
   resetRun() {
-    this.sounds.reset();
+    this.sounds.reset(); this.touchMove = null;
     this.onFoot = false; this.wreckedAt = -1; this.driver = new Body(4, 32, 75, 0.7, 0.7);
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.wastedReason = 'explosion';
     this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
@@ -144,12 +145,12 @@ export class Game {
     if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger'); return false; }
     this.driver.position = point; this.driver.velocity = vec(); this.driver.angle = b.angle; this.onFoot = true; this.player.parked = true; this.player.driverExited = true; this.navToGarage = false;
     if (this.job.stage === 'dropoff') { const passenger = this.world.people.find(p => p.id === this.job.customerId); if (passenger && this.job.type === 'fare') { passenger.aboard = false; passenger.alive = true; passenger.position = { ...point }; passenger.home = add(point, rotate(vec(0, 18), b.angle)); passenger.panic = 3; } this.newJob(); }
-    this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.notify('WASD / arrows to walk. E takes a parked car or motorbike.'); return true;
+    this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.notify('Follow the blue route to a parked car or motorbike.'); return true;
   }
   walk(dt: number) {
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
-    const direction = vec(Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left')), Number(has('KeyS', 'ArrowDown', 'down')) - Number(has('KeyW', 'ArrowUp', 'up')));
-    const moving = length(direction) > 0, velocity = scale(normalize(direction), 5.5);
+    const direction = this.touchMove ?? vec(Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left')), Number(has('KeyS', 'ArrowDown', 'down')) - Number(has('KeyW', 'ArrowUp', 'up')));
+    const moving = length(direction) > 0, velocity = scale(this.touchMove ? direction : normalize(direction), 5.5);
     this.driverKnockback = Math.max(0, this.driverKnockback - dt);
     this.driver.velocity = add(this.driver.velocity, scale(sub(velocity, this.driver.velocity), Math.min(1, dt * (this.driverKnockback > 0 ? 2.5 : 18))));
     if (moving) this.driver.angle = Math.atan2(direction.y, direction.x);
@@ -204,7 +205,7 @@ export class Game {
     try { localStorage.setItem(storageKeys.settings, JSON.stringify(this.preferences)); } catch {}
     this.onChange();
   }
-  setMode(mode: Mode) { if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.onModeChange(); }
+  setMode(mode: Mode) { if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
   start() { this.setMode('playing'); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   newJob(first = false) {
@@ -466,8 +467,10 @@ export class Game {
     this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
-    const boosting = !this.onFoot && has('ShiftLeft', 'ShiftRight', 'boost') && this.boost > 1 && has('KeyW', 'ArrowUp', 'up');
-    this.controls = this.onFoot ? { throttle: 0, turn: 0, handbrake: false, boost: false } : { throttle: Number(has('KeyW', 'ArrowUp', 'up')) - Number(has('KeyS', 'ArrowDown', 'down')), turn: Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left')), handbrake: has('Space', 'handbrake'), boost: boosting };
+    const throttle = this.touchMove ? -this.touchMove.y : Number(has('KeyW', 'ArrowUp', 'up')) - Number(has('KeyS', 'ArrowDown', 'down'));
+    const turn = this.touchMove ? this.touchMove.x : Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left'));
+    const boosting = !this.onFoot && has('ShiftLeft', 'ShiftRight', 'boost') && this.boost > 1 && throttle > 0;
+    this.controls = this.onFoot ? { throttle: 0, turn: 0, handbrake: false, boost: false } : { throttle, turn, handbrake: has('Space', 'handbrake'), boost: boosting };
     this.boost = this.settings.infiniteBoost ? 100 : clamp(this.boost + dt * (boosting ? -29 / (1 + this.save.upgrades.boost * 0.35) : 13), 0, 100);
     this.previousTyres = this.player.dynamics.tyres.map(t => this.player.body.toWorld(t.position));
     this.recoveryBudget.used = 0; this.recoveryBudget.rejoin = 0;

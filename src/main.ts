@@ -1,4 +1,6 @@
 import './style.css';
+import { bindTouchControls } from './touch-controls';
+import { bindFullscreen } from './fullscreen';
 import { Game, upgradeInfo, type Upgrade } from './game';
 import { Renderer } from './renderer';
 import { dist } from './physics';
@@ -9,6 +11,7 @@ import { AudioFX } from './audio';
 import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
 
 const icons = {
+  fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
   cab: '<path d="M5 17H3V9l2-5h14l2 5v8h-2M5 17h14M5 17v3M19 17v3M3 9h18M7 13h2M15 13h2M9 4V2h6v2"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   wrench: '<path d="m14 6 4 4 4-4a7 7 0 0 1-9 9l-7 7-4-4 7-7a7 7 0 0 1 9-9z"/>',
@@ -23,26 +26,27 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 document.querySelector('#app')!.innerHTML = `
   <canvas id="city" aria-label="Top-down taxi driving game. Use arrow keys or WASD to drive." tabindex="0"></canvas>
   <header class="topbar">
-    <a class="brand" href="#" aria-label="Taxi Chaos home"><span class="brand-icon">${icon('cab')}</span><span>TAXI<span class="brand-light">CHAOS</span><small>THE STREETS ARE YOURS.</small></span></a>
+    <div class="brand"><button id="taxi-menu-toggle" class="brand-icon" aria-label="Open Taxi Chaos menu" aria-expanded="false" aria-controls="taxi-menu">${icon('cab')}</button><span>TAXI<span class="brand-light">CHAOS</span><small>THE STREETS ARE YOURS.</small></span></div><nav id="taxi-menu" class="taxi-menu panel" aria-label="Taxi Chaos menu" hidden><button id="help">How to play</button><button id="lab-button">Test lab <kbd>F2</kbd></button></nav>
     <div class="top-center"><span class="live-dot"></span> ON THE CLOCK <span class="divider">/</span><span id="district">OLD TOWN</span></div>
     <div class="hud-clock" id="hud-clock" role="timer" aria-label="World time 07:00, morning, day 1"><span class="hud-clock-icon" id="clock-sun">${icon('sun')}</span><span class="hud-clock-icon" id="clock-moon" hidden>${icon('moon')}</span><span class="hud-clock-text"><strong id="clock-time">07:00</strong><small id="clock-period">MORNING</small></span></div>
-    <div class="top-actions"><div class="cash"><small>YOUR WALLET</small><strong id="cash">$80</strong></div><button id="sound-toggle" class="icon-button" title="Mute FX · M" aria-label="Mute sound FX" aria-pressed="false">${icon('sound')}</button><button id="pause" class="icon-button" title="Pause · P" aria-label="Pause game">${icon('pause')}</button></div>
+    <div class="top-actions"><div class="cash"><small>YOUR WALLET</small><strong id="cash">$80</strong></div><button id="sound-toggle" class="icon-button" title="Mute FX · M" aria-label="Mute sound FX" aria-pressed="false">${icon('sound')}</button><button id="pause" class="icon-button" title="Pause · P" aria-label="Pause game">${icon('pause')}</button><button id="fullscreen" class="icon-button" title="Enter fullscreen" aria-label="Enter fullscreen" aria-pressed="false">${icon('fullscreen')}</button></div>
   </header>
   <aside class="mission panel" aria-label="Current driving job">
     <div class="eyebrow"><span id="job-label">YOUR FIRST FARE</span><span class="tiny-tag" id="job-status">PICKUP</span></div>
     <div class="mission-heading"><span class="mission-icon">${icon('target')}</span><h1 id="mission-title">Meet Mia.</h1></div>
-    <p id="mission-description">A customer is waiting just up the street.</p>
+    <p class="mobile-hint" id="mobile-hint"></p><p id="mission-description">A customer is waiting just up the street.</p>
     <div class="mission-data"><div><small>BASE FARE</small><strong id="fare">$83 <span>+ tips</span></strong></div><div><small id="distance-label">TO PICKUP</small><strong id="distance">18 <span>m</span></strong></div></div>
     <div class="mission-footer" id="mission-footer"><span class="ring-dot"></span> Stop inside the yellow ring to pick up.</div>
     <div class="job-progress"><i id="job-progress"></i></div>
   </aside>
   <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div><div class="heat-panel" id="heat-panel" role="status"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div></section>
-  <div class="critical-status panel" id="critical-status" hidden><strong id="condition">ENGINE DAMAGE</strong><span id="components"></span><button id="interact" class="escape-button">E · Get out</button></div>
+  <div class="critical-status panel" id="critical-status" hidden><strong id="condition">ENGINE DAMAGE</strong><span id="components"></span></div>
+  <button id="interact" class="context-action" hidden>Get in</button>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
   <aside class="map-panel panel" aria-label="Local radar"><button id="map-toggle" class="map-toggle" aria-expanded="true" aria-controls="map-content" aria-label="Collapse radar"><span>RADAR</span><span id="map-status">LIVE</span><span class="map-chevron" aria-hidden="true">⌄</span></button><div id="map-content"><canvas id="map" aria-label="Local minimap: yellow is your taxi, circle or edge arrow is your destination, blue square is the garage, red dots are police"></canvas></div><button id="garage" class="garage-button">${icon('wrench')}<span>Pit Stop garage</span><kbd>G</kbd></button></aside>
-  <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER</span><span><kbd>G</kbd> GARAGE</span><span><kbd>P</kbd> PAUSE</span><button id="help">HOW TO PLAY <span>↗</span></button><button id="lab-button">TEST LAB <kbd>F2</kbd></button></footer>
-  <div class="touch-controls" aria-label="Touch driving controls"><div><button data-key="left" aria-label="Steer left">←</button><button data-key="right" aria-label="Steer right">→</button></div><div><button data-key="handbrake">DRIFT</button><button data-key="boost">BOOST</button><button data-key="down" aria-label="Brake and reverse">↓</button><button data-key="up" aria-label="Accelerate">↑</button></div></div>
+  <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER</span><span><kbd>G</kbd> GARAGE</span><span><kbd>P</kbd> PAUSE</span></footer>
+  <div class="touch-controls" aria-label="Touch driving controls"><div class="thumb-actions"><button data-key="boost" aria-label="Hold to boost">BOOST</button><button data-key="handbrake" aria-label="Hold handbrake">DRIFT</button></div><div id="joystick" class="joystick" role="group" aria-label="Drag to move: up accelerates, down brakes or reverses, left and right steer. On foot, drag in the direction to walk."><span class="joystick-guides" aria-hidden="true">＋</span><span class="joystick-knob" aria-hidden="true"></span></div></div>
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
@@ -92,7 +96,7 @@ function modal() {
   if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
 function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = false; helpOpen = true; game.setMode('paused'); }
-game.onModeChange = () => { modal(); hud(); }; game.onChange = () => { modal(); hud(); };
+game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); };
 function hud() {
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
@@ -116,6 +120,9 @@ function hud() {
   $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
   if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
   if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'WASD / arrows to walk. Blue radar markers show parked cars and motorbikes.'; $('distance-label').textContent = 'TO NEXT RIDE'; $('mission-footer').textContent = g.enterableCar ? `Press E to ${g.enterableCar.definition.graphics.sprite === 'motorcycle' ? 'ride' : 'get in'}. Wallet & upgrades carry over.` : 'Follow the blue radar route. E takes a parked ride.'; }
+  document.querySelector('.mission')!.classList.toggle('on-foot', g.onFoot);
+  $('mobile-hint').textContent = g.onFoot ? '' : g.navToGarage ? 'Stop at Pit Stop' : pickup ? parcel ? 'Stop in yellow to collect' : 'Stop in yellow to pick up' : `Stop in green to deliver${job.elapsed < job.time ? ` · ${Math.ceil(job.time - job.elapsed)}s tip` : ''}`;
+  document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach(button => { button.disabled = g.onFoot || g.mode !== 'playing'; });
   $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? 'ON FOOT' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
@@ -133,12 +140,12 @@ function hud() {
   $('toast').textContent = g.toast; $('toast').className = `toast ${g.toastTime > 0 && g.mode === 'playing' ? 'visible' : ''} ${g.toastKind}`;
   $('pause').setAttribute('aria-label', g.mode === 'paused' ? 'Resume game' : 'Pause game');
   const damage = g.player.damage;
-  $('critical-status').hidden = g.mode === 'wasted' || !g.onFoot && damage.status === 'intact' && damage.critical.engine + damage.critical.fuel + damage.critical.tyres < 15;
+  $('critical-status').hidden = g.mode !== 'playing' || (g.onFoot ? damage.status !== 'burning' : damage.status === 'intact' && damage.critical.engine + damage.critical.fuel + damage.critical.tyres < 15);
   $('critical-status').classList.toggle('burning', damage.status === 'burning');
   $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : 'COMPONENT DAMAGE';
   $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
-  $('interact').textContent = g.onFoot ? g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'E · Ride motorbike' : 'E · Get in' : 'E · Bail out'; ($('interact') as HTMLButtonElement).disabled = g.onFoot && !g.enterableCar;
-  $('interact').hidden = !g.onFoot && damage.status !== 'burning';
+  $('interact').textContent = g.onFoot ? g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : damage.status === 'burning' ? 'Bail out!' : bike ? 'Dismount' : 'Get out';
+  $('interact').hidden = g.mode !== 'playing' || (g.onFoot ? !g.enterableCar : !!g.player.sinking || g.speed > 6 && damage.status !== 'burning' && damage.status !== 'wreck');
   const wreck = damage.status === 'wreck' && !g.player.sinking && g.onFoot && g.mode === 'playing' && dist(g.driver.position, g.player.body.position) < 6;
   $('roadside').hidden = !wreck || g.time - g.player.wreckAt < 0.65;
   $('roadside').querySelector('strong')!.textContent = `${vehicleName} DESTROYED`;
@@ -161,6 +168,7 @@ $('sound-toggle').addEventListener('click', toggleSound);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
 function pause() { if (game.mode === 'playing') { statsOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { lab?.realtime(); externalClock = false; helpOpen = false; statsOpen = false; game.setMode('playing'); } }
+bindFullscreen($('fullscreen'), message => game.notify(message));
 $('pause').addEventListener('click', pause); $('garage').addEventListener('click', () => game.garage()); $('help').addEventListener('click', showHelp);
 $('map-toggle').addEventListener('click', () => {
   const collapsed = !$('map-content').hidden;
@@ -169,12 +177,23 @@ $('map-toggle').addEventListener('click', () => {
   $('map-toggle').setAttribute('aria-label', collapsed ? 'Expand radar' : 'Collapse radar');
   document.querySelector('.map-panel')!.classList.toggle('collapsed', collapsed);
 });
-$('lab-button').addEventListener('click', () => { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); });
-document.querySelector('.brand')!.addEventListener('click', e => { e.preventDefault(); showHelp(); });
+$('lab-button').addEventListener('click', () => { setMenu(false); if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); });
+function setMenu(open: boolean) {
+  $('taxi-menu').hidden = !open;
+  $('taxi-menu-toggle').setAttribute('aria-expanded', String(open));
+}
+$('taxi-menu-toggle').addEventListener('click', () => setMenu($('taxi-menu').hidden));
+document.addEventListener('pointerdown', event => { if (event.target instanceof Node && !$('taxi-menu').contains(event.target) && !$('taxi-menu-toggle').contains(event.target)) setMenu(false); });
+$('taxi-menu').addEventListener('keydown', event => {
+  const buttons = Array.from($('taxi-menu').querySelectorAll('button'));
+  if (event.code === 'ArrowDown' || event.code === 'ArrowUp') { event.preventDefault(); event.stopPropagation(); const index = buttons.indexOf(document.activeElement as HTMLButtonElement); buttons[(index + (event.code === 'ArrowDown' ? 1 : buttons.length - 1)) % buttons.length].focus(); }
+});
+document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
-  if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
+  if (e.code === 'Escape' && !$('taxi-menu').hidden) { e.preventDefault(); setMenu(false); $('taxi-menu-toggle').focus(); return; }
+  if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { setMenu(false); if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
   // Preserve native keyboard activation for HUD buttons, including radar toggle.
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
@@ -185,12 +204,15 @@ window.addEventListener('keydown', e => {
   if (game.mode === 'playing') game.keys.add(e.code);
 });
 window.addEventListener('keyup', e => game.keys.delete(e.code));
-window.addEventListener('blur', () => { audio.silence(game); game.keys.clear(); if (game.mode === 'playing') game.setMode('paused'); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { audio.silence(game); if (game.mode === 'playing') game.setMode('paused'); } });
-document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach(button => {
-  button.addEventListener('pointerdown', e => { if (game.mode !== 'playing') return; e.preventDefault(); button.setPointerCapture(e.pointerId); game.keys.add(button.dataset.key!); button.classList.add('pressed'); });
-  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(event, () => { game.keys.delete(button.dataset.key!); button.classList.remove('pressed'); });
+window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (game.mode === 'playing') game.setMode('paused'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (game.mode === 'playing') game.setMode('paused'); } });
+const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HTMLButtonElement>('[data-key]'), {
+  active: () => game.mode === 'playing',
+  move: value => { game.touchMove = value; },
+  action: (key, pressed) => { if (pressed) game.keys.add(key); else game.keys.delete(key); },
+  begin: () => { if (externalClock && lab) lab.realtime(); externalClock = false; },
 });
+window.addEventListener('resize', resetTouch);
 let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = false, timeScale = 1;
 const STEP = 1 / 120;
 function frame(now: number) {

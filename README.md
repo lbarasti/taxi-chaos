@@ -98,7 +98,7 @@ centralizes model definitions; `game.spawnVehicle(options)` is the named-options
 | M / speaker button | Mute / unmute sound FX |
 | F2 / Test Lab button | Open the scenario and cheat inspector |
 
-Touch steering, pedals, drift and boost are shown on small screens; desktop is the primary target. Pulp gore and **Cruise / Street / Chaos** difficulty can be changed on the welcome or pause screen as well as in the lab.
+On phones and tablets, drag the bottom-right joystick: up accelerates, down brakes/reverses, and sideways steers. On foot it walks in screen directions, with proportional speed. Hold BOOST or DRIFT in the bottom centre with your left thumb while steering with your right. Vehicle actions appear only when available. The taxi icon opens How to play and Test lab; the top-right button toggles fullscreen on browsers that support it. Speed, health, boost and police status share a transparent bottom-left stack. The radar remains collapsible; touch gameplay suppresses text selection and long-press callouts. Pulp gore and **Cruise / Street / Chaos** difficulty can be changed on the welcome or pause screen as well as in the lab.
 
 **Pause → Shift stats** shows earnings, completed jobs (fares and parcels), smashed objects and pedestrian fatalities for the current shift. The fatality count is kept off the driving HUD.
 
