@@ -85,7 +85,7 @@ User approved the sample-based FX plan (“Looks like a great plan. Please proce
 
 - Project: `/Users/lorenzobarasti/code/racer`
 - Frontend-only TypeScript + Canvas, Vite 8.3.3, Vitest 5.0.3, Node 24 available.
-- Git repository initialized on `main` at the user's request on 2026-10-08. Source, assets, tests, tooling and project notes are versioned; dependencies, `dist/`, local environment files, logs and caches are ignored. Only commit or push when requested.
+- Git repository initialized on `main` at the user's request on 2026-10-08. Source, assets, tests, tooling and project notes are versioned; dependencies, `dist/`, local environment files, logs and caches are ignored. On 2026-10-10 the user gave standing approval to commit completed requested work, publish feature branches, and raise PRs in `lbarasti/taxi-chaos` without reconfirmation; see `AGENTS.md`.
 - `npm run dev` serves `http://localhost:5173` (server was running at handoff).
 - `npm test` runs all tests.
 - `npm run build` runs strict TypeScript checking and creates **only `dist/index.html`**.

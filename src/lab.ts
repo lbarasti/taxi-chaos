@@ -41,6 +41,10 @@ export type ScenarioName =
   | 'motorcycle'
   | 'eastern-bridges'
   | 'woodland-estates'
+  | 'coastal-rails'
+  | 'coastal-gap'
+  | 'coastal-bike'
+  | 'coastal-walk'
   | 'hydrant'
   | 'alley'
   | 'wall'
@@ -65,6 +69,10 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
+  { name: 'coastal-rails', label: 'Coast / guardrail crash', description: 'A cab heads north into a guardrail at 26 m/s. Step or let it run to see the panel break, metal scatter and the cab splash into the ocean. Try 8 m/s with teleport for a deflection instead.' },
+  { name: 'coastal-gap', label: 'Coast / open gap', description: 'A cab heads north at 26 m/s through an unguarded shore. Watch its momentum carry it offshore before sinking and hospital respawn.' },
+  { name: 'coastal-bike', label: 'Coast / motorbike crash', description: 'A courier bike hits a guardrail at 26 m/s, breaks through and splashes into the ocean. The rider gets Wasted after sinking.' },
+  { name: 'coastal-walk', label: 'Coast / walk into ocean', description: 'On foot beside an open shore. Walk north with W into the ocean to get Wasted. Intact rails to your left stop walkers and cannot be broken on foot.' },
   { name: 'hydrant', label: 'Hydrant', description: 'Cab rolls south at (7.5, 3) into the kerbside hydrant at 12 m/s.' },
   { name: 'alley', label: 'Alley', description: 'Aim through the alley at (20.5, 4): barrier first, then stacked crates, at 16 m/s.' },
   { name: 'wall', label: 'Wall', description: 'Full-speed 20 m/s test into the solid building at (14, 4) — damage and bounce.' },
@@ -229,6 +237,21 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');
+      break;
+    }
+    case 'coastal-rails':
+    case 'coastal-gap':
+    case 'coastal-bike':
+    case 'coastal-walk': {
+      game.settings.noPolice = true;
+      if (name === 'coastal-bike') {
+        player.alive = false;
+        game.player = game.vehicle('taxi', 0, -4, NORTH, '#ed9b63', 'motorcycle');
+        game.vehicles = [game.player]; game.applyUpgrades(); game.newJob(true);
+      }
+      pose(game, renderer, game.player, name === 'coastal-gap' || name === 'coastal-walk' ? 16 : 0, -4, NORTH, name === 'coastal-walk' ? 0 : 26);
+      if (name === 'coastal-walk') { game.interact(); game.driver.position = vec(16, -8); }
+      game.notify(scenarioDescriptions[name]);
       break;
     }
     case 'hydrant':

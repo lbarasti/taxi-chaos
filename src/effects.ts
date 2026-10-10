@@ -186,7 +186,8 @@ export class Effects {
   blasts: BlastRing[] = [];
   embers: Ember[] = [];
   smoke: SmokePuff[] = [];
-  splashes: { position: Vec; elapsed: number }[] = [];
+  splashes: { position: Vec; elapsed: number; strength: number }[] = [];
+  railDebris: { position: Vec; velocity: Vec; angle: number; spin: number; life: number }[] = [];
   private random = seeded(0x9e3779b9);
   private seedTick = 1;
 
@@ -200,6 +201,7 @@ export class Effects {
     this.embers.length = 0;
     this.smoke.length = 0;
     this.splashes.length = 0;
+    this.railDebris.length = 0;
     this.random = seeded(0x9e3779b9);
     this.seedTick = 1;
   }
@@ -289,10 +291,16 @@ export class Effects {
     this.trim();
   }
 
-  /** Fireball + dust shockwave. The ring expands over BLAST_TTL (~0.7s); no screen flash. */
-  splash(position: Vec): void {
-    this.splashes.push({ position: { ...position }, elapsed: 0 });
+  splash(position: Vec, strength = 1): void {
+    this.splashes.push({ position: { ...position }, elapsed: 0, strength: clamp(strength, 0.5, 2) });
     if (this.splashes.length > 40) this.splashes.shift();
+  }
+  breakRail(position: Vec, velocity: Vec, angle: number) {
+    for (let i = 0; i < 6; i++) this.railDebris.push({
+      position: { ...position }, velocity: add(scale(velocity, 0.2 + this.random() * 0.15), vec((this.random() - 0.5) * 6, (this.random() - 0.5) * 6)),
+      angle, spin: (this.random() - 0.5) * 9, life: 4,
+    });
+    if (this.railDebris.length > 72) this.railDebris.splice(0, this.railDebris.length - 72);
   }
 
   explode(position: Vec, radius: number): void {
@@ -330,6 +338,11 @@ export class Effects {
     if (step <= 0) return;
     for (const s of this.splashes) s.elapsed += step;
     this.splashes = this.splashes.filter(s => s.elapsed < 1.5);
+    for (const shard of this.railDebris) {
+      shard.life -= step; shard.position = add(shard.position, scale(shard.velocity, step));
+      shard.velocity = scale(shard.velocity, Math.exp(-step * 2)); shard.angle += shard.spin * step;
+    }
+    this.railDebris = this.railDebris.filter(s => s.life > 0);
     for (const b of this.blasts) {
       b.life += step;
       const t = clamp(b.life / b.ttl, 0, 1);
@@ -398,7 +411,7 @@ export class Effects {
     ctx.save();
     for (const s of this.splashes) {
       const t = s.elapsed / 1.5;
-      ctx.save(); ctx.translate(s.position.x, s.position.y); ctx.globalAlpha = 1 - t;
+      ctx.save(); ctx.translate(s.position.x, s.position.y); ctx.scale(s.strength, s.strength); ctx.globalAlpha = 1 - t;
       ctx.strokeStyle = '#e3ffff'; ctx.lineWidth = 0.13;
       for (const delay of [0, 0.2]) {
         const r = Math.max(0.1, 0.5 + (t - delay) * 4);
@@ -411,6 +424,11 @@ export class Effects {
         ctx.beginPath(); ctx.ellipse(Math.cos(a) * r, Math.sin(a) * r * 0.6 - lift, 0.08, 0.16, a, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
+    }
+    for (const shard of this.railDebris) {
+      ctx.save(); ctx.translate(shard.position.x, shard.position.y - Math.max(0, Math.sin((4 - shard.life) * Math.PI)) * 1.3);
+      ctx.rotate(shard.angle); ctx.globalAlpha = Math.min(1, shard.life);
+      ctx.fillStyle = '#bdccc6'; ctx.fillRect(-0.55, -0.1, 1.1, 0.2); ctx.restore();
     }
     for (const s of this.smoke) {
       const t = clamp(s.life / s.ttl, 0, 1);

@@ -1,9 +1,10 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
-import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
+import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
+import { COAST_RAILS } from './coast';
 
-export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'water';
+export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
-export const isRigidObstacle = (kind: PropKind) => kind === 'building' || kind === 'rock' || kind === 'guardrail' || kind === 'water' || isStructural(kind) || kind === 'pump' || kind === 'tree';
+export const isRigidObstacle = (kind: PropKind) => kind === 'building' || kind === 'rock' || kind === 'guardrail' || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export type Prop = { id: number; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
@@ -20,7 +21,7 @@ export class World {
   parking: ParkingSpot[] = [];
   add(kind: PropKind, x: number, y: number, w: number, h: number, color: string, label = '', angle = 0) {
     const body = new Body(x, y, Infinity, w, h); body.angle = angle;
-    const hp = ['building', 'rock', 'guardrail', 'water'].includes(kind) ? Infinity : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
+    const hp = ['building', 'rock'].includes(kind) ? Infinity : kind === 'guardrail' ? 24 : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
     const prop: Prop = { id: this.props.length, body, kind, alive: true, hp, maxHp: hp, color, label, brokenAt: -1, lastHit: -100, fire: 0, fuelSpent: false, blamed: false };
     this.props.push(prop); this.hash.insert(prop); return prop;
   }
@@ -71,27 +72,11 @@ export class World {
     }
     // Dedicated courier bay beside Pit Stop; x=6.5 clears the hydrants on the first pickup run.
     this.parking.push({ position: vec(6.5, 34.6), angle: -Math.PI / 2, occupied: true, lot: false, motorcycle: true });
-    // Waterfront barriers and an unmistakable city boundary.
-    this.add('building', 120, -15, 280, 2, '#30484e', ''); this.add('building', 120, 255, 280, 2, '#30484e', '');
-    this.add('building', -15, 120, 2, 280, '#30484e', '');
-    // Open the original east boundary only at the two bridge approaches.
-    for (const [lo, hi] of [[-15, 72], [88, 192], [208, 255]]) {
-      this.add('guardrail', 255, (lo + hi) / 2, hi - lo, 1.2, '#819b98', '', Math.PI / 2);
-      this.add('water', 276, (lo + hi) / 2, 40, hi - lo, '#31505a');
-    }
+    for (const rail of COAST_RAILS) this.add('guardrail', rail.position.x, rail.position.y, rail.width, 0.8, '#a7b9b1', '', rail.angle);
     for (const y of BRIDGE_Y) {
       for (const side of [-1, 1]) {
-        this.add('guardrail', 279, y + side * 7.5, 66, 0.8, '#a7b9b1');
         this.add('lamp', 249, y + side * 9, 0.6, 0.6, '#a7bfbb');
         this.add('lamp', 307, y + side * 9, 0.6, 0.6, '#a7bfbb');
-      }
-    }
-    // Irregular shore/cliff boundaries, split finely so the bridge landings stay open.
-    for (let i = 0; i < HIGHLAND_OUTLINE.length; i++) {
-      const a = HIGHLAND_OUTLINE[i], b = HIGHLAND_OUTLINE[(i + 1) % HIGHLAND_OUTLINE.length], n = Math.ceil(dist(a, b) / 6), angle = Math.atan2(b.y - a.y, b.x - a.x);
-      for (let j = 0; j < n; j++) {
-        const t = (j + 0.5) / n, p = vec(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
-        if (countryAccess(p).distance > 10) this.add('rock', p.x, p.y, dist(a, b) / n + 0.2, 2.4, '#66766c', '', angle);
       }
     }
     // Separate RNG preserves the existing city's layouts, traffic and deterministic fixtures.

@@ -58,6 +58,13 @@ describe('audio lifecycle and bounded mixer', () => {
     game.player.damage.status = 'burning'; expect(game.interact()).toBe(true); audio.update(game, true, true);
     expect(audio.state().loops).not.toContain('engine'); expect(audio.state().loops).toContain(`car-fire:${game.player.id}`);
   });
+  it('stops engine, skid and boost loops as soon as a ride enters the ocean', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); game.vehicles = [game.player]; game.settings.noPolice = true;
+    game.controls.boost = true; audio.update(game, true, true); expect(audio.state().loops).toContain('engine');
+    game.player.body.position = vec(100, -30); game.player.body.velocity = vec(0, -30); game.update(1 / 120);
+    expect(game.player.sinking).toBeDefined(); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+  });
   it('limits dense explosions to twenty one-shots and culls inaudible events', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
     await audio.unlock(); game.start();
