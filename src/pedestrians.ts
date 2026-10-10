@@ -173,8 +173,8 @@ function updateCorpse(world: World, person: Person, vehicles: PedestrianVehicle[
     const hit = circleBody(v.body, person.position, PERSON_RADIUS);
     if (hit) person.position = separate(world, add(person.position, scale(hit.normal, hit.depth + 0.02)), PERSON_RADIUS);
   }
-  person.position.x = clamp(person.position.x, 0.4, 239.6);
-  person.position.y = clamp(person.position.y, 0.4, 239.6);
+  // Shoreline props and bridge rails bound corpses just like living pedestrians.
+  // Clamping to the original city rectangle teleports rural impacts across the river.
 }
 
 /**

@@ -44,7 +44,7 @@ export type OccluderProp = {
 };
 
 /** Kinds whose roofs are raised above the street and must not receive street-level light. */
-const OCCLUDING_KINDS = new Set(['building', 'shed', 'barracks', 'station']);
+const OCCLUDING_KINDS = new Set(['building', 'shed', 'barracks', 'station', 'rock']);
 
 // The renderer draws a building's facade lifted by (-0.25,-0.6) in local space (the visual cue for
 // height). Extend the receiver mask by the same offset so the clip follows the drawn silhouette.

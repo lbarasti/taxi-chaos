@@ -9,6 +9,7 @@ import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
 import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
 import { readStorage, storageKeys } from './storage';
+import { HIGHLAND_STOPS, ROAD_NODES, pathLength } from './countryside';
 
 export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -151,16 +152,18 @@ export class Game {
   newJob(first = false) {
     if (this.job) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.offer = first ? 0 : this.offer + 1;
-    const stops = [vec(4, 14), vec(44, 14), vec(84, 58), vec(116, 84), vec(164, 108), vec(204, 164), vec(156, 204), vec(76, 164), vec(4, 128), vec(44, 204), vec(204, 44), vec(124, 14)];
+    const cityStops = [vec(4, 14), vec(44, 14), vec(84, 58), vec(116, 84), vec(164, 108), vec(204, 164), vec(156, 204), vec(76, 164), vec(4, 128), vec(44, 204), vec(204, 44), vec(124, 14)];
+    const stops = [...cityStops, ...HIGHLAND_STOPS.map(s => s.position)];
     const names = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
     const places = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
     let pickup = first ? stops[0] : stops[(this.offer * 3 + 1) % stops.length];
     // Short trips first; later fares branch into the full city.
     const dropoff = first ? stops[1] : stops[(this.offer * 3 + 4) % stops.length];
     if (dist(pickup, this.player.body.position) > 160) pickup = stops.reduce((a, b) => dist(a, this.player.body.position) < dist(b, this.player.body.position) ? a : b);
-    const distance = dist(pickup, dropoff), time = 28 + distance / 3;
+    if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.player.body.position) < dist(b, this.player.body.position) ? a : b);
+    const distance = pickup.x > 246 || dropoff.x > 246 ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
-    const destination = storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
+    const destination = HIGHLAND_STOPS.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
     const type = this.player.model === 'motorcycle' ? 'parcel' : 'fare';
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
     this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
@@ -324,7 +327,7 @@ export class Game {
   }
   lineOfSight(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 3);
-    for (let i = 1; i < steps; i++) { const p = add(a, scale(sub(b, a), i / steps)); const probe = new Body(p.x, p.y, 1, 0.1, 0.1); for (const prop of this.world.hash.query(probe)) if (prop.kind === 'building' && contact(probe, prop.body)) return false; }
+    for (let i = 1; i < steps; i++) { const p = add(a, scale(sub(b, a), i / steps)); const probe = new Body(p.x, p.y, 1, 0.1, 0.1); for (const prop of this.world.hash.query(probe)) if (['building', 'rock', 'water', 'guardrail'].includes(prop.kind) && contact(probe, prop.body)) return false; }
     return true;
   }
   update(dt: number) {
@@ -446,7 +449,7 @@ export class Game {
       const rules = difficulties[this.settings.difficulty], desired = Math.min(rules.maxPolice, this.stars + (this.settings.difficulty === 'chaos' ? 3 : 1));
       if (this.police.length < desired) {
         const p = this.actor.position, node = roadNode(p);
-        const candidates = [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240 && this.police.every(v => dist(v.body.position, n) > 12));
+        const candidates = (p.x > 246 ? ROAD_NODES.filter(n => n.x > 240 && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
         const spawn = candidates[Math.floor(this.world.random() * candidates.length)] ?? vec(240, 240);
         const firstPatrol = this.police.length === 0;
         if (firstPatrol) this.policeIntel = { position: { ...p }, velocity: { ...this.actor.velocity }, seenAt: this.time };

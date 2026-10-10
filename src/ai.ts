@@ -1,5 +1,6 @@
 import { Body, CarDynamics, add, angleDiff, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
-import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNode, roadPath, roadProjection } from './world';
+import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
+import { countryAccess, countryNeighbours } from './countryside';
 import type { Vehicle } from './game';
 import { difficulties, type Difficulty } from './rules';
 
@@ -31,15 +32,18 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
 
 function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: number } | undefined {
   const node = roadNode(body.position), points: Vec[] = [];
-  // Alley exits matter after crashes: preserve the open channel instead of
-  // demanding a diagonal line to a lane point through a neighbouring building.
-  for (const lane of [-3, 3]) {
-    for (const y of [Math.floor(body.position.y / GRID) * GRID, Math.ceil(body.position.y / GRID) * GRID]) points.push(vec(body.position.x, clamp(y + lane, -3, SIZE + 3)));
-    for (const x of [Math.floor(body.position.x / GRID) * GRID, Math.ceil(body.position.x / GRID) * GRID]) points.push(vec(clamp(x + lane, -3, SIZE + 3), body.position.y));
-  }
-  for (const offset of [-18, -10, 10, 18]) for (const lane of [-3, 3]) {
-    if (Math.abs(node.x - body.position.x) < 15) points.push(vec(node.x + lane, clamp(body.position.y + offset, 1, SIZE - 1)));
-    if (Math.abs(node.y - body.position.y) < 15) points.push(vec(clamp(body.position.x + offset, 1, SIZE - 1), node.y + lane));
+  if (body.position.x > SIZE + 6) {
+    for (const point of countryAccess(body.position).road.points) if (dist(point, body.position) >= 5 && dist(point, body.position) <= 24) points.push(point);
+  } else {
+    // Alley exits preserve the open channel rather than cutting through a building.
+    for (const lane of [-3, 3]) {
+      for (const y of [Math.floor(body.position.y / GRID) * GRID, Math.ceil(body.position.y / GRID) * GRID]) points.push(vec(body.position.x, clamp(y + lane, -3, SIZE + 3)));
+      for (const x of [Math.floor(body.position.x / GRID) * GRID, Math.ceil(body.position.x / GRID) * GRID]) points.push(vec(clamp(x + lane, -3, SIZE + 3), body.position.y));
+    }
+    for (const offset of [-18, -10, 10, 18]) for (const lane of [-3, 3]) {
+      if (Math.abs(node.x - body.position.x) < 15) points.push(vec(node.x + lane, clamp(body.position.y + offset, 1, SIZE - 1)));
+      if (Math.abs(node.y - body.position.y) < 15) points.push(vec(clamp(body.position.x + offset, 1, SIZE - 1), node.y + lane));
+    }
   }
   let best: { point: Vec; score: number } | undefined;
   for (const point of points) {
@@ -86,14 +90,13 @@ function nextTrafficRoad(v: Vehicle, c: AIContext) {
     const rejoin = roadRejoin(v, v.body, c);
     if (rejoin) { v.path = [rejoin.point]; v.ai.phase = 'rejoin'; v.ai.phaseTime = 7; return; }
   }
-  const node = roadNode(v.body.position), directions = [vec(GRID, 0), vec(-GRID, 0), vec(0, GRID), vec(0, -GRID)];
-  const options = directions.map(d => add(node, d)).filter(p => p.x >= 0 && p.y >= 0 && p.x <= SIZE && p.y <= SIZE);
+  const node = roadNode(v.body.position), options = roadNeighbours(node);
   const forward = options.filter(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > -0.3);
   const choices = forward.length ? forward : options;
   const straight = choices.find(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > 0.85);
   const p = straight && c.world.random() < 0.6 ? straight : choices[Math.floor(c.world.random() * choices.length)];
   const heading = Math.atan2(p.y - node.y, p.x - node.x);
-  v.path = roadPath(v.body.position, add(p, rotate(vec(0, 3), heading))).slice(1);
+  v.path = roadPath(v.body.position, node.x > SIZE || p.x > SIZE ? p : add(p, rotate(vec(0, 3), heading))).slice(1);
 }
 
 function policeGoal(v: Vehicle, c: AIContext): Vec {
@@ -112,7 +115,11 @@ function policeGoal(v: Vehicle, c: AIContext): Vec {
   }
   if (fresh) return v.ai.lastSeen;
   // Search adjacent streets near the last sighting rather than tracking through walls.
-  if (dist(v.body.position, v.ai.lastSeen) < 10) { const n = roadNode(v.ai.lastSeen), turn = v.id % 2 ? 40 : -40; v.ai.lastSeen = vec(clamp(n.x + turn, 0, SIZE), n.y); }
+  if (dist(v.body.position, v.ai.lastSeen) < 10) {
+    const n = roadNode(v.ai.lastSeen), turn = v.id % 2 ? 40 : -40;
+    const neighbours = countryNeighbours(n);
+    v.ai.lastSeen = n.x > SIZE ? neighbours[v.id % neighbours.length] : vec(clamp(n.x + turn, 0, SIZE), n.y);
+  }
   return v.ai.lastSeen;
 }
 
