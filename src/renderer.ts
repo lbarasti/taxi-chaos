@@ -73,6 +73,20 @@ export class Renderer {
       if (person.aboard) continue;
       if (!person.alive) { if (g.settings.gore && person.deathTime >= 0) drawCorpse(c, person); continue; }
       const pp = person.position, so = this.shadowOffset();
+      if (person.fall) {
+        const airborne = person.fall.elapsed < LANDING_TIME;
+        const hop = airborne ? 0.3 * Math.sin(person.fall.elapsed / LANDING_TIME * Math.PI) : 0;
+        this.circle(add(pp, vec(0.18, 0.26)), 0.46, '#13242a77');
+        c.save(); c.translate(pp.x, pp.y - hop); c.rotate(person.angle + Math.PI / 2);
+        this.rect(-0.27, -0.46, 0.54, 0.92, person.color, '#9e7847');
+        this.circle(vec(0, -0.6), 0.28, '#e0c6a2');
+        for (const side of [-1, 1]) {
+          this.rect(side * 0.29 - 0.22, -0.18, 0.2, 0.65, '#263942');
+          this.rect(side * 0.19 - 0.1, 0.4, 0.2, 0.48, '#243740');
+        }
+        c.restore();
+        continue;
+      }
       c.globalAlpha = this.shadowAlpha; this.circle(add(pp, add(vec(0.18, 0.22), so)), 0.4, '#0d1a2280'); c.globalAlpha = 1;
       c.save(); c.translate(pp.x, pp.y); c.rotate(Math.sin(g.time * 3 + person.phase) * 0.2);
       this.rect(-0.22, -0.1, 0.44, 0.6, person.color); this.circle(vec(0, -0.22), 0.23, '#dfc4ab');
@@ -587,9 +601,16 @@ export class Renderer {
   }
   private motorcycle(v: Vehicle) {
     const c = this.ctx, b = v.body, g = this.game, wreck = v.damage.status === 'wreck';
+    const dynamics = v.dynamics as MotorcycleDynamics, fallen = dynamics.fallen;
     const occupied = !v.driverExited && !wreck;
-    const roll = wreck ? 1.25 : v.parked && length(b.velocity) < 0.5 ? -0.18 : (v.dynamics as MotorcycleDynamics).lean;
-    const frame = leanProjection(roll, 0.65), rider = leanProjection(roll, 1.05), helmet = leanProjection(roll, 1.4);
+    const roll = fallen ? dynamics.lean : wreck ? 1.25 : v.parked && length(b.velocity) < 0.5 ? -0.18 : dynamics.lean;
+    const projection = (height: number) => {
+      const result = leanProjection(roll, height);
+      // A fallen motorcycle is lying on its side, not disappearing into an
+      // edge-on mathematical slice of the road. Keep the laid-down frame visible.
+      return { ...result, width: fallen ? Math.max(0.53, result.width) : result.width };
+    };
+    const frame = projection(0.65), rider = projection(1.05), helmet = projection(1.4);
     const so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     // Contact patches stay at y=0. The cast shadow shortens as the bike's upper parts get lower.
@@ -621,7 +642,7 @@ export class Renderer {
     this.rect(-1.03, -0.14, 0.12, 0.28, v === g.player && g.controls.throttle < 0 ? '#ff675f' : '#ba6b61');
     c.restore();
     // Courier rack/box rolls with the frame; the box only appears when carrying an actual parcel.
-    c.save(); c.translate(-0.85, leanProjection(roll, 0.8).offset); c.scale(1, frame.width);
+    c.save(); c.translate(-0.85, projection(0.8).offset); c.scale(1, frame.width);
     this.rect(-0.4, -0.37, 0.65, 0.74, '#46575c', '#a9b4ac');
     if (v === g.player && !g.onFoot && g.job.type === 'parcel' && g.job.stage === 'dropoff' && !wreck) {
       this.rect(-0.45, -0.4, 0.75, 0.8, '#dca668', '#ffe3af');
