@@ -1,4 +1,4 @@
-import { Body, CarDynamics, add, angleDiff, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
+import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
 import { GARAGE, HOSPITAL, World, isStructural, roadNode, roadPath, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
 import { defaultSettings, difficulties, type Difficulty, type Settings } from './rules';
@@ -7,12 +7,13 @@ import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
-import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
+import { MotorcycleDynamics } from './motorcycle';
+import { createVehicleBody, createVehicleDynamics, trafficModel, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
 import { GOLF_CART_ROUTE, HIGHLAND_STOPS, ROAD_NODES, isCountry, pathLength } from './countryside';
 import { RAIL_BREAK_SPEED, inOcean } from './coast';
 
-export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle' | 'golf-cart'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
+export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
@@ -52,7 +53,16 @@ export class Game {
     this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, '#f7ce55');
     for (let i = 0; i < 23; i++) {
       const horizontal = i % 2 === 0, street = (i % 7) * 40, along = 45 + this.world.random() * 160;
-      const v = this.vehicle('traffic', horizontal ? along : street + 3, horizontal ? street + 3 : along, horizontal ? 0 : -Math.PI / 2, ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5]);
+      const model = trafficModel(i), angle = horizontal ? 0 : -Math.PI / 2;
+      const position = horizontal ? vec(along, street + 3) : vec(street + 3, along);
+      // Check the chosen model's complete footprint, including initial traffic.
+      const probe = createVehicleBody(vehicleDefinition(model), position, angle);
+      for (let attempt = 0; attempt < 32 && !this.canSpawnTraffic(probe); attempt++) {
+        if (horizontal) probe.position.x = 12 + ((along + attempt * 13) % 216);
+        else probe.position.y = 12 + ((along + attempt * 13) % 216);
+      }
+      if (!this.canSpawnTraffic(probe)) continue;
+      const v = this.spawnVehicle({ model, position: probe.position, angle, color: model === 'car' ? ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5] : undefined });
       const node = roadNode(v.body.position); v.path = [horizontal ? vec(Math.min(240, node.x + 40), node.y + 3) : vec(node.x + 3, Math.max(0, node.y - 40))];
     }
     for (const [i, spot] of this.world.parking.entries()) if (spot.occupied) {
@@ -77,31 +87,41 @@ export class Game {
     this.eventLog = []; this.newJob(true); this.applyUpgrades(); this.setMode('playing');
   }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
-    const bike = model === 'motorcycle', cart = model === 'golf-cart', body = bike ? new Body(x, y, 260, 2.6, 0.8) : cart ? new Body(x, y, 360, 2.7, 1.6) : new Body(x, y); body.angle = angle;
+    return this.spawnVehicle({ kind, position: vec(x, y), angle, color, model });
+  }
+  spawnVehicle({ model = 'car', kind = 'traffic', position, angle = 0, color, parked = false, driverExited = false }: VehicleSpawn): Vehicle {
+    const definition = vehicleDefinition(model), body = createVehicleBody(definition, position, angle);
     const id = this.serial++;
-    const v: Vehicle = { id, body, dynamics: bike ? new MotorcycleDynamics() : new CarDynamics(), model, kind, color, path: [], routeTimer: 0, alive: true, parked: false, ai: createAI(body.position, id), damage: createVehicleDamage(), baseEngine: bike ? BIKE_ENGINE : 10500, baseGrip: bike ? BIKE_GRIP : 1250, wreckAt: -1, driverExited: false };
-    if (cart) { v.baseEngine = 2300; v.baseGrip = 430; v.cart = { waypoint: 0, crush: 0, roll: 0, targetRoll: 0 }; v.dynamics.tyres.forEach(t => { t.position.x *= 0.65; t.position.y *= 0.8; }); }
+    const v: Vehicle = { id, body, definition, dynamics: createVehicleDynamics(definition), model, kind, color: color ?? definition.graphics.color, path: [], routeTimer: 0, alive: true, parked, ai: createAI(body.position, id), damage: createVehicleDamage(), baseEngine: definition.physics.engineForce, baseGrip: definition.physics.grip, wreckAt: -1, driverExited };
+    if (definition.ai.controller === 'golf') v.cart = { waypoint: 0, crush: 0, roll: 0, targetRoll: 0 };
     this.vehicles.push(v); return v;
+  }
+  private canSpawnTraffic(body: Body, margin = 2) {
+    return !inOcean(body.position) && !this.vehicles.some(v => v.alive && bodiesNear(body, v.body, margin)) && ![...this.world.hash.query(body)].some(prop => contact(body, prop.body)) && !this.world.pools.some(pool => contact(body, pool)) && !this.world.parking.some(spot => {
+      if (!spot.occupied) return false;
+      const parked = createVehicleBody(vehicleDefinition(spot.motorcycle ? 'motorcycle' : 'car'), spot.position, spot.angle);
+      return bodiesNear(body, parked, margin);
+    });
   }
   setTrafficCount(count: number) {
     this.trafficTarget = clamp(Math.floor(Number.isFinite(count) ? count : 0), 0, 60);
-    const cars = this.vehicles.filter(v => v.kind === 'traffic' && v.model !== 'golf-cart' && !v.parked && v.alive);
+    const cars = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && v.alive);
     for (const v of cars.slice(this.trafficTarget)) v.alive = false;
     this.vehicles = this.vehicles.filter(v => v.alive);
-    for (let attempt = 0; this.vehicles.filter(v => v.kind === 'traffic' && v.model !== 'golf-cart' && !v.parked && v.alive).length < this.trafficTarget && attempt < 300; attempt++) {
+    for (let attempt = 0; this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && v.alive).length < this.trafficTarget && attempt < 300; attempt++) {
       const horizontal = attempt % 2 === 0, street = Math.floor(this.world.random() * 7) * 40, along = 12 + this.world.random() * 216;
       const p = horizontal ? vec(along, street + 3) : vec(street + 3, along);
-      if (dist(p, this.player.body.position) < 9 || this.vehicles.some(v => dist(v.body.position, p) < 7)) continue;
-      const probe = new Body(p.x, p.y); probe.angle = horizontal ? 0 : -Math.PI / 2;
-      if ([...this.world.hash.query(probe)].some(prop => contact(probe, prop.body))) continue;
-      const v = this.vehicle('traffic', p.x, p.y, horizontal ? 0 : -Math.PI / 2, ['#91b5b0', '#d77f72', '#ad9dc6'][attempt % 3]);
+      const model = trafficModel(this.vehicles.filter(v => v.kind === 'traffic' && !v.parked && !v.cart).length), angle = horizontal ? 0 : -Math.PI / 2;
+      const probe = createVehicleBody(vehicleDefinition(model), p, angle);
+      if (dist(p, this.actor.position) < 9 || !this.canSpawnTraffic(probe)) continue;
+      const v = this.spawnVehicle({ position: p, angle, model });
       const node = roadNode(p); v.path = [horizontal ? vec(Math.min(240, node.x + 40), node.y + 3) : vec(node.x + 3, Math.max(0, node.y - 40))];
     }
   }
   get target() { return this.onFoot ? this.nearestCar?.body.position ?? GARAGE : this.navToGarage ? GARAGE : this.job.stage === 'pickup' ? this.job.pickup : this.job.dropoff; }
   get speed() { return length(this.actor.velocity); }
   get lean() { return this.player.dynamics instanceof MotorcycleDynamics ? this.player.dynamics.lean : 0; }
-  get nearestCar() { return this.vehicles.filter(v => v.alive && !v.sinking && v.model !== 'golf-cart' && v.kind !== 'police' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) < 2 && (v.parked || v === this.player)).sort((a, b) => dist(a.body.position, this.actor.position) - dist(b.body.position, this.actor.position))[0]; }
+  get nearestCar() { return this.vehicles.filter(v => v.alive && !v.sinking && v.definition.access.playerDrivable && v.kind !== 'police' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) < 2 && (v.parked || v === this.player)).sort((a, b) => dist(a.body.position, this.actor.position) - dist(b.body.position, this.actor.position))[0]; }
   get enterableCar() { const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 0.35);
@@ -115,7 +135,7 @@ export class Game {
       if (!next) { this.notify('Walk up to a parked car or motorbike, then press E to take it.'); return false; }
       if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
       this.setJobType();
-      next.parked = false; next.driverExited = false; next.path = []; this.onFoot = false; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify(next.model === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
+      next.parked = false; next.driverExited = false; next.path = []; this.onFoot = false; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
     }
     if (this.speed > 6 && this.player.damage.status !== 'burning' && this.player.damage.status !== 'wreck') { this.notify('Slow down before exiting or dismounting. E bails out immediately in a fire.'); return false; }
     const b = this.player.body;
@@ -203,12 +223,12 @@ export class Game {
     const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
     const destination = HIGHLAND_STOPS.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
-    const type = this.player.model === 'motorcycle' ? 'parcel' : 'fare';
+    const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
     this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
   }
   setJobType() {
-    const type = this.player.model === 'motorcycle' ? 'parcel' : 'fare';
+    const type = this.player.definition.access.job;
     if (this.job.type === type) return;
     const customer = this.world.people.find(p => p.id === this.job.customerId);
     if (type === 'parcel') {
@@ -220,7 +240,7 @@ export class Game {
     }
     this.job.type = type; this.job.wait = 0;
   }
-  applyUpgrades() { const bike = this.player.model === 'motorcycle'; this.player.baseEngine = this.player.dynamics.engineForce = (bike ? BIKE_ENGINE : 10500) * (1 + this.save.upgrades.engine * 0.22); this.player.baseGrip = this.player.dynamics.grip = (bike ? BIKE_GRIP : 1250) * (1 + this.save.upgrades.grip * 0.18); }
+  applyUpgrades() { const physics = this.player.definition.physics; this.player.baseEngine = this.player.dynamics.engineForce = physics.engineForce * (1 + this.save.upgrades.engine * 0.22); this.player.baseGrip = this.player.dynamics.grip = physics.grip * (1 + this.save.upgrades.grip * 0.18); }
   price(key: Upgrade) { return upgradeInfo[key].price * (this.save.upgrades[key] + 1); }
   buy(key: Upgrade) { const price = this.price(key); if (this.save.cash < price || this.save.upgrades[key] >= 3) return false; this.save.cash -= price; this.save.upgrades[key]++; this.applyUpgrades(); this.persist(); this.sounds.emit('purchase', this.time); this.onChange(); return true; }
   repair() { const price = this.repairPrice; if (this.save.cash < price || price === 0) return; this.save.cash -= price; this.player.damage = createVehicleDamage(); this.persist(); this.sounds.emit('repair', this.time); this.onChange(); }
@@ -306,8 +326,10 @@ export class Game {
       const pair = 'hp' in other ? `contact:${v.id}:prop:${other.id}` : `contact:${Math.min(v.id, other.id)}:car:${Math.max(v.id, other.id)}`;
       this.sounds.emit(impact > 15 ? 'crash' : impact > 5 ? 'crunch' : 'bump', this.time, { position: c.point, strength: clamp(impact / 18, 0.25, 1.4), key: pair, cooldown: 0.22 });
     }
-    this.damageImpact(v, impact, c.point, v.kind === 'taxi' || other.kind === 'taxi');
-    if (!('hp' in other)) this.damageImpact(other, impact, c.point, v.kind === 'taxi' || other.kind === 'taxi');
+    const dynamic = !('hp' in other), totalMass = v.body.mass + other.body.mass;
+    // Equal cars preserve the existing damage scale; a heavy truck takes less of the hit.
+    this.damageImpact(v, impact * (dynamic ? 2 * other.body.mass / totalMass : 1), c.point, v.kind === 'taxi' || other.kind === 'taxi', impact);
+    if (dynamic) this.damageImpact(other, impact * 2 * v.body.mass / totalMass, c.point, v.kind === 'taxi' || other.kind === 'taxi', impact);
     const involvesPlayer = v.kind === 'taxi' || ('kind' in other && other.kind === 'taxi');
     if (involvesPlayer && impact > 3 && this.crashCooldown <= 0) {
       this.crashCooldown = 0.3;
@@ -316,11 +338,11 @@ export class Game {
       if (before > 12) this.floating(c.point, 'OUCH', '#f29281');
     }
   }
-  damageImpact(v: Vehicle, impact: number, point: Vec, blamed: boolean) {
+  damageImpact(v: Vehicle, impact: number, point: Vec, blamed: boolean, closingSpeed = impact) {
     if (v.cart) {
       if (impact < 3 || v.damage.status === 'wreck' || this.time - v.damage.hitAt < 0.22) return;
       v.damage.hitAt = this.time; v.cart.crush = clamp(v.cart.crush + (impact - 2) / 40, 0, 1);
-      v.damage.health = Math.max(0, v.damage.health - (impact - 2) * 3);
+      v.damage.health = Math.max(0, v.damage.health - (impact - 2) * 1.45 * v.definition.damage.impactScale);
       if (impact >= 14) {
         const side = rotate(sub(point, v.body.position), -v.body.angle).y;
         v.cart.targetRoll = (side < 0 ? 1 : -1) * Math.PI;
@@ -328,8 +350,10 @@ export class Game {
       if (v.damage.health === 0 || v.cart.targetRoll) { v.damage.status = 'wreck'; v.wreckAt = this.time; v.driverExited = true; }
       return;
     }
-    const result = impactDamage(v.damage, { impact, localPoint: rotate(sub(point, v.body.position), -v.body.angle), armor: v.kind === 'taxi' ? this.save.upgrades.armor : v.kind === 'police' ? 1 : 0, time: this.time, scale: this.rules.damageScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
-    if (result.ignited && v === this.player && !this.onFoot) this.notify(`${v.model === 'motorcycle' ? 'BIKE' : 'CAB'} ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
+    const local = rotate(sub(point, v.body.position), -v.body.angle), cargo = v.definition.cargo;
+    const result = impactDamage(v.damage, { impact, localPoint: vec(local.x * 4.2 / v.body.w, local.y * 2.1 / v.body.h), armor: v.kind === 'taxi' ? this.save.upgrades.armor : v.kind === 'police' ? 1 : 0, time: this.time, scale: this.rules.damageScale * v.definition.damage.impactScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
+    if (cargo.flammable && result.damage > 0 && closingSpeed >= cargo.ignitionImpact && local.x < v.body.w / 2 - v.definition.graphics.cabLength) igniteVehicle(v.damage, cargo.fuse, blamed);
+    if (result.ignited && v === this.player && !this.onFoot) this.notify(`${v.definition.graphics.sprite === 'motorcycle' ? 'BIKE' : 'CAB'} ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
   }
   igniteProp(prop: Prop, blamed: boolean, fuse = 4.5) {
     if (prop.fuelSpent || !['pump', 'station'].includes(prop.kind)) return;
@@ -351,9 +375,11 @@ export class Game {
     for (const v of this.vehicles) {
       if (!v.alive || v.sinking || v.id === blast.sourceVehicle) continue;
       const effect = radialEffect(blast.position, v.body.position, blast.radius, blast.power); if (!effect.falloff) continue;
-      v.body.impulse(scale(effect.kick, v.body.mass), v.body.toWorld(vec(0, 0.4)));
+      v.body.impulse(scale(effect.kick, Math.min(v.body.mass, 1000)), v.body.toWorld(vec(0, 0.4)));
       if (v.cart) { this.damageImpact(v, effect.damage / 3, blast.position, blast.blamed); continue; }
-      const result = blastDamage(v.damage, effect.damage, { armor: v.kind === 'taxi' ? this.save.upgrades.armor : 0, time: this.time, scale: this.rules.damageScale, blamed: blast.blamed, fuse: Math.min(this.rules.fireFuse, 1.7), invincible: v.kind === 'taxi' && this.settings.invincible });
+      const result = blastDamage(v.damage, effect.damage, { armor: v.kind === 'taxi' ? this.save.upgrades.armor : 0, time: this.time, scale: this.rules.damageScale * v.definition.damage.blastScale, blamed: blast.blamed, fuse: Math.min(this.rules.fireFuse, 1.7), invincible: v.kind === 'taxi' && this.settings.invincible });
+      const cargo = v.definition.cargo;
+      if (cargo.flammable && result.damage > 0 && effect.damage >= cargo.ignitionBlast) igniteVehicle(v.damage, Math.min(cargo.fuse, 1.7), blast.blamed);
       if (result.ignited && v === this.player && !this.onFoot) this.notify('FUEL ON FIRE · Press E to bail out, then run clear!', 'danger');
     }
     for (const prop of this.world.props) {
@@ -389,7 +415,7 @@ export class Game {
       }
       if (v.damage.status !== 'burning') v.damage.bloodTime = Math.max(0, v.damage.bloodTime - dt);
       if (tickVehicleDamage(v.damage, dt) === 'explode') {
-        v.wreckAt = this.time; this.queueBlast(v.body.position, 13, 110, v.damage.blamed, v.id);
+        v.wreckAt = this.time; this.queueBlast(v.body.position, v.definition.damage.blastRadius, v.definition.damage.blastPower, v.damage.blamed, v.id);
         if (v === this.player && !this.onFoot && this.job.stage === 'dropoff' && this.settings.gore) {
           const passenger = this.world.people.find(p => p.id === this.job.customerId);
           if (passenger) { passenger.alive = true; passenger.aboard = false; passenger.position = add(v.body.position, vec(0.4, 0.4)); if (killPedestrian(passenger, vec(7, 4), this.time)) this.death(passenger, vec(7, 4), 2, v.damage.blamed); }
@@ -470,7 +496,7 @@ export class Game {
       if (inOcean(v.body.position)) this.enterWater(v);
     }
     for (let i = 0; i < this.vehicles.length; i++) for (let j = i + 1; j < this.vehicles.length; j++) {
-      const a = this.vehicles[i], b = this.vehicles[j]; if (a.alive && b.alive && !a.sinking && !b.sinking && dist(a.body.position, b.body.position) < 6) this.collision(a, b, dt);
+      const a = this.vehicles[i], b = this.vehicles[j]; if (a.alive && b.alive && !a.sinking && !b.sinking && bodiesNear(a.body, b.body)) this.collision(a, b, dt);
     }
     if (this.onFoot) this.walk(dt);
     if (!this.onFoot && !this.player.sinking && this.player.dynamics.skidding) {
@@ -522,12 +548,13 @@ export class Game {
     for (const v of this.vehicles) if (v !== this.player && v.damage.status === 'wreck' && this.time - v.wreckAt > 30 && dist(v.body.position, this.actor.position) > 85) v.alive = false;
     this.vehicles = this.vehicles.filter(v => v.alive);
     // Removed off-screen wrecks are replaced by traffic, keeping the city alive.
-    const count = this.vehicles.filter(v => v.kind === 'traffic' && v.model !== 'golf-cart' && !v.parked && v.damage.status !== 'wreck').length;
+    const count = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && v.damage.status !== 'wreck').length;
     if (count < this.trafficTarget) {
       for (let i = 0; i < 12; i++) {
         const p = vec(Math.floor(this.world.random() * 7) * 40 + 3, 15 + this.world.random() * 210);
-        if (dist(p, this.actor.position) < 85 || this.vehicles.some(v => dist(v.body.position, p) < 8)) continue;
-        this.vehicle('traffic', p.x, p.y, -Math.PI / 2, '#91b5b0'); break;
+        const model = trafficModel(this.serial), probe = createVehicleBody(vehicleDefinition(model), p, -Math.PI / 2);
+        if (dist(p, this.actor.position) < 85 || !this.canSpawnTraffic(probe)) continue;
+        this.spawnVehicle({ position: p, angle: -Math.PI / 2, model }); break;
       }
     }
   }

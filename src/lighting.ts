@@ -158,7 +158,8 @@ export function cullLights(lights: LightSource[], view: Viewport): LightSource[]
 export type SceneVehicle = {
   id: number;
   kind: 'taxi' | 'police' | 'traffic';
-  model?: 'car' | 'motorcycle' | 'golf-cart';
+  model?: import('./vehicles').VehicleModel;
+  definition?: import('./vehicles').VehicleDefinition;
   alive: boolean;
   parked: boolean;
   driverExited: boolean;
@@ -291,11 +292,12 @@ export function collectLights(scene: LightScene): LightSource[] {
     if (active) {
       const intensity = artificial * (vehicle.kind === 'police' ? 0.85 : 0.75);
       if (intensity > 0.02) {
-        const nose = vehicle.body.toWorld({ x: vehicle.model === 'motorcycle' ? 1.2 : 2.1, y: 0 });
+        const noseX = vehicle.definition ? vehicle.definition.chassis.length / 2 : vehicle.model === 'motorcycle' ? 1.2 : 2.1;
+        const nose = vehicle.body.toWorld({ x: noseX, y: 0 });
         out.push({ x: nose.x, y: nose.y, radius: 16, color: HEADLIGHT, intensity, artificial: true, profile: 'cone', angle: vehicle.body.angle, spread: 0.5 });
         // Short warm pool just ahead of the bumper so the road surface under the beam reads.
         // Tagged as a street-level headlight so it is masked by raised buildings too.
-        const pool = vehicle.body.toWorld({ x: 4.2, y: 0 });
+        const pool = vehicle.body.toWorld({ x: noseX + 2.1, y: 0 });
         out.push({ x: pool.x, y: pool.y, radius: 4.5, color: HEADLIGHT, intensity: clamp01(intensity * 0.7), artificial: true, inner: 0.3, occlude: true });
       }
     }
@@ -307,8 +309,9 @@ export function collectLights(scene: LightScene): LightSource[] {
     }
     if (vehicle.damage.status === 'burning') {
       const flicker = 0.7 + 0.3 * Math.sin(time * 13 + vehicle.id * 2.3);
-      const fire = vehicle.body.toWorld({ x: 0.9, y: 0 });
-      out.push({ x: fire.x, y: fire.y, radius: 7, color: FIRE, intensity: clamp01(0.85 * flicker) });
+      const fuel = vehicle.definition?.cargo.flammable;
+      const fire = vehicle.body.toWorld({ x: fuel ? -0.8 : 0.9, y: 0 });
+      out.push({ x: fire.x, y: fire.y, radius: fuel ? 10 : 7, color: FIRE, intensity: clamp01(0.85 * flicker) });
     }
     if (vehicle.id === scene.playerId && scene.playerBoosting && !scene.playerOnFoot) {
       const pulse = 0.6 + 0.4 * Math.sin(time * 43);

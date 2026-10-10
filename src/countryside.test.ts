@@ -98,7 +98,7 @@ describe('eastern bridges and highland roads', () => {
   });
   it('loads and pays rural parcel deliveries using the road-distance fare', () => {
     const g = new Game(); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
-    g.player.model = 'motorcycle'; g.offer = 2; g.newJob();
+    g.player = g.spawnVehicle({ kind: 'taxi', model: 'motorcycle', position: { ...g.player.body.position } }); g.vehicles = [g.player]; g.offer = 2; g.newJob();
     const fare = g.job.fare, cash = g.save.cash;
     expect(g.job.type).toBe('parcel'); expect(g.job.destination).toBe('Eagle Lookout');
     g.player.body.position = { ...g.job.pickup };

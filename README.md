@@ -70,6 +70,20 @@ navigation and road-distance fares use the expanded curved road network.
 passenger for Fairway Club. Automation: `__taxi.scenario('woodland-estates')`.
 See the [map overview and screenshots](docs/woodland-estates.md).
 
+## Commercial NPC fleet
+
+City traffic now includes **delivery vans, empty flatbed trucks, loaded freight trucks and
+trucks carrying flammable fuel barrels**. They have distinct body sizes, mass, acceleration,
+braking and cornering limits; payload increases yaw inertia and collision resistance. Fuel
+cargo can catch fire after a hard cargo-area hit or nearby blast and produces a larger
+chain-reaction explosion. These four models are **NPC only** until a later player unlock.
+
+**Try it:** F2 → **Vans / freight traffic**, or **Flammable cargo / impact** for a collision
+and cargo explosion fixture. The latter enables God mode for inspection.
+The [vehicle survey, handling measurements, extension API and screenshots](docs/vehicles.md)
+cover the existing cars, bikes and golf carts as well as the new fleet. `src/vehicles.ts`
+centralizes model definitions; `game.spawnVehicle(options)` is the named-options spawn API.
+
 ## Controls & game loop
 
 | Input | Action |
@@ -168,7 +182,7 @@ npm run build    # strict TypeScript check + standalone build
 
 Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. The same inspector works in the standalone HTML. Its controls include:
 
-- **17 fixtures:** first fare, **Motorbike deliveries**, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
+- **25 fixtures:** first fare, **Motorbike deliveries**, eastern bridges, woodland estates, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
 - **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
 - **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
 - **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.
@@ -176,7 +190,7 @@ Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. Th
 - **Difficulty and gore:** change during a run. Scenario presets may enable gore/God mode for their test; the preset's description explains its setup.
 - **Sound FX:** audition every sound, adjust saved FX/siren volume, mute, inspect sample/voice telemetry.
 
-Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving cars back. **Reset run** restores the ordinary 23-moving-car / 39-parked-vehicle city; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
+Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving vehicles back. **Reset run** restores the ordinary 23-moving-vehicle / 39-parked-vehicle city plus fairway carts; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
 
 For browser automation, the opt-in `window.__taxi` harness has:
 
@@ -187,6 +201,8 @@ __taxi.step(0.45, ['KeyS']);        // brake
 __taxi.step(1);                    // coast / test pickup dwell
 __taxi.state();                    // isolated serializable snapshot
 __taxi.vehicles();                 // live vehicle transforms for impact checks
+__taxi.vehicleModels();            // typed catalogue with graphics/physics/cargo settings
+__taxi.spawnVehicle({model: 'van', position: {x: 80, y: 83}}); // returns the NPC ID
 __taxi.contacts();                 // current static contact penetration depths
 __taxi.scenario('alley');           // resets and positions cab at the alley entrance
 __taxi.step(1.1, ['KeyW']);         // burst through a barrier and stacked crates
@@ -234,6 +250,7 @@ For shared browser sessions, run automated resets in a separate isolated browser
 ## Code map
 
 - `src/physics.ts`: vectors, rigid bodies, four-tyre forces, rotated-rectangle SAT and normal/friction impulses, spatial hash.
+- `src/vehicles.ts`: typed model catalogue, named spawn options, body/dynamics factories, commercial cargo, graphics/handling/access profiles and road-traffic mix.
 - `src/world.ts`: seeded city, special structures, stable entity IDs, and simple shortest street routing (same-street trips are direct; street-to-street trips need at most two turns).
 - `src/ai.ts`: obstacle sensing, budgeted physical recovery, road rejoin, police prediction/memory and containment.
 - `src/damage.ts`: component damage, armor, fire fuses, blast falloff and bounded impulses.

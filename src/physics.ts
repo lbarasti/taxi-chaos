@@ -29,33 +29,58 @@ export class Body {
 }
 
 export type Controls = { throttle: number; turn: number; handbrake: boolean; boost?: boolean };
+export type TyreLayout = { x: number; y: number; steered: boolean };
+export type CarTuning = {
+  engineForce: number; grip: number; brakeDeceleration: number; reverseRatio: number;
+  drag: number; rollingDrag: number; coastDrag: number; steeringLock: number;
+  steeringSpeedFalloff: number; maxLateralAcceleration: number;
+};
+export const defaultCarTuning: CarTuning = {
+  engineForce: 10500, grip: 1250, brakeDeceleration: 19, reverseRatio: 0.55,
+  drag: 12, rollingDrag: 35, coastDrag: 0.8, steeringLock: 0.55,
+  steeringSpeedFalloff: 0.018, maxLateralAcceleration: Infinity,
+};
 export class CarDynamics {
   rearGripLoss = 0; skidding = false;
   tyres = [-1.35, 1.35].flatMap(x => [-0.7, 0.7].map(y => ({ position: vec(x, y), steered: x > 0, angle: 0, skidding: false })));
   engineForce = 10500; grip = 1250;
+  tuning: CarTuning;
+  constructor(tuning: Partial<CarTuning> = {}, tyres?: readonly TyreLayout[]) {
+    this.tuning = { ...defaultCarTuning, ...tuning };
+    this.engineForce = this.tuning.engineForce; this.grip = this.tuning.grip;
+    if (tyres) this.tyres = tyres.map(t => ({ position: vec(t.x, t.y), steered: t.steered, angle: 0, skidding: false }));
+  }
   apply(body: Body, controls: Controls, dt: number) {
     this.rearGripLoss = controls.handbrake ? 1 : Math.max(0, this.rearGripLoss - dt / 0.2);
     const forward = rotate(vec(1, 0), body.angle);
     const speed = dot(body.velocity, forward);
     // Braking is stronger than reverse; aerodynamic drag gives a finite top speed.
-    const force = controls.throttle < 0 ? (speed > 0.5 ? 19000 : this.engineForce * 0.55) : this.engineForce;
+    const force = controls.throttle < 0 ? (speed > 0.5 ? body.mass * this.tuning.brakeDeceleration : this.engineForce * this.tuning.reverseRatio) : this.engineForce;
     body.addForce(scale(forward, controls.throttle * force * (controls.boost ? 3.1 : 1)));
-    body.addForce(scale(body.velocity, -12 * length(body.velocity)));
+    body.addForce(scale(body.velocity, -this.tuning.drag * length(body.velocity)));
     // Low-speed coast settles naturally into a pickup rather than creeping forever.
-    if (!controls.throttle && length(body.velocity) < 4) body.addForce(scale(body.velocity, -body.mass * 0.8));
+    if (!controls.throttle && length(body.velocity) < 4) body.addForce(scale(body.velocity, -body.mass * this.tuning.coastDrag));
     this.skidding = false;
     for (const tyre of this.tyres) {
-      tyre.angle = tyre.steered ? controls.turn * (0.55 / (1 + Math.abs(speed) * 0.018)) : 0;
+      tyre.angle = tyre.steered ? controls.turn * (this.tuning.steeringLock / (1 + Math.abs(speed) * this.tuning.steeringSpeedFalloff)) : 0;
       const p = body.toWorld(tyre.position), v = body.velocityAt(p), rolling = rotate(vec(1, 0), body.angle + tyre.angle), lateral = vec(-rolling.y, rolling.x);
       const side = dot(v, lateral), rear = !tyre.steered;
       tyre.skidding = rear && Math.abs(side) > (tyre.skidding ? 1.1 : 2);
       this.skidding ||= tyre.skidding;
-      const rollDrag = 35 * (rear && controls.handbrake ? 6 : 1);
+      const rollDrag = this.tuning.rollingDrag * (rear && controls.handbrake ? 6 : 1);
       const sideDrag = this.grip * (rear ? 1 - this.rearGripLoss * 0.8 : 1);
-      body.addForce(add(scale(rolling, -rollDrag * dot(v, rolling)), scale(lateral, -sideDrag * side)), p);
+      const limit = body.mass * this.tuning.maxLateralAcceleration / this.tyres.length;
+      const sideForce = clamp(-sideDrag * side, -limit, limit);
+      tyre.skidding ||= Math.abs(sideDrag * side) > limit;
+      this.skidding ||= tyre.skidding;
+      body.addForce(add(scale(rolling, -rollDrag * dot(v, rolling)), scale(lateral, sideForce)), p);
     }
   }
 }
+
+export const bodyRadius = (body: Body) => Math.hypot(body.w, body.h) / 2;
+/** Conservative broad phase for every vehicle size and orientation. */
+export const bodiesNear = (a: Body, b: Body, margin = 0) => dist(a.position, b.position) < bodyRadius(a) + bodyRadius(b) + margin;
 
 export type Contact = { normal: Vec; depth: number; point: Vec };
 // SAT for rotated rectangles, including a face midpoint for stable face contacts.
