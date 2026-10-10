@@ -251,7 +251,7 @@ export class Game {
         const damage = Math.min(95, landingDamage(tumbling.speed) * (tumbling.bike ? 1.13 : 1) * this.rules.damageScale);
         this.sounds.emit('body', this.time, { position: this.driver.position, strength: clamp(tumbling.speed / 17, 0.5, 1.2) });
         this.hurtDriver(damage, 'impact');
-        if (damage > 0) this.floating(this.driver.position, `LANDING -${Math.round(damage)} HP`, '#ee8675');
+        if (damage > 0 && !this.settings.invincible) this.floating(this.driver.position, `LANDING -${Math.round(damage)} HP`, '#ee8675');
       }
       if (tumbling.elapsed >= tumbling.duration) { this.tumble = null; this.driver.angularVelocity = 0; }
     } else {
