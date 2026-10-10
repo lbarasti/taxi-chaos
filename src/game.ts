@@ -146,6 +146,9 @@ export class Game {
   get speed() { return length(this.actor.velocity); }
   get lean() { return this.player.dynamics instanceof MotorcycleDynamics ? this.player.dynamics.lean : 0; }
   get nearestCar() { return this.vehicles.filter(v => v.alive && !v.sinking && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage)) && v.definition.access.playerDrivable && v.kind !== 'police' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) < 2 && (v.parked || v === this.player)).sort((a, b) => dist(a.body.position, this.actor.position) - dist(b.body.position, this.actor.position))[0]; }
+  get bikeDisabled() { return this.player.model === 'motorcycle' && !motorcycleEngineWorks(this.player.damage); }
+  get bikeTowable() { return this.onFoot && !this.tumble && !this.player.sinking && this.bikeDisabled
+    && length(this.player.body.velocity) < 2 && dist(this.driver.position, this.player.body.position) < 6; }
   get enterableCar() { if (this.tumble) return undefined; const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 0.35);
@@ -175,7 +178,14 @@ export class Game {
     if (!this.onFoot && this.portGateNear && this.player.damage.status !== 'burning' && this.player.damage.status !== 'wreck') return this.enterHarbour();
     if (this.onFoot) {
       const next = this.enterableCar;
-      if (!next) { this.notify(this.tumble ? 'Get back on your feet before taking another ride.' : 'Walk up to a parked car or motorbike, then press E to take it.'); return false; }
+      if (!next) {
+        const disabled = this.vehicles.some(v => v.alive && v.model === 'motorcycle' &&
+          !motorcycleEngineWorks(v.damage) && dist(v.body.position, this.driver.position) < 4);
+        this.notify(this.tumble ? 'Get back on your feet before taking another ride.'
+          : disabled ? 'That motorbike is too damaged to start. Find another ride or tow your bike to repair it.'
+          : 'Walk up to a parked car or motorbike, then press E to take it.');
+        return false;
+      }
       if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
       if (next.model === 'motorcycle' && (next.dynamics as MotorcycleDynamics).fallen) {
         const dynamics = next.dynamics as MotorcycleDynamics;
@@ -435,7 +445,8 @@ export class Game {
       this.newJob(); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
       return;
     }
-    if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking && this.player.damage.status === 'wreck' && dist(this.driver.position, this.player.body.position) < 6)) return;
+    if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking &&
+      (this.player.damage.status === 'wreck' && dist(this.driver.position, this.player.body.position) < 6 || this.bikeTowable))) return;
     if (this.mode !== 'arrested' && this.player.wreckAt >= 0 && this.time - this.player.wreckAt < 1.2) return;
     this.sounds.reset();
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
