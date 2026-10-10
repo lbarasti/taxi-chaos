@@ -84,7 +84,8 @@ describe('ocean entry and recovery', () => {
     expect(g.controls.boost).toBe(false); expect(g.interact()).toBe(false); g.garage(); expect(g.mode).toBe('playing');
     const entry = { ...old.body.position }; run(g, 0.4); expect(old.body.position.y).toBeLessThan(entry.y - 1);
     run(g, 2); expect(g.mode).toBe('wasted'); expect(old.alive).toBe(false); expect(g.wastedReason).toBe('drowning');
-    g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash);
+    expect(g.hospitalBill).toEqual({ medical: 50, repairs: 30, total: 80 });
+    g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - 80);
     expect(g.nearestCar).not.toBe(old); expect(old.alive).toBe(false);
   });
   it.each([vec(100, -30), vec(-30, 100), vec(100, 260), vec(276, 120), vec(540, 90), vec(336, 435)])('drowns outside the entire irregular map at $x,$y without invisible bounds', p => {
@@ -117,7 +118,8 @@ describe('walking at the coast', () => {
     const g = new Game(); loadScenario(g, 'coastal-walk'); g.world.people = []; g.keys.add('KeyW'); const cash = g.save.cash;
     expect(g.onFoot).toBe(true); run(g, 1.6);
     expect(g.mode).toBe('wasted'); expect(g.wastedReason).toBe('drowning'); expect(g.driverHealth).toBe(0); expect(g.fx.splashes).toHaveLength(1);
-    g.recover(); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash);
+    expect(g.hospitalBill).toEqual({ medical: 50, repairs: 0, total: 50 });
+    g.recover(); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - 50);
   });
   it('allows walking through a panel broken by a vehicle and rejects getting into an offshore ride', () => {
     const g = quiet(), rail = northRail(g), b = g.player.body;
