@@ -1,5 +1,5 @@
 import { Body, CarDynamics, add, angleDiff, clamp, contact, dist, length, normalize, resolveCollision, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, World, isStructural, roadNode, roadPath, type Person, type Prop } from './world';
+import { GARAGE, HOSPITAL, World, isStructural, roadNode, roadPath, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
 import { defaultSettings, difficulties, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
@@ -16,7 +16,7 @@ export type Feedback = { position: Vec; life: number; color: string; text: strin
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
 export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number };
-export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wrecked';
+export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export const upgradeInfo = {
   engine: { name: 'Street engine', subtitle: 'More pull. More problems.', detail: '+22% acceleration per level', price: 160 },
   grip: { name: 'Sticky tyres', subtitle: 'Own the next corner.', detail: '+18% tyre grip per level', price: 120 },
@@ -99,7 +99,7 @@ export class Game {
     return true;
   }
   interact() {
-    if (this.mode !== 'playing' && this.mode !== 'wrecked') return false;
+    if (this.mode !== 'playing') return false;
     if (this.onFoot) {
       const next = this.enterableCar;
       if (!next) { this.notify('Walk up to a parked car or motorbike, then press E to take it.'); return false; }
@@ -159,8 +159,9 @@ export class Game {
     let pickup = first ? stops[0] : stops[(this.offer * 3 + 1) % stops.length];
     // Short trips first; later fares branch into the full city.
     const dropoff = first ? stops[1] : stops[(this.offer * 3 + 4) % stops.length];
-    if (dist(pickup, this.player.body.position) > 160) pickup = stops.reduce((a, b) => dist(a, this.player.body.position) < dist(b, this.player.body.position) ? a : b);
-    if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.player.body.position) < dist(b, this.player.body.position) ? a : b);
+    // Dispatch follows the driver after hospital respawn, not the abandoned wreck.
+    if (dist(pickup, this.actor.position) > 160) pickup = stops.reduce((a, b) => dist(a, this.actor.position) < dist(b, this.actor.position) ? a : b);
+    if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.actor.position) < dist(b, this.actor.position) ? a : b);
     const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
     const destination = HIGHLAND_STOPS.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
@@ -187,11 +188,25 @@ export class Game {
   repair() { const price = this.repairPrice; if (this.save.cash < price || price === 0) return; this.save.cash -= price; this.player.damage = createVehicleDamage(); this.persist(); this.sounds.emit('repair', this.time); this.onChange(); }
   garage() { if (this.mode === 'garage') { this.setMode('playing'); return; } if (this.mode !== 'playing') return; if (this.onFoot) { this.notify('Get into a car before visiting Pit Stop.'); return; } if (this.stars) { this.notify('Lose the cops before visiting the garage.', 'danger'); return; } if (!this.garageNear) { this.navToGarage = !this.navToGarage; this.notify(this.navToGarage ? 'Route to Pit Stop set. Follow the blue line.' : 'Back to your fare. Follow the marked route.'); return; } if (this.speed > 3) { this.notify('Stop the cab to enter Pit Stop.'); return; } this.navToGarage = false; this.setMode('garage'); }
   recover() {
+    if (this.mode === 'wasted') {
+      this.sounds.reset();
+      // Leave the destroyed vehicle behind. Acknowledgment brings the driver back on foot.
+      this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true;
+      const passenger = this.world.people.find(p => p.id === this.job.customerId);
+      if (passenger?.aboard) { passenger.aboard = false; passenger.alive = true; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
+      this.onFoot = true; this.driver.position = { ...HOSPITAL }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
+      this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = [];
+      this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
+      for (const v of this.police) v.alive = false;
+      this.newJob(); this.setMode('playing'); this.notify('Discharged from Midtown Hospital. Find a parked ride to get back on the road.');
+      return;
+    }
+    if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && this.player.damage.status === 'wreck' && dist(this.driver.position, this.player.body.position) < 6)) return;
     if (this.mode !== 'arrested' && this.player.wreckAt >= 0 && this.time - this.player.wreckAt < 1.2) return;
     this.sounds.reset();
     const fee = this.mode === 'arrested' ? Math.min(this.save.cash, 75 + this.stars * 45) : Math.min(this.save.cash, 60);
     this.save.cash -= fee; this.persist(); this.player.body.position = vec(4, 32); this.player.body.velocity = vec(); this.player.body.angle = -Math.PI / 2; this.player.body.angularVelocity = 0;
-    this.onFoot = false; this.wreckedAt = -1; this.player.parked = false; this.player.driverExited = false; this.controls = { throttle: 0, turn: 0, handbrake: false };
+    this.onFoot = false; this.wreckedAt = -1; this.player.kind = 'taxi'; this.player.parked = false; this.player.driverExited = false; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
     this.player.damage = createVehicleDamage(); this.player.wreckAt = -1; this.player.alive = true; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.navToGarage = false;
     if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
     for (const v of this.police) v.alive = false;
@@ -311,7 +326,7 @@ export class Game {
           const passenger = this.world.people.find(p => p.id === this.job.customerId);
           if (passenger) { passenger.alive = true; passenger.aboard = false; passenger.position = add(v.body.position, vec(0.4, 0.4)); if (killPedestrian(passenger, vec(7, 4), this.time)) this.death(passenger, vec(7, 4), 2, v.damage.blamed); }
         }
-        if (v === this.player && !this.onFoot) { this.wreckedAt = this.time; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('wrecked'); }
+        if (v === this.player && !this.onFoot) { this.wreckedAt = this.time; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.setMode('wasted'); }
       }
     }
     for (const prop of this.world.props) if (prop.fire > 0 && !prop.fuelSpent) {
@@ -331,7 +346,7 @@ export class Game {
     return true;
   }
   update(dt: number) {
-    if (this.mode === 'wrecked') { this.time += dt; this.dayNight.update(dt); this.hazards(dt); this.effects(dt); return; }
+    if (this.mode === 'wasted') { this.effects(dt); return; }
     if (this.mode !== 'playing') return;
     this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;
@@ -374,8 +389,10 @@ export class Game {
     // stays at 60 Hz, while vehicle and collision physics always use 120 Hz.
     const pedestrianStep = this.vehicles.some(v => v.alive && length(v.body.velocity) > 40) ? 1 / 120 : 1 / 60;
     if (this.pedestrianClock >= pedestrianStep - 1e-8) { this.people(this.pedestrianClock); this.pedestrianClock = 0; }
-    this.hazards(dt); this.jobs(dt); this.law(dt); this.effects(dt); this.maintenance(dt);
-    if (!this.onFoot && this.player.damage.status === 'wreck' && this.mode === 'playing') { this.wreckedAt = this.time; this.setMode('wrecked'); }
+    this.hazards(dt);
+    if (!this.onFoot && this.player.damage.status === 'wreck' && this.mode === 'playing') { this.wreckedAt = this.time; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.setMode('wasted'); }
+    if (this.mode !== 'playing') { this.effects(dt); return; }
+    this.jobs(dt); this.law(dt); this.effects(dt); this.maintenance(dt);
   }
   people(dt: number) {
     const events = updatePedestrians(this.world, this.vehicles.filter(v => v.alive), this.settings, dt, this.time);
