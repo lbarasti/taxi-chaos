@@ -218,11 +218,12 @@ export class Game {
     this.driverKnockback = 0;
     this.tumble = moving ? { elapsed: 0, duration: tumbleDuration(speed) * (bike ? 1.1 : 1), speed, side, bike, grounded: false } : null;
     this.onFoot = true; v.parked = true; v.driverExited = true; this.navToGarage = false;
+    const bikeMass = b.mass;
+    if (bike) b.mass = Math.max(50, bikeMass - this.driver.mass);
     if (moving) {
       v.coastUntil = this.time + clamp(0.9 + speed * 0.12, 1.3, 4);
       if (bike) {
-        const reaction = motorcycleJumpReaction(speed, side, b.mass, this.driver.mass);
-        b.mass = Math.max(50, b.mass - this.driver.mass);
+        const reaction = motorcycleJumpReaction(speed, side, bikeMass, this.driver.mass);
         b.velocity = add(b.velocity, rotate(vec(0, reaction.lateralVelocity), b.angle));
         b.angularVelocity += reaction.yawVelocity;
         (v.dynamics as MotorcycleDynamics).leanVelocity += reaction.leanVelocity;
@@ -757,7 +758,7 @@ export class Game {
   }
   law(dt: number) {
     if (this.mode !== 'playing' || this.settings.noPolice) return;
-    if (this.speed > 24) { this.speedingTime += dt; if (this.speedingTime > 2) this.crime(dt * 3); }
+    if (!this.onFoot && this.speed > 24) { this.speedingTime += dt; if (this.speedingTime > 2) this.crime(dt * 3); }
     else this.speedingTime = 0;
     if (this.stars) {
       const rules = difficulties[this.settings.difficulty], desired = Math.min(rules.maxPolice, this.stars + (this.settings.difficulty === 'chaos' ? 3 : 1));
