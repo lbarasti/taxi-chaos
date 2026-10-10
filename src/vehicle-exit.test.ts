@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
+import { MotorcycleDynamics } from './motorcycle';
 import { length, vec } from './physics';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, doorOpenness, landingDamage, motorcycleJumpReaction, tumbleDuration } from './vehicle-exit';
 
@@ -127,7 +128,7 @@ describe('motorcycle dismount physics', () => {
     expect(g.driver.velocity.y).toBeGreaterThan(0);
     expect(bike.body.velocity.y).toBeLessThan(0);
     expect(bike.body.angularVelocity).toBeLessThan(0);
-    expect((bike.dynamics as { leanVelocity: number }).leanVelocity).toBeLessThan(0);
+    expect((bike.dynamics as MotorcycleDynamics).leanVelocity).toBeLessThan(0);
   });
 
   it('reverses bike swerve for a left exit and fades recoil as speed increases', () => {
