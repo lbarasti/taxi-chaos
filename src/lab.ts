@@ -42,6 +42,8 @@ export type ScenarioName =
   | 'motorcycle'
   | 'moving-car-exit'
   | 'moving-bike-exit'
+  | 'motorcycle-impact'
+  | 'rider-impact'
   | 'eastern-bridges'
   | 'woodland-estates'
   | 'harbour'
@@ -75,6 +77,8 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
   { name: 'moving-car-exit', label: 'Moving cab / jump out', description: 'A cab coasts east at 18 m/s. Press E while moving; watch the door swing outward before the jump, the driver tumble with momentum, the landing HP hit and the empty cab coast away. Hold A + E for a left-side exit.' },
   { name: 'moving-bike-exit', label: 'Moving motorbike / hop off', description: 'A courier bike rolls east at 5 m/s. Press E to jump right; the lighter empty bike recoils and steers left while the rider tumbles. Hold A + E to reverse the recoil; at rest E dismounts safely.' },
+  { name: 'motorcycle-impact', label: 'Motorbike / collision ejection', description: 'A cab drives east at 18 m/s into a 5 m/s oncoming motorcyclist. Watch the rider tumble separately while the motorcycle falls on its side, skids, spins and settles. Low-damage bikes can be lifted again.' },
+  { name: 'rider-impact', label: 'Motorbike / rider knocked off', description: 'You ride east at 12 m/s toward an incoming 12 m/s car. Watch your rider get thrown, tumble and lose HP on landing; the bike skids on its side. Recover and find another ride.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
   { name: 'harbour', label: 'Northstar Harbour / car exchange', description: 'Stop at the security gate. E pays $75. Follow cyan into container C-76 and stop fully inside for a fresh car and a completely clean police record. Working ships, cranes and trucks fill the docks.' },
@@ -240,6 +244,26 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       pose(game, renderer, player, 90, 80, EAST, 18);
       game.settings.noPolice = true;
       game.notify('MOVING CAB · Press E to jump. Door opens first. Hold A + E to leave on the left.', 'danger');
+      break;
+    }
+    case 'motorcycle-impact': {
+      pose(game, renderer, player, 90, 80, EAST, 18);
+      const bike = game.vehicle('traffic', 109, 80, WEST, '#ed9b63', 'motorcycle');
+      bike.body.velocity = vec(-5, 0); bike.path = [vec(60, 80)];
+      game.settings.noPolice = true;
+      game.notify('MOTORBIKE IMPACT · Drive straight. The rider and bike fly and slide separately.', 'danger');
+      break;
+    }
+    case 'rider-impact': {
+      player.alive = false;
+      game.vehicles = game.vehicles.filter(v => v !== player);
+      const bike = game.vehicle('taxi', 90, 80, EAST, '#ed9b63', 'motorcycle');
+      game.player = bike; game.setJobType(); game.applyUpgrades();
+      pose(game, renderer, bike, 90, 80, EAST, 12);
+      const oncoming = game.vehicle('traffic', 111, 80, WEST, '#91b5b0');
+      oncoming.body.velocity = vec(-12, 0); oncoming.path = [vec(60, 80)];
+      game.settings.noPolice = true;
+      game.notify('RIDER IMPACT · Hold your line. A collision will throw you off the bike.', 'danger');
       break;
     }
     case 'moving-bike-exit': {
