@@ -92,7 +92,7 @@ describe('motorcycle impact / laid-down bike dynamics', () => {
   it('also throws the rider when a motorcycle strikes a solid building', () => {
     const { g, bike, dynamics } = collisionScene(true);
     g.vehicles = [bike]; bike.body.velocity = vec(13, 0);
-    const wall = g.world.add('building', 92, 80, 1, 5, '#445566');
+    const wall = g.world.add('building', 91.6, 80, 1, 5, '#445566');
     g.collision(bike, wall, 1 / 120);
     expect(dynamics.fallen).toBe(true);
     expect(g.onFoot).toBe(true);
