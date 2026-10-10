@@ -5,6 +5,7 @@ import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
+import { MotorcycleDynamics, leanProjection } from './motorcycle';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
 
@@ -77,13 +78,17 @@ export class Renderer {
     for (const person of g.world.people) if (person.alive && !person.aboard && person.panic > 0 && this.visible(person.position, 2)) this.label('!', person.position.x, person.position.y - 1, 1.1, GOLD, '700');
     if (g.job.stage === 'pickup') {
       const person = g.world.people.find(p => p.id === g.job.customerId), waiting = person?.position ?? add(g.job.pickup, vec(3.4, 0));
-      const waving = add(waiting, vec(0.6, -0.3 - Math.sin(g.time * 6) * 0.2)); this.circle(waving, 0.18, GOLD);
-      this.label(g.job.name.toUpperCase(), waiting.x, waiting.y - 1.8, 0.8, GOLD, '700');
+      if (g.job.type === 'parcel') {
+        this.rect(waiting.x - 0.45, waiting.y - 0.35, 0.9, 0.7, '#dca668', '#fff0ba');
+        this.rect(waiting.x - 0.08, waiting.y - 0.35, 0.16, 0.7, '#ffe6af');
+      } else { const waving = add(waiting, vec(0.6, -0.3 - Math.sin(g.time * 6) * 0.2)); this.circle(waving, 0.18, GOLD); }
+      this.label(g.job.type === 'parcel' ? 'PARCEL PICKUP' : g.job.name.toUpperCase(), waiting.x, waiting.y - 1.8, 0.8, GOLD, '700');
     }
+    for (const v of g.vehicles) if (v.model === 'motorcycle' && v.parked && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('MOTORBIKE', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
     if (g.onFoot) {
       const p = g.driver.position;
       this.label('YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
-      const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? 'E · GET IN' : 'REPLACEMENT CAR');
+      const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? car.model === 'motorcycle' ? 'E · RIDE' : 'E · GET IN' : car.model === 'motorcycle' ? 'COURIER BIKE' : 'REPLACEMENT CAR');
     }
     this.debug();
     for (const feedback of g.feedback) {
@@ -267,6 +272,7 @@ export class Renderer {
     c.restore();
   }
   car(v: Vehicle) {
+    if (v.model === 'motorcycle') { this.motorcycle(v); this.vehicleEffects(v); return; }
     const c = this.ctx, b = v.body, police = v.kind === 'police', taxi = v.kind === 'taxi', wreck = v.damage.status === 'wreck', so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (v === this.game.player && !this.game.onFoot && this.game.mode === 'playing' && this.game.controls.boost) {
@@ -299,6 +305,67 @@ export class Renderer {
     if (v.damage.health < 75) { c.strokeStyle = '#283338'; c.lineWidth = 0.12; c.beginPath(); c.moveTo(1.7, -0.5); c.lineTo(0.9, 0.1); c.lineTo(1.8, 0.5); c.stroke(); }
     if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(1.8, -0.9, 0.2, 1.8, '#8e2230');
     c.restore();
+    this.vehicleEffects(v);
+  }
+  private motorcycle(v: Vehicle) {
+    const c = this.ctx, b = v.body, g = this.game, wreck = v.damage.status === 'wreck';
+    const occupied = !v.driverExited && !wreck;
+    const roll = wreck ? 1.25 : v.parked && length(b.velocity) < 0.5 ? -0.18 : (v.dynamics as MotorcycleDynamics).lean;
+    const frame = leanProjection(roll, 0.65), rider = leanProjection(roll, 1.05), helmet = leanProjection(roll, 1.4);
+    const so = this.shadowOffset(b.angle);
+    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+    // Contact patches stay at y=0. The cast shadow shortens as the bike's upper parts get lower.
+    this.shadowRect(-1.25 + so.x * frame.height, -0.3 + frame.offset + so.y * frame.height, 2.5, 0.6, '#0e1a2290');
+    if (occupied) this.shadowCircle(vec(0.18 + so.x * helmet.height, helmet.offset + so.y * helmet.height), 0.42, '#0e1a2270');
+    if (v === g.player && !g.onFoot && g.mode === 'playing' && g.controls.boost) {
+      const pulse = 0.5 + Math.sin(g.time * 43) * 0.12;
+      c.fillStyle = '#57d6f1bb'; c.beginPath(); c.moveTo(-1.1, frame.offset + 0.3); c.lineTo(-3.5 - pulse, frame.offset + 0.38); c.lineTo(-1.1, frame.offset + 0.55); c.fill();
+      this.rect(-1.8, frame.offset + 0.33, 0.8, 0.1, '#d9fbff');
+    }
+    for (const t of v.dynamics.tyres) {
+      this.circle(t.position, 0.16, '#0c161c'); // unmoving road contact, not a floating sprite
+      c.save(); c.translate(t.position.x, Math.sin(roll) * 0.28); c.rotate(t.angle);
+      this.rect(-0.4, -0.13 * frame.width, 0.8, 0.26 * frame.width, '#111c22');
+      this.rect(-0.3, -0.045 * frame.width, 0.6, 0.09 * frame.width, '#72838a'); c.restore();
+    }
+    c.save(); c.translate(0, frame.offset); c.scale(1, frame.width);
+    this.rect(-0.85, -0.13, 1.85, 0.26, '#adb7af'); // chassis/spine
+    this.rect(-0.9, 0.32, 1.05, 0.14, '#aebbc0'); this.rect(-0.9, 0.32, 0.32, 0.14, '#34464e'); // exhaust
+    c.fillStyle = wreck ? '#34393b' : v.color; c.beginPath(); c.roundRect(-0.65, -0.32, 1.55, 0.64, 0.24); c.fill();
+    this.rect(-0.63, -0.23, 0.68, 0.46, '#24343b'); // saddle
+    this.rect(0.24, -0.23, 0.45, 0.46, wreck ? '#252c2f' : v.color);
+    this.rect(0.31, -0.05, 0.2, 0.1, '#ffe3ac'); // tank highlight
+    c.save(); c.translate(0.82, 0); c.rotate(v.dynamics.tyres[1].angle);
+    this.rect(-0.06, -0.58, 0.12, 1.16, '#bcc7be');
+    this.rect(-0.13, -0.65, 0.26, 0.2, '#24343b'); this.rect(-0.13, 0.45, 0.26, 0.2, '#24343b');
+    this.rect(0.23, -0.2, 0.2, 0.4, wreck ? '#68716f' : '#fff0ba'); c.restore();
+    this.rect(-1.03, -0.14, 0.12, 0.28, v === g.player && g.controls.throttle < 0 ? '#ff675f' : '#ba6b61');
+    c.restore();
+    // Courier rack/box rolls with the frame; the box only appears when carrying an actual parcel.
+    c.save(); c.translate(-0.85, leanProjection(roll, 0.8).offset); c.scale(1, frame.width);
+    this.rect(-0.4, -0.37, 0.65, 0.74, '#46575c', '#a9b4ac');
+    if (v === g.player && !g.onFoot && g.job.type === 'parcel' && g.job.stage === 'dropoff' && !wreck) {
+      this.rect(-0.45, -0.4, 0.75, 0.8, '#dca668', '#ffe3af');
+      this.rect(-0.16, -0.4, 0.14, 0.8, '#fff0c4');
+    }
+    c.restore();
+    if (occupied) {
+      c.save(); c.translate(0, rider.offset); c.scale(1, rider.width);
+      this.rect(-0.32, -0.45, 0.7, 0.18, '#263942'); this.rect(-0.32, 0.27, 0.7, 0.18, '#263942'); // knees
+      c.strokeStyle = '#e5bd8f'; c.lineWidth = 0.16; c.lineCap = 'round';
+      for (const side of [-1, 1]) { c.beginPath(); c.moveTo(0.05, side * 0.3); c.lineTo(0.45, side * 0.4); c.lineTo(0.82, side * 0.52); c.stroke(); }
+      c.fillStyle = GOLD; c.beginPath(); c.roundRect(-0.32, -0.32, 0.62, 0.64, 0.15); c.fill();
+      this.rect(-0.26, -0.23, 0.12, 0.46, '#ffe8a3'); c.restore();
+      // Helmet's larger lateral displacement is the strongest top-down depth cue.
+      c.save(); c.translate(0.32, helmet.offset); c.scale(1, helmet.width);
+      this.circle(vec(), 0.3, '#f0ede0'); this.rect(0.09, -0.23, 0.18, 0.46, '#28444d'); this.circle(vec(-0.09, -0.09), 0.09, '#ffffff'); c.restore();
+      if (length(b.velocity) < 0.8) this.rect(-0.22, 0.55, 0.32, 0.18, '#253a43'); // foot down at stops
+    }
+    if (v.damage.health < 75) this.rect(0.3, frame.offset - 0.1, 0.4, 0.1, '#34393b');
+    c.restore();
+  }
+  private vehicleEffects(v: Vehicle) {
+    const c = this.ctx, b = v.body, wreck = v.damage.status === 'wreck', taxi = v.kind === 'taxi';
     if (v.damage.status === 'burning') { drawFire(c, b.toWorld(vec(0.9, 0)), 1.35, this.game.time, v.id); drawSmoke(c, b.position, 1.4, this.game.time, v.id); this.label(`${v.damage.fuse.toFixed(1)}s`, b.position.x, b.position.y - 3.5, 0.85, '#f4c693', '700'); }
     else if (v.damage.status === 'smoking' || (wreck && this.game.time - v.wreckAt < 8)) drawSmoke(c, b.toWorld(vec(1.1, 0)), wreck ? 1.2 : 0.8, this.game.time, v.id);
     if (!wreck && v.ai.phase === 'waiting') this.label('AWAITING TOW', b.position.x, b.position.y - 3, 0.68, '#d7bb9c');

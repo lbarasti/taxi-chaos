@@ -20,6 +20,7 @@ import type { AudioFX } from './audio';
 import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
 import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
+import { MotorcycleDynamics } from './motorcycle';
 
 const STEP = 1 / 120;
 /** Representative hour for each day/night period; presets set the hour only. */
@@ -36,6 +37,7 @@ const MAX_TRAFFIC = 40;
 
 export type ScenarioName =
   | 'first-fare'
+  | 'motorcycle'
   | 'hydrant'
   | 'alley'
   | 'wall'
@@ -57,6 +59,7 @@ export type ScenarioInfo = { name: ScenarioName; label: string; description: str
 /** Every reproducible LAB fixture, in the order they appear in the select. */
 export const scenarioInfo: ScenarioInfo[] = [
   { name: 'first-fare', label: 'First fare', description: 'Fresh run parked at Old Town; the first customer waits just down the street.' },
+  { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
   { name: 'hydrant', label: 'Hydrant', description: 'Cab rolls south at (7.5, 3) into the kerbside hydrant at 12 m/s.' },
   { name: 'alley', label: 'Alley', description: 'Aim through the alley at (20.5, 4): barrier first, then stacked crates, at 16 m/s.' },
   { name: 'wall', label: 'Wall', description: 'Full-speed 20 m/s test into the solid building at (14, 4) — damage and bounce.' },
@@ -94,7 +97,7 @@ export type LabSnapshot = ReturnType<Game['snapshot']> & { lab: LabClock };
 export type VehiclePatch = { health?: number; engine?: number; fuel?: number; tyres?: number; ignite?: boolean; fuse?: number };
 
 export type VehicleSummary = {
-  id: number; kind: Vehicle['kind']; alive: boolean; parked: boolean;
+  id: number; kind: Vehicle['kind']; model: Vehicle['model']; lean: number; alive: boolean; parked: boolean;
   position: Vec; velocity: Vec; angle: number;
   damage: { health: number; status: VehicleDamage['status']; critical: { engine: number; fuel: number; tyres: number }; fuse: number; fireTime: number; blamed: boolean };
   ai: { phase: Vehicle['ai']['phase']; role: Vehicle['ai']['role']; attempts: number; path: Vec[] };
@@ -173,6 +176,7 @@ function pose(game: Game, renderer: Renderer | undefined, vehicle: Vehicle, x: n
   body.angle = angle;
   body.velocity = vec(Math.cos(angle) * speed, Math.sin(angle) * speed);
   body.angularVelocity = 0;
+  if (vehicle.dynamics instanceof MotorcycleDynamics) vehicle.dynamics.resetLean();
   if (vehicle === game.player) {
     if (renderer) renderer.camera = vec(x, y);
     game.previousTyres = game.player.dynamics.tyres.map(t => game.player.body.toWorld(t.position));
@@ -198,6 +202,12 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
     case 'first-fare':
       pose(game, renderer, player, 4, 32, NORTH, 0);
       break;
+    case 'motorcycle': {
+      pose(game, renderer, player, 4, 32, NORTH, 0);
+      const bike = game.vehicle('traffic', 6.5, 34.6, NORTH, '#ed9b63', 'motorcycle');
+      bike.parked = true; bike.driverExited = true; game.settings.noPolice = true;
+      break;
+    }
     case 'hydrant':
       pose(game, renderer, player, 7.5, 3, SOUTH, 12);
       break;
@@ -602,7 +612,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     scenarios: scenarioInfo,
     state: snapshot,
     vehicles: () => structuredClone(game.vehicles.filter(v => v.alive).map(v => ({
-      id: v.id, kind: v.kind, alive: v.alive, parked: v.parked,
+      id: v.id, kind: v.kind, model: v.model, lean: v.dynamics instanceof MotorcycleDynamics ? v.dynamics.lean : 0, alive: v.alive, parked: v.parked,
       position: { ...v.body.position }, velocity: { ...v.body.velocity }, angle: v.body.angle,
       damage: { health: v.damage.health, status: v.damage.status, critical: { ...v.damage.critical }, fuse: v.damage.fuse, fireTime: v.damage.fireTime, blamed: v.damage.blamed },
       ai: { phase: v.ai.phase, role: v.ai.role, attempts: v.ai.attempts, path: v.path.map(p => ({ ...p })) },

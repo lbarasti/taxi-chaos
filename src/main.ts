@@ -28,7 +28,7 @@ document.querySelector('#app')!.innerHTML = `
     <div class="hud-clock" id="hud-clock" role="timer" aria-label="World time 07:00, morning, day 1"><span class="hud-clock-icon" id="clock-sun">${icon('sun')}</span><span class="hud-clock-icon" id="clock-moon" hidden>${icon('moon')}</span><span class="hud-clock-text"><strong id="clock-time">07:00</strong><small id="clock-period">MORNING</small></span></div>
     <div class="top-actions"><div class="cash"><small>YOUR WALLET</small><strong id="cash">$80</strong></div><button id="sound-toggle" class="icon-button" title="Mute FX · M" aria-label="Mute sound FX" aria-pressed="false">${icon('sound')}</button><button id="pause" class="icon-button" title="Pause · P" aria-label="Pause game">${icon('pause')}</button></div>
   </header>
-  <aside class="mission panel" aria-label="Current taxi job">
+  <aside class="mission panel" aria-label="Current driving job">
     <div class="eyebrow"><span id="job-label">YOUR FIRST FARE</span><span class="tiny-tag" id="job-status">PICKUP</span></div>
     <div class="mission-heading"><span class="mission-icon">${icon('target')}</span><h1 id="mission-title">Meet Mia.</h1></div>
     <p id="mission-description">A customer is waiting just up the street.</p>
@@ -63,8 +63,8 @@ function modal() {
   const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing' || game.mode === 'wrecked';
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
   if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
-  else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>FARES COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
-  else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>FARES COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-stats">Shift stats</button><button class="secondary" id="show-help">How to play</button>`;
+  else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
+  else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-stats">Shift stats</button><button class="secondary" id="show-help">How to play</button>`;
   else if (game.mode === 'garage') {
     const upgrades = (Object.entries(upgradeInfo) as [Upgrade, typeof upgradeInfo.engine][]).map(([key, u]) => { const level = game.save.upgrades[key], price = game.price(key); return `<div class="upgrade"><div><span class="upgrade-number">0${Object.keys(upgradeInfo).indexOf(key) + 1}</span><h3>${u.name}</h3><p>${u.subtitle}</p><small>${u.detail}</small><div class="level">${[1, 2, 3].map(i => `<i class="${i <= level ? 'filled' : ''}"></i>`).join('')}<span>LEVEL ${level} / 3</span></div></div><button class="buy" data-upgrade="${key}" ${level >= 3 || game.save.cash < price ? 'disabled' : ''}>${level >= 3 ? 'MAXED' : `$${price}`}</button></div>`; }).join('');
     const repairPrice = game.repairPrice;
@@ -74,7 +74,7 @@ function modal() {
     card.innerHTML = `<div class="eyebrow danger">BUSTED / CITY POLICE</div><h2 id="modal-title">End of the chase.</h2><p>They caught the cab. They couldn’t catch the spirit.</p><div class="bill"><span>BAIL & IMPOUND</span><strong>$${fee}</strong><small>Cab repaired. Boost refilled. Fresh start in Old Town.</small></div><button class="primary" id="recover">Pay bail & get back out ${icon('arrow')}</button>`;
   }
   if (game.mode === 'paused' && !helpOpen && !statsOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
-  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.').replace('Or pay the bail.', 'Or pay the bail. Cab on fire? Press E to get out, run clear with WASD, then E beside a parked car to get in.');
+  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.').replace('Or pay the bail.', 'Or pay the bail. Press E to exit, then E by a parked car or motorbike to take it. The bike beside Pit Stop unlocks parcel deliveries.');
   $('start')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
   $('resume')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; statsOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.player.body.position }; $('city').focus(); });
@@ -91,7 +91,7 @@ function modal() {
 function showHelp() { statsOpen = false; helpOpen = true; game.setMode('paused'); }
 game.onModeChange = () => { modal(); hud(); }; game.onChange = () => { modal(); hud(); };
 function hud() {
-  const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237);
+  const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.model === 'motorcycle', vehicleName = bike ? 'BIKE' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
   $('clock-time').textContent = dayNight.time; $('clock-period').textContent = dayNight.period.toUpperCase();
   $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, day ${dayNight.day}`);
@@ -103,14 +103,24 @@ function hud() {
   $('mission-description').textContent = pickup ? `${job.name} needs a lift. Follow the yellow route on the radar.` : `${job.name} is riding with you. Make it a good one.`;
   $('fare').innerHTML = `$${job.fare} <span>+ tips</span>`; $('distance-label').textContent = pickup ? 'TO PICKUP' : 'TO DROP-OFF'; $('distance').innerHTML = `${Math.round(dist(g.actor.position, g.target))} <span>m</span>`;
   $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in the yellow ring to pick up.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Still earning your base fare'} <span class="comfort">${Math.round(job.comfort)}% comfort</span>`;
+  if (parcel) {
+    $('job-label').textContent = `COURIER / DELIVERY ${String(g.jobsDone + 1).padStart(2, '0')}`;
+    $('job-status').textContent = pickup ? 'PARCEL PICKUP' : 'PARCEL LOADED';
+    $('mission-title').textContent = pickup ? `Collect ${job.name}'s parcel.` : `${job.destination}.`;
+    $('mission-description').textContent = pickup ? 'Stop in the yellow ring to load your courier rack. Follow the radar route.' : 'Parcel secured on the rear rack. Stop in the green ring to deliver.';
+    $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in yellow to load the parcel.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Base delivery pay guaranteed'} <span class="comfort">${Math.round(job.comfort)}% intact</span>`;
+  }
   $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
   if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
-  if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'Walk with WASD / arrows. Blue cars on the radar are available.'; $('distance-label').textContent = 'TO NEXT CAR'; $('mission-footer').textContent = g.enterableCar ? 'Press E to get in. Wallet & upgrades carry over.' : 'Follow the blue radar route. Press E beside a parked car.'; }
-  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? 'ON FOOT' : g.player.damage.status === 'wreck' ? 'CAB DOWN' : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? 'SLIDING' : speed < 2 ? 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : 'ON THE MOVE';
+  if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'WASD / arrows to walk. Blue radar markers show parked cars and motorbikes.'; $('distance-label').textContent = 'TO NEXT RIDE'; $('mission-footer').textContent = g.enterableCar ? `Press E to ${g.enterableCar.model === 'motorcycle' ? 'ride' : 'get in'}. Wallet & upgrades carry over.` : 'Follow the blue radar route. E takes a parked ride.'; }
+  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? 'ON FOOT' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
+  document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
+  document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
+  document.querySelector('.dashboard')!.setAttribute('aria-label', bike ? 'Motorbike condition' : 'Cab condition');
   document.querySelector('.dashboard')!.classList.toggle('boosting', !!g.controls.boost);
   $('health').textContent = `${Math.ceil(g.health)}%`; $('health-bar').style.width = `${g.health}%`; $('health-bar').style.background = g.health < 30 ? '#ee8675' : '#a3ddc2';
   $('boost').textContent = `${Math.round(g.boost)}%`; $('boost-bar').style.width = `${g.boost}%`;
-  $('deliveries').textContent = `${g.jobsDone} fare${g.jobsDone === 1 ? '' : 's'} this shift`; $('earnings').textContent = `+$${g.shiftEarnings} earned`;
+  $('deliveries').textContent = `${g.jobsDone} job${g.jobsDone === 1 ? '' : 's'} this shift`; $('earnings').textContent = `+$${g.shiftEarnings} earned`;
   $('stars').textContent = [0, 1, 2].map(i => i < g.stars ? '★' : '☆').join(' '); $('heat-panel').classList.toggle('wanted', g.stars > 0);
   $('heat-title').textContent = g.arrest > 0 ? 'GET MOVING!' : g.stars > 0 ? (g.escape > 0 ? 'LOSING THEM…' : 'POLICE PURSUIT') : g.heat > 5 ? 'MAKING A SCENE' : 'KEEP IT CLEAN';
   $('heat-fill').style.width = `${g.stars && g.escape ? (1 - g.escape / g.rules.escapeTime) * 100 : g.heat}%`;
@@ -121,14 +131,16 @@ function hud() {
   const damage = g.player.damage;
   $('critical-status').hidden = g.mode === 'wrecked' || !g.onFoot && damage.status === 'intact' && damage.critical.engine + damage.critical.fuel + damage.critical.tyres < 15;
   $('critical-status').classList.toggle('burning', damage.status === 'burning');
-  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED CAB · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED CAR' : damage.status === 'burning' ? `CAB ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? 'CAB DESTROYED' : 'COMPONENT DAMAGE';
-  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : 'WASD / arrows to walk · E beside a car' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
-  $('interact').textContent = g.onFoot ? 'E · Get in' : 'E · Bail out'; ($('interact') as HTMLButtonElement).disabled = g.onFoot && !g.enterableCar;
+  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : 'COMPONENT DAMAGE';
+  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
+  $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' ? 'E · Ride motorbike' : 'E · Get in' : 'E · Bail out'; ($('interact') as HTMLButtonElement).disabled = g.onFoot && !g.enterableCar;
   $('interact').hidden = !g.onFoot && damage.status !== 'burning';
   const wreck = damage.status === 'wreck' && (g.mode === 'wrecked' || g.onFoot && g.mode === 'playing');
   $('roadside').hidden = !wreck || g.time - g.player.wreckAt < 0.65;
+  $('roadside').querySelector('strong')!.textContent = `${vehicleName} DESTROYED`;
+  $('roadside').querySelector('p')!.textContent = 'The wreck stays here. Walk to a parked car or motorbike and keep your shift going.';
   $('wreck-exit').hidden = g.onFoot; ($('tow') as HTMLButtonElement).disabled = g.time - g.player.wreckAt < 1.2;
-  $('tow-price').textContent = `Optional tow & repair: $${Math.min(g.save.cash, 60)} · or take another car for free`;
+  $('tow-price').textContent = `Optional tow & repair: $${Math.min(g.save.cash, 60)} · or take another ride for free`;
   lab?.refreshUI();
   refreshAudioControls(audio);
   const muted = audio.preferences.muted;

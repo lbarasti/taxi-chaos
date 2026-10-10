@@ -128,7 +128,8 @@ export class AudioFX {
       if (driving) {
         const slip = player.dynamics.skidding ? Math.max(...player.dynamics.tyres.filter(t => t.skidding).map(t => Math.abs(dot(player.body.velocityAt(player.body.toWorld(t.position)), rotate(vec(0, 1), player.body.angle + t.angle))))) : 0;
         const signal = drivingSound(game.speed, game.controls.throttle, slip, boost);
-        desired.set('engine', { asset: 'engine', gain: signal.engineGain, rate: signal.engineRate, cutoff: 950 + Math.max(0, game.controls.throttle) * 1500 });
+        const bike = game.player.model === 'motorcycle';
+        desired.set('engine', { asset: 'engine', gain: signal.engineGain * (bike ? 0.85 : 1), rate: signal.engineRate * (bike ? 1.3 : 1), cutoff: (bike ? 1400 : 950) + Math.max(0, game.controls.throttle) * 1500 });
         desired.set('skid', { asset: 'skid', gain: signal.skidGain, rate: 0.92 + clamp(game.speed / 120, 0, 0.3), cutoff: 3500 });
         if (boost) desired.set('boost', { asset: 'boost-loop', gain: 0.28, cutoff: 3000 });
       }

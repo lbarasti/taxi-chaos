@@ -1,6 +1,6 @@
 # FARE CITY
 
-A frontend-only TypeScript taxi game: fares, four-tyre driving physics, smashable shortcuts, intelligent traffic, police tactics, critical damage, vehicle fires and fuel-station chain reactions. Desktop/keyboard first. Opt-in **pulp gore** adds fatal pedestrian impacts, blood, corpses and blood-stained tyre tracks. All visuals are procedural Canvas art; a sample-based **sound FX** mixer adds driving, destruction and gameplay feedback. No backend, API keys or runtime network requests.
+A frontend-only TypeScript driving game: taxi fares, motorcycle parcel deliveries, four-tyre car and single-track bike physics, smashable shortcuts, intelligent traffic, police tactics, critical damage, vehicle fires and fuel-station chain reactions. Desktop/keyboard first. Opt-in **pulp gore** adds fatal pedestrian impacts, blood, corpses and blood-stained tyre tracks. All visuals are procedural Canvas art; a sample-based **sound FX** mixer adds driving, destruction and gameplay feedback. No backend, API keys or runtime network requests.
 
 ## Run
 
@@ -30,9 +30,9 @@ npm run preview
 | Input | Action |
 | --- | --- |
 | WASD / arrows | Drive; move in screen directions while on foot |
-| Space | Handbrake / drift |
+| Space | Car handbrake / drift; motorcycle rear brake |
 | Shift + accelerate | Rechargeable nitro boost (blue jets + active HUD) |
-| E | Exit the cab / enter a nearby parked car |
+| E | Exit / dismount; take a nearby parked car or motorbike |
 | R | Optional tow & repair after a wreck |
 | G / garage button | Set/cancel a garage route; enter when stopped nearby |
 | P / Escape | Pause / resume |
@@ -41,7 +41,7 @@ npm run preview
 
 Touch steering, pedals, drift and boost are shown on small screens; desktop is the primary target. Pulp gore and **Cruise / Street / Chaos** difficulty can be changed on the welcome or pause screen as well as in the lab.
 
-**Pause → Shift stats** shows earnings, completed fares, smashed objects and pedestrian fatalities for the current shift. The fatality count is kept off the driving HUD.
+**Pause → Shift stats** shows earnings, completed jobs (fares and parcels), smashed objects and pedestrian fatalities for the current shift. The fatality count is kept off the driving HUD.
 
 - Slow down in a **yellow ring** to pick up; deliver to the **green ring** for base fare plus time/comfort tips.
 - Late delivery still pays: the timer affects the bonus, not whether a job can finish.
@@ -49,7 +49,7 @@ Touch steering, pedals, drift and boost are shown on small screens; desktop is t
 - Hydrants, crates, benches, bins, barriers, trees and kiosks break. **Civic Barracks**, **Freight Depot** and the **Last Chance Fuel** shop are larger destructible structures. Damage cracks their roofs; collapse opens drivable rubble. Fuel pumps and the station can ignite and cause chain blasts.
 - Cars track **engine, fuel-system and tyre damage**. Front, rear and side impacts damage different components, reducing performance. Severe/accumulated damage starts a visible fire countdown, then an area blast leaves a solid wreck. Repair at Pit Stop extinguishes fires and restores all components.
 - **Cab on fire? Press E to bail out, then run clear with WASD/arrows.** The abandoned fuse keeps counting down and the car still explodes. Follow the blue route/radar markers to a parked replacement and press E beside it. Wallet, upgrades and heat carry over; an aboard passenger evacuates and dispatch sends a new fare without paying the abandoned trip. Burning cars and wrecks cannot be entered. Ordinary exits require slowing below 6 m/s; emergency fire exits work at speed.
-- The city starts with **38 physical parked cars**, in marked curb bays and two open public parking lots. Empty bays make parking legible. Parked vehicles remain still, can be hit/pushed/damaged, and do not count toward the moving-traffic slider.
+- The city starts with **39 physical parked vehicles**, including courier motorbikes, in marked curb bays and two open public parking lots. One bike is beside the starting cab at Pit Stop. Empty bays make parking legible. Parked vehicles remain still, can be hit/pushed/damaged, and do not count toward the moving-traffic slider.
 - Nitro now applies **3.1× engine force** (previously 1.9×). Blue twin exhaust jets/speed streaks and a cyan **NITRO ACTIVE** dashboard show actual activation. The existing rechargeable tank/upgrades still control duration.
 - A cab explosion leaves the centre of the screen unobstructed. A small roadside card appears after 0.65 seconds; **E** lets you leave the wreck and **R** offers optional tow/repair (up to $60). Tow is unavailable for the first 1.2 seconds so the blast cannot be skipped. Hazard chains and effects keep running. Pit Stop can still save a burning car before its fuse expires; a detonated car stays wrecked until an explicit repair/tow.
 - Civilian drivers sense obstacles, slow for turns, pass where there is room, and back out using physically previewed reversing arcs. Alley exits are part of recovery. Impossible traps enter an **Awaiting tow** state; off-screen cleanup keeps the city flowing without visibly teleporting cars. Drivers abandon burning cars.
@@ -58,6 +58,15 @@ Touch steering, pedals, drift and boost are shown on small screens; desktop is t
 - On Street, break line of sight for eight seconds to escape; a contained slow cab is arrested after 3.5 seconds. Cruise gives a six-second escape/five-second arrest window; Chaos uses ten/2.6 seconds. Bail is capped at the wallet balance.
 - Gore is off by default. With it enabled, fast impacts and severe blast exposure can kill pedestrians, including a waiting customer. Dispatch replaces a lost customer without awarding a fare. With gore disabled, street hits are nonfatal. Blood/effects are bounded and old off-screen corpses are cleared; civilian population replenishes off-screen.
 - Buy engine, grip, armor and boost upgrades at **Pit Stop** in Old Town. Wallet, upgrades and completed-fare count persist. Repairs and bail return you to the driving loop.
+
+## Motorbike deliveries & lean
+
+- **Try it:** start your shift, press **E** to leave the cab, walk a little down/right to the orange bike beside Pit Stop, and press **E** to ride. Bikes are also parked throughout town. **F2 → Motorbike deliveries → Run** isolates this loop.
+- Mounting a bike changes dispatch to **parcel deliveries**. Stop in yellow for 0.8 seconds to load a visible parcel onto the rear rack, then stop in green to earn base pay plus speed/cargo-condition tips. Further jobs stay parcels until you take a car again. Dismounting with cargo cancels that delivery without payment; taking a car restores passenger fares. Wallet, upgrades, boost, heat and shift totals carry across vehicles.
+- Bikes are 2.6 × 0.8 m, with a 260 kg bike/rider body, two inline tyre contact points, their own engine/grip tuning, speed-sensitive steering, limited cornering traction, strong brakes and walking-speed reverse. Existing collision, fire, repair, police and lighting systems apply. Space uses the rear brake; Shift boosts with a single exhaust jet. The engine uses a higher-pitched version of the existing embedded sample.
+- **Research basis:** [Bicycle and motorcycle dynamics](https://en.wikipedia.org/wiki/Bicycle_and_motorcycle_dynamics) explains inward lean, smaller steering angles at speed and countersteering; [Steve Munden's cornering derivation](https://www.stevemunden.com/leanangle.html) gives `tan(lean) = lateral acceleration / g = v² / (radius × g)`. `src/motorcycle.ts` derives target lean from actual tyre forces, capped at 46.8°, and uses a critically damped roll transition. Steering alone at rest cannot yaw or lean the bike. This is an assisted, grip-limited planar model rather than a full multibody/countersteering simulation.
+- **Top-down depth cue:** roll is around the road-contact line. Frame, rack, arms and helmet shift inward by `height × sin(lean)` while their transverse width and height scale by `cos(lean)`. Higher parts shift farther; the tyre contact line stays on the pavement and cast shadows shorten. The rider plants a foot at stops, empty parked bikes lean onto their stand, and wrecks lie on their side.
+- Lab snapshots expose `vehicleModel` and signed `lean` (radians); `vehicles()` includes `model` and `lean` for each vehicle. The driving HUD shows the bike's lean angle.
 
 ## Day/night cycle
 
@@ -108,7 +117,7 @@ npm run build    # strict TypeScript check + standalone build
 
 Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. The same inspector works in the standalone HTML. Its controls include:
 
-- **16 fixtures:** first fare, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
+- **17 fixtures:** first fare, **Motorbike deliveries**, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
 - **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
 - **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
 - **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.
@@ -116,7 +125,7 @@ Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. Th
 - **Difficulty and gore:** change during a run. Scenario presets may enable gore/God mode for their test; the preset's description explains its setup.
 - **Sound FX:** audition every sound, adjust saved FX/siren volume, mute, inspect sample/voice telemetry.
 
-Fixtures clear incidental moving/parked cars and preserve cash/upgrades/difficulty. Use the traffic slider to add moving cars back. **Reset run** restores the ordinary 23-moving-car / 38-parked-car city; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
+Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving cars back. **Reset run** restores the ordinary 23-moving-car / 39-parked-vehicle city; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
 
 For browser automation, the opt-in `window.__taxi` harness has:
 

@@ -7,11 +7,12 @@ import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
+import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
 
-export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean };
+export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean };
-export type Job = { pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
+export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
 export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wrecked';
 export const upgradeInfo = {
@@ -50,7 +51,7 @@ export class Game {
       const node = roadNode(v.body.position); v.path = [horizontal ? vec(Math.min(240, node.x + 40), node.y + 3) : vec(node.x + 3, Math.max(0, node.y - 40))];
     }
     for (const [i, spot] of this.world.parking.entries()) if (spot.occupied) {
-      const v = this.vehicle('traffic', spot.position.x, spot.position.y, spot.angle, ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5]); v.parked = true; v.driverExited = true;
+      const v = this.vehicle('traffic', spot.position.x, spot.position.y, spot.angle, spot.motorcycle ? '#ed9b63' : ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5], spot.motorcycle || i % 7 === 0 ? 'motorcycle' : 'car'); v.parked = true; v.driverExited = true;
     }
   }
   resetRun() {
@@ -64,10 +65,10 @@ export class Game {
     this.dayNight.reset();
     this.eventLog = []; this.newJob(true); this.applyUpgrades(); this.setMode('playing');
   }
-  vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string) {
-    const body = new Body(x, y); body.angle = angle;
+  vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
+    const bike = model === 'motorcycle', body = bike ? new Body(x, y, 260, 2.6, 0.8) : new Body(x, y); body.angle = angle;
     const id = this.serial++;
-    const v: Vehicle = { id, body, dynamics: new CarDynamics(), kind, color, path: [], routeTimer: 0, alive: true, parked: false, ai: createAI(body.position, id), damage: createVehicleDamage(), baseEngine: 10500, baseGrip: 1250, wreckAt: -1, driverExited: false };
+    const v: Vehicle = { id, body, dynamics: bike ? new MotorcycleDynamics() : new CarDynamics(), model, kind, color, path: [], routeTimer: 0, alive: true, parked: false, ai: createAI(body.position, id), damage: createVehicleDamage(), baseEngine: bike ? BIKE_ENGINE : 10500, baseGrip: bike ? BIKE_GRIP : 1250, wreckAt: -1, driverExited: false };
     this.vehicles.push(v); return v;
   }
   setTrafficCount(count: number) {
@@ -87,6 +88,7 @@ export class Game {
   }
   get target() { return this.onFoot ? this.nearestCar?.body.position ?? GARAGE : this.navToGarage ? GARAGE : this.job.stage === 'pickup' ? this.job.pickup : this.job.dropoff; }
   get speed() { return length(this.actor.velocity); }
+  get lean() { return this.player.dynamics instanceof MotorcycleDynamics ? this.player.dynamics.lean : 0; }
   get nearestCar() { return this.vehicles.filter(v => v.alive && v.kind !== 'police' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) < 2 && (v.parked || v === this.player)).sort((a, b) => dist(a.body.position, this.actor.position) - dist(b.body.position, this.actor.position))[0]; }
   get enterableCar() { const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
@@ -98,18 +100,19 @@ export class Game {
     if (this.mode !== 'playing' && this.mode !== 'wrecked') return false;
     if (this.onFoot) {
       const next = this.enterableCar;
-      if (!next) { this.notify('Walk up to a parked car, then press E to get in.'); return false; }
+      if (!next) { this.notify('Walk up to a parked car or motorbike, then press E to take it.'); return false; }
       if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
-      next.parked = false; next.driverExited = false; next.path = []; this.onFoot = false; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify('Replacement cab ready. Back to the fares!'); return true;
+      this.setJobType();
+      next.parked = false; next.driverExited = false; next.path = []; this.onFoot = false; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify(next.model === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
     }
-    if (this.speed > 6 && this.player.damage.status !== 'burning' && this.player.damage.status !== 'wreck') { this.notify('Slow down before getting out. E exits immediately if the cab is burning.'); return false; }
+    if (this.speed > 6 && this.player.damage.status !== 'burning' && this.player.damage.status !== 'wreck') { this.notify('Slow down before exiting or dismounting. E bails out immediately in a fire.'); return false; }
     const b = this.player.body;
     const offsets = [vec(0, 2), vec(0, -2), vec(-3.2, 0), vec(3.2, 0), vec(0, 3.2), vec(0, -3.2)];
     const point = offsets.map(p => b.toWorld(p)).find(p => { const probe = new Body(p.x, p.y, 75, 0.7, 0.7); return this.clearWalk(b.position, p) && !this.vehicles.some(v => v.alive && contact(probe, v.body)); });
-    if (!point) { this.notify('Doors blocked. Move the cab to make room.', 'danger'); return false; }
+    if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger'); return false; }
     this.driver.position = point; this.driver.velocity = vec(); this.driver.angle = b.angle; this.onFoot = true; this.player.parked = true; this.player.driverExited = true; this.navToGarage = false;
-    if (this.job.stage === 'dropoff') { const passenger = this.world.people.find(p => p.id === this.job.customerId); if (passenger) { passenger.aboard = false; passenger.alive = true; passenger.position = { ...point }; passenger.home = add(point, rotate(vec(0, 18), b.angle)); passenger.panic = 3; } this.newJob(); }
-    this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.notify('WASD / arrows to walk. Get clear of the fire; E enters a parked car.'); return true;
+    if (this.job.stage === 'dropoff') { const passenger = this.world.people.find(p => p.id === this.job.customerId); if (passenger && this.job.type === 'fare') { passenger.aboard = false; passenger.alive = true; passenger.position = { ...point }; passenger.home = add(point, rotate(vec(0, 18), b.angle)); passenger.panic = 3; } this.newJob(); }
+    this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.notify('WASD / arrows to walk. E takes a parked car or motorbike.'); return true;
   }
   walk(dt: number) {
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
@@ -157,10 +160,24 @@ export class Game {
     const distance = dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
     const destination = storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
-    const customer = this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55');
-    this.job = { pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer.id };
+    const type = this.player.model === 'motorcycle' ? 'parcel' : 'fare';
+    const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
+    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
   }
-  applyUpgrades() { this.player.baseEngine = this.player.dynamics.engineForce = 10500 * (1 + this.save.upgrades.engine * 0.22); this.player.baseGrip = this.player.dynamics.grip = 1250 * (1 + this.save.upgrades.grip * 0.18); }
+  setJobType() {
+    const type = this.player.model === 'motorcycle' ? 'parcel' : 'fare';
+    if (this.job.type === type) return;
+    const customer = this.world.people.find(p => p.id === this.job.customerId);
+    if (type === 'parcel') {
+      if (customer) { customer.role = 'civilian'; customer.color = '#d4b487'; }
+      this.job.customerId = -1;
+    } else {
+      const person = this.world.addPerson(add(this.job.pickup, vec(3.4, 0)), 'customer', '#f7ce55');
+      this.job.customerId = person.id;
+    }
+    this.job.type = type; this.job.wait = 0;
+  }
+  applyUpgrades() { const bike = this.player.model === 'motorcycle'; this.player.baseEngine = this.player.dynamics.engineForce = (bike ? BIKE_ENGINE : 10500) * (1 + this.save.upgrades.engine * 0.22); this.player.baseGrip = this.player.dynamics.grip = (bike ? BIKE_GRIP : 1250) * (1 + this.save.upgrades.grip * 0.18); }
   price(key: Upgrade) { return upgradeInfo[key].price * (this.save.upgrades[key] + 1); }
   buy(key: Upgrade) { const price = this.price(key); if (this.save.cash < price || this.save.upgrades[key] >= 3) return false; this.save.cash -= price; this.save.upgrades[key]++; this.applyUpgrades(); this.persist(); this.sounds.emit('purchase', this.time); this.onChange(); return true; }
   repair() { const price = this.repairPrice; if (this.save.cash < price || price === 0) return; this.save.cash -= price; this.player.damage = createVehicleDamage(); this.persist(); this.sounds.emit('repair', this.time); this.onChange(); }
@@ -172,6 +189,7 @@ export class Game {
     this.save.cash -= fee; this.persist(); this.player.body.position = vec(4, 32); this.player.body.velocity = vec(); this.player.body.angle = -Math.PI / 2; this.player.body.angularVelocity = 0;
     this.onFoot = false; this.wreckedAt = -1; this.player.parked = false; this.player.driverExited = false; this.controls = { throttle: 0, turn: 0, handbrake: false };
     this.player.damage = createVehicleDamage(); this.player.wreckAt = -1; this.player.alive = true; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.navToGarage = false;
+    if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
     for (const v of this.police) v.alive = false;
     this.newJob(true); this.setMode('playing'); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`);
     this.sounds.emit('repair', this.time);
@@ -229,7 +247,7 @@ export class Game {
   }
   damageImpact(v: Vehicle, impact: number, point: Vec, blamed: boolean) {
     const result = impactDamage(v.damage, { impact, localPoint: rotate(sub(point, v.body.position), -v.body.angle), armor: v.kind === 'taxi' ? this.save.upgrades.armor : v.kind === 'police' ? 1 : 0, time: this.time, scale: this.rules.damageScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
-    if (result.ignited && v === this.player && !this.onFoot) this.notify(`CAB ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
+    if (result.ignited && v === this.player && !this.onFoot) this.notify(`${v.model === 'motorcycle' ? 'BIKE' : 'CAB'} ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
   }
   igniteProp(prop: Prop, blamed: boolean, fuse = 4.5) {
     if (prop.fuelSpent || !['pump', 'station'].includes(prop.kind)) return;
@@ -402,11 +420,11 @@ export class Game {
     if (dist(this.player.body.position, jobTarget) < 5.3 && this.speed < 2.8) {
       j.wait += dt;
       if (j.wait >= 0.8) {
-        if (j.stage === 'pickup') { j.stage = 'dropoff'; j.wait = 0; const person = this.world.people.find(p => p.id === j.customerId); if (person) { person.aboard = true; person.alive = false; } this.sounds.emit('pickup', this.time); this.notify(`${j.name} is in! Head to ${j.destination}.`); this.floating(this.player.body.position, 'HOP IN!', '#f7ce55'); }
+        if (j.stage === 'pickup') { j.stage = 'dropoff'; j.wait = 0; const person = this.world.people.find(p => p.id === j.customerId); if (person) { person.aboard = true; person.alive = false; } this.sounds.emit('pickup', this.time); this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`); this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55'); }
         else {
           const timeBonus = Math.max(0, Math.round((j.time - j.elapsed) * 0.8)), comfortBonus = Math.round(j.comfort * 0.3), payout = j.fare + timeBonus + comfortBonus;
           this.save.cash += payout; this.save.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
-          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`FARE COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next customer marked.`, 'success');
+          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next pickup marked.`, 'success');
           this.sounds.emit('payment', this.time);
           this.newJob();
         }
@@ -449,7 +467,7 @@ export class Game {
     for (const s of this.skids) s.life -= dt; this.skids = this.skids.filter(s => s.life > 0).slice(-4500);
   }
   snapshot() {
-    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, playerId: this.player.id, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
+    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, playerId: this.player.id, vehicleModel: this.player.model, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
       health: this.health, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,

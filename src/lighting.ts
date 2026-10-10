@@ -158,6 +158,7 @@ export function cullLights(lights: LightSource[], view: Viewport): LightSource[]
 export type SceneVehicle = {
   id: number;
   kind: 'taxi' | 'police' | 'traffic';
+  model?: 'car' | 'motorcycle';
   alive: boolean;
   parked: boolean;
   driverExited: boolean;
@@ -289,7 +290,7 @@ export function collectLights(scene: LightScene): LightSource[] {
     if (active) {
       const intensity = artificial * (vehicle.kind === 'police' ? 0.85 : 0.75);
       if (intensity > 0.02) {
-        const nose = vehicle.body.toWorld({ x: 2.1, y: 0 });
+        const nose = vehicle.body.toWorld({ x: vehicle.model === 'motorcycle' ? 1.2 : 2.1, y: 0 });
         out.push({ x: nose.x, y: nose.y, radius: 16, color: HEADLIGHT, intensity, artificial: true, profile: 'cone', angle: vehicle.body.angle, spread: 0.5 });
         // Short warm pool just ahead of the bumper so the road surface under the beam reads.
         // Tagged as a street-level headlight so it is masked by raised buildings too.

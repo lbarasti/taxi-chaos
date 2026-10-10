@@ -6,7 +6,7 @@ export const isRigidObstacle = (kind: PropKind) => kind === 'building' || isStru
 export type Prop = { id: number; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
-export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean };
+export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean };
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
 export const district = (p: Vec) => p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -65,6 +65,8 @@ export class World {
         this.addPerson(home2, 'civilian', '#c3b7d7');
       }
     }
+    // Dedicated courier bay beside Pit Stop; x=6.5 clears the hydrants on the first pickup run.
+    this.parking.push({ position: vec(6.5, 34.6), angle: -Math.PI / 2, occupied: true, lot: false, motorcycle: true });
     // Waterfront barriers and an unmistakable city boundary.
     this.add('building', 120, -15, 280, 2, '#30484e', ''); this.add('building', 120, 255, 280, 2, '#30484e', '');
     this.add('building', -15, 120, 2, 280, '#30484e', ''); this.add('building', 255, 120, 2, 280, '#30484e', '');
