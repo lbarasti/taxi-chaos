@@ -7,6 +7,7 @@ import {
   collectOccluders, convexHull, nearbyOccluders, occluderFor, pointInConvex, shadowVolume, shouldOcclude,
   type OccluderProp,
 } from './lighting-occlusion';
+import { vehicleDefinition } from './vehicles';
 
 // Lightweight recording contexts so the compositor and sprite cache run under Node (no DOM).
 function mockCtx() {
@@ -143,6 +144,13 @@ describe('collectLights', () => {
     expect(cone(vehicle({ parked: true }))).toBe(false);
     expect(cone(vehicle({ driverExited: true }))).toBe(false);
     expect(cone(vehicle({ damage: { status: 'wreck', fireTime: 0 } }))).toBe(false);
+  });
+
+  it('places long-truck headlights at the configured front bumper', () => {
+    const truck = vehicle({ model: 'truck-loaded', definition: vehicleDefinition('truck-loaded') });
+    const lights = collectLights(scene({ vehicles: [truck] }));
+    expect(lights.find(l => l.profile === 'cone')?.x).toBe(3.9);
+    expect(lights.find(l => l.profile !== 'cone')?.x).toBe(6);
   });
 
   it('fades artificial light to nothing at noon but keeps fires burning', () => {

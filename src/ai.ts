@@ -1,4 +1,5 @@
-import { Body, CarDynamics, add, angleDiff, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
+import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
+import { createVehicleDynamics } from './vehicles';
 import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
 import { GOLF_CART_ROUTE, countryAccess, countryNeighbours, isCountry } from './countryside';
 import type { Vehicle } from './game';
@@ -18,14 +19,14 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
   for (let d = 1.2; d <= distance; d += 1.2) {
     const p = add(body.position, scale(delta, d / distance));
     if (inOcean(p)) return false;
-    const probe = new Body(p.x, p.y, Infinity, 4.3, 2.35); probe.angle = heading;
+    const probe = new Body(p.x, p.y, Infinity, body.w + 0.1, body.h + 0.25); probe.angle = heading;
     for (const prop of c.world.hash.query(probe)) {
       if (ignoreSoft && !isRigidObstacle(prop.kind)) continue;
       if ((contact(probe, prop.body)?.depth ?? 0) > 0.04) return false;
     }
     for (const other of c.vehicles) {
       if (!other.alive || other === v || (v.kind === 'police' && other.kind === 'taxi')) continue;
-      if (dist(p, other.body.position) > 7) continue;
+      if (!bodiesNear(probe, other.body, 0.15)) continue;
       if ((contact(probe, other.body)?.depth ?? 0) > 0.08) return false;
     }
   }
@@ -69,13 +70,13 @@ function beginRecovery(v: Vehicle, c: AIContext): boolean {
   let bestTurn = 0, bestScore = Infinity;
   // Preview three physical reversing arcs. This chooses space, not a coin flip.
   for (const turn of [-0.85, 0, 0.85]) {
-    const body = new Body(v.body.position.x, v.body.position.y); body.angle = v.body.angle; body.velocity = { ...v.body.velocity }; body.angularVelocity = v.body.angularVelocity;
-    const dynamics = new CarDynamics(); dynamics.engineForce = v.dynamics.engineForce; dynamics.grip = v.dynamics.grip; let penalty = 0;
+    const body = new Body(v.body.position.x, v.body.position.y, v.body.mass, v.body.w, v.body.h); body.angle = v.body.angle; body.velocity = { ...v.body.velocity }; body.angularVelocity = v.body.angularVelocity;
+    const dynamics = createVehicleDynamics(v.definition); dynamics.engineForce = v.dynamics.engineForce; dynamics.grip = v.dynamics.grip; let penalty = 0;
     for (let i = 0; i < 60; i++) {
       dynamics.apply(body, { throttle: -0.65, turn, handbrake: false }, 1 / 30); body.integrate(1 / 30);
       if (inOcean(body.position)) penalty += 100;
       for (const prop of c.world.hash.query(body)) { const hit = contact(body, prop.body); if (hit && hit.depth > 0.06) penalty += hit.depth * 12; }
-      for (const other of c.vehicles) if (other !== v && other.alive && dist(other.body.position, body.position) < 6) { const hit = contact(body, other.body); if (hit && hit.depth > 0.1) penalty += hit.depth * 8; }
+      for (const other of c.vehicles) if (other !== v && other.alive && bodiesNear(other.body, body)) { const hit = contact(body, other.body); if (hit && hit.depth > 0.1) penalty += hit.depth * 8; }
     }
     const rejoin = roadRejoin(v, body, c);
     const score = penalty + (rejoin?.score ?? 24) + Math.max(0, roadDistance(body.position) - 3) * 2 - dist(body.position, v.body.position);
@@ -133,7 +134,7 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
     const target = GOLF_CART_ROUTE[v.cart.waypoint], delta = sub(target, v.body.position);
     const diff = angleDiff(Math.atan2(delta.y, delta.x), v.body.angle);
     const speed = dot(v.body.velocity, rotate(vec(1, 0), v.body.angle));
-    return { throttle: clamp((5 / (1 + Math.abs(diff) * 2) - speed) * 0.6, -1, 1), turn: clamp(diff * 2 - v.body.angularVelocity * 0.3, -1, 1), handbrake: false };
+    return { throttle: clamp((v.definition.ai.cruiseSpeed / (1 + Math.abs(diff) * 2) - speed) * 0.6, -1, 1), turn: clamp(diff * 2 - v.body.angularVelocity * 0.3, -1, 1), handbrake: false };
   }
   const state = v.ai, body = v.body, speed = length(body.velocity), rules = difficulties[c.settings.difficulty];
   if (v.baseEngine === 0) return { throttle: 0, turn: 0, handbrake: true };
@@ -186,7 +187,14 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
     state.waitTime += dt; state.stalled = 0; state.progressClock = 0;
     if (state.waitTime < 3.5) return { throttle: speed > 1 ? -1 : 0, turn: 0, handbrake: true };
   } else state.waitTime = 0;
-  let wantedSpeed = (state.phase === 'rejoin' ? 6 : v.kind === 'traffic' ? 9 : rules.copSpeed - (c.stars <= 1 ? 4 : 0)) / (1 + Math.abs(diff) * 1.6);
+  const profile = v.definition.ai;
+  let wantedSpeed = (state.phase === 'rejoin' ? Math.min(6, profile.cruiseSpeed) : v.kind === 'traffic' ? profile.cruiseSpeed : rules.copSpeed - (c.stars <= 1 ? 4 : 0)) / (1 + Math.abs(diff) * profile.cornerSlowdown);
+  // Loaded trucks start shedding speed before the waypoint reveals a sharp turn.
+  if (v.path.length > 1 && body.w > 5) {
+    const next = sub(v.path[1], target), bend = Math.abs(angleDiff(Math.atan2(next.y, next.x), desired));
+    const brakingDistance = speed * speed / (2 * v.dynamics.tuning.brakeDeceleration);
+    if (dist(body.position, target) < brakingDistance + body.w) wantedSpeed /= 1 + bend * profile.cornerSlowdown;
+  }
   if (v.kind === 'police' && dist(body.position, c.actor.position) < 19) {
     const separation = sub(c.actor.position, body.position), closing = dot(sub(body.velocity, c.actor.velocity), scale(separation, 1 / (length(separation) || 1)));
     if (closing > 20) wantedSpeed = Math.min(wantedSpeed, 3);
@@ -195,7 +203,12 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
   state.sensorClock -= dt;
   if (state.sensorClock <= 0) {
     state.sensorClock = 0.12; state.avoidTurn = 0; state.blocked = false;
-    const look = clamp(4 + speed * 0.55, 4.5, 13), ahead = body.toWorld(vec(look, 0));
+    const brakingDistance = speed * speed / (2 * v.dynamics.tuning.brakeDeceleration);
+    let look = clamp(Math.max(4 + speed * 0.55, body.w / 2 + profile.followingGap + brakingDistance), 4.5, 30);
+    // At walking-speed corners, a long straight probe reaches the opposite block
+    // before the truck can turn. Keep a stopping-distance sweep while it manoeuvres.
+    if (body.w > 5 && Math.abs(diff) > 0.35 && speed < 5) look = Math.min(look, 2 + brakingDistance);
+    const ahead = body.toWorld(vec(look, 0));
     const canSmashSoft = v.kind === 'police' && speed > 7;
     if (!clearCorridor(v, body, ahead, c, canSmashSoft)) {
       state.blocked = true;

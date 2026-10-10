@@ -101,11 +101,11 @@ export class Renderer {
       } else { const waving = add(waiting, vec(0.6, -0.3 - Math.sin(g.time * 6) * 0.2)); this.circle(waving, 0.18, GOLD); }
       this.label(g.job.type === 'parcel' ? 'PARCEL PICKUP' : g.job.name.toUpperCase(), waiting.x, waiting.y - 1.8, 0.8, GOLD, '700');
     }
-    for (const v of g.vehicles) if (v.model === 'motorcycle' && v.parked && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('MOTORBIKE', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
+    for (const v of g.vehicles) if (v.definition.graphics.sprite === 'motorcycle' && v.parked && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('MOTORBIKE', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
     if (g.onFoot) {
       const p = g.driver.position;
       this.label('YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
-      const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? car.model === 'motorcycle' ? 'E · RIDE' : 'E · GET IN' : car.model === 'motorcycle' ? 'COURIER BIKE' : 'REPLACEMENT CAR');
+      const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? car.definition.graphics.sprite === 'motorcycle' ? 'E · RIDE' : 'E · GET IN' : car.definition.graphics.sprite === 'motorcycle' ? 'COURIER BIKE' : 'REPLACEMENT CAR');
     }
     this.debug();
     for (const feedback of g.feedback) {
@@ -430,7 +430,9 @@ export class Renderer {
   }
   private vehicleSprite(v: Vehicle) {
     if (v.cart) { this.golfCart(v); return; }
-    if (v.model === 'motorcycle') { this.motorcycle(v); this.vehicleEffects(v); return; }
+    const sprite = v.definition.graphics.sprite;
+    if (sprite === 'motorcycle') { this.motorcycle(v); this.vehicleEffects(v); return; }
+    if (sprite === 'van' || sprite === 'truck') { this.commercialVehicle(v); this.vehicleEffects(v); return; }
     const c = this.ctx, b = v.body, police = v.kind === 'police', taxi = v.kind === 'taxi', wreck = v.damage.status === 'wreck', so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (v === this.game.player && !v.sinking && !this.game.onFoot && this.game.mode === 'playing' && this.game.controls.boost) {
@@ -442,12 +444,14 @@ export class Renderer {
       c.strokeStyle = '#8ee8f78a'; c.lineWidth = 0.1;
       for (const side of [-1.35, 1.35]) { c.beginPath(); c.moveTo(-1.8, side); c.lineTo(-5.5 - pulse * 2, side); c.stroke(); }
     }
-    this.shadowRect(-2 + 0.25 + so.x, -1 + 0.35 + so.y, 4.2, 2.1, '#0e1a2270');
+    this.shadowRect(-b.w / 2 + 0.25 + so.x, -b.h / 2 + 0.35 + so.y, b.w, b.h, '#0e1a2270');
     for (const t of v.dynamics.tyres) { c.save(); c.translate(t.position.x, t.position.y * 1.44); c.rotate(t.angle); this.rect(-0.48, -0.16, 0.96, 0.32, '#101b20'); c.restore(); }
+    // Existing car artwork stays proportional if its definition changes dimensions.
+    c.save(); c.scale(b.w / 4.2, b.h / 2.1);
     c.fillStyle = wreck ? '#34393b' : v.color; c.beginPath(); c.roundRect(-2.1, -1.02, 4.2, 2.04, 0.35); c.fill();
     this.rect(-1.15, -0.89, 2.45, 1.78, wreck ? '#252c2f' : police ? '#273945' : taxi ? '#e4b747' : v.color);
-    this.rect(0.5, -0.83, 0.65, 1.66, '#29434b'); this.rect(-1.4, -0.8, 0.45, 1.6, '#29434b');
-    this.rect(-0.9, -0.95, 1.3, 0.13, '#24414c'); this.rect(-0.9, 0.82, 1.3, 0.13, '#24414c');
+    this.rect(0.5, -0.83, 0.65, 1.66, v.definition.graphics.glass); this.rect(-1.4, -0.8, 0.45, 1.6, v.definition.graphics.glass);
+    this.rect(-0.9, -0.95, 1.3, 0.13, v.definition.graphics.trim); this.rect(-0.9, 0.82, 1.3, 0.13, v.definition.graphics.trim);
     this.rect(1.77, -0.84, 0.25, 0.38, '#fff3b2'); this.rect(1.77, 0.46, 0.25, 0.38, '#fff3b2');
     this.rect(-2, -0.8, 0.16, 0.37, taxi && this.game.controls.throttle < 0 ? '#ff675f' : '#ae625a'); this.rect(-2, 0.43, 0.16, 0.37, taxi && this.game.controls.throttle < 0 ? '#ff675f' : '#ae625a');
     this.rect(1.5, -1.13, 0.3, 0.2, v.color); this.rect(1.5, 0.93, 0.3, 0.2, v.color);
@@ -463,26 +467,77 @@ export class Renderer {
     if (v.damage.health < 75) { c.strokeStyle = '#283338'; c.lineWidth = 0.12; c.beginPath(); c.moveTo(1.7, -0.5); c.lineTo(0.9, 0.1); c.lineTo(1.8, 0.5); c.stroke(); }
     if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(1.8, -0.9, 0.2, 1.8, '#8e2230');
     c.restore();
+    c.restore();
     this.vehicleEffects(v);
+  }
+  private commercialVehicle(v: Vehicle) {
+    const c = this.ctx, b = v.body, art = v.definition.graphics, cargo = v.definition.cargo;
+    const wreck = v.damage.status === 'wreck', front = b.w / 2, rear = -front, half = b.h / 2;
+    const cab = art.cabLength, bedFront = front - cab - 0.15, bedRear = rear + 0.25, bedLength = bedFront - bedRear;
+    const so = this.shadowOffset(b.angle), paint = wreck ? '#353e41' : v.color, trim = wreck ? '#263033' : art.trim;
+    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+    this.shadowRect(rear + 0.25 + so.x, -half + 0.3 + so.y, b.w, b.h, '#0e1a2270');
+    for (const t of v.dynamics.tyres) {
+      c.save(); c.translate(t.position.x, Math.sign(t.position.y) * (half + 0.06)); c.rotate(t.angle);
+      this.rect(-0.52, -0.18, 1.04, 0.36, '#142026'); c.restore();
+    }
+    this.rect(rear, -half, b.w, b.h, trim, '#27353c');
+    this.rect(front - cab, -half + 0.06, cab, b.h - 0.12, paint);
+    this.rect(front - 0.94, -half + 0.17, 0.53, b.h - 0.34, wreck ? '#182c33' : art.glass);
+    this.rect(front - cab + 0.15, -half + 0.14, Math.max(0.2, cab - 1.2), b.h - 0.28, paint);
+    this.rect(front - 0.08, -half + 0.12, 0.12, 0.4, '#fff3b2'); this.rect(front - 0.08, half - 0.52, 0.12, 0.4, '#fff3b2');
+    this.rect(front - 1.1, -half - 0.2, 0.35, 0.2, trim); this.rect(front - 1.1, half, 0.35, 0.2, trim);
+    this.rect(rear, -half + 0.15, 0.15, 0.4, '#bd6657'); this.rect(rear, half - 0.55, 0.15, 0.4, '#bd6657');
+    if (art.sprite === 'van') {
+      this.rect(bedRear, -half + 0.06, bedLength, b.h - 0.12, paint);
+      this.rect(bedRear + 0.18, -half + 0.22, bedLength - 0.35, b.h - 0.44, wreck ? '#303638' : art.roof);
+      this.rect(rear + 0.05, -0.035, 0.3, 0.07, trim); // rear split doors
+      this.rect(rear + 0.45, -half + 0.13, bedLength - 0.5, 0.07, trim);
+      this.rect(rear + 0.45, half - 0.2, bedLength - 0.5, 0.07, trim);
+      c.save(); c.translate((bedRear + bedFront) / 2, 0); c.rotate(Math.PI / 2); this.label('DELIVERY', 0, 0, 0.32, trim, '700'); c.restore();
+    } else {
+      this.rect(bedRear, -half + 0.08, bedLength, b.h - 0.16, wreck ? '#394143' : '#a6a39a');
+      for (let x = bedRear + 0.2; x < bedFront; x += 0.42) this.rect(x, -half + 0.15, 0.035, b.h - 0.3, '#7e817b');
+      for (const y of [-half + 0.05, half - 0.18]) this.rect(bedRear, y, bedLength, 0.13, trim);
+      if (!wreck && cargo.kind === 'crates') {
+        for (let x = bedRear + 0.3; x < bedFront - 0.7; x += 1.35) for (const y of [-0.95, 0.08]) {
+          this.rect(x, y, 1.13, 0.84, art.cargoColor, '#735c3f'); this.rect(x + 0.48, y, 0.15, 0.84, '#e5c396');
+        }
+        for (const x of [bedRear + 1.2, bedFront - 1]) this.rect(x, -half + 0.12, 0.1, b.h - 0.24, '#394b53'); // tie-down straps
+      }
+      if (!wreck && cargo.kind === 'fuel') {
+        for (let x = bedRear + 0.6; x < bedFront - 0.35; x += 1.05) for (const y of [-0.57, 0.57]) {
+          this.circle(vec(x, y), 0.43, art.cargoColor); this.circle(vec(x, y), 0.31, '#d89261'); this.circle(vec(x + 0.13, y - 0.1), 0.065, '#463c38');
+        }
+        // Hazard diamond remains legible from above, without relying on body colour.
+        c.save(); c.translate(bedFront - 0.5, 0); c.rotate(Math.PI / 4); this.rect(-0.27, -0.27, 0.54, 0.54, '#f4c953', '#4f3730'); c.restore();
+        this.label('!', bedFront - 0.5, 0, 0.38, '#5a352b', '700');
+      }
+    }
+    if (v.damage.health < 75) { c.strokeStyle = '#24353b'; c.lineWidth = 0.12; trace(c, [vec(front - 0.3, -0.7), vec(front - 1.3, 0.1), vec(front - 0.8, 0.6)]); c.stroke(); }
+    if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(front - 0.2, -half + 0.1, 0.2, b.h - 0.2, '#8e2230');
+    c.restore();
   }
   private golfCart(v: Vehicle) {
     const c = this.ctx, b = v.body, cart = v.cart!, upsideDown = Math.abs(cart.roll) > Math.PI / 2;
     const width = Math.max(0.15, Math.abs(Math.cos(cart.roll))), roofOffset = Math.sin(cart.roll) * 1.1;
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
-    this.shadowRect(-1.25 + 0.2, -0.8 + 0.25, 2.5, 1.6, '#0e1a2270');
+    this.shadowRect(-b.w / 2 + 0.2, -b.h / 2 + 0.25, b.w, b.h, '#0e1a2270');
     c.save(); c.scale(1 - cart.crush * 0.25, width);
-    for (const x of [-0.85, 0.85]) for (const y of [-0.82, 0.82]) this.rect(x - 0.3, y - 0.14, 0.6, 0.28, '#142129');
-    this.rect(-1.25, -0.7, 2.5, 1.4, upsideDown ? '#263438' : '#698478', '#bbc5ae');
+    for (const t of v.dynamics.tyres) { c.save(); c.translate(t.position.x, Math.sign(t.position.y) * (b.h / 2 + 0.02)); c.rotate(t.angle); this.rect(-0.3, -0.14, 0.6, 0.28, '#142129'); c.restore(); }
+    c.save(); c.scale(b.w / 2.7, b.h / 1.6);
+    this.rect(-1.25, -0.7, 2.5, 1.4, upsideDown ? '#263438' : v.definition.graphics.trim, '#bbc5ae');
     if (upsideDown) {
       for (const x of [-0.85, 0.85]) this.rect(x - 0.06, -0.8, 0.12, 1.6, '#919b91');
       this.rect(-0.5, -0.35, 0.9, 0.7, '#15252d');
     } else {
-      this.rect(0.8, -0.65, 0.3, 1.3, '#b1ddd6'); this.rect(-0.65, -0.55, 0.45, 1.1, '#334e45');
+      this.rect(0.8, -0.65, 0.3, 1.3, v.definition.graphics.glass); this.rect(-0.65, -0.55, 0.45, 1.1, '#334e45');
       if (!v.driverExited) this.circle(vec(-0.05, -0.35), 0.22, '#e6c49b');
     }
     c.restore();
+    c.restore();
     if (!upsideDown) {
-      c.save(); c.translate(0, roofOffset); c.scale(1 - cart.crush * 0.35, width);
+      c.save(); c.translate(0, roofOffset); c.scale((1 - cart.crush * 0.35) * b.w / 2.7, width * b.h / 1.6);
       this.rect(-0.95, -0.72, 1.85, 1.44, v.color, '#9a9e8b');
       if (cart.crush > 0) { c.strokeStyle = '#59645b'; c.lineWidth = 0.1; trace(c, [vec(-0.7, -0.5), vec(0.1, 0.2), vec(0.5, -0.3)]); c.stroke(); }
       c.restore();
@@ -510,11 +565,12 @@ export class Renderer {
       this.rect(-0.4, -0.13 * frame.width, 0.8, 0.26 * frame.width, '#111c22');
       this.rect(-0.3, -0.045 * frame.width, 0.6, 0.09 * frame.width, '#72838a'); c.restore();
     }
+    c.save(); c.scale(b.w / 2.6, b.h / 0.8);
     c.save(); c.translate(0, frame.offset); c.scale(1, frame.width);
     this.rect(-0.85, -0.13, 1.85, 0.26, '#adb7af'); // chassis/spine
     this.rect(-0.9, 0.32, 1.05, 0.14, '#aebbc0'); this.rect(-0.9, 0.32, 0.32, 0.14, '#34464e'); // exhaust
     c.fillStyle = wreck ? '#34393b' : v.color; c.beginPath(); c.roundRect(-0.65, -0.32, 1.55, 0.64, 0.24); c.fill();
-    this.rect(-0.63, -0.23, 0.68, 0.46, '#24343b'); // saddle
+    this.rect(-0.63, -0.23, 0.68, 0.46, v.definition.graphics.trim); // saddle
     this.rect(0.24, -0.23, 0.45, 0.46, wreck ? '#252c2f' : v.color);
     this.rect(0.31, -0.05, 0.2, 0.1, '#ffe3ac'); // tank highlight
     c.save(); c.translate(0.82, 0); c.rotate(v.dynamics.tyres[1].angle);
@@ -545,11 +601,12 @@ export class Renderer {
     }
     if (v.damage.health < 75) this.rect(0.3, frame.offset - 0.1, 0.4, 0.1, '#34393b');
     c.restore();
+    c.restore();
   }
   private vehicleEffects(v: Vehicle) {
     if (v.sinking) return;
     const c = this.ctx, b = v.body, wreck = v.damage.status === 'wreck', taxi = v.kind === 'taxi';
-    if (v.damage.status === 'burning') { drawFire(c, b.toWorld(vec(0.9, 0)), 1.35, this.game.time, v.id); drawSmoke(c, b.position, 1.4, this.game.time, v.id); this.label(`${v.damage.fuse.toFixed(1)}s`, b.position.x, b.position.y - 3.5, 0.85, '#f4c693', '700'); }
+    if (v.damage.status === 'burning') { const fuel = v.definition.cargo.flammable; drawFire(c, b.toWorld(vec(fuel ? -0.8 : b.w * 0.21, 0)), fuel ? 2.6 : 1.35, this.game.time, v.id); drawSmoke(c, b.position, fuel ? 2 : 1.4, this.game.time, v.id); this.label(`${v.damage.fuse.toFixed(1)}s`, b.position.x, b.position.y - 3.5, 0.85, '#f4c693', '700'); }
     else if (v.damage.status === 'smoking' || (wreck && this.game.time - v.wreckAt < 8)) drawSmoke(c, b.toWorld(vec(1.1, 0)), wreck ? 1.2 : 0.8, this.game.time, v.id);
     if (!wreck && v.ai.phase === 'waiting') this.label('AWAITING TOW', b.position.x, b.position.y - 3, 0.68, '#d7bb9c');
     if (taxi && this.game.arrest > 0) { c.strokeStyle = '#f18075'; c.lineWidth = 0.3; c.beginPath(); c.arc(b.position.x, b.position.y, 3.3, -Math.PI / 2, -Math.PI / 2 + this.game.arrest / this.game.rules.arrestTime * 2 * Math.PI); c.stroke(); }
@@ -595,7 +652,7 @@ export class Renderer {
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
     c.strokeStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
     const markerScale = 0.66 / s;
-    if (g.onFoot) for (const v of g.vehicles) if (v.parked && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
+    if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
     c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
     for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }
     c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.scale(markerScale, markerScale); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();

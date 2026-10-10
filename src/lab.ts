@@ -22,6 +22,7 @@ import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
 import { removeStorage, storageKeys } from './storage';
+import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles';
 
 const STEP = 1 / 120;
 /** Representative hour for each day/night period; presets set the hour only. */
@@ -41,6 +42,8 @@ export type ScenarioName =
   | 'motorcycle'
   | 'eastern-bridges'
   | 'woodland-estates'
+  | 'commercial-traffic'
+  | 'flammable-cargo'
   | 'coastal-rails'
   | 'coastal-gap'
   | 'coastal-bike'
@@ -69,6 +72,8 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
+  { name: 'commercial-traffic', label: 'Vans / freight traffic', description: 'A van, empty truck, loaded truck and flammable cargo truck start together on Harbour Ave. Watch their different acceleration and follow them through the junction. NPC only; police disabled.' },
+  { name: 'flammable-cargo', label: 'Flammable cargo / impact', description: 'A god-mode cab hits a fuel truck cargo bed at speed. A hard cargo impact starts a readable fire, then a larger blast can ignite the nearby parked car. Commercial vehicles remain NPC only.' },
   { name: 'coastal-rails', label: 'Coast / guardrail crash', description: 'A cab heads north into a guardrail at 26 m/s. Step or let it run to see the panel break, metal scatter and the cab splash into the ocean. Try 8 m/s with teleport for a deflection instead.' },
   { name: 'coastal-gap', label: 'Coast / open gap', description: 'A cab heads north at 26 m/s through an unguarded shore. Watch its momentum carry it offshore before sinking and hospital respawn.' },
   { name: 'coastal-bike', label: 'Coast / motorbike crash', description: 'A courier bike hits a guardrail at 26 m/s, breaks through and splashes into the ocean. The rider gets Wasted after sinking.' },
@@ -112,6 +117,8 @@ export type VehiclePatch = { health?: number; engine?: number; fuel?: number; ty
 export type VehicleSummary = {
   id: number; kind: Vehicle['kind']; model: Vehicle['model']; lean: number; alive: boolean; parked: boolean;
   position: Vec; velocity: Vec; angle: number;
+  mass: number; inertia: number; size: { length: number; width: number }; playerDrivable: boolean;
+  cargo: { kind: VehicleDefinition['cargo']['kind']; mass: number; flammable: boolean };
   damage: { health: number; status: VehicleDamage['status']; critical: { engine: number; fuel: number; tyres: number }; fuse: number; fireTime: number; blamed: boolean };
   ai: { phase: Vehicle['ai']['phase']; role: Vehicle['ai']['role']; attempts: number; path: Vec[] };
 };
@@ -136,6 +143,8 @@ export type LabAPI = {
   scenarios: ScenarioInfo[];
   state(): LabSnapshot;
   vehicles(): VehicleSummary[];
+  vehicleModels(): { model: VehicleModel; definition: VehicleDefinition }[];
+  spawnVehicle(options: VehicleSpawn): number;
   contacts(): ContactSummary[];
   step(seconds: number, keys?: string[]): LabSnapshot;
   realtime(): void;
@@ -237,6 +246,25 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');
+      break;
+    }
+    case 'commercial-traffic': {
+      pose(game, renderer, player, 82, 77, EAST);
+      game.settings.noPolice = true;
+      for (const [i, model] of (['van', 'truck-empty', 'truck-loaded', 'truck-flammable'] as const).entries()) {
+        const v = game.spawnVehicle({ model, position: vec(62 + i * 16, 83), angle: EAST });
+        v.path = [vec(160, 83), vec(163, 120), vec(200, 123)];
+      }
+      game.notify('Commercial traffic: vans, empty flatbeds, freight and flammable cargo. NPC only.');
+      break;
+    }
+    case 'flammable-cargo': {
+      pose(game, renderer, player, 76, 83, EAST, 22);
+      game.settings.noPolice = true; game.settings.invincible = true;
+      game.spawnVehicle({ model: 'truck-flammable', position: vec(94, 83), angle: EAST, parked: true });
+      const neighbour = game.spawnVehicle({ position: vec(109, 83), angle: EAST, parked: true, driverExited: true });
+      neighbour.damage.health = 28;
+      game.notify('Hard cargo impact: fuel catches fire, then explodes. God mode enabled for this fixture.');
       break;
     }
     case 'coastal-rails':
@@ -663,9 +691,13 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     vehicles: () => structuredClone(game.vehicles.filter(v => v.alive).map(v => ({
       id: v.id, kind: v.kind, model: v.model, lean: v.dynamics instanceof MotorcycleDynamics ? v.dynamics.lean : 0, alive: v.alive, parked: v.parked,
       position: { ...v.body.position }, velocity: { ...v.body.velocity }, angle: v.body.angle,
+      mass: v.body.mass, inertia: v.body.inertia, size: { length: v.body.w, width: v.body.h }, playerDrivable: v.definition.access.playerDrivable,
+      cargo: { kind: v.definition.cargo.kind, mass: v.definition.cargo.mass, flammable: v.definition.cargo.flammable },
       damage: { health: v.damage.health, status: v.damage.status, critical: { ...v.damage.critical }, fuse: v.damage.fuse, fireTime: v.damage.fireTime, blamed: v.damage.blamed },
       ai: { phase: v.ai.phase, role: v.ai.role, attempts: v.ai.attempts, path: v.path.map(p => ({ ...p })) },
     }))),
+    vehicleModels: () => structuredClone(Object.entries(vehicleDefinitions).map(([model, definition]) => ({ model: model as VehicleModel, definition }))),
+    spawnVehicle: (options) => { const v = game.spawnVehicle(options); hooks.refresh(); return v.id; },
     contacts: () => [...game.world.hash.query(game.player.body)]
       .map(p => ({ id: p.id, kind: p.kind, depth: contact(game.player.body, p.body)?.depth ?? 0 }))
       .filter(p => p.depth > 0),

@@ -1,5 +1,33 @@
 # Taxi Chaos — continuation handoff
 
+## Latest checkpoint — commercial NPC fleet and vehicle catalogue, 2026-10-10
+
+- New road NPCs: delivery vans, empty three-axle flatbeds, trucks with strapped crates,
+  and fuel-barrel trucks. Commercial models remain unavailable for player entry/radar
+  replacement markers until a later unlock. The normal 23-road-vehicle mix contains
+  14 cars, 3 vans and 2 of each truck variant; parked cars/bikes and golf carts remain separate.
+- `src/vehicles.ts` centralizes typed geometry, dynamics/tyre layout, artwork colors/sprite,
+  audio pitch, cargo, damage/blast profiles, AI and access/job definitions for all seven models.
+  `Game.spawnVehicle(options)` is the named-options API; the positional helper delegates to it.
+  Model/definition identity is readonly on instances. Engine/grip upgrades derive from definitions.
+- Payload increases mass and yaw inertia. Trucks have longer braking distances, lower lateral
+  traction limits and earlier corner braking. Sensing/reverse previews use actual bodies/dynamics;
+  collision broad phase supports overlapping trucks with centres more than 6 m apart. Collision
+  damage reflects relative mass; heavy vehicles receive less velocity from blast impulses.
+- Fuel cargo ignites on hard cargo-area impacts or nearby blasts and uses the existing fire
+  lifecycle; detonation is one 24 m / 190-power blast. Scrapes/cab-only moderate hits stay safe;
+  sinking vehicles cannot detonate underwater. Fire artwork/lights cover the cargo bed.
+- F2 adds `commercial-traffic` and `flammable-cargo` (25 fixtures total). The latter physically
+  rams a fuel truck with a god-mode cab and chains into a parked car. `__taxi.vehicleModels()`
+  lists detached definitions; `__taxi.spawnVehicle(options)` returns a new NPC ID. Vehicle
+  summaries expose mass, inertia, dimensions, cargo and player access.
+- Survey, measured handling differences, extension instructions and five production screenshots:
+  `docs/vehicles.md`. All 325 tests and the production build pass. Offline production-browser QA covers the fleet and
+  cargo fire/explosion, no player access, night lights, mobile overflow and no runtime errors.
+  Additional runs took every commercial model over bridges/highland bends at 100 HP; a 30 s
+  normal-city run kept all nine commercial vehicles at 100 HP with no explosions.
+
+
 ## Project rename — 2026-10-10
 
 The project is now **Taxi Chaos**, with package name `taxi-chaos`. Branding, browser title, welcome/help UI, LAB title, source comments and audio credits use the new name. Browser storage uses `taxi-chaos-v1`, `taxi-chaos-settings` and `taxi-chaos-audio`; legacy keys migrate automatically on load, and erasing progress clears both save keys. Historical browser-context names and filesystem paths below refer to the original sessions.
