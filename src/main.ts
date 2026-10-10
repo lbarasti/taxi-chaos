@@ -60,6 +60,7 @@ function introduction(help = false) {
 }
 function modal() {
   const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing';
+  overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
   if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
   else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
@@ -69,7 +70,8 @@ function modal() {
     const repairPrice = game.repairPrice;
     card.innerHTML = `<div class="eyebrow">OLD TOWN / TUNING & REPAIRS <span class="garage-wallet">$${game.save.cash}</span></div><h2 id="modal-title">Pit Stop.</h2><p>Good drivers invest in bad decisions.</p><div class="upgrades">${upgrades}</div><div class="repair"><div><strong>Patch it up</strong><small>Restore your chassis to 100%.</small></div><button class="buy" id="repair" ${repairPrice === 0 || game.save.cash < repairPrice ? 'disabled' : ''}>${repairPrice === 0 ? 'ALL GOOD' : `$${repairPrice}`}</button></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button>`;
   } else if (game.mode === 'wasted') {
-    card.innerHTML = `<div class="eyebrow danger">SHIFT OVER / MIDTOWN HOSPITAL</div><h2 id="modal-title" class="danger">WASTED</h2><p>Your ride exploded with you still aboard.</p><div class="bill"><span>HOSPITAL DISCHARGE</span><small>Respawn on foot outside Midtown Hospital. Your wallet and upgrades carry over.</small></div><button class="primary" id="recover">Respawn at hospital ${icon('arrow')}</button>`;
+    const reason = game.wastedReason === 'drowning' ? 'Your ride sank to the bottom of the pool.' : game.wastedReason === 'impact' ? 'You were run over in the street.' : game.onFoot ? 'You were caught in the blast.' : 'Your ride exploded with you still aboard.';
+    card.innerHTML = `<div class="eyebrow danger">SHIFT OVER / MIDTOWN HOSPITAL</div><h2 id="modal-title" class="danger">WASTED</h2><p>${reason}</p><div class="bill"><span>HOSPITAL DISCHARGE</span><small>Respawn on foot outside Midtown Hospital. Your wallet and upgrades carry over.</small></div><button class="primary" id="recover">Respawn at hospital ${icon('arrow')}</button>`;
   } else if (game.mode === 'arrested') {
     const fee = Math.min(game.save.cash, 75 + game.stars * 45);
     card.innerHTML = `<div class="eyebrow danger">BUSTED / CITY POLICE</div><h2 id="modal-title">End of the chase.</h2><p>They caught the cab. They couldn’t catch the spirit.</p><div class="bill"><span>BAIL & IMPOUND</span><strong>$${fee}</strong><small>Cab repaired. Boost refilled. Fresh start in Old Town.</small></div><button class="primary" id="recover">Pay bail & get back out ${icon('arrow')}</button>`;
@@ -117,7 +119,8 @@ function hud() {
   $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? 'ON FOOT' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
-  document.querySelector('.dashboard')!.setAttribute('aria-label', bike ? 'Motorbike condition' : 'Cab condition');
+  document.querySelector('.dashboard')!.setAttribute('aria-label', g.onFoot ? 'Driver health' : bike ? 'Motorbike condition' : 'Cab condition');
+  document.querySelector('.cab-meters>div>span')!.textContent = g.onFoot ? 'HEALTH' : 'CHASSIS';
   document.querySelector('.dashboard')!.classList.toggle('boosting', !!g.controls.boost);
   $('health').textContent = `${Math.ceil(g.health)}%`; $('health-bar').style.width = `${g.health}%`; $('health-bar').style.background = g.health < 30 ? '#ee8675' : '#a3ddc2';
   $('boost').textContent = `${Math.round(g.boost)}%`; $('boost-bar').style.width = `${g.boost}%`;
@@ -136,7 +139,7 @@ function hud() {
   $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
   $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' ? 'E · Ride motorbike' : 'E · Get in' : 'E · Bail out'; ($('interact') as HTMLButtonElement).disabled = g.onFoot && !g.enterableCar;
   $('interact').hidden = !g.onFoot && damage.status !== 'burning';
-  const wreck = damage.status === 'wreck' && g.onFoot && g.mode === 'playing' && dist(g.driver.position, g.player.body.position) < 6;
+  const wreck = damage.status === 'wreck' && !g.player.sinking && g.onFoot && g.mode === 'playing' && dist(g.driver.position, g.player.body.position) < 6;
   $('roadside').hidden = !wreck || g.time - g.player.wreckAt < 0.65;
   $('roadside').querySelector('strong')!.textContent = `${vehicleName} DESTROYED`;
   $('roadside').querySelector('p')!.textContent = 'The wreck stays here. Walk to a parked car or motorbike and keep your shift going.';

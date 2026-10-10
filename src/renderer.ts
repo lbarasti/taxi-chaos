@@ -6,7 +6,7 @@ import { LightingLayer, collectLights, cullLights, type LightScene, type Lightin
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection } from './motorcycle';
-import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, isCountry } from './countryside';
+import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry } from './countryside';
 import { radarMarker, radarView } from './radar';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
@@ -78,7 +78,7 @@ export class Renderer {
     if (g.onFoot) {
       const p = g.driver.position;
       this.circle(p, 1.05, '#f7ce5525'); c.strokeStyle = GOLD; c.lineWidth = 0.12; c.beginPath(); c.arc(p.x, p.y, 1.05, 0, Math.PI * 2); c.stroke();
-      c.save(); c.translate(p.x, p.y); c.rotate(g.driver.angle + Math.PI / 2);
+      c.save(); c.translate(p.x, p.y); c.rotate(g.driver.angle + Math.PI / 2 + (g.driverHealth <= 0 ? 1.3 : 0));
       const stride = Math.sin(g.time * 17) * Math.min(g.speed / 5.5, 1) * 0.15;
       this.rect(-0.24, -0.05, 0.48, 0.6, GOLD); this.circle(vec(0, -0.23), 0.24, '#dfc4ab');
       this.rect(-0.26, 0.42 + stride, 0.18, 0.32, '#273c44'); this.rect(0.08, 0.42 - stride, 0.18, 0.32, '#273c44'); c.restore();
@@ -252,7 +252,8 @@ export class Renderer {
       trace(c, VILLA_DRIVES[i]); c.strokeStyle = '#b3b098'; c.lineWidth = 5; c.stroke();
       this.rect(p.x - 9, p.y + 5, 18, 7, '#c7b697'); // stone terrace
       this.rect(p.x + 10, p.y - 4, 8.5, 14, '#d4cbb2');
-      this.rect(p.x + 11, p.y - 3, 6.5, 12, '#57a9b4', '#e3e2c9');
+      const pool = VILLA_POOLS[i];
+      this.rect(pool.position.x - pool.width / 2, pool.position.y - pool.height / 2, pool.width, pool.height, '#57a9b4', '#e3e2c9');
       this.rect(p.x + 11.5, p.y - 2.5, 1, 11, '#b5e1de65');
       for (const y of [-8, -5]) { this.rect(p.x + 13, p.y + y, 3.4, 1.1, '#e9dcc0'); this.rect(p.x + 13.7, p.y + y, 0.4, 1.1, '#ab9274'); }
       this.circle(vec(p.x - 12, p.y + 8), 1.7, '#efe4c8');
@@ -282,11 +283,8 @@ export class Renderer {
       this.rect(hole.tee.x - 1.8, hole.tee.y - 0.8, 3.6, 1.6, '#425f42');
       this.label(String(i + 1), hole.tee.x - 3, hole.tee.y, 0.65, '#efe6bb', '700');
     }
-    // Small pond and parked golf carts make the club read as a leisure destination.
+    // Carts are rendered from physical vehicles, rather than painted decorations.
     c.beginPath(); c.ellipse(215, 355, 6, 3.3, 0.4, 0, Math.PI * 2); c.fillStyle = '#569097'; c.fill(); c.strokeStyle = '#bec79a'; c.lineWidth = 0.5; c.stroke();
-    for (const y of [356, 362]) {
-      this.rect(116, y, 2.5, 1.4, '#233c39'); this.rect(115.8, y - 0.2, 2.7, 1.5, '#eee7c8'); this.rect(117.7, y, 0.5, 1.1, '#547777');
-    }
     this.label('FAIRWAY COUNTRY CLUB', 174, 346, 0.95, '#e8dfb4', '700');
   }
   marker(p: Vec, color: string, label: string, garage = false) {
@@ -413,6 +411,15 @@ export class Renderer {
     c.restore();
   }
   car(v: Vehicle) {
+    if (v.sinking) {
+      const c = this.ctx, b = v.body, pool = v.sinking.pool, t = clamp(v.sinking.elapsed / 2.2, 0, 1);
+      c.save(); c.beginPath(); c.rect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); c.clip();
+      c.translate(b.position.x, b.position.y + t * 0.7); c.rotate(b.angle + t * 0.15); c.scale(1 - t * 0.25, 1 - t * 0.25);
+      c.globalAlpha = 1 - t; this.rect(-b.w / 2, -b.h / 2, b.w, b.h, v.color);
+      this.rect(b.w * 0.1, -b.h * 0.4, b.w * 0.17, b.h * 0.8, '#29434b');
+      c.globalAlpha = (1 - t) * t; this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#57a9b4'); c.restore(); return;
+    }
+    if (v.cart) { this.golfCart(v); return; }
     if (v.model === 'motorcycle') { this.motorcycle(v); this.vehicleEffects(v); return; }
     const c = this.ctx, b = v.body, police = v.kind === 'police', taxi = v.kind === 'taxi', wreck = v.damage.status === 'wreck', so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
@@ -447,6 +454,30 @@ export class Renderer {
     if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(1.8, -0.9, 0.2, 1.8, '#8e2230');
     c.restore();
     this.vehicleEffects(v);
+  }
+  private golfCart(v: Vehicle) {
+    const c = this.ctx, b = v.body, cart = v.cart!, upsideDown = Math.abs(cart.roll) > Math.PI / 2;
+    const width = Math.max(0.15, Math.abs(Math.cos(cart.roll))), roofOffset = Math.sin(cart.roll) * 1.1;
+    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+    this.shadowRect(-1.25 + 0.2, -0.8 + 0.25, 2.5, 1.6, '#0e1a2270');
+    c.save(); c.scale(1 - cart.crush * 0.25, width);
+    for (const x of [-0.85, 0.85]) for (const y of [-0.82, 0.82]) this.rect(x - 0.3, y - 0.14, 0.6, 0.28, '#142129');
+    this.rect(-1.25, -0.7, 2.5, 1.4, upsideDown ? '#263438' : '#698478', '#bbc5ae');
+    if (upsideDown) {
+      for (const x of [-0.85, 0.85]) this.rect(x - 0.06, -0.8, 0.12, 1.6, '#919b91');
+      this.rect(-0.5, -0.35, 0.9, 0.7, '#15252d');
+    } else {
+      this.rect(0.8, -0.65, 0.3, 1.3, '#b1ddd6'); this.rect(-0.65, -0.55, 0.45, 1.1, '#334e45');
+      if (!v.driverExited) this.circle(vec(-0.05, -0.35), 0.22, '#e6c49b');
+    }
+    c.restore();
+    if (!upsideDown) {
+      c.save(); c.translate(0, roofOffset); c.scale(1 - cart.crush * 0.35, width);
+      this.rect(-0.95, -0.72, 1.85, 1.44, v.color, '#9a9e8b');
+      if (cart.crush > 0) { c.strokeStyle = '#59645b'; c.lineWidth = 0.1; trace(c, [vec(-0.7, -0.5), vec(0.1, 0.2), vec(0.5, -0.3)]); c.stroke(); }
+      c.restore();
+    }
+    c.restore();
   }
   private motorcycle(v: Vehicle) {
     const c = this.ctx, b = v.body, g = this.game, wreck = v.damage.status === 'wreck';

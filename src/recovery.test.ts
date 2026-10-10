@@ -79,9 +79,11 @@ describe('nitro, parking and roadside recovery', () => {
   });
 
   it('offers local tow recovery only after escaping before the explosion', () => {
-    const g = make(), cash = g.save.cash; g.interact(); run(g, 7.1);
+    const g = make(), cash = g.save.cash; g.interact();
+    // Bailing out is only safe if the driver also gets beyond the blast radius.
+    run(g, 2.5, ['KeyD']); run(g, 4.6);
     expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true); expect(g.player.damage.status).toBe('wreck');
-    run(g, 1.3); g.recover(); expect(g.onFoot).toBe(false); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - Math.min(cash, 60));
+    run(g, 1.3); g.driver.position = g.player.body.toWorld(vec(0, 3)); g.recover(); expect(g.onFoot).toBe(false); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - Math.min(cash, 60));
   });
 
   it('respawns at a labeled hospital with a clear sidewalk and can take a replacement ride', () => {

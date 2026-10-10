@@ -164,14 +164,14 @@ type DebugFlags = { debugColliders?: boolean; debugAI?: boolean };
 // ---------------------------------------------------------------------------------------------
 
 /** Reset the run, wipe run-only cheats, and clear traffic so a fixture is deterministic. */
-function prepare(game: Game) {
+function prepare(game: Game, keepCarts = false) {
   game.resetRun();
   game.settings.gore = false;
   game.settings.invincible = false;
   game.settings.infiniteBoost = false;
   game.settings.noPolice = false;
   setTraffic(game, 0);
-  game.vehicles = game.vehicles.filter(v => !v.parked);
+  game.vehicles = game.vehicles.filter(v => !v.parked && (keepCarts || !v.cart));
 }
 
 /** Place a vehicle without touching its damage/upgrades. */
@@ -201,7 +201,7 @@ function parked(game: Game, kind: Vehicle['kind'], x: number, y: number, angle: 
 
 /** Apply a scenario to a live Game. Returns the name so callers can chain/assert. */
 export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer): ScenarioName {
-  prepare(game);
+  prepare(game, name === 'woodland-estates');
   const player = game.player;
   switch (name) {
     case 'first-fare':
@@ -361,6 +361,9 @@ export function repairVehicle(game: Game, id = game.player.id): boolean {
   vehicle.path = [];
   vehicle.routeTimer = 0;
   vehicle.driverExited = false;
+  vehicle.sinking = undefined;
+  if (vehicle.cart) { vehicle.cart.crush = 0; vehicle.cart.roll = 0; vehicle.cart.targetRoll = 0; }
+  if (vehicle === game.player) { game.driverHealth = 100; game.driverKnockback = 0; }
   if (vehicle === game.player && game.mode === 'wasted') game.setMode('playing');
   return true;
 }
@@ -388,7 +391,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   let frozen = false;
   let timeScale = 1;
   let currentScenario: ScenarioName | null = null;
-  let desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.parked && v.alive).length;
+  let desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked && v.alive).length;
   let expanded = false;
   let lastKeys: string[] = [];
 
@@ -681,7 +684,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       game.settings.infiniteBoost = false;
       game.settings.noPolice = false;
       currentScenario = null;
-      desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.parked && v.alive).length;
+      desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked && v.alive).length;
       hooks.refresh(); refreshUI();
       return snapshot();
     },

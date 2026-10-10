@@ -56,9 +56,9 @@ describe('integrated gore and test controls', () => {
     expect(g.job.customerId).not.toBe(old); expect(g.save.cash).toBe(cash); expect(g.jobsDone).toBe(0);
   });
   it('makes traffic density live-editable without vehicle ID reuse', () => {
-    const g = new Game(), parked = g.vehicles.filter(v => v.parked); g.setTrafficCount(40); expect(g.vehicles.filter(v => v.kind === 'traffic' && !v.parked).length).toBe(40);
-    const ids = g.vehicles.map(v => v.id); g.setTrafficCount(0); expect(g.vehicles.length).toBe(1 + parked.length); expect(g.vehicles.filter(v => v.parked)).toEqual(parked);
-    g.setTrafficCount(5); expect(g.vehicles.length).toBe(6 + parked.length); expect(g.vehicles.filter(v => v.kind === 'traffic' && !v.parked).every(v => !ids.includes(v.id))).toBe(true);
+    const g = new Game(), parked = g.vehicles.filter(v => v.parked), carts = g.vehicles.filter(v => v.cart); g.setTrafficCount(40); expect(g.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked).length).toBe(40);
+    const ids = g.vehicles.map(v => v.id); g.setTrafficCount(0); expect(g.vehicles.length).toBe(1 + parked.length + carts.length); expect(g.vehicles.filter(v => v.parked)).toEqual(parked); expect(g.vehicles.filter(v => v.cart)).toEqual(carts);
+    g.setTrafficCount(5); expect(g.vehicles.length).toBe(6 + parked.length + carts.length); expect(g.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked).every(v => !ids.includes(v.id))).toBe(true);
   });
   it('freezes fire countdowns while the user pauses', () => {
     const g = new Game(); loadScenario(g, 'fire'); const car = g.vehicles.find(v => v.kind === 'traffic')!; g.setMode('paused'); run(g, 10); expect(car.damage.fuse).toBe(7); expect(g.explosions).toBe(0);
