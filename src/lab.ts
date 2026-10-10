@@ -40,6 +40,8 @@ const MAX_TRAFFIC = 40;
 export type ScenarioName =
   | 'first-fare'
   | 'motorcycle'
+  | 'moving-car-exit'
+  | 'moving-bike-exit'
   | 'eastern-bridges'
   | 'woodland-estates'
   | 'harbour'
@@ -71,6 +73,8 @@ export type ScenarioInfo = { name: ScenarioName; label: string; description: str
 export const scenarioInfo: ScenarioInfo[] = [
   { name: 'first-fare', label: 'First fare', description: 'Fresh run parked at Old Town; the first customer waits just down the street.' },
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
+  { name: 'moving-car-exit', label: 'Moving cab / jump out', description: 'A cab coasts east at 18 m/s. Press E while moving; watch the door swing outward before the jump, the driver tumble with momentum, the landing HP hit and the empty cab coast away. Hold A + E for a left-side exit.' },
+  { name: 'moving-bike-exit', label: 'Moving motorbike / hop off', description: 'A courier bike rolls east at 5 m/s. Press E to jump right; the lighter empty bike recoils and steers left while the rider tumbles. Hold A + E to reverse the recoil; at rest E dismounts safely.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
   { name: 'harbour', label: 'Northstar Harbour / car exchange', description: 'Stop at the security gate. E pays $75. Follow cyan into container C-76 and stop fully inside for a fresh car and a completely clean police record. Working ships, cranes and trucks fill the docks.' },
@@ -230,6 +234,22 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       pose(game, renderer, player, 4, 32, NORTH, 0);
       const bike = game.vehicle('traffic', 6.5, 34.6, NORTH, '#ed9b63', 'motorcycle');
       bike.parked = true; bike.driverExited = true; game.settings.noPolice = true;
+      break;
+    }
+    case 'moving-car-exit': {
+      pose(game, renderer, player, 90, 80, EAST, 18);
+      game.settings.noPolice = true;
+      game.notify('MOVING CAB · Press E to jump. Door opens first. Hold A + E to leave on the left.', 'danger');
+      break;
+    }
+    case 'moving-bike-exit': {
+      player.alive = false;
+      game.vehicles = game.vehicles.filter(v => v !== player);
+      const bike = game.vehicle('taxi', 90, 80, EAST, '#ed9b63', 'motorcycle');
+      game.player = bike; game.setJobType(); game.applyUpgrades();
+      pose(game, renderer, bike, 90, 80, EAST, 5);
+      game.settings.noPolice = true;
+      game.notify('MOVING BIKE · Press E to jump right. Hold A + E to jump left; compare the recoil.', 'danger');
       break;
     }
     case 'eastern-bridges': {

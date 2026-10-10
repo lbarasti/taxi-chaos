@@ -19,7 +19,7 @@ const solidOverlap = (g: Game): string | null => {
 describe('LAB scenario catalogue', () => {
   it('exposes every documented fixture with a description', () => {
     expect(scenarioNames).toEqual<ScenarioName[]>([
-      'first-fare', 'motorcycle', 'eastern-bridges', 'woodland-estates', 'harbour', 'commercial-traffic', 'flammable-cargo', 'coastal-rails', 'coastal-gap', 'coastal-bike', 'coastal-walk', 'hydrant', 'alley', 'wall', 'traffic', 'npc-recovery', 'pileup', 'police-chase', 'arrest',
+      'first-fare', 'motorcycle', 'moving-car-exit', 'moving-bike-exit', 'eastern-bridges', 'woodland-estates', 'harbour', 'commercial-traffic', 'flammable-cargo', 'coastal-rails', 'coastal-gap', 'coastal-bike', 'coastal-walk', 'hydrant', 'alley', 'wall', 'traffic', 'npc-recovery', 'pileup', 'police-chase', 'arrest',
       'pedestrians', 'fire', 'cab-fire', 'chain-reaction', 'barracks', 'depot', 'gas-station',
     ]);
     for (const scenario of scenarioInfo) {
@@ -42,6 +42,25 @@ describe('LAB scenario catalogue', () => {
 });
 
 describe('LAB fixtures', () => {
+  it('stages both moving bailout demonstrations with deterministic speeds and vehicle types', () => {
+    const car = make(); loadScenario(car, 'moving-car-exit');
+    expect(car.player.model).toBe('car');
+    expect(car.player.body.position).toEqual(vec(90, 80));
+    expect(car.player.body.velocity.x).toBeCloseTo(18);
+    expect(car.settings.noPolice).toBe(true);
+    expect(car.interact()).toBe(true);
+    expect(car.pendingExit).not.toBeNull();
+
+    const bike = make(); loadScenario(bike, 'moving-bike-exit');
+    expect(bike.player.model).toBe('motorcycle');
+    expect(bike.player.body.position).toEqual(vec(90, 80));
+    expect(bike.player.body.velocity.x).toBeCloseTo(5);
+    expect(bike.job.type).toBe('parcel');
+    expect(bike.settings.noPolice).toBe(true);
+    expect(bike.interact()).toBe(true);
+    expect(bike.pendingExit).not.toBeNull();
+  });
+
   it('hydrant, alley and wall aim the cab south at the documented speeds', () => {
     const hydrant = make(); loadScenario(hydrant, 'hydrant');
     expect(hydrant.player.body.position).toEqual(vec(7.5, 3));
