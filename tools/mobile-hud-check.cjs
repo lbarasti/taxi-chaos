@@ -51,7 +51,14 @@ let rects=await page.evaluate(()=>{const out={};for(const s of ['.topbar','.miss
 const overlap=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
 for(let [sel,r] of Object.entries(rects)){if(!r.width)continue;assert(r.x>=0&&r.y>=0&&r.x+r.width<=w+1&&r.y+r.height<=h+1,`${name}: ${sel} out of bounds`)}
 for(let [a,b] of [['.topbar','.mission'],['.mission','.map-panel'],['.dashboard','#joystick'],['.dashboard','.thumb-actions'],['.thumb-actions','#joystick'],['#interact','#joystick']])assert(!overlap(rects[a],rects[b]),`${name}: ${a} overlaps ${b}`);
-if(mobile){assert(!(await page.locator('.controls').isVisible()));assert(rects['.mission'].height<=60)}
+if(mobile){assert(!(await page.locator('.controls').isVisible()));assert(rects['.mission'].height<=60);
+const speed=await page.locator('#speed').boundingBox(),unit=await page.locator('.speed>span').boundingBox();assert(unit.y>=speed.y+speed.height,`${name}: MPH is not below speed`);
+assert(await page.locator('.cab-meters b').first().evaluate(e=>getComputedStyle(e).clipPath==='inset(50%)'),`${name}: meter percentage remains visible`);
+assert(Math.abs(h-rects['.dashboard'].y-rects['.dashboard'].height-12)<1,`${name}: dashboard is not at the bottom edge`);
+assert.equal(rects['.dashboard'].x,10);assert.equal(rects['.dashboard'].width,124);
+assert(await page.evaluate(()=>{const speed=document.querySelector('#speed'),old=speed.textContent;speed.textContent='128';const fits=speed.getBoundingClientRect().right<=document.querySelector('.cab-meters').getBoundingClientRect().left;speed.textContent=old;return fits}),`${name}: three-digit speed overlaps meters`);
+}
+await page.waitForTimeout(250);
 await page.screenshot({path:`${root}/docs/screenshots/mobile-controls/${name}.png`});console.log(name,'layout passed');
 }
 await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{__taxi.scenario('first-fare');__taxi.interact();__taxi.step(5);document.querySelector('#debug-panel').hidden=true});assert((await page.locator('.mission').boundingBox()).height<=42);await page.screenshot({path:root+'/docs/screenshots/mobile-controls/on-foot.png'});
