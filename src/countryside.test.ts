@@ -4,6 +4,7 @@ import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_STOPS, ROAD_NODES, countryAccess, pat
 import { World, district, roadDistance, roadNeighbours, roadPath, roadProjection } from './world';
 import { Game } from './game';
 import { loadScenario } from './lab';
+import { killPedestrian, updatePedestrians } from './pedestrians';
 
 function samples(points: Vec[], stride = 2): { point: Vec; angle: number }[] {
   return points.flatMap((b, i) => {
@@ -14,6 +15,20 @@ function samples(points: Vec[], stride = 2): { point: Vec; angle: number }[] {
 }
 
 describe('eastern bridges and highland roads', () => {
+  it('keeps rural corpses at the impact site and stops their kick at bridge rails', () => {
+    const world = new World(); world.people = [];
+    for (const position of [vec(358, 114), vec(404, 245), vec(276, 85)]) {
+      const person = world.addPerson(position);
+      killPedestrian(person, vec(0, 20), 0);
+      updatePedestrians(world, [], { gore: true }, 1 / 120, 1 / 120);
+      expect(dist(person.position, position)).toBeLessThan(0.1);
+    }
+    for (let i = 0; i < 240; i++) updatePedestrians(world, [], { gore: true }, 1 / 120, (i + 2) / 120);
+    const bridgeCorpse = world.people[2];
+    expect(bridgeCorpse.position.y).toBeLessThan(87);
+    const probe = new Body(bridgeCorpse.position.x, bridgeCorpse.position.y, 1, 0.6, 0.6);
+    expect([...world.hash.query(probe)].filter(p => contact(probe, p.body))).toEqual([]);
+  });
   it('opens both bridge decks for cars and walkers while keeping the river solid elsewhere', () => {
     const world = new World();
     for (const y of BRIDGE_Y) for (let x = 244; x <= 310; x += 2) for (const lane of [-3, 0, 3]) {
@@ -78,6 +93,18 @@ describe('eastern bridges and highland roads', () => {
     expect(g.job.fare).toBe(Math.round(55 + distance * 0.7));
     expect(g.job.time).toBeCloseTo(28 + distance / 3);
   });
+  it('loads and pays rural parcel deliveries using the road-distance fare', () => {
+    const g = new Game(); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
+    g.player.model = 'motorcycle'; g.offer = 2; g.newJob();
+    const fare = g.job.fare, cash = g.save.cash;
+    expect(g.job.type).toBe('parcel'); expect(g.job.destination).toBe('Eagle Lookout');
+    g.player.body.position = { ...g.job.pickup };
+    for (let i = 0; i < 100; i++) g.update(1 / 120);
+    expect(g.job.stage).toBe('dropoff');
+    g.player.body.position = { ...g.job.dropoff };
+    for (let i = 0; i < 100; i++) g.update(1 / 120);
+    expect(g.jobsDone).toBe(1); expect(g.save.cash).toBeGreaterThanOrEqual(cash + fare);
+  });
   it('drives civilian traffic over a bridge in either direction and around the ridge bends', () => {
     for (const [from, to] of [[vec(236, 80), vec(358, 114)], [vec(310, 200), vec(204, 204)], [vec(358, 114), vec(474, 58)]]) {
       const g = new Game(); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
@@ -92,5 +119,17 @@ describe('eastern bridges and highland roads', () => {
       expect(reached, `traffic failed ${from.x},${from.y} to ${to.x},${to.y}`).toBe(true);
       expect(car.damage.health).toBe(100);
     }
+  });
+  it('pursues a rural sighting over Pine Bridge and follows the ridge bends', () => {
+    const g = new Game(); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
+    g.player.body.position = vec(474, 58);
+    const cop = g.vehicle('police', 236, 80, 0, '#cfdfdf'); cop.ai.role = 'pursuit';
+    let reached = false;
+    for (let i = 0; i < 40 * 120; i++) {
+      g.policeIntel = { position: { ...g.player.body.position }, velocity: vec(), seenAt: g.time };
+      g.update(1 / 120);
+      if (dist(cop.body.position, g.player.body.position) < 12) { reached = true; break; }
+    }
+    expect(reached).toBe(true); expect(cop.damage.health).toBe(100);
   });
 });
