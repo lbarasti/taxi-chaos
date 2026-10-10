@@ -5,6 +5,7 @@
 // All coordinates are WORLD METRES, matching renderer.ts's scaled camera space.
 import { add, clamp, length, normalize, scale, vec, type Vec } from './physics';
 import { seeded, type Person } from './world';
+import { MAP_HEIGHT, MAP_WIDTH } from './countryside';
 
 export type GoreKind = 'pulp' | 'cloth' | 'shard';
 export type BloodLobe = { x: number; y: number; r: number };
@@ -43,7 +44,7 @@ export const BLAST_TTL = 0.7;
 export const MAX_BLAST_RADIUS = 34;
 
 const CHUNK_TTL = 4.5;
-const BOUNDS_MIN = -30, BOUNDS_MAX = 270;
+const BOUNDS_MIN = -30;
 const BLOOD_TONES = ['#7e1420', '#8f1b22', '#5c1018', '#6d141c', '#a3242a'];
 
 function parseHex(hex: string): [number, number, number] | null {
@@ -185,6 +186,7 @@ export class Effects {
   blasts: BlastRing[] = [];
   embers: Ember[] = [];
   smoke: SmokePuff[] = [];
+  splashes: { position: Vec; elapsed: number }[] = [];
   private random = seeded(0x9e3779b9);
   private seedTick = 1;
 
@@ -197,13 +199,14 @@ export class Effects {
     this.blasts.length = 0;
     this.embers.length = 0;
     this.smoke.length = 0;
+    this.splashes.length = 0;
     this.random = seeded(0x9e3779b9);
     this.seedTick = 1;
   }
 
   private nextSeed(): number { return (this.seedTick++ * 2654435761) >>> 0; }
 
-  private inBounds(p: Vec): boolean { return p.x > BOUNDS_MIN && p.x < BOUNDS_MAX && p.y > BOUNDS_MIN && p.y < BOUNDS_MAX; }
+  private inBounds(p: Vec): boolean { return p.x > BOUNDS_MIN && p.x < MAP_WIDTH + 30 && p.y > BOUNDS_MIN && p.y < MAP_HEIGHT + 30; }
 
   private trim(): void {
     if (this.bloodMarks.length > MAX_BLOOD_MARKS) this.bloodMarks.splice(0, this.bloodMarks.length - MAX_BLOOD_MARKS);
@@ -287,6 +290,11 @@ export class Effects {
   }
 
   /** Fireball + dust shockwave. The ring expands over BLAST_TTL (~0.7s); no screen flash. */
+  splash(position: Vec): void {
+    this.splashes.push({ position: { ...position }, elapsed: 0 });
+    if (this.splashes.length > 40) this.splashes.shift();
+  }
+
   explode(position: Vec, radius: number): void {
     const p = { ...position };
     const rad = clamp(Number.isFinite(radius) ? radius : 3, 0.8, MAX_BLAST_RADIUS);
@@ -320,6 +328,8 @@ export class Effects {
   update(dt: number): void {
     const step = Number.isFinite(dt) ? clamp(dt, 0, 0.2) : 0;
     if (step <= 0) return;
+    for (const s of this.splashes) s.elapsed += step;
+    this.splashes = this.splashes.filter(s => s.elapsed < 1.5);
     for (const b of this.blasts) {
       b.life += step;
       const t = clamp(b.life / b.ttl, 0, 1);
@@ -386,6 +396,22 @@ export class Effects {
   /** Air layers: shockwave rings, smoke and amber specks always; gore chunks only when gore. */
   drawAir(ctx: CanvasRenderingContext2D, time: number, gore: boolean): void {
     ctx.save();
+    for (const s of this.splashes) {
+      const t = s.elapsed / 1.5;
+      ctx.save(); ctx.translate(s.position.x, s.position.y); ctx.globalAlpha = 1 - t;
+      ctx.strokeStyle = '#e3ffff'; ctx.lineWidth = 0.13;
+      for (const delay of [0, 0.2]) {
+        const r = Math.max(0.1, 0.5 + (t - delay) * 4);
+        ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.65, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.fillStyle = '#d6fcff';
+      for (let i = 0; i < 18; i++) {
+        const a = i * Math.PI * 2 / 18, r = 0.4 + t * (2.5 + i % 3);
+        const lift = Math.max(0, Math.sin(Math.min(1, t * 1.7) * Math.PI)) * 2;
+        ctx.beginPath(); ctx.ellipse(Math.cos(a) * r, Math.sin(a) * r * 0.6 - lift, 0.08, 0.16, a, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
     for (const s of this.smoke) {
       const t = clamp(s.life / s.ttl, 0, 1);
       const alpha = 0.16 * t;

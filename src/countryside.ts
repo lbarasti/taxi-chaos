@@ -32,6 +32,9 @@ export const VILLAS = [
   { position: vec(97, 367), name: 'CEDAR LODGE', color: '#9d7360' },
 ];
 export const GOLF_COURSE = { center: vec(174, 367), width: 96, height: 36, clubhouse: vec(127, 361) };
+// Pool water bounds are shared by drawing and gameplay; terraces stay solid ground.
+export const VILLA_POOLS = VILLAS.map(v => ({ position: vec(v.position.x + 14.25, v.position.y + 3), width: 6.5, height: 12 }));
+export const GOLF_CART_ROUTE = [vec(144, 350), vec(204, 350), vec(204, 384), vec(144, 384)];
 export const GOLF_HOLES = [
   { tee: vec(146, 360), green: vec(193, 359), bunker: vec(195, 354) },
   { tee: vec(210, 366), green: vec(167, 369), bunker: vec(165, 363) },

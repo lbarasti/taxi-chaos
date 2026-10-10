@@ -158,7 +158,7 @@ export function cullLights(lights: LightSource[], view: Viewport): LightSource[]
 export type SceneVehicle = {
   id: number;
   kind: 'taxi' | 'police' | 'traffic';
-  model?: 'car' | 'motorcycle';
+  model?: 'car' | 'motorcycle' | 'golf-cart';
   alive: boolean;
   parked: boolean;
   driverExited: boolean;

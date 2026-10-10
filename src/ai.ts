@@ -1,6 +1,6 @@
 import { Body, CarDynamics, add, angleDiff, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
 import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
-import { countryAccess, countryNeighbours, isCountry } from './countryside';
+import { GOLF_CART_ROUTE, countryAccess, countryNeighbours, isCountry } from './countryside';
 import type { Vehicle } from './game';
 import { difficulties, type Difficulty } from './rules';
 
@@ -124,6 +124,14 @@ function policeGoal(v: Vehicle, c: AIContext): Vec {
 }
 
 export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
+  if (v.cart) {
+    // Carts patrol the fairways; never feed them into the city road/rejoin planner.
+    if (dist(v.body.position, GOLF_CART_ROUTE[v.cart.waypoint]) < 3) v.cart.waypoint = (v.cart.waypoint + 1) % GOLF_CART_ROUTE.length;
+    const target = GOLF_CART_ROUTE[v.cart.waypoint], delta = sub(target, v.body.position);
+    const diff = angleDiff(Math.atan2(delta.y, delta.x), v.body.angle);
+    const speed = dot(v.body.velocity, rotate(vec(1, 0), v.body.angle));
+    return { throttle: clamp((5 / (1 + Math.abs(diff) * 2) - speed) * 0.6, -1, 1), turn: clamp(diff * 2 - v.body.angularVelocity * 0.3, -1, 1), handbrake: false };
+  }
   const state = v.ai, body = v.body, speed = length(body.velocity), rules = difficulties[c.settings.difficulty];
   if (v.baseEngine === 0) return { throttle: 0, turn: 0, handbrake: true };
   // A deliberate containment/roadblock stop is not a traffic jam.
