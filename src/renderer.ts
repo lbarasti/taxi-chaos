@@ -6,7 +6,7 @@ import { LightingLayer, collectLights, cullLights, type LightScene, type Lightin
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection } from './motorcycle';
-import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_OUTLINE, HIGHLAND_STOPS } from './countryside';
+import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, isCountry } from './countryside';
 import { radarMarker, radarView } from './radar';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
@@ -21,6 +21,8 @@ const RIDGES = [
   [vec(368, 19), vec(400, -4), vec(444, 6), vec(478, 26), vec(450, 34), vec(432, 48), vec(404, 44), vec(393, 29)],
   [vec(410, 126), vec(432, 91), vec(454, 97), vec(469, 124), vec(454, 155), vec(427, 166), vec(405, 149)],
   [vec(355, 220), vec(376, 202), vec(394, 224), vec(429, 235), vec(460, 224), vec(494, 234), vec(486, 250), vec(404, 255)],
+  [vec(16, 291), vec(88, 280), vec(152, 282), vec(218, 290), vec(250, 309), vec(185, 311), vec(118, 303), vec(52, 305)],
+  [vec(281, 406), vec(314, 414), vec(383, 417), vec(451, 400), vec(481, 380), vec(456, 393), vec(380, 405)],
 ];
 
 function mixHex(a: string, b: string, t: number): string {
@@ -213,6 +215,7 @@ export class Renderer {
     for (const stop of HIGHLAND_STOPS) {
       c.beginPath(); c.ellipse(stop.position.x, stop.position.y, 14, 12, 0, 0, Math.PI * 2); c.fillStyle = '#7c816049'; c.fill();
     }
+    this.countryEstates();
     c.lineJoin = 'round'; c.lineCap = 'round';
     for (const road of COUNTRY_ROADS) {
       trace(c, road.points); c.strokeStyle = road.bridge ? '#7d8985' : '#89917a'; c.lineWidth = road.bridge ? 15 : 15.5; c.stroke();
@@ -235,7 +238,56 @@ export class Renderer {
     for (const stop of HIGHLAND_STOPS) this.label(stop.name.toUpperCase(), stop.position.x, stop.position.y + 10, 0.9, '#c7d5ad', '700');
     this.label('P I N E   W O O D S', 335, 140, 1.5, '#a7bd9180');
     this.label('E A G L E   R I D G E', 441, 78, 1.5, '#d6d1ad80');
+    this.label('C E D A R   W O O D S', 78, 354, 1.3, '#c7d5ad80');
+    this.label('M I L L I O N A I R E S   R O W', 288, 290, 1.1, '#e8d5ac');
     c.lineJoin = 'miter'; c.lineCap = 'butt';
+  }
+  countryEstates() {
+    const c = this.ctx;
+    for (const [i, villa] of VILLAS.entries()) {
+      const p = villa.position;
+      if (!this.visible(p, 40)) continue;
+      this.rect(p.x - 21, p.y - 17, 42, 34, '#547452');
+      this.rect(p.x - 19, p.y - 15, 38, 30, '#76926240', '#d9d1ad65');
+      trace(c, VILLA_DRIVES[i]); c.strokeStyle = '#b3b098'; c.lineWidth = 5; c.stroke();
+      this.rect(p.x - 9, p.y + 5, 18, 7, '#c7b697'); // stone terrace
+      this.rect(p.x + 10, p.y - 4, 8.5, 14, '#d4cbb2');
+      this.rect(p.x + 11, p.y - 3, 6.5, 12, '#57a9b4', '#e3e2c9');
+      this.rect(p.x + 11.5, p.y - 2.5, 1, 11, '#b5e1de65');
+      for (const y of [-8, -5]) { this.rect(p.x + 13, p.y + y, 3.4, 1.1, '#e9dcc0'); this.rect(p.x + 13.7, p.y + y, 0.4, 1.1, '#ab9274'); }
+      this.circle(vec(p.x - 12, p.y + 8), 1.7, '#efe4c8');
+      this.circle(vec(p.x - 12, p.y + 8), 0.2, '#9d7b59');
+      for (const dx of [-17, 17]) for (const dy of [-12, 12]) {
+        this.circle(vec(p.x + dx, p.y + dy), 1.5, '#38583e');
+        this.circle(vec(p.x + dx - 0.25, p.y + dy - 0.25), 1.1, '#698554');
+      }
+      this.label(villa.name, p.x, p.y + 14, 0.72, '#f3e6c7', '600');
+    }
+    const club = GOLF_COURSE;
+    this.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8, '#3b6346');
+    trace(c, [vec(132, 338), vec(119, 345), vec(116, 367), vec(140, 385), vec(218, 386)]);
+    c.strokeStyle = '#b8b395'; c.lineWidth = 2.4; c.stroke();
+    this.rect(117, 352, 20, 22, '#b8aa87');
+    for (const [i, hole] of GOLF_HOLES.entries()) {
+      const center = scale(add(hole.tee, hole.green), 0.5), angle = Math.atan2(hole.green.y - hole.tee.y, hole.green.x - hole.tee.x);
+      c.save(); c.beginPath(); c.ellipse(center.x, center.y, dist(hole.tee, hole.green) / 2 + 6, 4.3, angle, 0, Math.PI * 2); c.clip();
+      this.rect(center.x - 40, center.y - 10, 80, 20, '#7b9b59');
+      for (let x = center.x - 40; x < center.x + 40; x += 5) this.rect(x, center.y - 10, 2.5, 20, '#acc77829');
+      c.restore();
+      c.beginPath(); c.ellipse(hole.bunker.x, hole.bunker.y, 5, 2.2, -0.35, 0, Math.PI * 2); c.fillStyle = '#d9c69a'; c.fill();
+      c.beginPath(); c.ellipse(hole.green.x, hole.green.y, 5, 3.6, 0.2, 0, Math.PI * 2); c.fillStyle = '#a5bd72'; c.fill();
+      this.circle(hole.green, 0.22, '#253d30');
+      this.rect(hole.green.x, hole.green.y - 2.1, 0.1, 2.1, '#efe9d1');
+      trace(c, [vec(hole.green.x, hole.green.y - 2.1), vec(hole.green.x + 1.3, hole.green.y - 1.7), vec(hole.green.x, hole.green.y - 1.3)], true); c.fillStyle = '#e87663'; c.fill();
+      this.rect(hole.tee.x - 1.8, hole.tee.y - 0.8, 3.6, 1.6, '#425f42');
+      this.label(String(i + 1), hole.tee.x - 3, hole.tee.y, 0.65, '#efe6bb', '700');
+    }
+    // Small pond and parked golf carts make the club read as a leisure destination.
+    c.beginPath(); c.ellipse(215, 355, 6, 3.3, 0.4, 0, Math.PI * 2); c.fillStyle = '#569097'; c.fill(); c.strokeStyle = '#bec79a'; c.lineWidth = 0.5; c.stroke();
+    for (const y of [356, 362]) {
+      this.rect(116, y, 2.5, 1.4, '#233c39'); this.rect(115.8, y - 0.2, 2.7, 1.5, '#eee7c8'); this.rect(117.7, y, 0.5, 1.1, '#547777');
+    }
+    this.label('FAIRWAY COUNTRY CLUB', 174, 346, 0.95, '#e8dfb4', '700');
   }
   marker(p: Vec, color: string, label: string, garage = false) {
     if (!this.visible(p, 10)) return; const c = this.ctx, g = this.game;
@@ -269,6 +321,19 @@ export class Renderer {
       c.save(); c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); c.restore();
       trace(c, shape, true); c.fillStyle = prop.color; c.fill(); c.strokeStyle = '#b4b49a70'; c.lineWidth = 0.12; c.stroke();
       trace(c, [vec(-w * 0.65, -h), vec(-w * 0.2, 0), vec(w * 0.8, h)]); c.strokeStyle = '#33484070'; c.stroke();
+    } else if (prop.kind === 'building' && (prop.label.startsWith('VILLA ') || prop.label === 'FAIRWAY CLUB')) {
+      const w = b.w, h = b.h;
+      this.shadowRect(-w / 2 + so.x + 0.8, -h / 2 + so.y + 1, w, h, '#14282080');
+      this.rect(-w / 2, -h / 2, w, h, '#e3d6b8', '#f4e6c5');
+      this.rect(-w / 2 - 0.3, -h / 2 - 0.6, w + 0.6, h, prop.color, '#e9cbaa');
+      trace(c, [vec(-w / 2, -h / 2 - 0.6), vec(-w / 2 + 2, -0.6), vec(w / 2 - 2, -0.6), vec(w / 2, -h / 2 - 0.6)]);
+      c.strokeStyle = '#ebc7a06b'; c.lineWidth = 0.18; c.stroke();
+      for (let y = -h / 2 + 0.2; y < h / 2 - 0.6; y += 0.65) this.rect(-w / 2 + 0.5, y, w - 1, 0.08, '#513d3530');
+      this.rect(-w / 2 + 2, -0.75, w - 4, 0.35, '#694b3b');
+      this.rect(-2, -3.9, 3.5, 1.7, '#83b0b57d', '#ddd3b4');
+      this.rect(w / 2 - 3.5, -h / 2 + 1, 1, 1.4, '#ddd3be');
+      for (let x = -w / 2 + 1; x < w / 2 - 1; x += 2.6) this.rect(x, h / 2 - 0.9, 1.4, 0.75, '#ffe3a0');
+      this.rect(-1.3, h / 2 - 0.5, 2.6, 0.8, '#675648');
     } else if (prop.kind === 'building') {
       this.shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1.3 + so.y, b.w + 0.5, b.h + 0.5, '#13212870');
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#202f37');
@@ -322,7 +387,7 @@ export class Renderer {
       if (prop.fire > 0) drawFire(c, vec(), 1.4, this.game.time, prop.id);
     } else if (prop.kind === 'tree') {
       this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80');
-      if (b.position.x > 296) {
+      if (isCountry(b.position)) {
         for (const r of [2.4, 1.7, 1]) {
           const needles = Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8; return vec(Math.cos(a) * r * (i % 2 ? 0.6 : 1), Math.sin(a) * r * (i % 2 ? 0.6 : 1) - (2.4 - r) * 0.2); });
           trace(c, needles, true); c.fillStyle = r === 2.4 ? '#233f36' : r === 1.7 ? prop.color : '#63816a'; c.fill();
@@ -482,6 +547,8 @@ export class Renderer {
     c.translate(view.offset.x, view.offset.y); c.scale(s, s);
     trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = '#45634a'; c.fill();
     for (const ridge of RIDGES) { trace(c, ridge, true); c.fillStyle = '#717566'; c.fill(); }
+    c.fillStyle = '#90a66b'; c.fillRect(GOLF_COURSE.center.x - GOLF_COURSE.width / 2, GOLF_COURSE.center.y - GOLF_COURSE.height / 2, GOLF_COURSE.width, GOLF_COURSE.height);
+    for (const villa of VILLAS) { c.fillStyle = '#dcc4a1'; c.fillRect(villa.position.x - 5, villa.position.y - 3, 10, 6); }
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
     c.strokeStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();

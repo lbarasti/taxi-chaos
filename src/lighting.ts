@@ -178,6 +178,7 @@ export type SceneProp = {
   kind: string;
   alive: boolean;
   fire: number;
+  label?: string;
   body: { position: { x: number; y: number }; angle: number; w: number; h: number };
 };
 
@@ -241,14 +242,14 @@ export function collectLights(scene: LightScene): LightSource[] {
         // across the pavement instead of a small white dot.
         const intensity = artificial;
         if (intensity > 0.02) out.push({ x: pos.x, y: pos.y, radius: 8.5, color: LAMP, intensity, artificial: true, inner: 0.32 });
-      } else if (prop.kind === 'building' && prop.body.w <= 12) {
+      } else if (prop.kind === 'building' && (prop.body.w <= 12 || prop.label?.startsWith('VILLA '))) {
         // Storefront/awning wash with a wide lit window band. Most shops are warm amber; a third
         // of them also carry a saturated neon sign to echo the reference signage clusters.
         const intensity = artificial * 0.8;
         if (intensity > 0.02) {
           const front = localToWorld(pos, prop.body.angle, 0, 4);
           out.push({ x: front.x, y: front.y, radius: 6.5, color: WINDOW, intensity, artificial: true, inner: 0.34 });
-          if (prop.id % 3 === 0) {
+          if (prop.id % 3 === 0 && !prop.label?.startsWith('VILLA ') && prop.label !== 'FAIRWAY CLUB') {
             const sign = localToWorld(pos, prop.body.angle, -2.4, 4.8);
             out.push({ x: sign.x, y: sign.y, radius: 3.4, color: NEON[Math.floor(prop.id / 3) % NEON.length], intensity: artificial * 0.5, artificial: true, inner: 0.18 });
           }

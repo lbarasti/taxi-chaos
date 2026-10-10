@@ -42,7 +42,7 @@ irregular shoreline are solid scenery. Mountain relief is drawn from above; driv
 the existing planar physics.
 
 The minimap includes both land masses. Navigation, civilian traffic and police follow the
-curved road network, and later taxi/parcel jobs include the four rural stops with travel
+curved road network, and later taxi/parcel jobs include the seven rural stops with travel
 time and pay based on road distance. The first fare stays in Old Town.
 
 **Try it:** F2 → **Eastern bridges / highlands** → Run starts at Pine Bridge facing east
@@ -51,6 +51,23 @@ with a delivery to Eagle Lookout and police disabled for that scenario. Automati
 
 See the [screenshots and map notes](docs/eastern-highlands.md) for the bridge crossing,
 ridge road and highlands at night.
+
+## Woodland villas & country club
+
+The eastern woods now wrap south and west **beneath the city**, forming a mirrored L.
+Southwoods Drive and Highland Descent lead into a continuous southern loop through
+Millionaires Row, Woodland Estates and Cedar Woods. Twelve villas are scattered through
+both the original highlands and the extension, with private drives, guest wings, pools,
+terraces, landscaped gardens and residents. Warm house and garden lights come on at night.
+
+**Fairway Country Club** has three striped fairways, tees, putting greens with flags,
+sand bunkers, a pond, golfers, a clubhouse and parked decorative golf carts. Woodland
+Estates, Fairway Club and Cedar Crescent are taxi and parcel stops. Traffic, police,
+navigation and road-distance fares use the expanded curved road network.
+
+**Try it:** F2 → **Woodland villas / golf club** → Run starts in Woodland Estates with a
+passenger for Fairway Club. Automation: `__taxi.scenario('woodland-estates')`.
+See the [map overview and screenshots](docs/woodland-estates.md).
 
 ## Controls & game loop
 

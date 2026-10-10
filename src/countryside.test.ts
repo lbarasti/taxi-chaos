@@ -53,7 +53,7 @@ describe('eastern bridges and highland roads', () => {
       for (const [a, b] of [[start, stop.position], [stop.position, start]]) {
         const route = roadPath(a, b);
         expect(route[0]).toEqual(a); expect(route.at(-1)).toEqual(b);
-        const crossings = samples(route).filter(s => s.point.x > 256 && s.point.x < 296);
+        const crossings = samples(route).filter(s => s.point.x > 256 && s.point.x < 296 && s.point.y < 254);
         expect(crossings.length).toBeGreaterThan(0);
         for (const { point } of crossings) expect(BRIDGE_Y.some(y => Math.abs(point.y - y) < 0.01)).toBe(true);
         for (const { point } of samples(route)) expect(roadDistance(point)).toBeLessThan(6.01);
