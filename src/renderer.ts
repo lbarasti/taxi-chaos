@@ -6,6 +6,7 @@ import { LightingLayer, collectLights, cullLights, type LightScene, type Lightin
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection } from './motorcycle';
+import { doorOpenness, LANDING_TIME } from './vehicle-exit';
 import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry } from './countryside';
 import { radarMarker, radarView } from './radar';
 import { CITY_SHORE } from './coast';
@@ -80,12 +81,32 @@ export class Renderer {
     }
     for (const v of g.vehicles) if (v.alive && this.visible(v.body.position)) this.car(v);
     if (g.onFoot && !(g.mode === 'wasted' && g.wastedReason === 'drowning')) {
-      const p = g.driver.position;
+      const p = g.driver.position, tumble = g.tumble;
       this.circle(p, 1.05, '#f7ce5525'); c.strokeStyle = GOLD; c.lineWidth = 0.12; c.beginPath(); c.arc(p.x, p.y, 1.05, 0, Math.PI * 2); c.stroke();
-      c.save(); c.translate(p.x, p.y); c.rotate(g.driver.angle + Math.PI / 2 + (g.driverHealth <= 0 ? 1.3 : 0));
-      const stride = Math.sin(g.time * 17) * Math.min(g.speed / 5.5, 1) * 0.15;
-      this.rect(-0.24, -0.05, 0.48, 0.6, GOLD); this.circle(vec(0, -0.23), 0.24, '#dfc4ab');
-      this.rect(-0.26, 0.42 + stride, 0.18, 0.32, '#273c44'); this.rect(0.08, 0.42 - stride, 0.18, 0.32, '#273c44'); c.restore();
+      c.save(); c.translate(p.x, p.y);
+      if (tumble) {
+        // An elongated, spinning prone body rather than the upright walking sprite.
+        // Ground shadow and scuff streaks keep the roll readable at normal game zoom.
+        const airborne = tumble.elapsed < LANDING_TIME;
+        const wriggle = Math.sin(tumble.elapsed * (tumble.bike ? 27 : 20)) * 0.23;
+        this.circle(vec(0.18, 0.27), 0.48, '#12212866');
+        c.translate(0, airborne ? -0.32 * Math.sin(tumble.elapsed / LANDING_TIME * Math.PI) : 0);
+        c.rotate(g.driver.angle + Math.PI / 2);
+        this.rect(-0.28, -0.48, 0.56, 1.04, GOLD, '#deaa46');
+        this.circle(vec(0, -0.62), 0.3, '#dfc4ab');
+        for (const side of [-1, 1]) {
+          c.save(); c.translate(side * 0.29, -0.25); c.rotate(side * (0.25 + wriggle));
+          this.rect(side > 0 ? 0 : -0.48, -0.13, 0.48, 0.19, '#e5bc8c'); c.restore();
+          c.save(); c.translate(side * 0.16, 0.48); c.rotate(side * (0.25 - wriggle));
+          this.rect(-0.11, 0, 0.22, 0.55, '#273c44'); c.restore();
+        }
+      } else {
+        c.rotate(g.driver.angle + Math.PI / 2 + (g.driverHealth <= 0 ? 1.3 : 0));
+        const stride = Math.sin(g.time * 17) * Math.min(g.speed / 5.5, 1) * 0.15;
+        this.rect(-0.24, -0.05, 0.48, 0.6, GOLD); this.circle(vec(0, -0.23), 0.24, '#dfc4ab');
+        this.rect(-0.26, 0.42 + stride, 0.18, 0.32, '#273c44'); this.rect(0.08, 0.42 - stride, 0.18, 0.32, '#273c44');
+      }
+      c.restore();
     }
     drawHarbourActivity(this);
     g.fx.drawAir(c, g.time, g.settings.gore);
@@ -109,7 +130,7 @@ export class Renderer {
     for (const v of g.vehicles) if (v.definition.graphics.sprite === 'motorcycle' && v.parked && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('MOTORBIKE', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
     if (g.onFoot) {
       const p = g.driver.position;
-      this.label('YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
+      this.label(g.tumble ? g.tumble.grounded ? 'ROLLING!' : 'JUMP!' : 'YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
       const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? car.definition.graphics.sprite === 'motorcycle' ? 'E · RIDE' : 'E · GET IN' : car.definition.graphics.sprite === 'motorcycle' ? 'COURIER BIKE' : 'REPLACEMENT CAR');
     }
     this.debug();
@@ -474,6 +495,19 @@ export class Renderer {
     if (v.damage.health < 75) { c.strokeStyle = '#283338'; c.lineWidth = 0.12; c.beginPath(); c.moveTo(1.7, -0.5); c.lineTo(0.9, 0.1); c.lineTo(1.8, 0.5); c.stroke(); }
     if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(1.8, -0.9, 0.2, 1.8, '#8e2230');
     c.restore();
+    // A real hinged panel is visible before the driver launches from a moving car.
+    if (v.door) {
+      const open = doorOpenness(this.game.time - v.door.at);
+      if (open > 0) {
+        const side = v.door.side;
+        c.save(); c.scale(b.w / 4.2, b.h / 2.1);
+        c.translate(0.78, side * 1.02); c.rotate(-side * open * 1.36);
+        this.rect(-1.25, -0.12, 1.25, 0.24, wreck ? '#414a4d' : v.color, '#25363c');
+        this.rect(-1.17, -0.07, 0.75, 0.14, v.definition.graphics.glass);
+        this.rect(-0.95, side * 0.15, 0.24, 0.08, '#eee6cf');
+        c.restore();
+      }
+    }
     c.restore();
     this.vehicleEffects(v);
   }
