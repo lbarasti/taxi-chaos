@@ -350,12 +350,12 @@ export function repairVehicle(game: Game, id = game.player.id): boolean {
   vehicle.path = [];
   vehicle.routeTimer = 0;
   vehicle.driverExited = false;
-  if (vehicle === game.player && game.mode === 'wrecked') game.setMode('playing');
+  if (vehicle === game.player && game.mode === 'wasted') game.setMode('playing');
   return true;
 }
 
 /**
- * Clock helper used by `realtime()`: a paused world resumes, but arrested/wrecked/garage
+ * Clock helper used by `realtime()`: a paused world resumes, but arrested/wasted/garage
  * states are left alone so the LIVE label can never imply a modal has been dismissed for the
  * player or quietly waive a bail/tow fee. Returns whether the mode changed.
  */
@@ -644,7 +644,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     },
     realtime: () => {
       frozen = false; hooks.setExternalClock(false); hooks.setTimeScale(timeScale);
-      resumeFromPause(game); // only a paused world resumes; never arrested/wrecked/garage
+      resumeFromPause(game); // only a paused world resumes; never arrested/wasted/garage
       hooks.refresh(); refreshUI();
     },
     teleport: (x, y, angle = NORTH, speed = 0) => {
@@ -724,7 +724,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       const vehicle = findVehicle(id);
       if (!vehicle) return;
       // Force the normal burning-then-blast path so queueBlast, area damage and the
-      // player's wrecked mode all behave exactly as they do in play.
+      // player's wasted mode all behave exactly as they do in play.
       vehicle.damage.status = 'burning';
       vehicle.damage.health = 0;
       vehicle.damage.fireTime = 0;

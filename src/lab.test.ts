@@ -228,7 +228,7 @@ describe('LAB isolation and preservation rules', () => {
     g.player.damage.health = 0;
     g.player.damage.status = 'wreck';
     g.player.damage.critical.engine = 80;
-    g.setMode('wrecked');
+    g.setMode('wasted');
     const cash = g.save.cash;
     expect(repairVehicle(g)).toBe(true);
     expect(g.mode).toBe('playing');
@@ -264,9 +264,9 @@ describe('LAB isolation and preservation rules', () => {
     expect(car.damage.fuse).toBeCloseTo(2, 5);
   });
 
-  it('resumes only a paused world to playing, never arrested/wrecked/garage/intro', () => {
+  it('resumes only a paused world to playing, never arrested/wasted/garage/intro', () => {
     const g = make();
-    for (const mode of ['arrested', 'wrecked', 'garage', 'intro'] as const) {
+    for (const mode of ['arrested', 'wasted', 'garage', 'intro'] as const) {
       g.setMode(mode);
       expect(resumeFromPause(g)).toBe(false);
       expect(g.mode).toBe(mode);

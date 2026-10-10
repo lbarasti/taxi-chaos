@@ -197,7 +197,7 @@ describe('game day/night integration', () => {
     expect(g.snapshot().dayNight.time).toBe('07:30');
   });
 
-  it('freezes the clock in intro, pause, garage and arrest but runs it when wrecked', () => {
+  it('freezes the clock in intro, pause, garage, arrest and wasted states', () => {
     const g = new Game();
     const introStart = g.snapshot().dayNight.minutes;
     run(g, 30);
@@ -219,8 +219,8 @@ describe('game day/night integration', () => {
     g.setMode('arrested'); run(g, 30);
     expect(g.snapshot().dayNight.minutes).toBe(playing);
 
-    g.mode = 'wrecked'; run(g, 10);
-    expect(g.snapshot().dayNight.minutes).toBeCloseTo(460, 4);
+    g.mode = 'wasted'; run(g, 10);
+    expect(g.snapshot().dayNight.minutes).toBe(playing);
   });
 
   it('changing the hour never touches gameplay timers or consumes gameplay RNG', () => {

@@ -118,7 +118,7 @@ export class AudioFX {
     if (!enabled) { this.stopAll(); this.audible = false; this.framePeak = 0; return; }
     if (this.previewUntil > ctx.currentTime) { game.sounds.clear(); this.audible = true; this.measure(); return; }
     if (this.previewUntil) this.stopPreview();
-    const running = live && (game.mode === 'playing' || game.mode === 'wrecked');
+    const running = live && (game.mode === 'playing' || game.mode === 'wasted');
     this.smooth(this.world!.gain, running ? 1 : 0, 0.025);
     this.audible = running;
     const desired = new Map<string, LoopTarget>();

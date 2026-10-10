@@ -3,6 +3,7 @@ import { Game } from './game';
 import { Body, CarDynamics, contact, dist, length, vec } from './physics';
 import { igniteVehicle } from './damage';
 import { loadScenario } from './lab';
+import { HOSPITAL } from './world';
 
 const run = (g: Game, seconds: number, keys: string[] = []) => { g.keys = new Set(keys); for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); g.keys.clear(); };
 const make = () => { const g = new Game(); loadScenario(g, 'cab-fire'); return g; };
@@ -39,12 +40,60 @@ describe('nitro, parking and roadside recovery', () => {
     expect(g.player.damage.status).not.toBe('wreck');
   });
 
-  it('shows the blast before tow recovery and allows exiting the wreck afterwards', () => {
-    const g = make(), cash = g.save.cash; run(g, 7.1);
-    expect(g.mode).toBe('wrecked'); expect(g.explosions).toBe(1); expect(g.fx.blasts.length).toBeGreaterThan(0);
-    g.recover(); expect(g.mode).toBe('wrecked'); expect(g.save.cash).toBe(cash);
-    expect(g.interact()).toBe(true); expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true); expect(g.player.damage.status).toBe('wreck');
+  it.each(['car', 'motorcycle'] as const)('ends play when the occupied %s explodes and waits for hospital acknowledgment', model => {
+    const g = make(), cash = g.save.cash;
+    if (model === 'motorcycle') { g.player.alive = false; g.player = g.vehicle('taxi', 4, 32, -Math.PI / 2, '#ed9b63', model); igniteVehicle(g.player.damage, 1); }
+    const old = g.player; g.save.upgrades.engine = 2;
+    g.heat = 90; g.arrest = g.rules.arrestTime; g.driftMeter = 12;
+    // Detonate at a drop-off that would otherwise complete on this very tick.
+    old.body.position = { ...g.job.dropoff }; g.job.stage = 'dropoff'; g.job.wait = 0.799;
+    g.settings.noPolice = false; g.vehicle('police', old.body.position.x + 6, old.body.position.y, 0, '#fff');
+    old.damage.fuse = 0.001; run(g, 1 / 120, ['KeyW', 'ShiftLeft']);
+    expect(g.mode).toBe('wasted'); expect(g.onFoot).toBe(false);
+    expect(g.explosions).toBe(1); expect(g.fx.blasts.length).toBeGreaterThan(0);
+    expect(g.controls.throttle).toBe(0); expect(g.controls.boost).toBeFalsy(); expect(g.keys.size).toBe(0);
+    expect(g.jobsDone).toBe(0); expect(g.save.cash).toBe(cash);
+    expect(g.interact()).toBe(false); g.garage(); expect(g.mode).toBe('wasted');
+    const time = g.time, clock = g.dayNight.snapshot().minutes, position = { ...g.actor.position }, job = { ...g.job };
+    const burning = g.vehicle('traffic', 204, 204, 0, '#fff'); igniteVehicle(burning.damage, 1);
+    run(g, 10, ['KeyW', 'KeyE']);
+    expect(g.mode).toBe('wasted'); expect(g.time).toBe(time); expect(g.dayNight.snapshot().minutes).toBe(clock);
+    expect(g.actor.position).toEqual(position); expect(g.job).toEqual(job); expect(g.explosions).toBe(1); expect(burning.damage.fuse).toBe(1);
+    g.recover();
+    expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
+    expect(g.speed).toBe(0); expect(old.damage.status).toBe('wreck'); expect(old.body.position).toEqual(position);
+    expect(old.kind).toBe('traffic'); expect(old.parked).toBe(true);
+    expect(g.save.cash).toBe(cash); expect(g.save.upgrades.engine).toBe(2); expect(g.heat).toBe(0); expect(g.arrest).toBe(0);
+    expect(g.driftMeter).toBe(0); expect(g.navToGarage).toBe(false); expect(g.job.stage).toBe('pickup');
+    g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
+    run(g, 0.3, ['KeyS']); expect(g.actor.position.y).toBeGreaterThan(HOSPITAL.y + 0.5);
+  });
+
+  it.each([false, true])('cleans up an interrupted passenger fare on hospital respawn (gore=%s)', gore => {
+    const g = make(); g.settings.gore = gore;
+    const passenger = g.world.addPerson(g.player.body.position, 'customer');
+    g.job.stage = 'dropoff'; g.job.customerId = passenger.id; passenger.aboard = true; passenger.alive = false;
+    g.player.damage.fuse = 0.001; run(g, 0.02); g.recover();
+    expect(passenger.aboard).toBe(false); expect(passenger.alive).toBe(!gore);
+    expect(g.world.people.some(p => p.aboard)).toBe(false); expect(g.job.customerId).not.toBe(passenger.id); expect(g.jobsDone).toBe(0);
+  });
+
+  it('offers local tow recovery only after escaping before the explosion', () => {
+    const g = make(), cash = g.save.cash; g.interact(); run(g, 7.1);
+    expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true); expect(g.player.damage.status).toBe('wreck');
     run(g, 1.3); g.recover(); expect(g.onFoot).toBe(false); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - Math.min(cash, 60));
+  });
+
+  it('respawns at a labeled hospital with a clear sidewalk and can take a replacement ride', () => {
+    const g = new Game(); g.start(); g.vehicles = g.vehicles.filter(v => v === g.player || v.parked);
+    const old = g.player;
+    igniteVehicle(old.damage, 0.01); run(g, 0.02); expect(g.mode).toBe('wasted'); g.recover();
+    expect(g.world.props.some(p => p.label === 'HOSPITAL' && dist(p.body.position, HOSPITAL) < 10)).toBe(true);
+    expect([...g.world.hash.query(g.driver)].some(p => contact(g.driver, p.body))).toBe(false);
+    expect(g.vehicles.some(v => v.alive && contact(g.driver, v.body))).toBe(false);
+    const next = g.nearestCar!; g.driver.position = next.body.toWorld(vec(0, 2));
+    expect(g.interact()).toBe(true); expect(g.player).toBe(next); expect(g.onFoot).toBe(false); expect(g.player.kind).toBe('taxi');
+    expect(old.damage.status).toBe('wreck');
   });
 
   it('never treats a wreck or a burning parked car as a replacement', () => {

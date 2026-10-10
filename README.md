@@ -78,7 +78,7 @@ Touch steering, pedals, drift and boost are shown on small screens; desktop is t
 - **Cab on fire? Press E to bail out, then run clear with WASD/arrows.** The abandoned fuse keeps counting down and the car still explodes. Follow the blue route/radar markers to a parked replacement and press E beside it. Wallet, upgrades and heat carry over; an aboard passenger evacuates and dispatch sends a new fare without paying the abandoned trip. Burning cars and wrecks cannot be entered. Ordinary exits require slowing below 6 m/s; emergency fire exits work at speed.
 - The city starts with **39 physical parked vehicles**, including courier motorbikes, in marked curb bays and two open public parking lots. One bike is beside the starting cab at Pit Stop. Empty bays make parking legible. Parked vehicles remain still, can be hit/pushed/damaged, and do not count toward the moving-traffic slider.
 - Nitro now applies **3.1× engine force** (previously 1.9×). Blue twin exhaust jets/speed streaks and a cyan **NITRO ACTIVE** dashboard show actual activation. The existing rechargeable tank/upgrades still control duration.
-- A cab explosion leaves the centre of the screen unobstructed. A small roadside card appears after 0.65 seconds; **E** lets you leave the wreck and **R** offers optional tow/repair (up to $60). Tow is unavailable for the first 1.2 seconds so the blast cannot be skipped. Hazard chains and effects keep running. Pit Stop can still save a burning car before its fuse expires; a detonated car stays wrecked until an explicit repair/tow.
+- If your occupied car or motorbike explodes, **WASTED** ends play and freezes the world. Acknowledge **Respawn at hospital** to return on foot outside Midtown Hospital with your wallet and upgrades intact. The wreck stays at the crash site; find a parked ride to continue. Bail out with **E before detonation** to survive and keep playing. An abandoned wreck offers optional **R** tow/repair (up to $60) only while you are nearby; tow is unavailable for the first 1.2 seconds. Pit Stop can extinguish a burning vehicle before its fuse expires.
 - Civilian drivers sense obstacles, slow for turns, pass where there is room, and back out using physically previewed reversing arcs. Alley exits are part of recovery. Impossible traps enter an **Awaiting tow** state; off-screen cleanup keeps the city flowing without visibly teleporting cars. Drivers abandon burning cars.
 - Police share sightings and use **pursuit, predictive interception and junction-blocking** roles. They brake for excessive closing speed, aim for the cab's rear quarter, search last-known locations after losing contact, and can recover from collisions themselves.
 - Property damage, pedestrian impacts and sustained speeding build heat. Street difficulty fields up to four cops; Cruise allows two and Chaos allows six.
@@ -101,7 +101,7 @@ Saved progress, gameplay settings and audio preferences use the `taxi-chaos-*` b
 
 - New runs start at **07:00** on day 1. One simulated second advances one in-game minute, so a full day lasts **24 minutes** at the normal rate.
 - Periods: morning 05:00–12:00, afternoon 12:00–17:00, evening 17:00–21:00, night 21:00–05:00. Labels change at those boundaries; lighting, moving sun shadows and local lights interpolate smoothly across every transition, including midnight.
-- Time advances only while the world advances (playing/wrecked). It freezes in intro/pause/garage/arrest and follows fixed lab stepping. Changing the hour never alters existing fare/fire timers and never consumes gameplay RNG.
+- Time advances only while playing. It freezes in intro/pause/garage/arrest/wasted and follows fixed lab stepping. Changing the hour never alters existing fare/fire timers and never consumes gameplay RNG.
 - The top-bar HUD clock shows zero-padded **HH:MM**, the period name and a sun/moon icon, and stays visible on tablet/mobile widths.
 - Lab controls (F2): an hour slider, morning/afternoon/evening/night presets (07:00/14:00/19:00/23:00), a cycle-rate slider and a cycle-only freeze. These affect the day/night clock only; the simulation speed and Step controls are unchanged.
 
@@ -189,7 +189,7 @@ __taxi.configure({difficulty: 'chaos', invincible: true, infiniteBoost: true});
 __taxi.traffic(40);                // live density adjustment
 __taxi.damageVehicle(0, {engine: 60, tyres: 70});
 __taxi.ignite(0, 5);               // explicit ignition; overrides impact immunity
-__taxi.repair();                   // free lab repair; also clears wrecked mode
+__taxi.repair();                   // free lab repair; also clears wasted mode
 __taxi.props();                    // finite-HP structures / fuel states
 __taxi.people();                   // pedestrian state, including alive/aboard
 __taxi.audio();                    // audio readiness, sample failures, loops, voice counts, output peak

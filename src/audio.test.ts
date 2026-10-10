@@ -47,7 +47,7 @@ describe('audio lifecycle and bounded mixer', () => {
   });
   it('keeps ongoing wreck fires audible and allows garage confirmations without engines', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
-    await audio.unlock(); game.setMode('wrecked'); game.vehicles[1].damage.status = 'burning'; game.vehicles[1].body.position = { ...game.player.body.position };
+    await audio.unlock(); game.setMode('wasted'); game.vehicles[1].damage.status = 'burning'; game.vehicles[1].body.position = { ...game.player.body.position };
     audio.update(game, true, true); expect(audio.state().loops).toEqual([`car-fire:${game.vehicles[1].id}`]);
     game.setMode('garage'); game.sounds.emit('purchase', game.time); audio.update(game, true, true);
     expect(audio.state().loops).toEqual([]); expect(audio.state().played.purchase).toBe(1);
