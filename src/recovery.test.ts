@@ -163,8 +163,10 @@ describe('nitro, parking and roadside recovery', () => {
     expect(g.job.stage).toBe('pickup'); expect(g.jobsDone).toBe(0); expect(g.save.cash).toBe(cash);
   });
 
-  it('permits an emergency bail at speed but requires slowing down for ordinary exits', () => {
+  it('permits emergency and ordinary moving exits, with a short door-opening interval', () => {
     const g = make(); g.player.body.velocity = vec(0, -20); expect(g.interact()).toBe(true);
-    const safe = new Game(); safe.start(); safe.player.body.velocity = vec(0, -20); expect(safe.interact()).toBe(false);
+    expect(g.pendingExit).not.toBeNull(); expect(g.onFoot).toBe(false);
+    const safe = new Game(); safe.start(); safe.player.body.velocity = vec(0, -20);
+    expect(safe.interact()).toBe(true); expect(safe.pendingExit).not.toBeNull();
   });
 });
