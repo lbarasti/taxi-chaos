@@ -1,4 +1,4 @@
-// Cheap 2D light occlusion for Fare City's reduced-resolution lighting compositor.
+// Cheap 2D light occlusion for Taxi Chaos's reduced-resolution lighting compositor.
 //
 // General raytracing / CPU visibility polygons are out of scope (they are CPU-heavy and pop as
 // the camera moves). Instead each raised structure contributes a convex occluder outline, and for

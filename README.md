@@ -1,4 +1,4 @@
-# FARE CITY
+# Taxi Chaos
 
 A frontend-only TypeScript driving game: taxi fares, motorcycle parcel deliveries, four-tyre car and single-track bike physics, smashable shortcuts, intelligent traffic, police tactics, critical damage, vehicle fires and fuel-station chain reactions. Desktop/keyboard first. Opt-in **pulp gore** adds fatal pedestrian impacts, blood, corpses and blood-stained tyre tracks. All visuals are procedural Canvas art; a sample-based **sound FX** mixer adds driving, destruction and gameplay feedback. No backend, API keys or runtime network requests.
 
@@ -58,6 +58,8 @@ Touch steering, pedals, drift and boost are shown on small screens; desktop is t
 - On Street, break line of sight for eight seconds to escape; a contained slow cab is arrested after 3.5 seconds. Cruise gives a six-second escape/five-second arrest window; Chaos uses ten/2.6 seconds. Bail is capped at the wallet balance.
 - Gore is off by default. With it enabled, fast impacts and severe blast exposure can kill pedestrians, including a waiting customer. Dispatch replaces a lost customer without awarding a fare. With gore disabled, street hits are nonfatal. Blood/effects are bounded and old off-screen corpses are cleared; civilian population replenishes off-screen.
 - Buy engine, grip, armor and boost upgrades at **Pit Stop** in Old Town. Wallet, upgrades and completed-fare count persist. Repairs and bail return you to the driving loop.
+
+Saved progress, gameplay settings and audio preferences use the `taxi-chaos-*` browser storage keys. Existing saves from the previous project name migrate automatically on the same browser origin.
 
 ## Motorbike deliveries & lean
 

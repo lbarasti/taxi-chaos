@@ -8,6 +8,7 @@ import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
 import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
+import { readStorage, storageKeys } from './storage';
 
 export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -23,8 +24,8 @@ export const upgradeInfo = {
 };
 export type Upgrade = keyof typeof upgradeInfo;
 export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0 });
-function loadSave(): Save { try { const s = JSON.parse(localStorage.getItem('fare-city-v1') ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
-function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(localStorage.getItem('fare-city-settings') ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
+function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
+function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 export type Blast = { position: Vec; radius: number; power: number; blamed: boolean; due: number; sourceVehicle?: number; sourceProp?: number };
 export class Game {
   world = new World(); save = loadSave(); mode: Mode = 'intro'; keys = new Set<string>();
@@ -133,7 +134,7 @@ export class Game {
   get stars() { return this.heat < 20 ? 0 : this.heat < 48 ? 1 : this.heat < 76 ? 2 : 3; }
   get police() { return this.vehicles.filter(v => v.kind === 'police' && v.alive && v.damage.status !== 'wreck'); }
   get garageNear() { return !this.onFoot && dist(this.player.body.position, GARAGE) < 9; }
-  persist() { try { localStorage.setItem('fare-city-v1', JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
+  persist() { try { localStorage.setItem(storageKeys.save, JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
   configure(settings: Partial<Settings>) {
     const enableGod = settings.invincible === true && !this.settings.invincible;
     if (settings.difficulty && Object.hasOwn(difficulties, settings.difficulty)) this.preferences.difficulty = this.settings.difficulty = settings.difficulty;
@@ -141,7 +142,7 @@ export class Game {
     for (const key of ['gore', 'invincible', 'infiniteBoost', 'noPolice'] as const) if (typeof settings[key] === 'boolean') this.settings[key] = settings[key]!;
     if (enableGod) this.player.damage = createVehicleDamage();
     if (this.settings.noPolice) { this.heat = 0; for (const v of this.police) v.alive = false; }
-    try { localStorage.setItem('fare-city-settings', JSON.stringify(this.preferences)); } catch {}
+    try { localStorage.setItem(storageKeys.settings, JSON.stringify(this.preferences)); } catch {}
     this.onChange();
   }
   setMode(mode: Mode) { if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.onModeChange(); }

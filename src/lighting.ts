@@ -1,4 +1,4 @@
-// Reduced-resolution ambient + local-light compositing for Fare City's Canvas 2D renderer.
+// Reduced-resolution ambient + local-light compositing for Taxi Chaos's Canvas 2D renderer.
 //
 // The world is drawn normally, then a half-resolution "darkness/tint mask" is composited over it
 // and a matching "glow" pass is added on top:

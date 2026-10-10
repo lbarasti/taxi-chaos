@@ -1,4 +1,4 @@
-// Stylized pulp-gore, vehicle fire and explosion effects for Fare City.
+// Stylized pulp-gore, vehicle fire and explosion effects for Taxi Chaos.
 // Pure Canvas 2D procedural art: no assets, audio or network, and no per-frame
 // randomness (fires/smoke are deterministic functions of time+seed) so the muted
 // city palette stays legible. Every ctx mutation is wrapped in save()/restore().

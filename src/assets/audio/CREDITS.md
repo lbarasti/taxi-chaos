@@ -1,4 +1,4 @@
-# Fare City FX credits
+# Taxi Chaos FX credits
 
 All samples are embedded in the standalone HTML. Edited for mono playback,
 matched loudness, short fades, loop seams and size (22.05 kHz PCM loops / MP3
@@ -46,7 +46,7 @@ License: https://creativecommons.org/licenses/by/3.0/
 ## Generated cues
 
 Pickup, payment, purchase, repair, escape and arrest cues are short procedural
-Web Audio tones created for Fare City. No music or voice recordings are included.
+Web Audio tones created for Taxi Chaos. No music or voice recordings are included.
 
 ## Reproducing the edits
 

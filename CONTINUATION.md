@@ -1,4 +1,8 @@
-# Fare City — continuation handoff
+# Taxi Chaos — continuation handoff
+
+## Project rename — 2026-10-10
+
+The project is now **Taxi Chaos**, with package name `taxi-chaos`. Branding, browser title, welcome/help UI, LAB title, source comments and audio credits use the new name. Browser storage uses `taxi-chaos-v1`, `taxi-chaos-settings` and `taxi-chaos-audio`; legacy keys migrate automatically on load, and erasing progress clears both save keys. Historical browser-context names and filesystem paths below refer to the original sessions.
 
 Read this file first after resetting context. The expanded game, sound FX, and **boost / roadside escape / parked-car follow-up are complete** as of 2026-10-08. Earlier checkpoints below are retained as history. The historical instruction to postpone audio has been superseded by the user's explicit approval to implement FX.
 

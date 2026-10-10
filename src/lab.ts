@@ -1,4 +1,4 @@
-// LAB — desktop-only dev playground for Fare City.
+// LAB — desktop-only dev playground for Taxi Chaos.
 //
 // Owned entirely by this module: `main.ts` only has to call `setupLab(game, renderer, hooks)`
 // (lazily for `?debug=1` or F2) and forward F2 to `lab.toggle()`. Everything else — the
@@ -21,6 +21,7 @@ import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-co
 import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
+import { removeStorage, storageKeys } from './storage';
 
 const STEP = 1 / 120;
 /** Representative hour for each day/night period; presets set the hour only. */
@@ -382,7 +383,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     </div>
     <div class="lab-body" data-lab="body">
       <div class="lab-head">
-        <strong>Fare City Lab</strong>
+        <strong>Taxi Chaos Lab</strong>
         <span class="lab-pill" data-lab="clock-2">LIVE</span>
         <span class="lab-tele" data-lab="tele"></span>
         <button data-lab="collapse" aria-label="Collapse LAB panel">Collapse ▾</button>
@@ -669,7 +670,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       game.garage();
       hooks.refresh(); refreshUI();
     },
-    resetSave: () => { try { localStorage.removeItem('fare-city-v1'); location.reload(); } catch { /* storage/location unavailable */ } },
+    resetSave: () => { try { removeStorage(storageKeys.save); location.reload(); } catch { /* storage/location unavailable */ } },
     configure: (settings) => { game.configure(settings); hooks.refresh(); refreshUI(); },
     upgrades: (patch) => {
       for (const key of Object.keys(patch) as Upgrade[]) {

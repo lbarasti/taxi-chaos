@@ -2,13 +2,14 @@ import type { Game } from './game';
 import { clamp, dist, dot, length, rotate, vec, type Vec } from './physics';
 import { audioAssets, type AudioAsset } from './audio-assets';
 import { drivingSound, soundLabels, soundPriority, spatialSound, type SoundCue, type SoundEvent } from './sound';
+import { readStorage, storageKeys } from './storage';
 
 export type AudioPreferences = { muted: boolean; volume: number; sirens: number };
 export function audioPreferences(value: Partial<AudioPreferences> = {}): AudioPreferences {
   return { muted: value.muted === true, volume: typeof value.volume === 'number' && Number.isFinite(value.volume) ? clamp(value.volume, 0, 1) : 0.65,
     sirens: typeof value.sirens === 'number' && Number.isFinite(value.sirens) ? clamp(value.sirens, 0, 1) : 0.25 };
 }
-function loadPreferences() { try { return audioPreferences(JSON.parse(localStorage.getItem('fare-city-audio') ?? '{}') ?? {}); } catch { return audioPreferences(); } }
+function loadPreferences() { try { return audioPreferences(JSON.parse(readStorage(storageKeys.audio) ?? '{}') ?? {}); } catch { return audioPreferences(); } }
 
 type Voice = { source: AudioBufferSourceNode; gain: GainNode; pan: StereoPannerNode; filter: BiquadFilterNode; priority: number; level: number; preview: boolean };
 type LoopTarget = { asset: AudioAsset; gain: number; rate?: number; pan?: number; cutoff?: number };
@@ -73,7 +74,7 @@ export class AudioFX {
 
   configure(patch: Partial<AudioPreferences>) {
     this.preferences = audioPreferences({ ...this.preferences, ...patch });
-    try { localStorage.setItem('fare-city-audio', JSON.stringify(this.preferences)); } catch {}
+    try { localStorage.setItem(storageKeys.audio, JSON.stringify(this.preferences)); } catch {}
     if (this.preferences.muted || this.preferences.volume === 0) { this.stopAll(); this.audible = false; }
     if (this.context && this.master) this.smooth(this.master.gain, this.preferences.muted ? 0 : this.preferences.volume, 0.025);
   }
