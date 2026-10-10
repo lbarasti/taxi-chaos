@@ -133,3 +133,17 @@ export class SpatialHash<T extends { body: Body; alive: boolean }> {
   insert(item: T) { for (const key of this.keys(item.body)) { const cell = this.cells.get(key) ?? []; cell.push(item); this.cells.set(key, cell); } }
   query(body: Body) { const found = new Set<T>(); for (const key of this.keys(body)) for (const item of this.cells.get(key) ?? []) if (item.alive) found.add(item); return found; }
 }
+
+/** Exact segment/OBB test; thin walls cannot be skipped by sampled sight rays. */
+export function segmentIntersectsBody(a: Vec, b: Vec, body: Body): boolean {
+  const start = rotate(sub(a, body.position), -body.angle), end = rotate(sub(b, body.position), -body.angle), delta = sub(end, start);
+  let enter = 0, leave = 1;
+  for (const axis of ['x', 'y'] as const) {
+    const half = (axis === 'x' ? body.w : body.h) / 2;
+    if (Math.abs(delta[axis]) < 1e-9) { if (Math.abs(start[axis]) > half) return false; continue; }
+    const t1 = (-half - start[axis]) / delta[axis], t2 = (half - start[axis]) / delta[axis];
+    enter = Math.max(enter, Math.min(t1, t2)); leave = Math.min(leave, Math.max(t1, t2));
+    if (enter > leave) return false;
+  }
+  return leave > 1e-5 && enter < 1 - 1e-5;
+}

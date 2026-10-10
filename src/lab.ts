@@ -42,6 +42,7 @@ export type ScenarioName =
   | 'motorcycle'
   | 'eastern-bridges'
   | 'woodland-estates'
+  | 'harbour'
   | 'commercial-traffic'
   | 'flammable-cargo'
   | 'coastal-rails'
@@ -72,6 +73,7 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
+  { name: 'harbour', label: 'Northstar Harbour / car exchange', description: 'Stop at the security gate. E pays $75. Follow cyan into container C-76 and stop fully inside for a fresh car and a completely clean police record. Working ships, cranes and trucks fill the docks.' },
   { name: 'commercial-traffic', label: 'Vans / freight traffic', description: 'A van, empty truck, loaded truck and flammable cargo truck start together on Harbour Ave. Watch their different acceleration and follow them through the junction. NPC only; police disabled.' },
   { name: 'flammable-cargo', label: 'Flammable cargo / impact', description: 'A god-mode cab hits a fuel truck cargo bed at speed. A hard cargo impact starts a readable fire, then a larger blast can ignite the nearby parked car. Commercial vehicles remain NPC only.' },
   { name: 'coastal-rails', label: 'Coast / guardrail crash', description: 'A cab heads north into a guardrail at 26 m/s. Step or let it run to see the panel break, metal scatter and the cab splash into the ocean. Try 8 m/s with teleport for a deflection instead.' },
@@ -188,7 +190,7 @@ function prepare(game: Game, keepCarts = false) {
   game.settings.infiniteBoost = false;
   game.settings.noPolice = false;
   setTraffic(game, 0);
-  game.vehicles = game.vehicles.filter(v => !v.parked && (keepCarts || !v.cart));
+  game.vehicles = game.vehicles.filter(v => !v.freight && !v.parked && (keepCarts || !v.cart));
 }
 
 /** Place a vehicle without touching its damage/upgrades. */
@@ -246,6 +248,11 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');
+      break;
+    }
+    case 'harbour': {
+      pose(game, renderer, player, 200, -8, NORTH); game.save.cash = 180; game.heat = 15; game.navToHarbour = true; game.populateFreight();
+      game.notify('E pays security $75. Follow cyan to container C-76 for a clean ride.');
       break;
     }
     case 'commercial-traffic': {
@@ -442,7 +449,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   let frozen = false;
   let timeScale = 1;
   let currentScenario: ScenarioName | null = null;
-  let desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked && v.alive).length;
+  let desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked && !v.freight && v.alive).length;
   let expanded = false;
   let lastKeys: string[] = [];
 
@@ -739,7 +746,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       game.settings.infiniteBoost = false;
       game.settings.noPolice = false;
       currentScenario = null;
-      desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked && v.alive).length;
+      desiredTraffic = game.vehicles.filter(v => v.kind === 'traffic' && !v.cart && !v.parked && !v.freight && v.alive).length;
       hooks.refresh(); refreshUI();
       return snapshot();
     },

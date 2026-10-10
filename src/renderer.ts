@@ -10,6 +10,9 @@ import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIG
 import { radarMarker, radarView } from './radar';
 import { CITY_SHORE } from './coast';
 
+import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
+import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
+
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
 
 function trace(c: CanvasRenderingContext2D, points: Vec[], closed = false) {
@@ -84,12 +87,14 @@ export class Renderer {
       this.rect(-0.24, -0.05, 0.48, 0.6, GOLD); this.circle(vec(0, -0.23), 0.24, '#dfc4ab');
       this.rect(-0.26, 0.42 + stride, 0.18, 0.32, '#273c44'); this.rect(0.08, 0.42 - stride, 0.18, 0.32, '#273c44'); c.restore();
     }
+    drawHarbourActivity(this);
     g.fx.drawAir(c, g.time, g.settings.gore);
     c.restore();
     this.lightingPass(lighting);
     // Navigation, labels and debug feedback are redrawn above the lighting pass so night never
     // hides the destination markers or the player's read-outs.
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
+    if (this.visible(PORT_ENTRY, 10)) this.label('HARBOUR / $75', PORT_ENTRY.x, PORT_ENTRY.y + 3, 0.9, '#a3ddc2', '700');
     this.marker(GARAGE, '#a7bcca', 'PIT STOP', true);
     const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
     for (const person of g.world.people) if (person.alive && !person.aboard && person.panic > 0 && this.visible(person.position, 2)) this.label('!', person.position.x, person.position.y - 1, 1.1, GOLD, '700');
@@ -155,6 +160,7 @@ export class Renderer {
     // do not read as a darker night before the ambient lighting pass is applied.
     this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#29383e', '#84938a', this.daylight * 0.45), '#bac2a5');
     this.countrysideGround();
+    drawHarbourGround(this);
     for (const b of g.world.blocks) {
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
       this.rect(b.x + 6, b.y + 6, 28, 28, '#596361'); this.rect(b.x + 6.5, b.y + 6.5, 27, 27, b.park ? '#345b4a' : '#444c4b');
@@ -296,6 +302,7 @@ export class Renderer {
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
   prop(prop: Prop) {
+    if (drawPortProp(this, prop)) return;
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (!prop.alive) {
@@ -646,11 +653,14 @@ export class Renderer {
     c.translate(view.offset.x, view.offset.y); c.scale(s, s);
     trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = '#45634a'; c.fill();
     for (const ridge of RIDGES) { trace(c, ridge, true); c.fillStyle = '#717566'; c.fill(); }
+    c.fillStyle = '#6f8983'; c.fillRect(HARBOUR.left, HARBOUR.top, HARBOUR.right - HARBOUR.left, HARBOUR.bottom - HARBOUR.top);
+    for (const box of PORT_CONTAINERS) { c.fillStyle = box.color; c.fillRect(box.position.x - 7, box.position.y - 2.8, 14, 5.6); }
+    c.fillStyle = '#a3ddc2'; c.fillRect(SWAP_CONTAINER.x - 5, SWAP_CONTAINER.y - 3, 10, 6); c.fillRect(PORT_ENTRY.x - 3, PORT_ENTRY.y - 3, 6, 6);
     c.fillStyle = '#90a66b'; c.fillRect(GOLF_COURSE.center.x - GOLF_COURSE.width / 2, GOLF_COURSE.center.y - GOLF_COURSE.height / 2, GOLF_COURSE.width, GOLF_COURSE.height);
     for (const villa of VILLAS) { c.fillStyle = '#dcc4a1'; c.fillRect(villa.position.x - 5, villa.position.y - 3, 10, 6); }
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
-    c.strokeStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
+    c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
     const markerScale = 0.66 / s;
     if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
     c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
@@ -659,7 +669,7 @@ export class Renderer {
     c.restore();
     const marker = radarMarker(g.target, view, width, chartHeight);
     c.save(); c.translate(marker.position.x, marker.position.y);
-    c.strokeStyle = c.fillStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT;
+    c.strokeStyle = c.fillStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT;
     c.lineWidth = 1.5; c.beginPath();
     if (marker.offscreen) { c.rotate(marker.angle); c.moveTo(5, 0); c.lineTo(-4, -4); c.lineTo(-2, 0); c.lineTo(-4, 4); c.closePath(); c.fill(); }
     else { c.arc(0, 0, 4, 0, Math.PI * 2); c.stroke(); }

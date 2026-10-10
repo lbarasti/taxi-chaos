@@ -66,7 +66,7 @@ describe('vehicle catalogue and physics', () => {
 
 describe('commercial NPC integration', () => {
   it('populates all commercial types without intersecting vehicles or solid scenery', () => {
-    const g = new Game(), moving = g.vehicles.filter(v => v.kind === 'traffic' && !v.parked && !v.cart);
+    const g = new Game(), moving = g.vehicles.filter(v => v.kind === 'traffic' && !v.parked && !v.cart && !v.freight);
     expect(moving).toHaveLength(23); for (const model of commercial) expect(moving.some(v => v.model === model)).toBe(true);
     for (const v of moving) {
       expect([...g.world.hash.query(v.body)].some(p => contact(v.body, p.body))).toBe(false);
@@ -74,7 +74,7 @@ describe('commercial NPC integration', () => {
     }
     g.setTrafficCount(0); g.setTrafficCount(40);
     for (const model of commercial) expect(g.vehicles.some(v => v.model === model && !v.parked)).toBe(true);
-    for (const v of g.vehicles.filter(v => !v.parked && !v.cart)) {
+    for (const v of g.vehicles.filter(v => !v.parked && !v.cart && !v.freight)) {
       expect([...g.world.hash.query(v.body)].some(p => contact(v.body, p.body))).toBe(false);
       expect(g.vehicles.some(other => other !== v && contact(v.body, other.body))).toBe(false);
     }
