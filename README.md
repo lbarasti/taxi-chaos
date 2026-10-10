@@ -84,6 +84,23 @@ The [vehicle survey, handling measurements, extension API and screenshots](docs/
 cover the existing cars, bikes and golf carts as well as the new fleet. `src/vehicles.ts`
 centralizes model definitions; `game.spawnVehicle(options)` is the named-options spawn API.
 
+## Working harbour / clean-car escape
+
+**Northstar Harbour** extends the north waterfront with fifteen container stacks,
+two cargo ships, four cranes visibly loading cargo, workers, warehouses and three
+freight trucks using separate entrance/exit lanes. The terminal is drivable and the
+open quay still leads into the ocean.
+
+Press **H** or tap **Harbour · $75** to navigate there. Stop at security in a car
+with police out of line of sight; **E / Pay $75** buys entry and one exchange.
+Follow cyan to **C-76**, drive fully inside and stop for 2.5 seconds while unseen.
+A new healthy car emerges and **all police heat, warnings and pursuit intel clear**.
+Wallet, upgrades and the current passenger/fare carry over. Follow cyan out; a
+return visit requires payment again. New offences still attract cops.
+
+**Try it:** F2 → **Northstar Harbour / car exchange**. See the
+[reference study, rules, implementation notes and screenshots](docs/harbour.md).
+
 ## Controls & game loop
 
 | Input | Action |
@@ -91,8 +108,9 @@ centralizes model definitions; `game.spawnVehicle(options)` is the named-options
 | WASD / arrows | Drive; move in screen directions while on foot |
 | Space | Car handbrake / drift; motorcycle rear brake |
 | Shift + accelerate | Rechargeable nitro boost (blue jets + active HUD) |
-| E | Exit / dismount; take a nearby parked car or motorbike |
+| E | Pay harbour security at the gate; exit / dismount; take a nearby parked ride |
 | R | Optional tow & repair after a wreck |
+| H / harbour button | Set/cancel a route to harbour security |
 | G / garage button | Set/cancel a garage route; enter when stopped nearby |
 | P / Escape | Pause / resume |
 | M / speaker button | Mute / unmute sound FX |
@@ -182,7 +200,7 @@ npm run build    # strict TypeScript check + standalone build
 
 Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. The same inspector works in the standalone HTML. Its controls include:
 
-- **25 fixtures:** first fare, **Motorbike deliveries**, eastern bridges, woodland estates, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
+- **26 fixtures:** first fare, **Motorbike deliveries**, eastern bridges, woodland estates, **Northstar Harbour / car exchange**, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
 - **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
 - **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
 - **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.
@@ -190,7 +208,7 @@ Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. Th
 - **Difficulty and gore:** change during a run. Scenario presets may enable gore/God mode for their test; the preset's description explains its setup.
 - **Sound FX:** audition every sound, adjust saved FX/siren volume, mute, inspect sample/voice telemetry.
 
-Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving vehicles back. **Reset run** restores the ordinary 23-moving-vehicle / 39-parked-vehicle city plus fairway carts; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
+Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving vehicles back. **Reset run** restores the ordinary 23-moving-vehicle / 39-parked-vehicle city plus fairway carts and three harbour freight trucks; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
 
 For browser automation, the opt-in `window.__taxi` harness has:
 
@@ -250,6 +268,7 @@ For shared browser sessions, run automated resets in a separate isolated browser
 ## Code map
 
 - `src/physics.ts`: vectors, rigid bodies, four-tyre forces, rotated-rectangle SAT and normal/friction impulses, spatial hash.
+- `src/harbour.ts` / `src/harbour-renderer.ts`: harbour geography and road graph, security/exchange definitions, ship/crane loading art and freight circuit.
 - `src/vehicles.ts`: typed model catalogue, named spawn options, body/dynamics factories, commercial cargo, graphics/handling/access profiles and road-traffic mix.
 - `src/world.ts`: seeded city, special structures, stable entity IDs, and simple shortest street routing (same-street trips are direct; street-to-street trips need at most two turns).
 - `src/ai.ts`: obstacle sensing, budgeted physical recovery, road rejoin, police prediction/memory and containment.

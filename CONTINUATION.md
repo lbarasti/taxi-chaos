@@ -1,5 +1,32 @@
 # Taxi Chaos — continuation handoff
 
+## Latest checkpoint — working harbour and paid car exchange, 2026-10-10
+
+- Added Northstar Harbour on the north waterfront: shared 180 × 120 m dry apron,
+  fifteen container stacks, two cargo ships, four staggered animated loading cranes,
+  workers, warehouse/customs detail, open quay and separate truck entrance/exit lanes.
+- Three physical empty/loaded freight NPCs follow a port/city circuit with the existing
+  commercial physics and sensing/recovery AI. They are separate from road traffic density.
+- H / Harbour button routes to security. E / touch payment charges $75 once in a stopped
+  eligible car while unseen by police. Admission is per vehicle and includes one exchange.
+  C-76 requires full containment, <0.8 m/s, no throttle and 2.5 s uninterrupted concealment.
+  Safe output clearance is checked before issuing a new healthy, different-coloured car.
+- Wallet, upgrades, current job/passenger persist. Heat, all warning levels, arrest/escape,
+  speeding and shared police intel clear completely; active pursuers retire without an
+  escape reward. Later crimes work normally. Admission expires on exit/reset/recovery.
+  Emergency bailout still takes priority for burning/wrecked cars at the gate.
+- Harbour navigation connects to city/woodland without altering top-street routing.
+  Exact segment/OBB police visibility prevents thin container walls from being skipped;
+  container stacks also occlude headlights. Gate/fence mesh does not conceal the car.
+- New F2 `harbour` scenario (26 total); snapshots expose detached `harbour` state.
+  Reference research, gameplay/API notes and seven production screenshots: `docs/harbour.md`.
+- Rebase retains joystick/fullscreen/compact status and contextual actions, with short harbour-specific mobile instructions and accessible security payment. Native two-finger controls, five HUD layouts and small/portrait/landscape harbour exchanges pass browser QA.
+- Integrated latest main (consolidated game-over billing and mobile thumb controls). All 359 tests / 26 files and
+  the standalone production build pass. Physical gate-to-exchange driving caused no damage;
+  a five-minute freight circuit crossed both gates at 100 HP. Desktop/night/mobile Chrome
+  QA showed no runtime errors or mobile overflow.
+
+
 ## Latest checkpoint — commercial NPC fleet and vehicle catalogue, 2026-10-10
 
 - New road NPCs: delivery vans, empty three-axle flatbeds, trucks with strapped crates,

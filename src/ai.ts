@@ -5,6 +5,7 @@ import { GOLF_CART_ROUTE, countryAccess, countryNeighbours, isCountry } from './
 import type { Vehicle } from './game';
 import { difficulties, type Difficulty } from './rules';
 import { inOcean } from './coast';
+import { FREIGHT_ROUTE, PORT_NODES, onPortRoad } from './harbour';
 
 export type AIState = {
   anchor: Vec; progressClock: number; stalled: number; phase: 'drive' | 'reverse' | 'rejoin' | 'waiting'; phaseTime: number; reverseTurn: number; attempts: number; failures: number;
@@ -21,6 +22,7 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
     if (inOcean(p)) return false;
     const probe = new Body(p.x, p.y, Infinity, body.w + 0.1, body.h + 0.25); probe.angle = heading;
     for (const prop of c.world.hash.query(probe)) {
+      if (prop.kind === 'port-gate' && v.freight) continue;
       if (ignoreSoft && !isRigidObstacle(prop.kind)) continue;
       if ((contact(probe, prop.body)?.depth ?? 0) > 0.04) return false;
     }
@@ -35,7 +37,7 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
 
 function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: number } | undefined {
   const node = roadNode(body.position), points: Vec[] = [];
-  if (isCountry(body.position)) {
+  if (onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (isCountry(body.position)) {
     for (const point of countryAccess(body.position).road.points) if (dist(point, body.position) >= 5 && dist(point, body.position) <= 24) points.push(point);
   } else {
     // Alley exits preserve the open channel rather than cutting through a building.
@@ -94,7 +96,7 @@ function nextTrafficRoad(v: Vehicle, c: AIContext) {
     const rejoin = roadRejoin(v, v.body, c);
     if (rejoin) { v.path = [rejoin.point]; v.ai.phase = 'rejoin'; v.ai.phaseTime = 7; return; }
   }
-  const node = roadNode(v.body.position), options = roadNeighbours(node);
+  const node = roadNode(v.body.position), options = roadNeighbours(node).filter(p => onPortRoad(v.body.position) || p.y >= 0 || !onPortRoad(p));
   const forward = options.filter(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > -0.3);
   const choices = forward.length ? forward : options;
   const straight = choices.find(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > 0.85);
@@ -135,6 +137,10 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
     const diff = angleDiff(Math.atan2(delta.y, delta.x), v.body.angle);
     const speed = dot(v.body.velocity, rotate(vec(1, 0), v.body.angle));
     return { throttle: clamp((v.definition.ai.cruiseSpeed / (1 + Math.abs(diff) * 2) - speed) * 0.6, -1, 1), turn: clamp(diff * 2 - v.body.angularVelocity * 0.3, -1, 1), handbrake: false };
+  }
+  if (v.freight && v.ai.phase === 'drive') {
+    if (dist(v.body.position, FREIGHT_ROUTE[v.freight.waypoint]) < 5) v.freight.waypoint = (v.freight.waypoint + 1) % FREIGHT_ROUTE.length;
+    v.path = [FREIGHT_ROUTE[v.freight.waypoint], FREIGHT_ROUTE[(v.freight.waypoint + 1) % FREIGHT_ROUTE.length]];
   }
   const state = v.ai, body = v.body, speed = length(body.velocity), rules = difficulties[c.settings.difficulty];
   if (v.baseEngine === 0) return { throttle: 0, turn: 0, handbrake: true };
@@ -179,8 +185,8 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
     if (v.kind === 'traffic' && !v.path.length) nextTrafficRoad(v, c);
   }
   if (state.planPending) return { throttle: speed > 1 ? -1 : 0, turn: 0, handbrake: true };
-  while (v.path.length > 1 && dist(v.path[0], body.position) < 5) v.path.shift();
-  if (v.kind === 'traffic' && state.phase === 'drive' && v.path[0] && dist(v.path[0], body.position) < 5) { v.path.shift(); if (!v.path.length) nextTrafficRoad(v, c); }
+  while (!v.freight && v.path.length > 1 && dist(v.path[0], body.position) < 5) v.path.shift();
+  if (!v.freight && v.kind === 'traffic' && state.phase === 'drive' && v.path[0] && dist(v.path[0], body.position) < 5) { v.path.shift(); if (!v.path.length) nextTrafficRoad(v, c); }
   if (state.planPending) return { throttle: speed > 1 ? -1 : 0, turn: 0, handbrake: true };
   const target = v.path[0] ?? body.position, desired = Math.atan2(target.y - body.position.y, target.x - body.position.x), diff = angleDiff(desired, body.angle);
   if (v.kind === 'police' && state.role === 'blocker' && c.time - state.seenAt < 4 && dist(target, body.position) < 5 && dist(body.position, c.actor.position) > 12) {
@@ -189,6 +195,7 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
   } else state.waitTime = 0;
   const profile = v.definition.ai;
   let wantedSpeed = (state.phase === 'rejoin' ? Math.min(6, profile.cruiseSpeed) : v.kind === 'traffic' ? profile.cruiseSpeed : rules.copSpeed - (c.stars <= 1 ? 4 : 0)) / (1 + Math.abs(diff) * profile.cornerSlowdown);
+  if (v.freight) wantedSpeed = Math.min(wantedSpeed, 7 / (1 + Math.abs(diff)));
   // Loaded trucks start shedding speed before the waypoint reveals a sharp turn.
   if (v.path.length > 1 && body.w > 5) {
     const next = sub(v.path[1], target), bend = Math.abs(angleDiff(Math.atan2(next.y, next.x), desired));
