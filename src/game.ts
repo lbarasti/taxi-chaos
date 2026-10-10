@@ -190,6 +190,16 @@ export class Game {
   }
   get rules() { return difficulties[this.settings.difficulty]; }
   get repairPrice() { const d = this.player.damage; return Math.ceil(Math.max((100 - d.health) * 0.55, (d.critical.engine + d.critical.fuel + d.critical.tyres) * 0.16, d.status === 'burning' ? 30 : 0)); }
+  get hospitalBill() {
+    const medical = Math.min(this.save.cash, 50);
+    const repairs = this.player.damage.status === 'wreck' || this.player.sinking ? Math.min(this.save.cash - medical, 60) : 0;
+    return { medical, repairs, total: medical + repairs };
+  }
+  get arrestBill() {
+    const impound = Math.min(this.save.cash, 75);
+    const bail = Math.min(this.save.cash - impound, this.stars * 45);
+    return { impound, bail, total: impound + bail };
+  }
   get stars() { return this.heat < 20 ? 0 : this.heat < 48 ? 1 : this.heat < 76 ? 2 : 3; }
   get police() { return this.vehicles.filter(v => v.kind === 'police' && v.alive && v.damage.status !== 'wreck'); }
   get garageNear() { return !this.onFoot && dist(this.player.body.position, GARAGE) < 9; }
@@ -248,6 +258,8 @@ export class Game {
   recover() {
     if (this.mode === 'wasted') {
       this.sounds.reset();
+      const bill = this.hospitalBill;
+      this.save.cash -= bill.total; this.persist();
       // Leave the destroyed vehicle behind. Acknowledgment brings the driver back on foot.
       this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true;
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
@@ -257,13 +269,13 @@ export class Game {
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = [];
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
       for (const v of this.police) v.alive = false;
-      this.newJob(); this.setMode('playing'); this.notify('Discharged from Midtown Hospital. Find a parked ride to get back on the road.');
+      this.newJob(); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
       return;
     }
     if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking && this.player.damage.status === 'wreck' && dist(this.driver.position, this.player.body.position) < 6)) return;
     if (this.mode !== 'arrested' && this.player.wreckAt >= 0 && this.time - this.player.wreckAt < 1.2) return;
     this.sounds.reset();
-    const fee = this.mode === 'arrested' ? Math.min(this.save.cash, 75 + this.stars * 45) : Math.min(this.save.cash, 60);
+    const fee = this.mode === 'arrested' ? this.arrestBill.total : Math.min(this.save.cash, 60);
     this.save.cash -= fee; this.persist(); this.player.body.position = vec(4, 32); this.player.body.velocity = vec(); this.player.body.angle = -Math.PI / 2; this.player.body.angularVelocity = 0;
     this.onFoot = false; this.wreckedAt = -1; this.player.kind = 'taxi'; this.player.parked = false; this.player.driverExited = false; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
     this.player.damage = createVehicleDamage(); this.player.wreckAt = -1; this.player.alive = true; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.navToGarage = false;
