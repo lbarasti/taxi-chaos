@@ -31,10 +31,11 @@ describe('pool drowning', () => {
     run(g, 2.2);
     expect(g.mode).toBe('wasted'); expect(g.wastedReason).toBe('drowning'); expect(old.alive).toBe(false);
     expect(g.jobsDone).toBe(0); expect(g.explosions).toBe(0);
-    g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash);
+    expect(g.hospitalBill).toEqual({ medical: 50, repairs: 30, total: 80 });
+    g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - 80);
     expect(old.damage.status).toBe('wreck'); expect(old.alive).toBe(false); expect(g.nearestCar).not.toBe(old);
     g.driver.position = old.body.toWorld(vec(0, 3)); g.recover();
-    expect(g.onFoot).toBe(true); expect(old.alive).toBe(false); expect(g.save.cash).toBe(cash);
+    expect(g.onFoot).toBe(true); expect(old.alive).toBe(false); expect(g.save.cash).toBe(cash - 80);
   });
 
   it('drives into water from the terrace without a solid pool barrier', () => {
@@ -97,7 +98,8 @@ describe('driver health and knockback', () => {
     const source = g.vehicle('traffic', 79, 80, 0, '#fff'); source.parked = true; source.driverExited = true;
     igniteVehicle(source.damage, 0.001); run(g, 0.02);
     expect(g.mode).toBe('wasted'); expect(g.driverHealth).toBe(0); expect(g.wastedReason).toBe('explosion');
-    g.recover(); expect(g.mode).toBe('playing'); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash);
+    expect(g.hospitalBill).toEqual({ medical: 50, repairs: 0, total: 50 });
+    g.recover(); expect(g.mode).toBe('playing'); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - 50);
   });
 
   it('freezes the driver and nearby vehicles after fatal on-foot damage', () => {

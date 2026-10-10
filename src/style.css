@@ -139,10 +139,12 @@
 /* Game-over text stays legible while the blast and street remain visible. */
 .modal-backdrop.game-over{background:transparent;backdrop-filter:none}
 .game-over .modal{background:transparent;border:0;box-shadow:none;text-align:center;text-shadow:0 2px 3px #08131f,0 0 8px #08131f,1px 0 2px #08131f,-1px 0 2px #08131f}
-.game-over .eyebrow{justify-content:center;color:#ffe5dc}
 .game-over .modal h2{font-size:clamp(42px,8vw,76px);font-weight:700;color:#ffb4a2}
-.game-over .modal>p,.game-over .bill small,.game-over .bill>span{color:#fff2dc}
-.game-over .bill{border:0;padding:12px 0 22px}
 .game-over .primary{background:transparent;border:0;color:#fff2dc;text-shadow:inherit;justify-content:center}
 .game-over .primary:hover{color:#ffe391;background:transparent}
 .game-over .primary:focus-visible{outline:none;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+.game-over-bill{display:grid;gap:8px;width:min(260px,100%);margin:0 auto 20px;color:#fff2dc;font-size:14px}
+.game-over-bill>div{display:flex;justify-content:space-between;gap:24px}
+.game-over-bill strong{font-variant-numeric:tabular-nums;color:#ffb4a2}
+.continue-touch{display:none}
+@media(pointer:coarse){.continue-keyboard{display:none}.continue-touch{display:inline}}

@@ -25,7 +25,7 @@ describe('hospital dispatch after a distant explosion', () => {
     expect(game.onFoot).toBe(true);
     expect(wreck.body.position).toEqual(crashPosition);
     expect(wreck.damage.status).toBe('wreck');
-    expect(game.save.cash).toBe(cash);
+    expect(game.save.cash).toBe(cash - Math.min(cash, 110));
     expect(game.job.stage).toBe('pickup');
     expect(game.job.pickup).toEqual(vec(164, 108));
     expect(dist(game.job.pickup, game.actor.position)).toBeLessThan(160);

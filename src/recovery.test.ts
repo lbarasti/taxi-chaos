@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
 import { Body, CarDynamics, contact, dist, length, vec } from './physics';
 import { igniteVehicle } from './damage';
@@ -63,10 +63,28 @@ describe('nitro, parking and roadside recovery', () => {
     expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
     expect(g.speed).toBe(0); expect(old.damage.status).toBe('wreck'); expect(old.body.position).toEqual(position);
     expect(old.kind).toBe('traffic'); expect(old.parked).toBe(true);
-    expect(g.save.cash).toBe(cash); expect(g.save.upgrades.engine).toBe(2); expect(g.heat).toBe(0); expect(g.arrest).toBe(0);
+    expect(g.save.cash).toBe(cash - Math.min(cash, 110)); expect(g.save.upgrades.engine).toBe(2); expect(g.heat).toBe(0); expect(g.arrest).toBe(0);
     expect(g.driftMeter).toBe(0); expect(g.navToGarage).toBe(false); expect(g.job.stage).toBe('pickup');
     g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
     run(g, 0.3, ['KeyS']); expect(g.actor.position.y).toBeGreaterThan(HOSPITAL.y + 0.5);
+  });
+
+  it.each([
+    { cash: 0, medical: 0, repairs: 0, balance: 0 },
+    { cash: 25, medical: 25, repairs: 0, balance: 0 },
+    { cash: 80, medical: 50, repairs: 30, balance: 0 },
+    { cash: 250, medical: 50, repairs: 60, balance: 140 },
+  ])('charges and persists hospital recovery once with a $$cash wallet', ({ cash, medical, repairs, balance }) => {
+    const g = make(); g.save.cash = cash;
+    g.player.damage.fuse = 0.001; run(g, 1 / 120);
+    const persist = vi.spyOn(g, 'persist');
+    expect(g.mode).toBe('wasted'); expect(g.save.cash).toBe(cash);
+    expect(g.hospitalBill).toEqual({ medical, repairs, total: medical + repairs });
+    g.recover();
+    expect(g.save.cash).toBe(balance); expect(persist).toHaveBeenCalledTimes(1);
+    expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
+    g.recover();
+    expect(g.save.cash).toBe(balance); expect(persist).toHaveBeenCalledTimes(1);
   });
 
   it.each([false, true])('cleans up an interrupted passenger fare on hospital respawn (gore=%s)', gore => {
@@ -76,6 +94,27 @@ describe('nitro, parking and roadside recovery', () => {
     g.player.damage.fuse = 0.001; run(g, 0.02); g.recover();
     expect(passenger.aboard).toBe(false); expect(passenger.alive).toBe(!gore);
     expect(g.world.people.some(p => p.aboard)).toBe(false); expect(g.job.customerId).not.toBe(passenger.id); expect(g.jobsDone).toBe(0);
+  });
+
+  it.each([
+    { cash: 500, heat: 0, impound: 75, bail: 0, balance: 425 },
+    { cash: 500, heat: 35, impound: 75, bail: 45, balance: 380 },
+    { cash: 500, heat: 60, impound: 75, bail: 90, balance: 335 },
+    { cash: 500, heat: 90, impound: 75, bail: 135, balance: 290 },
+    { cash: 0, heat: 90, impound: 0, bail: 0, balance: 0 },
+    { cash: 25, heat: 90, impound: 25, bail: 0, balance: 0 },
+    { cash: 80, heat: 90, impound: 75, bail: 5, balance: 0 },
+  ])('itemizes and charges arrest recovery once (cash=$cash, heat=$heat)', ({ cash, heat, impound, bail, balance }) => {
+    const g = new Game(); g.start(); g.save.cash = cash; g.save.upgrades.engine = 2;
+    g.heat = heat; g.boost = 20; g.player.damage.health = 40; g.setMode('arrested');
+    const persist = vi.spyOn(g, 'persist');
+    expect(g.arrestBill).toEqual({ impound, bail, total: impound + bail });
+    run(g, 1); expect(g.save.cash).toBe(cash); expect(g.mode).toBe('arrested');
+    g.recover();
+    expect(g.save.cash).toBe(balance); expect(persist).toHaveBeenCalledTimes(1);
+    expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(false); expect(g.actor.position).toEqual(vec(4, 32));
+    expect(g.health).toBe(100); expect(g.boost).toBe(100); expect(g.heat).toBe(0); expect(g.save.upgrades.engine).toBe(2);
+    g.recover(); expect(g.save.cash).toBe(balance); expect(persist).toHaveBeenCalledTimes(1);
   });
 
   it('offers local tow recovery only after escaping before the explosion', () => {
