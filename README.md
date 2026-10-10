@@ -25,6 +25,12 @@ npm run build
 npm run preview
 ```
 
+### GitHub Pages
+
+Play online at **https://lbarasti.com/taxi-chaos/**. The GitHub Pages URL, `https://lbarasti.github.io/taxi-chaos/`, redirects to the account's custom domain.
+
+The **Deploy GitHub Pages** workflow in `.github/workflows/pages.yml` runs on pushes to `main` and can also be started manually from GitHub Actions. It installs dependencies, runs the tests, builds the standalone HTML, and publishes `dist/`. The repository's **Settings → Pages → Source** is set to **GitHub Actions**.
+
 ## Controls & game loop
 
 | Input | Action |
