@@ -404,7 +404,7 @@ export class Game {
     return true;
   }
   update(dt: number) {
-    if (this.mode === 'wasted') { if (this.onFoot && this.driverKnockback > 0) this.walk(dt); this.effects(dt); return; }
+    if (this.mode === 'wasted') { this.effects(dt); return; }
     if (this.mode !== 'playing') return;
     this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;

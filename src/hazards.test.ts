@@ -100,6 +100,22 @@ describe('driver health and knockback', () => {
     g.recover(); expect(g.mode).toBe('playing'); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash);
   });
 
+  it('freezes the driver and nearby vehicles after fatal on-foot damage', () => {
+    const g = walking();
+    const car = g.vehicle('traffic', 77.9, 80, 0, '#fff'); car.body.velocity = vec(35, 0);
+    g.walk(1 / 120);
+    expect(g.mode).toBe('wasted'); expect(g.driverKnockback).toBeGreaterThan(0);
+    const driver = { position: { ...g.driver.position }, velocity: { ...g.driver.velocity }, angle: g.driver.angle };
+    const vehicles = g.vehicles.map(v => ({ position: { ...v.body.position }, velocity: { ...v.body.velocity }, angle: v.body.angle }));
+    const time = g.time;
+    // New key presses must not move the dead driver or push the frozen car.
+    g.keys.add('KeyW'); g.keys.add('KeyA'); run(g, 1);
+    expect({ position: g.driver.position, velocity: g.driver.velocity, angle: g.driver.angle }).toEqual(driver);
+    expect(g.vehicles.map(v => ({ position: v.body.position, velocity: v.body.velocity, angle: v.body.angle }))).toEqual(vehicles);
+    expect(g.time).toBe(time); expect(g.mode).toBe('wasted');
+    g.recover(); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100);
+  });
+
   it('leaves a driver outside the blast radius unharmed', () => {
     const g = walking(); g.explosion({ position: vec(60, 80), radius: 13, power: 110, blamed: false, due: 0 });
     expect(g.driverHealth).toBe(100); expect(g.driver.velocity).toEqual(vec());
