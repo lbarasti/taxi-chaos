@@ -3,6 +3,7 @@ import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadN
 import { GOLF_CART_ROUTE, countryAccess, countryNeighbours, isCountry } from './countryside';
 import type { Vehicle } from './game';
 import { difficulties, type Difficulty } from './rules';
+import { inOcean } from './coast';
 
 export type AIState = {
   anchor: Vec; progressClock: number; stalled: number; phase: 'drive' | 'reverse' | 'rejoin' | 'waiting'; phaseTime: number; reverseTurn: number; attempts: number; failures: number;
@@ -16,6 +17,7 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
   const delta = sub(target, body.position), distance = length(delta), heading = Math.atan2(delta.y, delta.x);
   for (let d = 1.2; d <= distance; d += 1.2) {
     const p = add(body.position, scale(delta, d / distance));
+    if (inOcean(p)) return false;
     const probe = new Body(p.x, p.y, Infinity, 4.3, 2.35); probe.angle = heading;
     for (const prop of c.world.hash.query(probe)) {
       if (ignoreSoft && !isRigidObstacle(prop.kind)) continue;
@@ -71,6 +73,7 @@ function beginRecovery(v: Vehicle, c: AIContext): boolean {
     const dynamics = new CarDynamics(); dynamics.engineForce = v.dynamics.engineForce; dynamics.grip = v.dynamics.grip; let penalty = 0;
     for (let i = 0; i < 60; i++) {
       dynamics.apply(body, { throttle: -0.65, turn, handbrake: false }, 1 / 30); body.integrate(1 / 30);
+      if (inOcean(body.position)) penalty += 100;
       for (const prop of c.world.hash.query(body)) { const hit = contact(body, prop.body); if (hit && hit.depth > 0.06) penalty += hit.depth * 12; }
       for (const other of c.vehicles) if (other !== v && other.alive && dist(other.body.position, body.position) < 6) { const hit = contact(body, other.body); if (hit && hit.depth > 0.1) penalty += hit.depth * 8; }
     }

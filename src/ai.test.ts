@@ -30,7 +30,7 @@ describe('NPC incident recovery', () => {
     for (const [x, y, w, h] of [[17.8, 20.5, 1, 7], [23.2, 20.5, 1, 7], [20.5, 17.3, 8, 1], [20.5, 23.7, 8, 1]]) g.world.add('building', x, y, w, h, '#333');
     const car = g.vehicle('traffic', 20.5, 20.5, 0, '#abc'); car.path = [vec(40, 20.5)]; run(g, 25);
     expect(car.ai.attempts).toBeLessThanOrEqual(4); expect(car.alive).toBe(false); expect(car.damage.status).not.toBe('wreck');
-  });
+  }, 15000); // 25 simulated seconds with parked traffic can exceed the default 5 s on slower runners.
   it('limits heavy reversing previews to one per simulation step', () => {
     const g = make(); const cars = [14, 54, 94].map(x => { const v = g.vehicle('traffic', x, 6.7, Math.PI / 2, '#abc'); v.path = [vec(x, 24)]; v.ai.stalled = 2; return v; });
     g.update(1 / 120); expect(g.recoveryBudget.used).toBeLessThanOrEqual(1); expect(cars.filter(v => v.ai.attempts > 0).length).toBe(1);

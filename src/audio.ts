@@ -124,7 +124,7 @@ export class AudioFX {
     const desired = new Map<string, LoopTarget>();
     if (running) {
       for (const event of events.sort((a, b) => b.priority - a.priority)) if (event.cue !== 'pulp' || game.settings.gore) this.play(event);
-      const player = game.player, driving = game.mode === 'playing' && !game.onFoot && player.damage.status !== 'wreck';
+      const player = game.player, driving = game.mode === 'playing' && !game.onFoot && !player.sinking && player.damage.status !== 'wreck';
       const boost = driving && game.controls.boost === true;
       if (driving) {
         const slip = player.dynamics.skidding ? Math.max(...player.dynamics.tyres.filter(t => t.skidding).map(t => Math.abs(dot(player.body.velocityAt(player.body.toWorld(t.position)), rotate(vec(0, 1), player.body.angle + t.angle))))) : 0;
@@ -137,7 +137,7 @@ export class AudioFX {
       if (boost !== this.boosting) this.play({ cue: boost ? 'boost-start' : 'boost-end', time: game.time, strength: 1, priority: 2 });
       this.boosting = boost;
       // Quiet nearest traffic only; never twenty-three equally loud engines.
-      if (game.mode === 'playing') for (const car of game.vehicles.filter(v => v.alive && v.kind === 'traffic' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) > 2)
+      if (game.mode === 'playing') for (const car of game.vehicles.filter(v => v.alive && !v.sinking && v.kind === 'traffic' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) > 2)
         .sort((a, b) => dist(a.body.position, this.listener) - dist(b.body.position, this.listener)).slice(0, 2)) {
         const spatial = spatialSound(this.listener, car.body.position, 35);
         desired.set(`traffic:${car.id}`, { asset: 'engine', gain: spatial.gain * 0.055, pan: spatial.pan, rate: 0.8 + length(car.body.velocity) / 35, cutoff: 1300 });

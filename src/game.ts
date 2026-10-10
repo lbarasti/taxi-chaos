@@ -10,8 +10,9 @@ import { DayNight } from './day-night';
 import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
 import { readStorage, storageKeys } from './storage';
 import { GOLF_CART_ROUTE, HIGHLAND_STOPS, ROAD_NODES, isCountry, pathLength } from './countryside';
+import { RAIL_BREAK_SPEED, inOcean } from './coast';
 
-export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle' | 'golf-cart'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; sinking?: { elapsed: number; pool: Body }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
+export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle' | 'golf-cart'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
@@ -104,7 +105,7 @@ export class Game {
   get enterableCar() { const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 0.35);
-    for (let i = 0; i <= steps; i++) { const p = add(a, scale(sub(b, a), i / (steps || 1))), probe = new Body(p.x, p.y, 1, 0.7, 0.7); if ([...this.world.hash.query(probe)].some(prop => contact(probe, prop.body)) || this.world.pools.some(pool => contact(probe, pool))) return false; }
+    for (let i = 0; i <= steps; i++) { const p = add(a, scale(sub(b, a), i / (steps || 1))), probe = new Body(p.x, p.y, 1, 0.7, 0.7); if (inOcean(p) || [...this.world.hash.query(probe)].some(prop => contact(probe, prop.body)) || this.world.pools.some(pool => contact(probe, pool))) return false; }
     return true;
   }
   interact() {
@@ -149,6 +150,11 @@ export class Game {
       }
     }
     this.driver.angularVelocity = 0;
+    // Resolve intact rails first. Only a real gap (or a previously broken panel)
+    // lets the walker cross the shoreline; walking never calls prop damage.
+    if (this.mode === 'playing' && inOcean(this.driver.position)) {
+      this.fx.splash(this.driver.position, 0.6); this.driverHealth = 0; this.driver.velocity = vec(); this.waste('drowning');
+    }
   }
   get health() { return this.onFoot ? this.driverHealth : this.player.damage.health; }
   set health(value: number) { if (this.onFoot) this.driverHealth = clamp(value, 0, 100); else this.player.damage.health = clamp(value, 0, 100); }
@@ -225,7 +231,7 @@ export class Game {
       // Leave the destroyed vehicle behind. Acknowledgment brings the driver back on foot.
       this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true;
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
-      if (passenger?.aboard) { passenger.aboard = false; passenger.alive = true; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
+      if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
       this.onFoot = true; this.driver.position = { ...HOSPITAL }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
       this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear();
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = [];
@@ -269,9 +275,19 @@ export class Game {
     this.sounds.emit(cue, this.time, { position: prop.body.position, strength: clamp(impact / 14, 0.5, 1.4), key: `prop:${prop.id}`, cooldown: 1 });
   }
   collision(v: Vehicle, other: Vehicle | Prop, dt: number) {
+    if (!other.alive) return;
     const c = contact(v.body, other.body); if (!c) return;
     const before = length(v.body.velocity);
-    if ('hp' in other && other.kind !== 'building') {
+    if ('hp' in other && other.kind === 'guardrail') {
+      const impact = Math.max(0, -dot(v.body.velocityAt(c.point), c.normal));
+      if (impact >= RAIL_BREAK_SPEED && dt > 0) {
+        other.hp = 0; this.damageImpact(v, impact, c.point, v.kind === 'taxi');
+        this.destroy(other, v, impact); this.fx.breakRail(c.point, v.body.velocity, other.body.angle);
+        // Fracture consumes momentum even when the rider punches straight through.
+        v.body.velocity = scale(v.body.velocity, 0.68); v.body.angularVelocity *= 0.7;
+        return;
+      }
+    } else if ('hp' in other && other.kind !== 'building') {
       const impact = Math.max(0, -((v.body.velocity.x * c.normal.x) + (v.body.velocity.y * c.normal.y)));
       // Objects fracture before the impulse solver stops the car. Momentum carries through.
       const structural = isStructural(other.kind);
@@ -283,7 +299,9 @@ export class Game {
         this.destroy(other, v, impact); v.body.velocity = scale(v.body.velocity, structural ? 0.6 : other.kind === 'kiosk' ? 0.78 : 0.96); return;
       }
     }
-    const impact = resolveCollision(v.body, other.body, c);
+    const rail = 'hp' in other && other.kind === 'guardrail';
+    const impact = resolveCollision(v.body, other.body, c, rail ? 0.08 : 0.22);
+    if (rail && impact > 0.05) v.body.velocity = scale(v.body.velocity, 0.985);
     if (impact > 1.5) {
       const pair = 'hp' in other ? `contact:${v.id}:prop:${other.id}` : `contact:${Math.min(v.id, other.id)}:car:${Math.max(v.id, other.id)}`;
       this.sounds.emit(impact > 15 ? 'crash' : impact > 5 ? 'crunch' : 'bump', this.time, { position: c.point, strength: clamp(impact / 18, 0.25, 1.4), key: pair, cooldown: 0.22 });
@@ -392,15 +410,28 @@ export class Game {
   }
   private sink(v: Vehicle, dt: number) {
     const sinking = v.sinking!; sinking.elapsed += dt;
-    // Settle inside the basin as the car falls below the surface.
-    v.body.position = add(v.body.position, scale(sub(sinking.pool.position, v.body.position), Math.min(1, dt * 2)));
+    if (sinking.pool) {
+      // Pools are confined basins. Ocean entries instead carry momentum offshore.
+      v.body.position = add(v.body.position, scale(sub(sinking.pool.position, v.body.position), Math.min(1, dt * 2)));
+    } else {
+      v.body.velocity = scale(v.body.velocity, Math.exp(-dt * 1.7));
+      v.body.angularVelocity *= Math.exp(-dt * 2); v.body.integrate(dt);
+    }
     if (sinking.elapsed < 2.2) return;
     v.damage.status = 'wreck'; v.damage.health = 0; v.wreckAt = this.time; v.alive = false;
     if (v === this.player && !this.onFoot) this.waste('drowning');
   }
+  private enterWater(v: Vehicle, pool?: Body) {
+    v.sinking = { elapsed: 0, pool, entrySpeed: length(v.body.velocity) };
+    v.damage.status = 'intact'; v.damage.fuse = 0; v.damage.fireTime = 0; v.dynamics.skidding = false;
+    v.body.force = vec(); v.body.torque = 0;
+    if (pool) { v.body.velocity = vec(); v.body.angularVelocity = 0; }
+    this.fx.splash(v.body.position, pool ? 1 : clamp(v.sinking.entrySpeed / 15, 0.8, 2));
+    if (v === this.player && !this.onFoot) this.notify(pool ? 'RIDE IN THE POOL · SINKING' : 'RIDE IN THE OCEAN · SINKING', 'danger');
+  }
   lineOfSight(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 3);
-    for (let i = 1; i < steps; i++) { const p = add(a, scale(sub(b, a), i / steps)); const probe = new Body(p.x, p.y, 1, 0.1, 0.1); for (const prop of this.world.hash.query(probe)) if (['building', 'rock', 'water', 'guardrail'].includes(prop.kind) && contact(probe, prop.body)) return false; }
+    for (let i = 1; i < steps; i++) { const p = add(a, scale(sub(b, a), i / steps)); const probe = new Body(p.x, p.y, 1, 0.1, 0.1); for (const prop of this.world.hash.query(probe)) if (['building', 'rock', 'guardrail'].includes(prop.kind) && contact(probe, prop.body)) return false; }
     return true;
   }
   update(dt: number) {
@@ -431,18 +462,18 @@ export class Game {
       }
       const pool = this.world.pools.find(pool => Math.abs(v.body.position.x - pool.position.x) < pool.w / 2 && Math.abs(v.body.position.y - pool.position.y) < pool.h / 2);
       if (pool) {
-        v.sinking = { elapsed: 0, pool }; v.damage.status = 'intact'; v.damage.fuse = 0; v.damage.fireTime = 0; v.body.velocity = vec(); v.body.angularVelocity = 0;
-        this.fx.splash(v.body.position); if (v === this.player && !this.onFoot) this.notify('CAB IN THE POOL · SINKING', 'danger');
+        this.enterWater(v, pool);
         continue;
       }
       // At 120 Hz even a boosted taxi moves <0.4 m: narrow props cannot be tunnelled.
       for (let pass = 0; pass < 2; pass++) for (const prop of this.world.hash.query(v.body)) this.collision(v, prop, pass ? 0 : dt);
+      if (inOcean(v.body.position)) this.enterWater(v);
     }
     for (let i = 0; i < this.vehicles.length; i++) for (let j = i + 1; j < this.vehicles.length; j++) {
       const a = this.vehicles[i], b = this.vehicles[j]; if (a.alive && b.alive && !a.sinking && !b.sinking && dist(a.body.position, b.body.position) < 6) this.collision(a, b, dt);
     }
     if (this.onFoot) this.walk(dt);
-    if (!this.onFoot && this.player.dynamics.skidding) {
+    if (!this.onFoot && !this.player.sinking && this.player.dynamics.skidding) {
       this.player.dynamics.tyres.forEach((t, i) => { if (t.skidding) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 18 }); });
       if (this.speed > 8) this.driftMeter += this.speed * dt;
     } else if (this.driftMeter > 7) {
@@ -556,7 +587,7 @@ export class Game {
   }
   snapshot() {
     return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, playerId: this.player.id, vehicleModel: this.player.model, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
-      health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
+      health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, water: this.player.sinking ? this.player.sinking.pool ? 'pool' : 'ocean' : null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),

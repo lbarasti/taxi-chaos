@@ -8,6 +8,7 @@ import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection } from './motorcycle';
 import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry } from './countryside';
 import { radarMarker, radarView } from './radar';
+import { CITY_SHORE } from './coast';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
 
@@ -75,7 +76,7 @@ export class Renderer {
       c.restore();
     }
     for (const v of g.vehicles) if (v.alive && this.visible(v.body.position)) this.car(v);
-    if (g.onFoot) {
+    if (g.onFoot && !(g.mode === 'wasted' && g.wastedReason === 'drowning')) {
       const p = g.driver.position;
       this.circle(p, 1.05, '#f7ce5525'); c.strokeStyle = GOLD; c.lineWidth = 0.12; c.beginPath(); c.arc(p.x, p.y, 1.05, 0, Math.PI * 2); c.stroke();
       c.save(); c.translate(p.x, p.y); c.rotate(g.driver.angle + Math.PI / 2 + (g.driverHealth <= 0 ? 1.3 : 0));
@@ -118,8 +119,8 @@ export class Renderer {
     const world = add(scale(contact, 1 - this.shadowT), scale(this.sun, -this.shadowT));
     return angle ? rotate(world, -angle) : world;
   }
-  private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.ctx.globalAlpha = this.shadowAlpha; this.rect(x, y, w, h, color); this.ctx.globalAlpha = 1; }
-  private shadowCircle(p: Vec, r: number, color: string) { this.ctx.globalAlpha = this.shadowAlpha; this.circle(p, r, color); this.ctx.globalAlpha = 1; }
+  private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.ctx.save(); this.ctx.globalAlpha *= this.shadowAlpha; this.rect(x, y, w, h, color); this.ctx.restore(); }
+  private shadowCircle(p: Vec, r: number, color: string) { this.ctx.save(); this.ctx.globalAlpha *= this.shadowAlpha; this.circle(p, r, color); this.ctx.restore(); }
   private worldViewport(): Viewport {
     const left = this.camera.x + (0 - this.width * 0.53) / this.zoom, right = this.camera.x + (this.width - this.width * 0.53) / this.zoom;
     const top = this.camera.y + (0 - this.height * 0.54) / this.zoom, bottom = this.camera.y + (this.height - this.height * 0.54) / this.zoom;
@@ -152,7 +153,7 @@ export class Renderer {
     }
     // The base palette was authored for a night city; lift it toward daylight so morning/afternoon
     // do not read as a darker night before the ambient lighting pass is applied.
-    this.rect(-14, -14, 268, 268, mixHex('#29383e', '#84938a', this.daylight * 0.45));
+    this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#29383e', '#84938a', this.daylight * 0.45), '#bac2a5');
     this.countrysideGround();
     for (const b of g.world.blocks) {
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
@@ -295,11 +296,16 @@ export class Renderer {
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
   prop(prop: Prop) {
-    if (prop.kind === 'water') return;
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (!prop.alive) {
-      if (prop.kind === 'hydrant') { this.circle(vec(), 1.7, '#6ba2b63c'); this.circle(vec(), 0.3, '#343d41'); }
+      if (prop.kind === 'guardrail') {
+        // Broken ends remain legible while the middle becomes a drivable gap.
+        for (const side of [-1, 1]) {
+          c.save(); c.translate(side * (b.w / 2 - 0.55), 0); c.rotate(side * 0.45);
+          this.rect(-0.65, -0.12, 1.3, 0.24, '#a7b9b1'); this.rect(side * 0.3, -0.35, 0.25, 0.7, '#d3cf9c'); c.restore();
+        }
+      } else if (prop.kind === 'hydrant') { this.circle(vec(), 1.7, '#6ba2b63c'); this.circle(vec(), 0.3, '#343d41'); }
       else {
         const large = b.w > 5 || b.h > 5;
         this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#18232860');
@@ -413,17 +419,21 @@ export class Renderer {
   car(v: Vehicle) {
     if (v.sinking) {
       const c = this.ctx, b = v.body, pool = v.sinking.pool, t = clamp(v.sinking.elapsed / 2.2, 0, 1);
-      c.save(); c.beginPath(); c.rect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); c.clip();
-      c.translate(b.position.x, b.position.y + t * 0.7); c.rotate(b.angle + t * 0.15); c.scale(1 - t * 0.25, 1 - t * 0.25);
-      c.globalAlpha = 1 - t; this.rect(-b.w / 2, -b.h / 2, b.w, b.h, v.color);
-      this.rect(b.w * 0.1, -b.h * 0.4, b.w * 0.17, b.h * 0.8, '#29434b');
-      c.globalAlpha = (1 - t) * t; this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#57a9b4'); c.restore(); return;
+      c.save();
+      if (pool) { c.beginPath(); c.rect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); c.clip(); }
+      const flight = pool ? 0 : Math.sin(Math.min(1, v.sinking.elapsed / 0.6) * Math.PI) * Math.min(2.4, v.sinking.entrySpeed * 0.08);
+      c.translate(b.position.x, b.position.y + t * 0.7 - flight); c.rotate(t * 0.15); c.scale(1 - t * 0.25, 1 - t * 0.25);
+      c.translate(-b.position.x, -b.position.y); c.globalAlpha = 1 - t;
+      this.vehicleSprite(v); c.restore(); return;
     }
+    this.vehicleSprite(v);
+  }
+  private vehicleSprite(v: Vehicle) {
     if (v.cart) { this.golfCart(v); return; }
     if (v.model === 'motorcycle') { this.motorcycle(v); this.vehicleEffects(v); return; }
     const c = this.ctx, b = v.body, police = v.kind === 'police', taxi = v.kind === 'taxi', wreck = v.damage.status === 'wreck', so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
-    if (v === this.game.player && !this.game.onFoot && this.game.mode === 'playing' && this.game.controls.boost) {
+    if (v === this.game.player && !v.sinking && !this.game.onFoot && this.game.mode === 'playing' && this.game.controls.boost) {
       const pulse = 0.5 + Math.sin(this.game.time * 43) * 0.12;
       for (const side of [-0.67, 0.67]) {
         c.fillStyle = '#57d6f1aa'; c.beginPath(); c.moveTo(-1.9, side - 0.3); c.lineTo(-4.6 - pulse, side); c.lineTo(-1.9, side + 0.3); c.fill();
@@ -489,7 +499,7 @@ export class Renderer {
     // Contact patches stay at y=0. The cast shadow shortens as the bike's upper parts get lower.
     this.shadowRect(-1.25 + so.x * frame.height, -0.3 + frame.offset + so.y * frame.height, 2.5, 0.6, '#0e1a2290');
     if (occupied) this.shadowCircle(vec(0.18 + so.x * helmet.height, helmet.offset + so.y * helmet.height), 0.42, '#0e1a2270');
-    if (v === g.player && !g.onFoot && g.mode === 'playing' && g.controls.boost) {
+    if (v === g.player && !v.sinking && !g.onFoot && g.mode === 'playing' && g.controls.boost) {
       const pulse = 0.5 + Math.sin(g.time * 43) * 0.12;
       c.fillStyle = '#57d6f1bb'; c.beginPath(); c.moveTo(-1.1, frame.offset + 0.3); c.lineTo(-3.5 - pulse, frame.offset + 0.38); c.lineTo(-1.1, frame.offset + 0.55); c.fill();
       this.rect(-1.8, frame.offset + 0.33, 0.8, 0.1, '#d9fbff');
@@ -537,6 +547,7 @@ export class Renderer {
     c.restore();
   }
   private vehicleEffects(v: Vehicle) {
+    if (v.sinking) return;
     const c = this.ctx, b = v.body, wreck = v.damage.status === 'wreck', taxi = v.kind === 'taxi';
     if (v.damage.status === 'burning') { drawFire(c, b.toWorld(vec(0.9, 0)), 1.35, this.game.time, v.id); drawSmoke(c, b.position, 1.4, this.game.time, v.id); this.label(`${v.damage.fuse.toFixed(1)}s`, b.position.x, b.position.y - 3.5, 0.85, '#f4c693', '700'); }
     else if (v.damage.status === 'smoking' || (wreck && this.game.time - v.wreckAt < 8)) drawSmoke(c, b.toWorld(vec(1.1, 0)), wreck ? 1.2 : 0.8, this.game.time, v.id);

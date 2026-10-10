@@ -3,6 +3,7 @@ import { Body, contact, dist, vec, type Vec } from './physics';
 import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_STOPS, ROAD_NODES, countryAccess, pathLength } from './countryside';
 import { World, district, roadDistance, roadNeighbours, roadPath, roadProjection } from './world';
 import { Game } from './game';
+import { inOcean } from './coast';
 import { loadScenario } from './lab';
 import { killPedestrian, updatePedestrians } from './pedestrians';
 
@@ -29,15 +30,17 @@ describe('eastern bridges and highland roads', () => {
     const probe = new Body(bridgeCorpse.position.x, bridgeCorpse.position.y, 1, 0.6, 0.6);
     expect([...world.hash.query(probe)].filter(p => contact(probe, p.body))).toEqual([]);
   });
-  it('opens both bridge decks for cars and walkers while keeping the river solid elsewhere', () => {
+  it('opens both bridge decks for cars and walkers while treating the river as drowning water elsewhere', () => {
     const world = new World();
     for (const y of BRIDGE_Y) for (let x = 244; x <= 310; x += 2) for (const lane of [-3, 0, 3]) {
       const car = new Body(x, y + lane);
+      expect(inOcean(car.position)).toBe(false);
       expect([...world.hash.query(car)].filter(p => contact(car, p.body)), `blocked deck at ${x},${y + lane}`).toEqual([]);
     }
     for (const y of [20, 40, 120, 160, 235]) {
       const probe = new Body(276, y, 1, 0.7, 0.7);
-      expect([...world.hash.query(probe)].some(p => p.kind === 'water' && contact(probe, p.body))).toBe(true);
+      expect(inOcean(probe.position)).toBe(true);
+      expect([...world.hash.query(probe)].filter(p => contact(probe, p.body))).toEqual([]);
       expect(roadDistance(probe.position)).toBeGreaterThan(6);
     }
   });
