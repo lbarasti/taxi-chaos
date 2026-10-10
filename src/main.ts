@@ -62,6 +62,10 @@ function settingsMarkup() {
 function introduction(help = false) {
   return `<div class="intro-eyebrow"><span class="live-dot"></span> WELCOME TO TAXI CHAOS</div><div class="intro-cab">${icon('cab')}</div><h2 id="modal-title">A little cab.<br><em>A lot of trouble.</em></h2><p class="intro-copy">Pick up. Drop off. Get paid.<br>How you get there is entirely your business.</p><div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Stop in the yellow ring. Deliver to green. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Damage and speeding attract cops. Break line of sight to escape. Or pay the bail.</p></div></div><div class="intro-controls"><kbd>WASD / ARROWS</kbd> drive <kbd>SPACE</kbd> handbrake <kbd>SHIFT</kbd> boost</div><button class="primary" id="start">${help ? 'Back to the streets' : 'Start your shift'} ${icon('arrow')}</button><div class="intro-note">No fuel stops. No time-outs. Just one more fare.<br><span>Physics foundation: Pat Kerr's Motion Lab · Built for the joy of driving.</span></div>`;
 }
+function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; amount: number }[]) {
+  const rows = charges.map(({ label, amount }) => `<div><span>${label}</span><strong>−$${amount}</strong></div>`).join('');
+  return `<h2 id="modal-title" class="danger">${title}</h2><div class="game-over-bill">${rows}</div><button class="primary" id="recover"><span class="continue-keyboard">Press space bar to continue</span><span class="continue-touch">Tap to continue</span></button>`;
+}
 function modal() {
   const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing';
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
@@ -74,11 +78,13 @@ function modal() {
     const repairPrice = game.repairPrice;
     card.innerHTML = `<div class="eyebrow">OLD TOWN / TUNING & REPAIRS <span class="garage-wallet">$${game.save.cash}</span></div><h2 id="modal-title">Pit Stop.</h2><p>Good drivers invest in bad decisions.</p><div class="upgrades">${upgrades}</div><div class="repair"><div><strong>Patch it up</strong><small>Restore your chassis to 100%.</small></div><button class="buy" id="repair" ${repairPrice === 0 || game.save.cash < repairPrice ? 'disabled' : ''}>${repairPrice === 0 ? 'ALL GOOD' : `$${repairPrice}`}</button></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button>`;
   } else if (game.mode === 'wasted') {
-    const reason = game.wastedReason === 'drowning' ? game.onFoot ? 'You walked into the ocean.' : game.player.sinking?.pool ? 'Your ride sank to the bottom of the pool.' : 'Your ride sank beneath the waves.' : game.wastedReason === 'impact' ? 'You were run over in the street.' : game.onFoot ? 'You were caught in the blast.' : 'Your ride exploded with you still aboard.';
-    card.innerHTML = `<div class="eyebrow danger">SHIFT OVER / MIDTOWN HOSPITAL</div><h2 id="modal-title" class="danger">WASTED</h2><p>${reason}</p><div class="bill"><span>HOSPITAL DISCHARGE</span><small>Respawn on foot outside Midtown Hospital. Your wallet and upgrades carry over.</small></div><button class="primary" id="recover">Respawn at hospital ${icon('arrow')}</button>`;
+    const bill = game.hospitalBill;
+    const charges = [{ label: 'Medical bill', amount: bill.medical }];
+    if (game.player.damage.status === 'wreck' || game.player.sinking) charges.push({ label: `${game.player.model === 'motorcycle' ? 'Bike' : 'Car'} repairs`, amount: bill.repairs });
+    card.innerHTML = gameOverMarkup('WASTED', charges);
   } else if (game.mode === 'arrested') {
-    const fee = Math.min(game.save.cash, 75 + game.stars * 45);
-    card.innerHTML = `<div class="eyebrow danger">BUSTED / CITY POLICE</div><h2 id="modal-title">End of the chase.</h2><p>They caught the cab. They couldn’t catch the spirit.</p><div class="bill"><span>BAIL & IMPOUND</span><strong>$${fee}</strong><small>Cab repaired. Boost refilled. Fresh start in Old Town.</small></div><button class="primary" id="recover">Pay bail & get back out ${icon('arrow')}</button>`;
+    const bill = game.arrestBill;
+    card.innerHTML = gameOverMarkup('BUSTED', [{ label: 'Impound bill', amount: bill.impound }, { label: 'Bail', amount: bill.bail }]);
   }
   if (game.mode === 'paused' && !helpOpen && !statsOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
@@ -194,6 +200,9 @@ window.addEventListener('keydown', e => {
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
   if (e.code === 'Escape' && !$('taxi-menu').hidden) { e.preventDefault(); setMenu(false); $('taxi-menu-toggle').focus(); return; }
   if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { setMenu(false); if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
+  if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {
+    e.preventDefault(); if (!e.repeat) $('recover').click(); return;
+  }
   // Preserve native keyboard activation for HUD buttons, including radar toggle.
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;

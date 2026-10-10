@@ -23,10 +23,10 @@ The HUD suppresses text selection and native touch callouts/context menus. The r
 
 ## Verification
 
-- All 332 tests pass with `npm test -- --maxWorkers=2 --testTimeout=20000`. Default parallel runs exceeded the existing 5-second timeout in simulation tests on this environment; no timeout settings were changed in the repository.
+- All 343 tests pass with `npm test -- --maxWorkers=2 --testTimeout=20000`. Default parallel runs exceeded the existing 5-second timeout in simulation tests on this environment; no timeout settings were changed in the repository.
 - Vitest covers joystick dead zone/circular clamping, proportional driving/reverse/walking, boost gating, input reset, standard/WebKit fullscreen, browser-driven fullscreen exits, unsupported APIs and rejected requests.
 - `npm run build` checks strict TypeScript and produces the single standalone HTML.
 - `node tools/mobile-hud-check.cjs` checks that HTML with Playwright Chromium. Install Playwright/Chromium beforehand; optionally set `PLAYWRIGHT_PATH` and `CHROMIUM_PATH` to existing installations. The script regenerates the screenshots above.
-- Browser QA uses native Chromium touch events for simultaneous steering/boost and steering/handbrake, independent finger release, cancellation, focus-loss reset and on-foot movement. It also checks menu/help/lab actions, contextual enter/exit buttons, native long press selection, fullscreen enter/exit, radar collapse, panel bounds/overlap across five viewport sizes, and uncaught page errors.
+- Browser QA uses native Chromium touch events for simultaneous steering/boost and steering/handbrake, independent finger release, cancellation, focus-loss reset and on-foot movement. It also checks menu/help/lab actions, contextual enter/exit buttons, native long press selection, fullscreen enter/exit, Space/touch recovery after arrest/death, radar collapse, panel bounds/overlap across five viewport sizes, and uncaught page errors.
 
 Chromium mobile emulation is covered. Physical iPhone/WebKit long-press behavior and element fullscreen availability still depend on the host browser; WebKit API routing is covered with unit tests.

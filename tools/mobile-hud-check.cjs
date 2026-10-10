@@ -40,6 +40,9 @@ assert.equal(await page.locator('#mission-title').evaluate(e=>getComputedStyle(e
 await touch('touchStart',[point(90,82,6)]);await page.waitForTimeout(650);await touch('touchEnd',[]);assert.equal(await page.evaluate(()=>getSelection().toString()),'');
 // Fullscreen toggles and browser-driven exit sync accessible button state.
 await page.locator('#fullscreen').click();await page.waitForFunction(()=>!!document.fullscreenElement);assert(await page.evaluate(()=>!!document.fullscreenElement));assert.equal(await page.locator('#fullscreen').getAttribute('aria-pressed'),'true');await page.locator('#fullscreen').click();await page.waitForFunction(()=>!document.fullscreenElement);assert(!(await page.evaluate(()=>!!document.fullscreenElement)));
+// Preserve the merged game-over keyboard and touch recovery paths.
+await page.evaluate(()=>{__taxi.scenario('arrest');__taxi.step(10)});assert.equal(await page.evaluate(()=>__taxi.state().mode),'arrested');await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>__taxi.state().mode),'playing');
+await page.evaluate(()=>{__taxi.scenario('cab-fire');__taxi.step(8)});assert.equal(await page.evaluate(()=>__taxi.state().mode),'wasted');await page.locator('#recover').click();assert.equal(await page.evaluate(()=>__taxi.state().mode),'playing');
 // Radar and mobile/layout sizes, using production artifact.
 await page.locator('#map-toggle').click();assert(!(await page.locator('#map-content').isVisible()));await page.locator('#map-toggle').click();assert(await page.locator('#map-content').isVisible());
 for(const [name,w,h,mobile] of [['portrait',390,844,true],['small',320,568,true],['landscape',844,390,true],['tablet',768,1024,true],['desktop',1440,900,false]]){
