@@ -22,3 +22,116 @@
 @media(max-width:560px){.brand small{display:none}.hud-clock{padding:3px 7px}}
 @media(max-width:380px){.cash small{display:none}.hud-clock{gap:5px;padding:3px 6px}.hud-clock-icon svg{width:14px;height:14px}.hud-clock-text strong{font-size:12px}}
 @media(max-width:340px){.brand>span:last-child{display:none}}
+
+/* Compact HUD: the street remains visible behind condition and navigation. */
+.mission{width:320px;padding:14px 16px 0;background:#14232ad9}
+.mission-heading{margin-top:10px}
+.mission p{margin:6px 0 10px;line-height:1.5}
+.mission-data{padding:10px 0}
+.mission-data strong{margin-top:4px;font-size:18px}
+.mission-footer{margin:0 -16px;padding:9px 12px}
+.job-progress{margin:0 -16px}
+.dashboard{width:270px;padding:14px 16px 0;background:#14232ab8}
+.dashboard-footer{margin:0 -16px}
+.dashboard .heat-panel{position:static;width:auto;padding:10px 0 12px;border-top:1px solid var(--border)}
+.dashboard .heat-track{margin:6px 0}
+.dashboard .heat-panel small{display:none}
+.dashboard .heat-panel.wanted small{display:block;color:#ffd0c5}
+.dashboard:has(.wanted){border-color:#ed867666}
+.map-panel{width:178px;background:#14232ac2}
+.map-toggle{display:flex;align-items:center;gap:7px;width:100%;min-height:38px;padding:0 10px;border:0;background:transparent;color:#b7c7bd;font-size:8px;letter-spacing:1px}
+.map-toggle #map-status{margin-left:auto;color:var(--mint);font-size:7px}
+.map-chevron{font-size:15px;line-height:1;transition:transform .15s}
+.collapsed .map-chevron{transform:rotate(180deg)}
+#map{width:100%;height:144px;margin:0}
+.garage-button{padding:10px;font-size:9px;gap:6px}
+.garage-button kbd{display:none}
+
+@media(max-width:700px), (max-width:1000px) and (max-height:500px){
+  :root{--hud-bottom:calc(126px + env(safe-area-inset-bottom,0px))}
+  .topbar{height:56px;padding:0 12px;gap:8px}
+  .brand{font-size:16px;gap:6px;letter-spacing:-.7px}
+  .brand-icon{width:29px;height:29px;border-radius:8px}
+  .brand-icon svg{width:21px;height:21px}
+  .brand small,.cash small,.hud-clock-text small,.top-center{display:none}
+  .top-actions{gap:6px}
+  .cash{margin-right:0}
+  .cash strong{font-size:18px;margin:0}
+  .icon-button{width:32px;height:36px}
+  .icon-button svg{width:17px;height:17px}
+  .hud-clock{padding:4px 6px;gap:4px}
+  .hud-clock-icon svg{width:13px;height:13px}
+  .hud-clock-text strong{font-size:12px}
+  .mission{top:66px;left:10px;right:10px;width:auto;padding:10px 12px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;border-radius:10px;background:#14232ab8}
+  .mission .eyebrow{grid-column:1/-1;font-size:8px;letter-spacing:.6px}
+  .tiny-tag{font-size:8px;padding:3px 5px}
+  .mission-heading{margin:6px 0 9px;gap:6px;min-width:0}
+  .mission h1{font-size:18px;letter-spacing:-.5px;line-height:1.15}
+  .mission-icon svg{width:17px;height:17px}
+  .mission p{display:none}
+  .mission-data{border:0;padding:0 0 6px;gap:14px;align-self:center}
+  .mission-data small{font-size:7px;letter-spacing:.5px}
+  .mission-data strong{font-size:15px;margin-top:3px}
+  .mission-data strong span{font-size:9px}
+  .mission-footer{grid-column:1/-1;margin:0 -12px;padding:6px 10px;font-size:9px;line-height:1.4;gap:6px}
+  .comfort{font-size:8px}
+  .job-progress{grid-column:1/-1;margin:0 -12px}
+  .dashboard{bottom:var(--hud-bottom);left:10px;right:10px;width:auto;padding:9px 10px;display:grid;grid-template-columns:64px minmax(85px,1fr) minmax(100px,1fr);gap:10px;align-items:center;border-radius:10px;background:#14232aa8}
+  .speed{gap:5px;align-self:center}
+  .speed>strong{font-size:29px;letter-spacing:-1.5px}
+  .speed>span{font-size:7px;letter-spacing:.5px;margin:0}
+  .speed small{font-size:7px;letter-spacing:0;max-width:29px;line-height:1.2;margin-top:4px}
+  .cab-meters{margin:0}
+  .cab-meters>div{font-size:8px;letter-spacing:0;gap:4px;margin:5px 0}
+  .cab-meters>div>span{width:43px}
+  .cab-meters kbd{display:none}
+  .cab-meters b{font-size:8px;min-width:25px}
+  .meter{height:3px}
+  .dashboard-footer{display:none}
+  .dashboard .heat-panel{border:0;border-left:1px solid var(--border);padding:0 0 0 10px;min-width:0}
+  .heat-top{font-size:7px;letter-spacing:.3px;flex-wrap:wrap;gap:3px}
+  .heat-top #stars{font-size:13px;letter-spacing:1px}
+  .dashboard .heat-track{margin:4px 0 0;height:3px}
+  .dashboard .heat-panel.wanted small{font-size:8px;line-height:1.3;margin-top:4px}
+  .map-panel{right:10px;bottom:calc(var(--hud-bottom) + 94px);width:116px;border-radius:10px}
+  .map-toggle{min-height:36px;font-size:8px;padding:0 8px;letter-spacing:.5px;gap:4px}
+  .map-toggle #map-status{font-size:6px;letter-spacing:0}
+  #map{height:108px}
+  .garage-button{padding:7px 8px;font-size:8px;gap:5px;min-height:32px}
+  .garage-button svg{width:11px;height:11px;flex-shrink:0}
+  .controls{height:calc(32px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);gap:8px}
+  .controls>span{display:none}
+  .controls button{font-size:8px}
+  .touch-controls{display:flex;position:fixed;z-index:4;justify-content:space-between;pointer-events:none;bottom:calc(42px + env(safe-area-inset-bottom,0px));left:10px;right:10px;gap:8px}
+  .touch-controls>div{display:flex;align-items:end;gap:5px}
+  .touch-controls button{pointer-events:auto;touch-action:none;user-select:none;border:1px solid #b5c9b54a;color:#dce5cb;border-radius:12px;width:46px;height:52px;font-size:23px;background:#183039ad}
+  .touch-controls button[data-key=handbrake],.touch-controls button[data-key=boost]{width:39px;height:44px;font-size:8px}
+  .touch-controls button[data-key=up]{height:70px}
+  .toast{bottom:calc(var(--hud-bottom) + 88px);left:10px;transform:translateY(10px);width:calc(100% - 146px);max-width:360px;padding:9px;font-size:9px}
+  .toast.visible{transform:translateY(0)}
+  .critical-status{top:calc(190px + env(safe-area-inset-top,0px));bottom:auto;left:10px;width:calc(100% - 146px);padding:9px;transform:none}
+  .roadside{top:190px;right:auto;left:10px;width:calc(100% - 146px)}
+}
+@media(max-width:360px){
+  .topbar{gap:5px;padding:0 10px}
+  .dashboard{grid-template-columns:54px minmax(75px,1fr) minmax(90px,1fr);gap:6px;padding:8px}
+  .speed>strong{font-size:25px}
+  .cab-meters>div>span{width:38px;font-size:7px}
+  .dashboard .heat-panel{padding-left:6px}
+  .touch-controls button{width:40px}
+  .touch-controls button[data-key=handbrake],.touch-controls button[data-key=boost]{width:34px}
+  .mission-data{gap:8px}
+  .mission h1{font-size:16px}
+  #map{height:76px}
+}
+@media(max-height:500px) and (max-width:1000px){
+  .topbar{height:48px}
+  .mission{top:58px;right:auto;left:10px;width:min(43vw,340px)}
+  .dashboard{top:58px;bottom:auto;left:auto;right:10px;width:min(46vw,360px)}
+  .map-panel{top:140px;bottom:auto;right:10px;width:100px}
+  #map{height:70px}
+  .map-toggle{min-height:30px}
+  .garage-button{min-height:26px;padding:5px 6px}
+  .critical-status,.roadside{top:185px;left:10px;width:240px}
+  .toast{bottom:120px;width:240px}
+}

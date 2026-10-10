@@ -6,7 +6,8 @@ import { LightingLayer, collectLights, cullLights, type LightScene, type Lightin
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection } from './motorcycle';
-import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_OUTLINE, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH } from './countryside';
+import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_OUTLINE, HIGHLAND_STOPS } from './countryside';
+import { radarMarker, radarView } from './radar';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
 
@@ -459,16 +460,26 @@ export class Renderer {
     }
   }
   edgePointer() {
-    const g = this.game, p = this.screen(g.target), mobile = this.width < 700;
-    if (p.x > (mobile ? 20 : 300) && p.x < this.width - (mobile ? 20 : 260) && p.y > (mobile ? 290 : 125) && p.y < this.height - (mobile ? 300 : 160)) return;
+    const g = this.game, p = this.screen(g.target), compact = this.width <= 700 || this.width <= 1000 && this.height <= 500;
+    const left = compact ? 30 : 370, right = this.width - (compact ? 30 : 220);
+    const top = compact ? this.height <= 500 ? 170 : 190 : 125;
+    const bottom = Math.max(top + 30, this.height - (compact ? 170 : 160));
+    if (p.x > left && p.x < right && p.y > top && p.y < bottom) return;
     const center = this.screen(g.actor.position), d = sub(p, center), theta = Math.atan2(d.y, d.x);
-    const x = clamp(p.x, mobile ? 50 : 320, this.width - (mobile ? 50 : 260)), y = clamp(p.y, mobile ? 310 : 125, this.height - (mobile ? 310 : 190)), c = this.ctx;
+    const x = clamp(p.x, left, right), y = clamp(p.y, top, bottom), c = this.ctx;
     c.save(); c.translate(x, y); c.rotate(theta); c.fillStyle = g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT; c.beginPath(); c.moveTo(12, 0); c.lineTo(-7, -8); c.lineTo(-3, 0); c.lineTo(-7, 8); c.fill(); c.restore();
     this.label(`${Math.round(dist(g.target, g.actor.position))} m`, x, y + 24, 11, '#e9e9da', '600');
   }
   minimap() {
-    const c = this.mapCtx, g = this.game; c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.clearRect(0, 0, 220, 190); c.fillStyle = '#192c33'; c.fillRect(0, 0, 220, 190);
-    const s = Math.min(200 / (MAP_WIDTH + 28), 154 / (MAP_HEIGHT + 28)), ox = 10 + 14 * s, oy = 12 + (154 - (MAP_HEIGHT + 28) * s) / 2 + 14 * s; c.save(); c.translate(ox, oy); c.scale(s, s);
+    const width = this.map.clientWidth, height = this.map.clientHeight;
+    if (!width || !height) return; // Collapsed radar needs no drawing work.
+    const pixelsW = Math.round(width * this.dpr), pixelsH = Math.round(height * this.dpr);
+    if (this.map.width !== pixelsW || this.map.height !== pixelsH) { this.map.width = pixelsW; this.map.height = pixelsH; }
+    const c = this.mapCtx, g = this.game, chartHeight = height - 18;
+    const view = radarView(g.actor.position, width, chartHeight), s = view.scale;
+    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.clearRect(0, 0, width, height);
+    c.save(); c.beginPath(); c.rect(0, 0, width, chartHeight); c.clip();
+    c.translate(view.offset.x, view.offset.y); c.scale(s, s);
     trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = '#45634a'; c.fill();
     for (const ridge of RIDGES) { trace(c, ridge, true); c.fillStyle = '#717566'; c.fill(); }
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
@@ -478,8 +489,14 @@ export class Renderer {
     if (g.onFoot) for (const v of g.vehicles) if (v.parked && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
     c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
     for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }
-    c.strokeStyle = g.job.stage === 'pickup' ? GOLD : MINT; c.lineWidth = 1 / s; c.beginPath(); c.arc(g.target.x, g.target.y, 3 / s, 0, Math.PI * 2); c.stroke();
     c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.scale(markerScale, markerScale); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();
-    c.restore(); c.fillStyle = '#9aafb5'; c.font = '9px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position), 14, 182); c.textAlign = 'right'; c.fillText('N ↑', 205, 182);
+    c.restore();
+    const marker = radarMarker(g.target, view, width, chartHeight);
+    c.save(); c.translate(marker.position.x, marker.position.y);
+    c.strokeStyle = c.fillStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT;
+    c.lineWidth = 1.5; c.beginPath();
+    if (marker.offscreen) { c.rotate(marker.angle); c.moveTo(5, 0); c.lineTo(-4, -4); c.lineTo(-2, 0); c.lineTo(-4, 4); c.closePath(); c.fill(); }
+    else { c.arc(0, 0, 4, 0, Math.PI * 2); c.stroke(); }
+    c.restore(); c.fillStyle = '#b4c5c2'; c.font = '8px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position), 8, height - 5, width - 35); c.textAlign = 'right'; c.fillText('N ↑', width - 7, height - 5);
   }
 }

@@ -36,12 +36,11 @@ document.querySelector('#app')!.innerHTML = `
     <div class="mission-footer" id="mission-footer"><span class="ring-dot"></span> Stop inside the yellow ring to pick up.</div>
     <div class="job-progress"><i id="job-progress"></i></div>
   </aside>
-  <div class="heat-panel panel" id="heat-panel"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div>
-  <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div></section>
+  <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div><div class="heat-panel" id="heat-panel" role="status"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div></section>
   <div class="critical-status panel" id="critical-status" hidden><strong id="condition">ENGINE DAMAGE</strong><span id="components"></span><button id="interact" class="escape-button">E · Get out</button></div>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="wreck-exit">E · Get out</button><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
-  <aside class="map-panel panel"><div class="eyebrow"><span>CITY RADAR</span><span id="map-status">LIVE</span></div><canvas id="map" aria-label="Minimap: yellow is your taxi, circle is your destination, blue square is the garage, red dots are police"></canvas><button id="garage" class="garage-button">${icon('wrench')}<span>Pit Stop garage</span><kbd>G</kbd></button></aside>
+  <aside class="map-panel panel" aria-label="Local radar"><button id="map-toggle" class="map-toggle" aria-expanded="true" aria-controls="map-content" aria-label="Collapse radar"><span>RADAR</span><span id="map-status">LIVE</span><span class="map-chevron" aria-hidden="true">⌄</span></button><div id="map-content"><canvas id="map" aria-label="Local minimap: yellow is your taxi, circle or edge arrow is your destination, blue square is the garage, red dots are police"></canvas></div><button id="garage" class="garage-button">${icon('wrench')}<span>Pit Stop garage</span><kbd>G</kbd></button></aside>
   <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER</span><span><kbd>G</kbd> GARAGE</span><span><kbd>P</kbd> PAUSE</span><button id="help">HOW TO PLAY <span>↗</span></button><button id="lab-button">TEST LAB <kbd>F2</kbd></button></footer>
   <div class="touch-controls" aria-label="Touch driving controls"><div><button data-key="left" aria-label="Steer left">←</button><button data-key="right" aria-label="Steer right">→</button></div><div><button data-key="handbrake">DRIFT</button><button data-key="boost">BOOST</button><button data-key="down" aria-label="Brake and reverse">↓</button><button data-key="up" aria-label="Accelerate">↑</button></div></div>
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
@@ -74,7 +73,7 @@ function modal() {
     card.innerHTML = `<div class="eyebrow danger">BUSTED / CITY POLICE</div><h2 id="modal-title">End of the chase.</h2><p>They caught the cab. They couldn’t catch the spirit.</p><div class="bill"><span>BAIL & IMPOUND</span><strong>$${fee}</strong><small>Cab repaired. Boost refilled. Fresh start in Old Town.</small></div><button class="primary" id="recover">Pay bail & get back out ${icon('arrow')}</button>`;
   }
   if (game.mode === 'paused' && !helpOpen && !statsOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
-  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.').replace('Or pay the bail.', 'Or pay the bail. Press E to exit, then E by a parked car or motorbike to take it. The bike beside Pit Stop unlocks parcel deliveries.');
+  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
   $('start')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
   $('resume')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; statsOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.player.body.position }; $('city').focus(); });
@@ -158,12 +157,21 @@ $('sound-toggle').addEventListener('click', toggleSound);
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
 function pause() { if (game.mode === 'playing') { statsOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { lab?.realtime(); externalClock = false; helpOpen = false; statsOpen = false; game.setMode('playing'); } }
 $('pause').addEventListener('click', pause); $('garage').addEventListener('click', () => game.garage()); $('help').addEventListener('click', showHelp);
+$('map-toggle').addEventListener('click', () => {
+  const collapsed = !$('map-content').hidden;
+  $('map-content').hidden = collapsed;
+  $('map-toggle').setAttribute('aria-expanded', String(!collapsed));
+  $('map-toggle').setAttribute('aria-label', collapsed ? 'Expand radar' : 'Collapse radar');
+  document.querySelector('.map-panel')!.classList.toggle('collapsed', collapsed);
+});
 $('lab-button').addEventListener('click', () => { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); });
 document.querySelector('.brand')!.addEventListener('click', e => { e.preventDefault(); showHelp(); });
 window.addEventListener('keydown', e => {
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
   if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
+  // Preserve native keyboard activation for HUD buttons, including radar toggle.
+  if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
    if (e.code === 'Tab' && game.mode !== 'playing' && game.mode !== 'wrecked' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
