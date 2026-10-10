@@ -31,6 +31,27 @@ Play online at **https://lbarasti.com/taxi-chaos/**. The GitHub Pages URL, `http
 
 The **Deploy GitHub Pages** workflow in `.github/workflows/pages.yml` runs on pushes to `main` and can also be started manually from GitHub Actions. It installs dependencies, runs the tests, builds the standalone HTML, and publishes `dist/`. The repository's **Settings → Pages → Source** is set to **GitHub Actions**.
 
+## Eastern bridges & highlands
+
+Two bridges extend the eastern waterfront into **Pine Woods** and the **Eagle Highlands**.
+Follow the roads east at the northern crossing (y = 80) for **Pine Bridge**, or the southern
+crossing (y = 200) for **Fern Bridge**. Across the river, smooth forest bends lead to Pine
+Junction, Fern Hollow, Highland Lodge and Eagle Lookout. The ridge loop connects both
+crossings; there is no city grid in the woods. Trees, rock outcrops, bridge rails and the
+irregular shoreline are solid scenery. Mountain relief is drawn from above; driving uses
+the existing planar physics.
+
+The minimap includes both land masses. Navigation, civilian traffic and police follow the
+curved road network, and later taxi/parcel jobs include the four rural stops with travel
+time and pay based on road distance. The first fare stays in Old Town.
+
+**Try it:** F2 → **Eastern bridges / highlands** → Run starts at Pine Bridge facing east
+with a delivery to Eagle Lookout and police disabled for that scenario. Automation can use
+`__taxi.scenario('eastern-bridges')`.
+
+See the [screenshots and map notes](docs/eastern-highlands.md) for the bridge crossing,
+ridge road and highlands at night.
+
 ## Controls & game loop
 
 | Input | Action |

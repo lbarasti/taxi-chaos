@@ -1,14 +1,15 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
+import { BRIDGE_Y, HIGHLAND_OUTLINE, HIGHLAND_STOPS, ROAD_NODES, countryAccess, countryNeighbours, countryNode, countryPath, inHighlands, pathLength } from './countryside';
 
-export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump';
+export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'water';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
-export const isRigidObstacle = (kind: PropKind) => kind === 'building' || isStructural(kind) || kind === 'pump' || kind === 'tree';
+export const isRigidObstacle = (kind: PropKind) => kind === 'building' || kind === 'rock' || kind === 'guardrail' || kind === 'water' || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export type Prop = { id: number; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
 export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean };
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
-export const district = (p: Vec) => p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+export const district = (p: Vec) => p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
   props: Prop[] = []; people: Person[] = []; blocks: Block[] = []; hash = new SpatialHash<Prop>(); random = seeded(1976);
@@ -16,7 +17,7 @@ export class World {
   parking: ParkingSpot[] = [];
   add(kind: PropKind, x: number, y: number, w: number, h: number, color: string, label = '', angle = 0) {
     const body = new Body(x, y, Infinity, w, h); body.angle = angle;
-    const hp = kind === 'building' ? Infinity : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
+    const hp = ['building', 'rock', 'guardrail', 'water'].includes(kind) ? Infinity : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
     const prop: Prop = { id: this.props.length, body, kind, alive: true, hp, maxHp: hp, color, label, brokenAt: -1, lastHit: -100, fire: 0, fuelSpent: false, blamed: false };
     this.props.push(prop); this.hash.insert(prop); return prop;
   }
@@ -69,21 +70,65 @@ export class World {
     this.parking.push({ position: vec(6.5, 34.6), angle: -Math.PI / 2, occupied: true, lot: false, motorcycle: true });
     // Waterfront barriers and an unmistakable city boundary.
     this.add('building', 120, -15, 280, 2, '#30484e', ''); this.add('building', 120, 255, 280, 2, '#30484e', '');
-    this.add('building', -15, 120, 2, 280, '#30484e', ''); this.add('building', 255, 120, 2, 280, '#30484e', '');
+    this.add('building', -15, 120, 2, 280, '#30484e', '');
+    // Open the original east boundary only at the two bridge approaches.
+    for (const [lo, hi] of [[-15, 72], [88, 192], [208, 255]]) {
+      this.add('guardrail', 255, (lo + hi) / 2, hi - lo, 1.2, '#819b98', '', Math.PI / 2);
+      this.add('water', 276, (lo + hi) / 2, 40, hi - lo, '#31505a');
+    }
+    for (const y of BRIDGE_Y) {
+      for (const side of [-1, 1]) {
+        this.add('guardrail', 279, y + side * 7.5, 66, 0.8, '#a7b9b1');
+        this.add('lamp', 249, y + side * 9, 0.6, 0.6, '#a7bfbb');
+        this.add('lamp', 307, y + side * 9, 0.6, 0.6, '#a7bfbb');
+      }
+    }
+    // Irregular shore/cliff boundaries, split finely so the bridge landings stay open.
+    for (let i = 0; i < HIGHLAND_OUTLINE.length; i++) {
+      const a = HIGHLAND_OUTLINE[i], b = HIGHLAND_OUTLINE[(i + 1) % HIGHLAND_OUTLINE.length], n = Math.ceil(dist(a, b) / 6), angle = Math.atan2(b.y - a.y, b.x - a.x);
+      for (let j = 0; j < n; j++) {
+        const t = (j + 0.5) / n, p = vec(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+        if (countryAccess(p).distance > 10) this.add('rock', p.x, p.y, dist(a, b) / n + 0.2, 2.4, '#66766c', '', angle);
+      }
+    }
+    // Separate RNG preserves the existing city's layouts, traffic and deterministic fixtures.
+    const ruralRandom = seeded(8642);
+    for (let i = 0; i < 350; i++) {
+      const p = vec(310 + ruralRandom() * 208, ruralRandom() * 240);
+      if (!inHighlands(p) || countryAccess(p).distance < 12 || HIGHLAND_STOPS.some(s => dist(s.position, p) < 15)) continue;
+      const rock = i % 8 === 0, size = rock ? 3 + ruralRandom() * 4 : 1.6;
+      this.add(rock ? 'rock' : 'tree', p.x, p.y, size, rock ? size * 0.8 : size, rock ? '#788278' : ['#3d654f', '#426e58', '#315747'][i % 3], '', ruralRandom() * Math.PI);
+    }
+    const cityRandom = this.random; this.random = ruralRandom;
+    for (const stop of HIGHLAND_STOPS) {
+      const p = stop.position;
+      const clearing = (radius: number, clearance: number) => Array.from({ length: 16 }, (_, i) => vec(p.x + Math.cos(i * Math.PI / 8) * radius, p.y + Math.sin(i * Math.PI / 8) * radius)).find(point => inHighlands(point) && countryAccess(point).distance > clearance)!;
+      const kiosk = clearing(14, 10), bench = clearing(11, 7);
+      this.add('kiosk', kiosk.x, kiosk.y, 3.8, 3, '#987c59', stop.name.toUpperCase());
+      this.add('bench', bench.x, bench.y, 2.4, 0.75, '#bf9870');
+      this.addPerson(vec(bench.x + 2, bench.y + 2), 'civilian', '#b0cbaa');
+    }
+    this.random = cityRandom;
   }
 }
 
 // Street access + a shortest orthogonal route. No compulsory intersection snaps
 // or stair-step zigzags: a grid without closed roads needs at most two turns.
-export function roadNode(p: Vec): Vec { return vec(Math.round(Math.max(0, Math.min(SIZE, p.x)) / GRID) * GRID, Math.round(Math.max(0, Math.min(SIZE, p.y)) / GRID) * GRID); }
-export const roadDistance = (p: Vec) => Math.min(Math.abs(p.x - roadNode(p).x), Math.abs(p.y - roadNode(p).y));
+function gridNode(p: Vec): Vec { return vec(Math.round(Math.max(0, Math.min(SIZE, p.x)) / GRID) * GRID, Math.round(Math.max(0, Math.min(SIZE, p.y)) / GRID) * GRID); }
+export function roadNode(p: Vec): Vec { return p.x > SIZE + 6 ? countryNode(p) : gridNode(p); }
+export const roadDistance = (p: Vec) => p.x > SIZE + 6 ? countryAccess(p).distance : Math.min(Math.abs(p.x - gridNode(p).x), Math.abs(p.y - gridNode(p).y));
+export function roadNeighbours(p: Vec): Vec[] {
+  const country = countryNeighbours(p);
+  if (p.x > SIZE) return country;
+  return [...[vec(p.x + GRID, p.y), vec(p.x - GRID, p.y), vec(p.x, p.y + GRID), vec(p.x, p.y - GRID)].filter(n => n.x >= 0 && n.y >= 0 && n.x <= SIZE && n.y <= SIZE), ...country];
+}
 type Access = { point: Vec; vertical?: number; horizontal?: number };
 function streetAccess(p: Vec): Access {
-  const n = roadNode(p), dx = Math.abs(n.x - p.x), dy = Math.abs(n.y - p.y);
+  const n = gridNode(p), dx = Math.abs(n.x - p.x), dy = Math.abs(n.y - p.y);
   if (dx <= 6 || dy <= 6) return { point: { ...p }, vertical: dx <= 6 ? n.x : undefined, horizontal: dy <= 6 ? n.y : undefined };
   return dx < dy ? { point: vec(n.x, p.y), vertical: n.x } : { point: vec(p.x, n.y), horizontal: n.y };
 }
-export const roadProjection = (p: Vec) => streetAccess(p).point;
+export const roadProjection = (p: Vec) => p.x > SIZE + 6 ? countryAccess(p).point : streetAccess(p).point;
 export function simplifyPath(points: Vec[]): Vec[] {
   const result: Vec[] = [];
   for (const point of points) {
@@ -97,7 +142,7 @@ export function simplifyPath(points: Vec[]): Vec[] {
   }
   return result;
 }
-export function roadPath(from: Vec, to: Vec): Vec[] {
+function gridPath(from: Vec, to: Vec): Vec[] {
   if (dist(from, to) < 0.01) return [{ ...to }];
   const start = streetAccess(from), end = streetAccess(to), a = start.point, b = end.point;
   const candidates: Vec[][] = [];
@@ -109,4 +154,14 @@ export function roadPath(from: Vec, to: Vec): Vec[] {
   const score = (points: Vec[]) => points.reduce((sum, p, i) => sum + (i ? dist(points[i - 1], p) : 0), 0) + Math.max(0, points.length - 2) * 0.2;
   const routes = candidates.map(points => simplifyPath([from, ...points, to]));
   return routes.reduce((best, route) => score(route) < score(best) ? route : best, routes[0]);
+}
+
+export function roadPath(from: Vec, to: Vec): Vec[] {
+  const a = from.x > SIZE + 6, b = to.x > SIZE + 6;
+  if (!a && !b) return gridPath(from, to);
+  if (a && b) return simplifyPath(countryPath(from, to));
+  const routes = [ROAD_NODES[0], ROAD_NODES[7]].map(bridge => a
+    ? [...countryPath(from, bridge), ...gridPath(bridge, to)]
+    : [...gridPath(from, bridge), ...countryPath(bridge, to)]);
+  return simplifyPath(routes.reduce((best, route) => pathLength(route) < pathLength(best) ? route : best));
 }

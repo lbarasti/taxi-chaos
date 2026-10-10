@@ -39,6 +39,7 @@ const MAX_TRAFFIC = 40;
 export type ScenarioName =
   | 'first-fare'
   | 'motorcycle'
+  | 'eastern-bridges'
   | 'hydrant'
   | 'alley'
   | 'wall'
@@ -61,6 +62,7 @@ export type ScenarioInfo = { name: ScenarioName; label: string; description: str
 export const scenarioInfo: ScenarioInfo[] = [
   { name: 'first-fare', label: 'First fare', description: 'Fresh run parked at Old Town; the first customer waits just down the street.' },
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
+  { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'hydrant', label: 'Hydrant', description: 'Cab rolls south at (7.5, 3) into the kerbside hydrant at 12 m/s.' },
   { name: 'alley', label: 'Alley', description: 'Aim through the alley at (20.5, 4): barrier first, then stacked crates, at 16 m/s.' },
   { name: 'wall', label: 'Wall', description: 'Full-speed 20 m/s test into the solid building at (14, 4) — damage and bounce.' },
@@ -207,6 +209,15 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       pose(game, renderer, player, 4, 32, NORTH, 0);
       const bike = game.vehicle('traffic', 6.5, 34.6, NORTH, '#ed9b63', 'motorcycle');
       bike.parked = true; bike.driverExited = true; game.settings.noPolice = true;
+      break;
+    }
+    case 'eastern-bridges': {
+      pose(game, renderer, player, 236, 80, EAST, 0);
+      game.settings.noPolice = true;
+      game.job.pickup = vec(236, 80); game.job.dropoff = vec(474, 58); game.job.destination = 'Eagle Lookout'; game.job.stage = 'dropoff'; game.job.time = 140;
+      const customer = game.world.people.find(p => p.id === game.job.customerId);
+      if (customer) { customer.aboard = true; customer.alive = false; }
+      game.notify('Cross Pine Bridge, then follow the ridge road to Eagle Lookout.');
       break;
     }
     case 'hydrant':

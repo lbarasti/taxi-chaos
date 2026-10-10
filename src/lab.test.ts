@@ -19,7 +19,7 @@ const solidOverlap = (g: Game): string | null => {
 describe('LAB scenario catalogue', () => {
   it('exposes every documented fixture with a description', () => {
     expect(scenarioNames).toEqual<ScenarioName[]>([
-      'first-fare', 'motorcycle', 'hydrant', 'alley', 'wall', 'traffic', 'npc-recovery', 'pileup', 'police-chase', 'arrest',
+      'first-fare', 'motorcycle', 'eastern-bridges', 'hydrant', 'alley', 'wall', 'traffic', 'npc-recovery', 'pileup', 'police-chase', 'arrest',
       'pedestrians', 'fire', 'cab-fire', 'chain-reaction', 'barracks', 'depot', 'gas-station',
     ]);
     for (const scenario of scenarioInfo) {

@@ -6,8 +6,21 @@ import { LightingLayer, collectLights, cullLights, type LightScene, type Lightin
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection } from './motorcycle';
+import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_OUTLINE, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH } from './countryside';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
+
+function trace(c: CanvasRenderingContext2D, points: Vec[], closed = false) {
+  c.beginPath(); c.moveTo(points[0].x, points[0].y);
+  for (const p of points.slice(1)) c.lineTo(p.x, p.y);
+  if (closed) c.closePath();
+}
+
+const RIDGES = [
+  [vec(368, 19), vec(400, -4), vec(444, 6), vec(478, 26), vec(450, 34), vec(432, 48), vec(404, 44), vec(393, 29)],
+  [vec(410, 126), vec(432, 91), vec(454, 97), vec(469, 124), vec(454, 155), vec(427, 166), vec(405, 149)],
+  [vec(355, 220), vec(376, 202), vec(394, 224), vec(429, 235), vec(460, 224), vec(494, 234), vec(486, 250), vec(404, 255)],
+];
 
 function mixHex(a: string, b: string, t: number): string {
   const parse = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] as [number, number, number]; };
@@ -128,12 +141,16 @@ export class Renderer {
   }
   ground() {
     const c = this.ctx, g = this.game;
+    // Water fills the view first; both land masses cover it with their actual shoreline.
+    c.strokeStyle = mixHex('#31505a', '#9bc0c6', this.daylight * 0.5); c.lineWidth = 0.12;
+    const minX = this.camera.x - this.width / this.zoom, maxX = this.camera.x + this.width / this.zoom;
+    for (let y = Math.floor((this.camera.y - this.height / this.zoom) / 7) * 7; y < this.camera.y + this.height / this.zoom; y += 7) {
+      c.beginPath(); for (let x = minX; x < maxX; x += 3) { const yy = y + Math.sin(x * 0.5 + g.time * 0.3) * 0.3; if (x === minX) c.moveTo(x, yy); else c.lineTo(x, yy); } c.stroke();
+    }
     // The base palette was authored for a night city; lift it toward daylight so morning/afternoon
     // do not read as a darker night before the ambient lighting pass is applied.
     this.rect(-14, -14, 268, 268, mixHex('#29383e', '#84938a', this.daylight * 0.45));
-    // Waterfront: graphic waves, not textures.
-    c.strokeStyle = mixHex('#31505a', '#9bc0c6', this.daylight * 0.5); c.lineWidth = 0.12;
-    for (let y = -70; y < 320; y += 7) { c.beginPath(); for (let x = -100; x < 350; x += 2) { if (x > -17 && x < 257 && y > -17 && y < 257) continue; const yy = y + Math.sin(x * 0.5 + g.time * 0.3) * 0.3; c.lineTo(x, yy); } c.stroke(); }
+    this.countrysideGround();
     for (const b of g.world.blocks) {
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
       this.rect(b.x + 6, b.y + 6, 28, 28, '#596361'); this.rect(b.x + 6.5, b.y + 6.5, 27, 27, b.park ? '#345b4a' : '#444c4b');
@@ -178,6 +195,47 @@ export class Renderer {
     // Workshop's apron, immediately beside the starting cab.
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
   }
+  countrysideGround() {
+    const c = this.ctx;
+    trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = mixHex('#29483a', '#6b835e', this.daylight * 0.35); c.fill();
+    c.strokeStyle = '#9da17b'; c.lineWidth = 2; c.stroke();
+    for (const [i, ridge] of RIDGES.entries()) {
+      trace(c, ridge, true); c.fillStyle = mixHex('#47554a', '#949080', this.daylight * 0.5); c.fill();
+      const center = ridge.reduce((a, p) => add(a, scale(p, 1 / ridge.length)), vec());
+      for (const k of [0.85, 0.65, 0.45]) {
+        const contour = ridge.map(p => add(center, scale(sub(p, center), k)));
+        trace(c, contour, true); c.strokeStyle = '#bec0a337'; c.lineWidth = 0.45; c.stroke();
+      }
+      trace(c, [ridge[0], center, ridge[2], ridge[4]]); c.strokeStyle = '#263b3880'; c.lineWidth = 1.2; c.stroke();
+      if (i === 0) { trace(c, [vec(426, 16), vec(444, 12), vec(455, 20), vec(441, 24), vec(436, 20)], true); c.fillStyle = '#c9cfbd'; c.fill(); }
+    }
+    for (const stop of HIGHLAND_STOPS) {
+      c.beginPath(); c.ellipse(stop.position.x, stop.position.y, 14, 12, 0, 0, Math.PI * 2); c.fillStyle = '#7c816049'; c.fill();
+    }
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    for (const road of COUNTRY_ROADS) {
+      trace(c, road.points); c.strokeStyle = road.bridge ? '#7d8985' : '#89917a'; c.lineWidth = road.bridge ? 15 : 15.5; c.stroke();
+    }
+    for (const road of COUNTRY_ROADS) {
+      trace(c, road.points); c.strokeStyle = '#354747'; c.lineWidth = 12; c.stroke();
+    }
+    for (const road of COUNTRY_ROADS) {
+      trace(c, road.points);
+      c.strokeStyle = '#ddcb8880'; c.lineWidth = 0.16; c.setLineDash([2.4, 3]); c.stroke(); c.setLineDash([]);
+    }
+    for (const y of BRIDGE_Y) {
+      for (let x = 256; x < 298; x += 4) {
+        this.rect(x, y - 6, 0.13, 12, '#b6c1ac3b');
+        this.rect(x, y - 8.1, 0.7, 1.1, '#c4c9b4'); this.rect(x, y + 7, 0.7, 1.1, '#c4c9b4');
+      }
+      this.label(y === 80 ? 'P I N E   B R I D G E' : 'F E R N   B R I D G E', 277, y - 11, 0.85, '#cfddcb', '600');
+      this.label('WOODS / RIDGE →', 233, y - 10, 0.8, '#b9d5bc', '600');
+    }
+    for (const stop of HIGHLAND_STOPS) this.label(stop.name.toUpperCase(), stop.position.x, stop.position.y + 10, 0.9, '#c7d5ad', '700');
+    this.label('P I N E   W O O D S', 335, 140, 1.5, '#a7bd9180');
+    this.label('E A G L E   R I D G E', 441, 78, 1.5, '#d6d1ad80');
+    c.lineJoin = 'miter'; c.lineCap = 'butt';
+  }
   marker(p: Vec, color: string, label: string, garage = false) {
     if (!this.visible(p, 10)) return; const c = this.ctx, g = this.game;
     c.save(); c.translate(p.x, p.y); c.strokeStyle = color; c.fillStyle = color + '12'; c.lineWidth = 0.15;
@@ -186,6 +244,7 @@ export class Renderer {
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
   prop(prop: Prop) {
+    if (prop.kind === 'water') return;
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (!prop.alive) {
@@ -199,7 +258,17 @@ export class Renderer {
       if (prop.fire > 0) drawFire(c, vec(), prop.kind === 'station' ? 3 : 1.4, this.game.time, prop.id);
       c.restore(); return;
     }
-    if (prop.kind === 'building') {
+    if (prop.kind === 'guardrail') {
+      this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#314847');
+      this.rect(-b.w / 2, -b.h / 2 - 0.12, b.w, b.h * 0.55, prop.color);
+      for (let x = -b.w / 2 + 1; x < b.w / 2; x += 4) this.rect(x, -b.h / 2, 0.4, b.h + 0.4, '#d3cf9c');
+    } else if (prop.kind === 'rock') {
+      const w = b.w / 2, h = b.h / 2;
+      const shape = [vec(-w, -h * 0.55), vec(-w * 0.65, -h), vec(w * 0.45, -h), vec(w, -h * 0.2), vec(w * 0.8, h), vec(-w * 0.5, h), vec(-w, h * 0.4)];
+      c.save(); c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); c.restore();
+      trace(c, shape, true); c.fillStyle = prop.color; c.fill(); c.strokeStyle = '#b4b49a70'; c.lineWidth = 0.12; c.stroke();
+      trace(c, [vec(-w * 0.65, -h), vec(-w * 0.2, 0), vec(w * 0.8, h)]); c.strokeStyle = '#33484070'; c.stroke();
+    } else if (prop.kind === 'building') {
       this.shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1.3 + so.y, b.w + 0.5, b.h + 0.5, '#13212870');
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#202f37');
       this.rect(-b.w / 2 - 0.25, -b.h / 2 - 0.6, b.w, b.h, prop.color, '#84938c50');
@@ -251,7 +320,13 @@ export class Renderer {
       c.strokeStyle = '#26383c'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(0.6, 0); c.lineTo(1.2, 0); c.lineTo(1.2, 0.8); c.lineTo(0.6, 0.8); c.stroke();
       if (prop.fire > 0) drawFire(c, vec(), 1.4, this.game.time, prop.id);
     } else if (prop.kind === 'tree') {
-      this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80'); this.circle(vec(), 1.9, '#294c43'); this.circle(vec(-0.25, -0.3), 1.6, prop.color); this.circle(vec(-0.6, -0.7), 0.8, '#6b92724a');
+      this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80');
+      if (b.position.x > 296) {
+        for (const r of [2.4, 1.7, 1]) {
+          const needles = Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8; return vec(Math.cos(a) * r * (i % 2 ? 0.6 : 1), Math.sin(a) * r * (i % 2 ? 0.6 : 1) - (2.4 - r) * 0.2); });
+          trace(c, needles, true); c.fillStyle = r === 2.4 ? '#233f36' : r === 1.7 ? prop.color : '#63816a'; c.fill();
+        }
+      } else { this.circle(vec(), 1.9, '#294c43'); this.circle(vec(-0.25, -0.3), 1.6, prop.color); this.circle(vec(-0.6, -0.7), 0.8, '#6b92724a'); }
     } else if (prop.kind === 'hydrant') {
       this.shadowCircle(vec(0.15 + so.x, 0.2 + so.y), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
     } else if (prop.kind === 'lamp') {
@@ -393,14 +468,18 @@ export class Renderer {
   }
   minimap() {
     const c = this.mapCtx, g = this.game; c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.clearRect(0, 0, 220, 190); c.fillStyle = '#192c33'; c.fillRect(0, 0, 220, 190);
-    const s = 0.66, ox = 30, oy = 12; c.save(); c.translate(ox, oy); c.scale(s, s);
+    const s = Math.min(200 / (MAP_WIDTH + 28), 154 / (MAP_HEIGHT + 28)), ox = 10 + 14 * s, oy = 12 + (154 - (MAP_HEIGHT + 28) * s) / 2 + 14 * s; c.save(); c.translate(ox, oy); c.scale(s, s);
+    trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = '#45634a'; c.fill();
+    for (const ridge of RIDGES) { trace(c, ridge, true); c.fillStyle = '#717566'; c.fill(); }
+    for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
-    c.strokeStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 2; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
-    if (g.onFoot) for (const v of g.vehicles) if (v.parked && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2, v.body.position.y - 2, 4, 4); }
-    c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3, GARAGE.y - 3, 6, 6);
-    for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3, 0, Math.PI * 2); c.fill(); }
-    c.strokeStyle = g.job.stage === 'pickup' ? GOLD : MINT; c.lineWidth = 2; c.beginPath(); c.arc(g.target.x, g.target.y, 6, 0, Math.PI * 2); c.stroke();
-    c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();
+    c.strokeStyle = g.onFoot ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
+    const markerScale = 0.66 / s;
+    if (g.onFoot) for (const v of g.vehicles) if (v.parked && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
+    c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
+    for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }
+    c.strokeStyle = g.job.stage === 'pickup' ? GOLD : MINT; c.lineWidth = 1 / s; c.beginPath(); c.arc(g.target.x, g.target.y, 3 / s, 0, Math.PI * 2); c.stroke();
+    c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.scale(markerScale, markerScale); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();
     c.restore(); c.fillStyle = '#9aafb5'; c.font = '9px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position), 14, 182); c.textAlign = 'right'; c.fillText('N ↑', 205, 182);
   }
 }
