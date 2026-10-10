@@ -40,6 +40,7 @@ export type ScenarioName =
   | 'first-fare'
   | 'motorcycle'
   | 'eastern-bridges'
+  | 'woodland-estates'
   | 'hydrant'
   | 'alley'
   | 'wall'
@@ -63,6 +64,7 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'first-fare', label: 'First fare', description: 'Fresh run parked at Old Town; the first customer waits just down the street.' },
   { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
+  { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
   { name: 'hydrant', label: 'Hydrant', description: 'Cab rolls south at (7.5, 3) into the kerbside hydrant at 12 m/s.' },
   { name: 'alley', label: 'Alley', description: 'Aim through the alley at (20.5, 4): barrier first, then stacked crates, at 16 m/s.' },
   { name: 'wall', label: 'Wall', description: 'Full-speed 20 m/s test into the solid building at (14, 4) — damage and bounce.' },
@@ -218,6 +220,15 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Cross Pine Bridge, then follow the ridge road to Eagle Lookout.');
+      break;
+    }
+    case 'woodland-estates': {
+      pose(game, renderer, player, 242, 330, WEST, 0);
+      game.settings.noPolice = true;
+      game.job.pickup = vec(242, 330); game.job.dropoff = vec(132, 338); game.job.destination = 'Fairway Club'; game.job.stage = 'dropoff'; game.job.time = 140;
+      const customer = game.world.people.find(p => p.id === game.job.customerId);
+      if (customer) { customer.aboard = true; customer.alive = false; }
+      game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');
       break;
     }
     case 'hydrant':

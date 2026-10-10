@@ -9,7 +9,7 @@ import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
 import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
 import { readStorage, storageKeys } from './storage';
-import { HIGHLAND_STOPS, ROAD_NODES, pathLength } from './countryside';
+import { HIGHLAND_STOPS, ROAD_NODES, isCountry, pathLength } from './countryside';
 
 export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; model: 'car' | 'motorcycle'; kind: 'taxi' | 'police' | 'traffic'; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -161,7 +161,7 @@ export class Game {
     const dropoff = first ? stops[1] : stops[(this.offer * 3 + 4) % stops.length];
     if (dist(pickup, this.player.body.position) > 160) pickup = stops.reduce((a, b) => dist(a, this.player.body.position) < dist(b, this.player.body.position) ? a : b);
     if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.player.body.position) < dist(b, this.player.body.position) ? a : b);
-    const distance = pickup.x > 246 || dropoff.x > 246 ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
+    const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
     const destination = HIGHLAND_STOPS.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
     const type = this.player.model === 'motorcycle' ? 'parcel' : 'fare';
@@ -449,7 +449,7 @@ export class Game {
       const rules = difficulties[this.settings.difficulty], desired = Math.min(rules.maxPolice, this.stars + (this.settings.difficulty === 'chaos' ? 3 : 1));
       if (this.police.length < desired) {
         const p = this.actor.position, node = roadNode(p);
-        const candidates = (p.x > 246 ? ROAD_NODES.filter(n => n.x > 240 && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
+        const candidates = (isCountry(p) ? ROAD_NODES.filter(n => isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
         const spawn = candidates[Math.floor(this.world.random() * candidates.length)] ?? vec(240, 240);
         const firstPatrol = this.police.length === 0;
         if (firstPatrol) this.policeIntel = { position: { ...p }, velocity: { ...this.actor.velocity }, seenAt: this.time };
