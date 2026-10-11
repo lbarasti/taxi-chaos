@@ -313,6 +313,41 @@ Browser automation: `__taxi.map.snapshot()`, `.describe(id)`, `.apply(batch)`,
 See [the editor guide](docs/map-editor.md) for API/CLI examples, ownership rules,
 extension instructions, validation tolerances and desktop/mobile screenshots.
 
+### Publish a draft as the main map
+
+**`src/map/default-map.json` is the authored source for the shipped map.** Editing,
+importing or previewing in Map studio changes only the in-memory draft; export it
+before reloading. To make a reviewed draft the default for all players:
+
+1. Start from the latest `main` on a feature branch. Edit the map in Map studio
+   or through `__taxi.map` / the headless CLI. Resolve validation errors and use
+   **Preview gameplay** to check driving, collisions, water, routes and fares.
+2. Export the document with **Export JSON**, `__taxi.map.export()`, or the CLI's
+   `--output` option. CLI operation batches require an explicit output path that
+   does not already exist; see the [CLI examples](docs/map-editor.md#headless-cli).
+3. Replace **`src/map/default-map.json`** with the reviewed exported JSON using
+   your editor or file tools. Keep the document's schema, stable IDs and ownership
+   rules intact; generated collision/navigation geometry is rebuilt from this file.
+4. Validate the new baseline, run the tests and rebuild the standalone game:
+
+   ```sh
+   npm run map:check -- --input src/map/default-map.json --json
+   npm test
+   npm run build
+   ```
+
+   Review findings and any affected regression tests. Update map-dependent
+   fixtures, documented measurements and example batch `baseRevision` values
+   where necessary; revisions change when the authored map changes.
+5. Open the newly built **`dist/index.html`**, start ordinary gameplay and confirm
+   that the edited map is the default. Check affected areas on desktop/mobile and
+   capture screenshots for review.
+6. Commit the map and corresponding fixture/documentation updates, push the
+   feature branch and open a PR. Merge after review and passing CI.
+7. The push to `main` triggers **Deploy GitHub Pages**, which tests, rebuilds and
+   publishes the new map. Confirm the deployment succeeds and refresh the online
+   game. For other static hosts, publish the rebuilt `dist/index.html` yourself.
+
 ## Code map
 
 - `src/physics.ts`: vectors, rigid bodies, four-tyre forces, rotated-rectangle SAT and normal/friction impulses, spatial hash.
