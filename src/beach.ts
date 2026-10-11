@@ -1,7 +1,7 @@
 import { Body, clamp, vec, type TyreLayout, type Vec } from './physics';
 
 // Screen south is +y. This shore widens to the west and tapers into Ocean Walk
-// to the east, leaving the woodland inlet and its existing villas intact.
+// to the east. The opposite woodland shore sits across an open-water inlet.
 export const BEACH = { left: -42, right: 254, top: 246 };
 export const BEACH_SHORE = [vec(-42, 264), vec(-22, 271), vec(32, 274), vec(108, 270), vec(162, 272), vec(214, 272), vec(254, 270.5)];
 export const BEACH_OUTLINE = [vec(BEACH.left, BEACH.top), vec(BEACH.right, BEACH.top), ...[...BEACH_SHORE].reverse()];

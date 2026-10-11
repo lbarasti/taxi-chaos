@@ -19,7 +19,7 @@ describe('working harbour geography', () => {
   it('routes from the city and woodland through gates, then along clear yard lanes', () => {
     const world = new World();
     expect(roadDistance(vec(117, -3))).toBe(3); expect(roadDistance(vec(203, 24))).toBe(3);
-    for (const start of [vec(4, 32), vec(204, 164), vec(358, 114), vec(132, 338)]) {
+    for (const start of [vec(4, 32), vec(204, 164), vec(358, 114), vec(132, 458)]) {
       const path = roadPath(start, SWAP_CONTAINER);
       expect(path.at(-1)).toEqual(SWAP_CONTAINER); expect(path.some(p => p.y === 0 && (p.x === 200 || p.x === 220))).toBe(true);
       expect(roadPath(SWAP_CONTAINER, start).at(-1)).toEqual(start);

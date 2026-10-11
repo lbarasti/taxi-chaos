@@ -1,5 +1,5 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
-import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
+import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, SOUTH_WOODS_Y, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
 import { COAST_RAILS } from './coast';
 import { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, beachAccess, beachAccessPath, beachVehicleTarget, inBeach, onPromenade } from './beach';
 import type { VehicleModel } from './vehicles';
@@ -16,7 +16,7 @@ export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
 // Clear sidewalk outside Midtown Hospital; the adjacent curb bay is unoccupied.
 export const HOSPITAL = vec(147, 74.6);
-export const district = (p: Vec) => inBeach(p) ? onPromenade(p) || p.x >= 146 ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y > 270 ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+export const district = (p: Vec) => inBeach(p) ? onPromenade(p) || p.x >= 146 ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
   pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));

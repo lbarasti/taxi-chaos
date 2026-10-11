@@ -4,16 +4,35 @@ import { COUNTRY_ROADS, GOLF_COURSE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, count
 import { World, district, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
 import { Game } from './game';
 import { loadScenario } from './lab';
+import { beachShoreY } from './beach';
+import { inOcean } from './coast';
 
 const woodlandStops = HIGHLAND_STOPS.slice(4);
 
 describe('southern woodland estates and golf club', () => {
   it('wraps the eastern woods below the city in a mirrored L and preserves the inlet', () => {
-    for (const p of [vec(320, 20), vec(510, 180), vec(480, 340), vec(220, 370), vec(30, 340)]) expect(inHighlands(p)).toBe(true);
-    for (const p of [vec(120, 120), vec(120, 260), vec(270, 180), vec(-30, 330), vec(220, 450)]) expect(inHighlands(p)).toBe(false);
-    expect(district(vec(60, 316))).toBe('CEDAR WOODS');
-    expect(district(vec(132, 338))).toBe('FAIRWAY CLUB');
-    expect(district(vec(242, 330))).toBe('WOODLAND ESTATES');
+    for (const p of [vec(320, 20), vec(510, 180), vec(480, 460), vec(220, 490), vec(30, 460)]) expect(inHighlands(p)).toBe(true);
+    for (const p of [vec(120, 120), vec(120, 260), vec(270, 180), vec(-30, 450), vec(220, 570)]) expect(inHighlands(p)).toBe(false);
+    expect(district(vec(60, 436))).toBe('CEDAR WOODS');
+    expect(district(vec(132, 458))).toBe('FAIRWAY CLUB');
+    expect(district(vec(242, 450))).toBe('WOODLAND ESTATES');
+  });
+
+  it('leaves at least 110 m of open water across the entire beachfront', () => {
+    const world = new World();
+    for (let x = -40; x <= 254; x += 2) {
+      const shore = beachShoreY(x);
+      for (let offset = 0.1; offset <= 110; offset += 2) {
+        const p = vec(x, shore + offset);
+        expect(inOcean(p), `inlet at ${p.x},${p.y}`).toBe(true);
+        const probe = new Body(p.x, p.y, 1, 0.7, 0.7);
+        expect([...world.hash.query(probe)].some(prop => contact(probe, prop.body)), `scenery in inlet at ${p.x},${p.y}`).toBe(false);
+      }
+    }
+    // The old estate/golf locations are now water; their destinations moved south.
+    for (const p of [vec(105, 294), vec(209, 295), vec(174, 367)]) expect(inOcean(p)).toBe(true);
+    expect(VILLAS.find(v => v.name === 'THE LAURELS')!.position).toEqual(vec(105, 414));
+    expect(GOLF_COURSE.center).toEqual(vec(174, 487));
   });
 
   it('keeps both lanes of the extended winding roads clear of estate scenery', () => {
@@ -22,6 +41,7 @@ describe('southern woodland estates and golf club', () => {
       const a = road.points[i - 1], b = road.points[i], angle = Math.atan2(b.y - a.y, b.x - a.x);
       for (const lane of [-3, 0, 3]) {
         const car = new Body(b.x - Math.sin(angle) * lane, b.y + Math.cos(angle) * lane); car.angle = angle;
+        expect(car.corners().some(inOcean), `${road.name} enters water`).toBe(false);
         expect([...world.hash.query(car)].filter(p => contact(car, p.body)), `${road.name}, lane ${lane} at ${b.x},${b.y}`).toEqual([]);
       }
     }
@@ -58,11 +78,11 @@ describe('southern woodland estates and golf club', () => {
         for (const p of route) expect(roadDistance(p)).toBeLessThan(6.01);
       }
     }
-    expect(countryAccess(vec(180, 330)).distance).toBeLessThan(15);
+    expect(countryAccess(vec(180, 450)).distance).toBeLessThan(15);
   });
 
   it('drives civilian traffic through the southern network without damage', () => {
-    for (const [from, to] of [[vec(378, 170), vec(242, 330)], [vec(242, 330), vec(60, 316)], [vec(60, 316), vec(306, 390)]]) {
+    for (const [from, to] of [[vec(378, 170), vec(242, 450)], [vec(242, 450), vec(60, 436)], [vec(60, 436), vec(306, 510)]]) {
       const g = new Game(); loadScenario(g, 'woodland-estates'); g.world.people = [];
       g.player.body.position = vec(4, 32);
       const path = roadPath(from, to), car = g.vehicle('traffic', from.x, from.y, Math.atan2(path[1].y - from.y, path[1].x - from.x), '#a3b8ab'); car.path = path.slice(1);
@@ -75,7 +95,7 @@ describe('southern woodland estates and golf club', () => {
 
   it('dispatches and pays a southern delivery with road-distance fare and time', () => {
     const g = new Game(); loadScenario(g, 'woodland-estates'); g.offer = 18; g.newJob();
-    expect(g.job.dropoff).toEqual(vec(132, 338));
+    expect(g.job.dropoff).toEqual(vec(132, 458));
     expect(g.job.destination).toBe('Fairway Club');
     const distance = pathLength(roadPath(g.job.pickup, g.job.dropoff));
     expect(g.job.fare).toBe(Math.round(55 + distance * 0.7));

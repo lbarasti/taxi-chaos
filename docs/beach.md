@@ -10,6 +10,37 @@ Public access survives in two gaps between hotels. Surf rentals, cafés, palms,
 benches and strolling pedestrians occupy the public promenade.
 The existing south street provides access and fare pickup/drop-off points.
 
+## Seafront spacing
+
+The opposite woodland shore and its seven southern villas, Fairway Country Club,
+gardens, pools and road loop have moved **120 m south**. The inlet now gives the
+beach a broad open-water outlook, with at least **110 m of unobstructed sea**
+across the whole beachfront. The map extends to y = 550 m to accommodate the move.
+The southern estate layout is translated at its original scale; the two eastern
+approach roads extend smoothly to the relocated loop.
+
+`SOUTH_COAST_OFFSET` / `southPoint()` in `src/countryside.ts` share the translation
+between land geometry, navigation, golf holes/cart routes and decorative ridges.
+Villa drives, pool collisions, residents, fare stops and the radar derive from
+the relocated descriptors. The woodland LAB fixture uses the same live stops:
+Woodland Estates is at **(242, 450)** and Fairway Club at **(132, 458)**.
+
+Spacing verification: **410 tests / 29 files** and the production build pass.
+The inlet is sampled for both water and stray scenery; full-body road probes
+verify dry, clear lanes. Existing integration tests cover southern traffic,
+driveway clearance, carts, pools, fares and beach/harbour routes. Offline standalone
+browser QA verifies beach and golf rendering, a physical southern road drive at
+100 HP, a paid delivery at the relocated club, surf drowning, and a 390 × 844
+mobile viewport with no overflow or console errors.
+
+### Before / after overview
+
+![Previously cramped inlet](screenshots/beach/south-coast-before.png)
+![Expanded inlet and relocated southern estates](screenshots/beach/south-coast-after.png)
+![Open beachfront in the standalone build](screenshots/beach/open-seafront-desktop.png)
+![Relocated golf course in the standalone build](screenshots/beach/relocated-golf-desktop.png)
+![Mobile beachfront](screenshots/beach/open-seafront-mobile.png)
+
 ## Aesthetic research before implementation
 
 - [Los Angeles County: Venice Beach](https://beaches.lacounty.gov/venice-beach/): the long shoreline, Ocean Front Walk, volleyball, vendors and beach activity informed the overall layout and informal western court.
