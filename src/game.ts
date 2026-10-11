@@ -18,8 +18,12 @@ import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landi
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
 import { defaultPlayerRecords, migratePlayerRecords, MAX_TEXT_RECEIPTS, MAX_NOTEBOOK_ENTRIES, type NotebookEntry, type PlayerRecords } from './player-records';
-import { defaultCampaign, migrateCampaign, advanceCampaign, type Campaign } from './campaign/state';
-import { cityBulletin, everydayJobs, jobMaterials, jobNames, materials, NEWSROOM_STOP } from './campaign/content';
+import { defaultCampaign, migrateCampaign, type Campaign } from './campaign/state';
+import { everydayJobs, jobMaterials, jobNames, jobWindows, materials, NEWSROOM_STOP, type Allegation } from './campaign/content';
+import { CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
+import { advanceCampaignTo, approvePublication, receiveMaterial } from './campaign/scheduler';
+import { cityBulletin } from './campaign/bulletin';
+import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
 import { isCountry, pathLength } from './countryside';
 import { RAIL_BREAK_SPEED } from './coast';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
@@ -70,14 +74,19 @@ export class Game {
   /** Unaccepted physical pickups, keyed by stable mission identity. */
   missionOffers = new Map<MissionId, Job>();
   private offerCheckpoint = 0;
+  private rideBeat = 0;
+  private dialogueStartedAt = 0;
+  private rideDistance = 0;
+  private lastRidePosition = vec();
+  private campaignVanSpawned = false;
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   touchMove: Vec | null = null;
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
   private sandRuts: { anchor: Vec; segment?: Skid }[] = [];
   private rutVehicleId = -1;
-  constructor(public readonly map: CompiledMap = defaultCompiledMap, private readonly persistence = true, story: boolean | 'legacy' = true) {
-    this.world = new World(map); this.fx = new Effects(map.document.envelope); this.save = persistence ? loadSave() : defaultSave();
+  constructor(public readonly map: CompiledMap = defaultCompiledMap, private readonly persistence = true, story: boolean | 'legacy' = true, initialSave?: Save) {
+    this.world = new World(map); this.fx = new Effects(map.document.envelope); this.save = initialSave ? structuredClone(initialSave) : persistence ? loadSave() : defaultSave();
     this.settings = persistence ? loadSettings() : defaultSettings();
     this.preferences = { gore: this.settings.gore, difficulty: this.settings.difficulty };
     // Isolated map previews opt out of story compilation; the lab and normal
@@ -85,7 +94,15 @@ export class Game {
     this.campaignEnabled = story === true;
     this.missions = new MissionDirector(story === true ? openShoreMissions(map) : story === 'legacy' ? missionsFor(map) : neutralMissions(map), this.save.story);
     this.resolveCampaignSites();
-    this.populateVehicles(); this.newJob(true); this.applyUpgrades();
+    this.populateVehicles();
+    const ride = this.save.campaign.activeRide;
+    if (this.campaignEnabled && ride && this.missions.resumeRide(ride.missionId)) {
+      this.job = this.makeMissionJob(ride.missionId); this.job.type = ride.type; this.job.stage = 'dropoff'; this.job.elapsed = ride.elapsed; this.job.comfort = ride.comfort; this.rideBeat = ride.rideBeat;
+      const rider = this.world.people.find(p => p.id === this.job.customerId); if (rider) { rider.alive = false; rider.aboard = true; }
+      this.player.body.position = { ...this.job.pickup }; this.lastRidePosition = { ...this.job.pickup }; this.syncMissionOffers();
+    } else this.newJob(true);
+    this.applyUpgrades(); this.syncCampaignWorld();
+    if (this.campaignEnabled) this.dayNight.followCampaign(this.save.campaign.minute);
   }
   populateVehicles() {
     const { GOLF_CART_ROUTE } = this.map.country;
@@ -130,21 +147,65 @@ export class Game {
     this.smashed = 0; this.shiftEarnings = 0; this.jobsDone = 0; this.crashCooldown = 0; this.speedingTime = 0; this.driftMeter = 0; this.lastDrift = 0; this.nearMiss.clear(); this.navToGarage = false;
     this.kills = 0; this.explosions = 0; this.buildingsSmashed = 0; this.offer = 0; this.pedestrianClock = 0; this.maintenanceClock = 0; this.policeIntel = { position: vec(4, 32), velocity: vec(), seenAt: -100 };
     this.dayNight.reset();
+    this.campaignVanSpawned = false; this.syncCampaignWorld();
+    if (this.campaignEnabled) this.dayNight.followCampaign(this.save.campaign.minute);
     this.eventLog = []; this.newJob(true, 'reset'); this.applyUpgrades(); this.setMode('playing');
   }
-  /** Explicit new-story reset. Ordinary new shifts preserve persistent story. */
-  resetStory() { this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(); this.navToNewsroom = false; this.newJob(true, 'reset'); this.persist(); }
-  /** Calendar advances only by this explicit player action, never recovery or wall time. */
-  endShift(): boolean {
-    if (!this.campaignEnabled || this.mode !== 'paused' || this.job.stage === 'dropoff' || this.save.campaign.finished) return false;
-    this.releaseMission('shift');
-    advanceCampaign(this.save.campaign);
-    this.persist();
-    if (!this.save.campaign.finished) this.resetRun();
-    else this.onChange();
-    return true;
+  /** New campaign is separate from recovery and laboratory run resets. */
+  resetStory() { this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist(); }
+  get sleepReason(): string | null {
+    if (!this.campaignEnabled || this.save.campaign.finished) return 'Campaign finished · free driving continues';
+    if (!this.garageNear || this.onFoot || this.speed > 0.5) return 'Park at Pit Stop to sleep';
+    if (this.job.stage === 'dropoff') return 'Finish or abandon your current ride first';
+    if (this.heat > 0 || this.policeVisible || this.pendingExit || this.tumble || this.player.damage.status === 'burning' || this.player.damage.status === 'wreck' || this.vehicles.some(v => v.damage.status === 'burning' && dist(v.body.position, this.actor.position) < 30) || this.blasts.some(b => dist(b.position, this.actor.position) < 30)) return 'Wait until the area and your car are safe';
+    if (this.dialogue.active?.expanded && !this.dialogue.complete) return 'Read or minimize the current conversation first';
+    return null;
   }
-  get campaignBulletin() { return cityBulletin(this.save.campaign.shift, this.save.campaign.publications.map(p => p.allegation), this.save.story.flags); }
+  get sleepPreview() {
+    const until = nextMorning(this.save.campaign.minute);
+    const expiring = this.save.playerRecords.texts.filter(t => this.missionOffers.has(t.missionId) && jobWindows[t.missionId]?.until <= until).map(t => t.title);
+    if (this.job.missionId && this.job.stage === 'pickup' && jobWindows[this.job.missionId]?.until <= until && !expiring.includes(this.missions.mission(this.job.missionId).title)) expiring.push(this.missions.mission(this.job.missionId).title);
+    return { until, label: calendarLabel(until), hours: (until - this.save.campaign.minute) / 60, expiring };
+  }
+  /** One safe overnight transaction. Transient physics, fares, damage and cash stay put. */
+  sleep(): boolean {
+    if ((this.mode !== 'paused' && this.mode !== 'garage') || this.sleepReason) return false;
+    this.releaseMission('shift'); this.dialogue.clear();
+    this.advanceNarrativeTo(this.sleepPreview.until); this.newJob(false, 'shift'); this.persist();
+    this.setMode('playing'); this.notify(`Morning · ${this.campaignBulletin}`); return true;
+  }
+  get campaignBulletin() { return cityBulletin(this.save.campaign); }
+  /** Also used by the explicit Lab campaign control; never changes simulation seconds. */
+  advanceNarrativeTo(minute: number): boolean {
+    if (!this.campaignEnabled) return false;
+    const before = Object.keys(this.save.campaign.occurrences).length, wasFinished = this.save.campaign.finished;
+    const changed = advanceCampaignTo(this.save.campaign, minute, this.save.story.flags);
+    this.dayNight.synchronize(this.save.campaign.minute);
+    if (Object.keys(this.save.campaign.occurrences).length !== before) this.syncCampaignWorld();
+    if (!wasFinished && this.save.campaign.finished) {
+      this.syncMissionOffers();
+      // Finish a fare already on board; no new campaign fare can be accepted.
+      this.notify(`Election-day campaign complete. ${this.campaignBulletin}`); this.persist();
+    }
+    return changed;
+  }
+  private syncCampaignWorld() {
+    if (!this.campaignEnabled) return;
+    const existing = this.vehicles.find(v => v.sourceId === 'campaign-ms14');
+    if (this.save.campaign.world.van === 'at-cafe' && !this.campaignVanSpawned) {
+      this.campaignVanSpawned = true;
+      const stop = this.missions.catalogue.stops.byId['garden-cafe'];
+      if (stop) for (const offset of [vec(2.5, 12), vec(2.5, 18), vec(-7, 12)]) {
+        const position = add(stop.position, offset), body = createVehicleBody(vehicleDefinition('van'), position, Math.PI / 2);
+        if (this.vehicles.some(v => v.alive && bodiesNear(body, v.body, 0.3)) || [...this.world.hash.query(body)].some(p => p.alive && contact(body, p.body)) || this.world.pools.some(pool => contact(body, pool))) continue;
+        const van = this.spawnVehicle({ model: 'van', position, angle: Math.PI / 2, color: '#d4c6ab', parked: true, driverExited: true });
+        van.sourceId = 'campaign-ms14'; break;
+      }
+    } else if (existing?.alive && this.save.campaign.world.van !== 'at-cafe' && existing.parked) {
+      existing.parked = false; existing.driverExited = false;
+      existing.path = this.world.navigation.roadPath(existing.body.position, this.missions.catalogue.stops.byId['the-docks'].position);
+    }
+  }
   private resolveCampaignSites() {
     this.campaignSites = {};
     if (!this.campaignEnabled) return;
@@ -160,19 +221,30 @@ export class Game {
   private note(entry: Omit<NotebookEntry, 'shift' | 'at'>) {
     const notebook = this.save.playerRecords.notebook;
     if (notebook.length >= MAX_NOTEBOOK_ENTRIES || notebook.some(e => e.id === entry.id)) return;
-    notebook.push({ id: entry.id, title: entry.title, text: entry.text, kind: entry.kind, shift: this.save.campaign.shift, at: this.save.story.campaignSeconds });
+    notebook.push({ id: entry.id, title: entry.title, text: entry.text, kind: entry.kind, shift: this.save.campaign.shift, at: this.save.story.campaignSeconds, minute: this.save.campaign.minute, source: entry.source ?? 'driver-record' });
   }
   /** A photograph is a player action at the site, not an automatic deduction. */
   photographCafe(): boolean {
     const stop = this.missions.catalogue.stops.byId['garden-cafe'];
-    if (!this.campaignEnabled || this.mode !== 'playing' || !stop || this.save.campaign.shift < 3 || dist(this.actor.position, stop.position) > 16 || this.speed > 2.8) return false;
+    if (!this.campaignEnabled || this.mode !== 'playing' || !stop || !['boarded', 'tenancy-review', 'closed'].includes(this.save.campaign.world.cafe) || dist(this.actor.position, stop.position) > 16 || this.speed > 2.8) return false;
     this.note({ id: 'cafe-photo', ...materials['cafe-photo'] }); this.persist(); this.notify('Garden Café frontage bookmarked in Notebook.'); return true;
   }
   submitMaterial(id: string): boolean {
-    if (!this.newsroomNear || this.save.campaign.finished || this.save.campaign.shift === 14 || !Object.hasOwn(materials, id) || !this.save.playerRecords.notebook.some(e => e.id === id) || this.save.campaign.submitted.includes(id)) return false;
-    this.save.campaign.submitted.push(id); this.persist();
-    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Verification needs a shift; receipt is not publication.'); return true;
+    if (!this.newsroomNear || this.save.campaign.finished || !Object.hasOwn(materials, id) || !this.save.playerRecords.notebook.some(e => e.id === id) || Object.hasOwn(this.save.campaign.newsroom.received, id)) return false;
+    if (!receiveMaterial(this.save.campaign, id)) return false; this.persist();
+    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Return to the editor to request a ready story’s publication.'); return true;
   }
+  requestPublication(allegation: Allegation): boolean {
+    if (!this.newsroomNear || !approvePublication(this.save.campaign, allegation)) return false;
+    this.persist(); this.notify('Editor accepted the story for the next 06:00 edition. Any response will follow later.'); return true;
+  }
+  recordDialogue() {
+    const active = this.dialogue.active;
+    if (!this.campaignEnabled || !active) return;
+    this.note({ id: active.beatId, title: `${characters[active.message.speaker].name} · ride conversation`, text: active.message.text, kind: 'conversation', source: active.message.speaker });
+    this.persist();
+  }
+  private speak(beatId: string, message: import('./story').StoryMessage | null) { this.dialogue.start(beatId, message); this.dialogueStartedAt = this.time; }
   /** Abandons any active mission and detaches it from the current job. */
   releaseMission(reason: AbandonReason = 'shift') { const active = this.missions.activeId; if (active) { const persistent = this.missions.active?.abandon.retry !== 'always'; this.missions.abandon(reason, this.save.story.campaignSeconds); if (persistent) this.persist(); } if (this.job && (active || !this.missionOffers.has(this.job.missionId ?? ''))) delete this.job.missionId; }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
@@ -453,8 +525,11 @@ export class Game {
     for (const v of this.police) v.alive = false;
     this.sounds.emit('escape', this.time); this.notify('FRESH CAR. CLEAN RECORD. All police warnings cleared. Follow cyan to the exit.', 'success'); this.onChange();
   }
+  get persistenceEnabled() { return this.persistence; }
   get garageNear() { return !this.onFoot && dist(this.player.body.position, GARAGE) < 9; }
-  persist() { if (!this.persistence) return; try { localStorage.setItem(storageKeys.save, JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
+  persist() {
+    if (this.campaignEnabled && this.job) this.save.campaign.activeRide = this.job.missionId && this.job.stage === 'dropoff' ? { missionId: this.job.missionId, type: this.job.type, elapsed: this.job.elapsed, comfort: this.job.comfort, rideBeat: this.rideBeat } : null;
+    if (!this.persistence) return; try { localStorage.setItem(storageKeys.save, JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
   configure(settings: Partial<Settings>) {
     const enableGod = settings.invincible === true && !this.settings.invincible;
     if (settings.difficulty && Object.hasOwn(difficulties, settings.difficulty)) this.preferences.difficulty = this.settings.difficulty = settings.difficulty;
@@ -469,7 +544,7 @@ export class Game {
   start() { this.setMode('playing'); this.syncMissionOffers(); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   private missionContext(): DirectorContext {
-    return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds, shift: this.save.campaign.finished ? 15 : this.save.campaign.shift };
+    return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds, minute: this.save.campaign.minute, shift: this.save.campaign.finished ? 15 : this.save.campaign.shift };
   }
   private makeMissionJob(missionId: MissionId): Job {
     const mission = this.missions.mission(missionId), { roadPath } = this.world.navigation;
@@ -492,6 +567,10 @@ export class Game {
     // opportunity cannot be recreated in this pass or after reloading the save.
     let changed = false;
     let routedRemoved = false;
+    if (this.campaignEnabled) for (const [id, window] of Object.entries(jobWindows)) if (this.save.campaign.minute >= window.until && !(this.job?.missionId === id && this.job.stage === 'dropoff')) {
+      routedRemoved ||= this.job?.missionId === id && this.job.stage === 'pickup';
+      changed = this.missions.expire(id, this.save.story.campaignSeconds) || changed;
+    }
     for (const [id, job] of this.missionOffers) if (job.customerId !== -1 && !this.world.people.find(p => p.id === job.customerId)?.alive) {
       changed = this.missions.loseContact(id, this.save.story.campaignSeconds) || changed;
     }
@@ -543,8 +622,8 @@ export class Game {
     this.navToNewsroom = false;
     return true;
   }
-  newJob(first = false, reason?: AbandonReason) {
-    this.dialogue.clear();
+  newJob(first = false, reason?: AbandonReason, ordinaryOnly = false) {
+    this.dialogue.clear(); this.rideBeat = 0; this.rideDistance = 0;
     if (this.job && !this.missionOffers.has(this.job.missionId ?? '')) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.releaseMission(reason ?? 'replaced');
     if (this.job) this.job.wait = 0;
@@ -554,7 +633,12 @@ export class Game {
     // Keep recovery dispatch local without moving an authored story pickup.
     this.syncMissionOffers();
     const offered = this.missions.available(this.missionContext()).find(id => !this.missions.mission(id).offer && dist(this.missions.mission(id).stops.pickup, this.actor.position) <= this.missions.mission(id).dispatchRadius);
-    if (offered) { this.newMissionJob(offered); return; }
+    if (offered && !ordinaryOnly) { this.newMissionJob(offered); return; }
+    if (this.campaignEnabled && !ordinaryOnly && !this.onFoot && this.save.campaign.ordinarySinceStory >= 1) {
+      const suggestion = [...this.missionOffers.keys()].filter(id => !this.missions.mission(id).pickupChoice && dist(this.missions.mission(id).stops.pickup, this.actor.position) <= 160)
+        .sort((a, b) => jobWindows[a].until - jobWindows[b].until || dist(this.missions.mission(a).stops.pickup, this.actor.position) - dist(this.missions.mission(b).stops.pickup, this.actor.position) || a.localeCompare(b))[0];
+      if (suggestion) { this.job = this.missionOffers.get(suggestion)!; return; }
+    }
     const { roadPath } = this.world.navigation;
     // Authored stop identities resolve through the same registry as story missions.
     const stops = this.missions.catalogue.stops.routeStops;
@@ -894,8 +978,17 @@ export class Game {
     if (this.mode !== 'playing') return;
     const campaignBucket = Math.floor(this.save.story.campaignSeconds / 5);
     this.save.story.campaignSeconds += dt;
+    this.time += dt;
+    if (this.campaignEnabled && !this.save.campaign.finished) {
+      let target = Math.min(CAMPAIGN_END, this.save.campaign.minute + dt);
+      if (Math.abs(target - Math.round(target)) < 1e-6) target = Math.round(target);
+      if (Math.floor(target + 1e-6) !== Math.floor(this.save.campaign.minute + 1e-6)) this.advanceNarrativeTo(Math.round(target * 1e9) / 1e9);
+      else this.save.campaign.minute = target;
+      this.dayNight.synchronize(this.save.campaign.minute);
+    }
+    if (!this.campaignEnabled || this.dayNight.previewing || this.save.campaign.finished) this.dayNight.update(dt);
     if (Math.floor(this.save.story.campaignSeconds / 5) !== campaignBucket) this.persist();
-    this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
+    this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
     const throttle = this.touchMove ? -this.touchMove.y : Number(has('KeyW', 'ArrowUp', 'up')) - Number(has('KeyS', 'ArrowDown', 'down'));
@@ -1026,16 +1119,23 @@ export class Game {
   jobs(dt: number) {
     if (this.mode !== 'playing' || this.onFoot) { this.job.wait = 0; return; }
     this.dialogue.update(dt);
+    if (this.dialogue.complete && this.dialogue.active?.expanded && !this.save.playerRecords.notebook.some(e => e.id === this.dialogue.active!.beatId)) this.recordDialogue();
     if (this.save.story.campaignSeconds >= this.offerCheckpoint) this.syncMissionOffers();
-    // All text pickups remain live. Driving to a different ring chooses that
-    // offer, regardless of which message supplied the current radar route.
-    if (this.job.stage === 'pickup' && !this.navToGarage && !this.navToHarbour && !this.navToNewsroom && this.speed < 2.8) {
+    // Legacy fixtures retain their distinct-ring physical offer selection. The
+    // campaign’s co-located competing bookings require an explicit route choice.
+    if (!this.campaignEnabled && this.job.stage === 'pickup' && !this.navToGarage && !this.navToHarbour && !this.navToNewsroom && this.speed < 2.8) {
       const routed = this.missionOffers.get(this.job.missionId ?? '');
       const nearby = routed && dist(this.player.body.position, routed.pickup) < 5.3 ? routed : [...this.missionOffers.values()].find(j => dist(this.player.body.position, j.pickup) < 5.3);
       if (nearby && nearby !== this.job) this.routeMissionOffer(nearby.missionId!);
     }
     const j = this.job;
-    if (j.stage === 'dropoff') j.elapsed += dt;
+    if (j.stage === 'dropoff') {
+      j.elapsed += dt; this.rideDistance += dist(this.player.body.position, this.lastRidePosition); this.lastRidePosition = { ...this.player.body.position };
+      if (this.campaignEnabled && this.rideBeat === 0 && j.elapsed >= 8 && this.rideDistance >= 10 && (!this.dialogue.active || this.dialogue.complete) && this.time - this.dialogueStartedAt >= 8) {
+        const message = j.missionId ? rideMessage(j.missionId, 'during', j.type === 'parcel') : j.everyday ? { speaker: 'bea' as const, category: 'lore' as const, channel: 'sender' as const, text: `${j.name}: “${ordinaryDuring(j.name, this.save.campaign)}”` } : null;
+        if (message) { this.speak(`ride-${j.missionId ?? `ordinary-${this.save.story.deliveries + 1}`}-during`, message); this.rideBeat = 1; }
+      }
+    }
     const jobTarget = j.stage === 'pickup' ? j.pickup : j.dropoff;
     if (!this.navToNewsroom && dist(this.player.body.position, jobTarget) < 5.3 && this.speed < 2.8) {
       j.wait += dt;
@@ -1049,17 +1149,14 @@ export class Game {
             this.releaseMission('vehicle-change'); this.newJob(false, 'vehicle-change');
             this.notify('That ride cannot take this mission. Dispatch sent a new job.', 'danger'); return;
           }
-          j.stage = 'dropoff'; j.wait = 0;
+          j.stage = 'dropoff'; j.wait = 0; this.rideBeat = 0; this.rideDistance = 0; this.lastRidePosition = { ...this.player.body.position };
           if (j.missionId) this.missionOffers.delete(j.missionId);
           const person = this.world.people.find(p => p.id === j.customerId);
           if (person) { person.aboard = true; person.alive = false; }
           this.syncMissionOffers();
-          this.dialogue.start(outcome?.beatId ?? undefined, outcome?.message ?? null);
-          if (this.campaignEnabled && outcome?.message && j.missionId) {
-            this.note({ id: `ride-${j.missionId}`, title: `${j.name} · ${this.missions.mission(j.missionId).title}`, text: outcome.message.text, kind: 'conversation' });
-          }
+          if (outcome?.message) this.speak(`ride-${j.missionId}-pickup`, outcome.message);
           if (this.campaignEnabled && j.everyday) {
-            this.dialogue.start(`ordinary-${j.name}`, { speaker: 'bea', category: 'lore', channel: 'sender', text: `Dispatch note · ${j.name}: “${j.everyday.line}”` });
+            this.speak(`ordinary-${this.save.story.deliveries + 1}-pickup`, { speaker: 'bea', category: 'lore', channel: 'sender', text: `Dispatch note · ${j.name}: “${j.everyday.line}”` });
           }
           if (j.missionId) this.persist();
           this.sounds.emit('pickup', this.time);
@@ -1071,13 +1168,17 @@ export class Game {
           if (j.missionId) this.missions.complete(this.missionContext());
           if (this.campaignEnabled) {
             for (const id of jobMaterials[j.missionId ?? ''] ?? []) this.note({ id, ...materials[id] });
+            this.save.campaign.ordinarySinceStory = j.missionId ? 0 : Math.min(2, this.save.campaign.ordinarySinceStory + 1);
             if (j.everyday) this.save.campaign.regularRides[j.name] = (this.save.campaign.regularRides[j.name] ?? 0) + 1;
             this.note({ id: `fare-${this.save.story.deliveries + 1}`, title: `${j.name} · signed ${j.type === 'parcel' ? 'delivery' : 'fare'} receipt`, text: `${j.name}. Pickup (${j.pickup.x}, ${j.pickup.y}) → ${j.destination}. Paid $${payout}, including $${timeBonus + comfortBonus} tips. ${j.everyday?.line ?? this.missions.mission(j.missionId!)?.title ?? 'Transport completed.'}`, kind: 'receipt' });
           }
           this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
           this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next pickup marked.`, 'success');
           this.sounds.emit('payment', this.time);
+          const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel') : null, completedId = j.missionId;
           this.newJob();
+          if (arrival) this.speak(`ride-${completedId}-arrival`, arrival);
+          this.persist();
         }
       }
     } else j.wait = 0;

@@ -1,3 +1,4 @@
+import { calendarLabel, dayMinute } from '../campaign/clock';
 import { characters, type CharacterId } from '../characters';
 import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles';
 import type { CompiledMissions, CompiledMission } from './compile';
@@ -18,7 +19,7 @@ export type PreviewMessage = {
 };
 export type PreviewJob = {
   id: string; title: string; category: string; chapter: number;
-  route: { pickup: string; dropoff: string }; status: 'available' | 'locked' | 'completed';
+  route: { pickup: string; dropoff: string }; status: 'available' | 'locked' | 'completed' | 'missed';
   checks: PreviewCheck[]; messages: PreviewMessage[];
   pickupEffects: string[]; completionEffects: string[]; contactLostEffects: string[];
 };
@@ -65,6 +66,8 @@ function conditionLabel(condition: Condition): string {
   if ('missionCompleted' in condition) return `Completed job: ${condition.missionCompleted}`;
   if ('choiceEquals' in condition) return `Choice: ${condition.choiceEquals.group} = ${condition.choiceEquals.choice}`;
   if ('choiceUnset' in condition) return `Choice not yet committed: ${condition.choiceUnset}`;
+  if ('minuteAtLeast' in condition) return `Pickup from ${calendarLabel(condition.minuteAtLeast)}`;
+  if ('minuteBefore' in condition) return `Pickup before ${calendarLabel(condition.minuteBefore)}`;
   if ('shiftAtLeast' in condition) return `Shift >= ${condition.shiftAtLeast}`;
   if ('shiftAtMost' in condition) return `Shift <= ${condition.shiftAtMost}`;
   if ('minDeliveries' in condition) return `Campaign deliveries >= ${condition.minDeliveries}`;
@@ -119,7 +122,7 @@ export function generateDialoguePreview(catalogue: CompiledMissions, input: Prev
     if (!options.choices[group]?.includes(choice)) throw new Error(`Unknown choice: ${group}=${choice}. Use --list.`);
     progress.choices[group] = choice;
   }
-  const context: DirectorContext = { shift, deliveries, careerDeliveries, time, jobType, model, kind };
+  const context: DirectorContext = { shift, minute: dayMinute(shift), deliveries, careerDeliveries, time, jobType, model, kind };
   const director = new MissionDirector(catalogue, progress);
   const jobs: PreviewJob[] = [];
   for (const id of catalogue.order) {

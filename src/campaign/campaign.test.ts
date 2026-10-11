@@ -3,179 +3,195 @@ import { Game, defaultSave } from '../game';
 import { defaultCompiledMap } from '../map/compile';
 import { openShoreMissions } from '../missions/compile';
 import { assertMissionCatalogue } from '../missions/schema';
-import { vec } from '../physics';
+import { contact, vec } from '../physics';
+import { GARAGE } from '../world';
 import { storageKeys } from '../storage';
 import { migratePlayerRecords } from '../player-records';
-import { campaignCast, corroboration, jobMaterials, jobNames, materials, openShoreCatalogue } from './content';
-import { advanceCampaign, defaultCampaign, migrateCampaign } from './state';
+import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
+import { defaultCampaign, migrateCampaign } from './state';
+import { CAMPAIGN_END, dayMinute } from './clock';
 import { notebookMarkup } from './view';
+import { rideDialogueIds } from './ride-dialogue';
 
 const make = () => { const g = new Game(defaultCompiledMap, false); g.vehicles = [g.player]; g.trafficTarget = 0; g.settings.noPolice = true; g.start(); return g; };
 const step = (g: Game, seconds = 0.9) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };
 const arrive = (g: Game, point: { x: number; y: number }) => { g.player.body.position = { ...point }; g.player.body.velocity = vec(); step(g); };
-const shift = (g: Game, until: number) => { while (g.save.campaign.shift < until) { g.setMode('paused'); expect(g.endShift()).toBe(true); } };
-const deliver = (g: Game, id: string) => { expect(g.routeMissionOffer(id)).toBe(true); arrive(g, g.job.pickup); expect(g.job.missionId).toBe(id); expect(g.job.stage).toBe('dropoff'); arrive(g, g.job.dropoff); expect(g.save.story.completed).toContain(id); };
-
+const advance = (g: Game, day: number) => { g.advanceNarrativeTo(dayMinute(day)); g.syncMissionOffers(); };
+const finish = (g: Game) => { arrive(g, g.job.pickup); g.dialogue.readAll(); step(g, 0.01); arrive(g, g.job.dropoff); };
+const deliver = (g: Game, id: string) => { expect(g.routeMissionOffer(id)).toBe(true); finish(g); expect(g.save.story.completed).toContain(id); };
 afterEach(() => vi.unstubAllGlobals());
-describe('Open Shore authored campaign', () => {
-  it('compiles the twelve-character cast, bounded jobs and two independent routes per allegation against the actual map', () => {
-    expect(campaignCast).toHaveLength(12);
+
+describe('Open Shore world-driven campaign', () => {
+  it('compiles bounded routes, cast, exact windows, all ride conversations and independent sources', () => {
     const compiled = openShoreMissions(defaultCompiledMap);
+    expect(campaignCast).toHaveLength(12); expect(compiled.warnings).toEqual([]); expect(Object.isFrozen(compiled)).toBe(true);
     expect(() => assertMissionCatalogue(openShoreCatalogue)).not.toThrow();
-    expect(compiled.warnings).toEqual([]); expect(Object.isFrozen(compiled)).toBe(true);
     expect(new Set(Object.values(compiled.missions).map(m => m.passenger))).toEqual(new Set(campaignCast));
+    expect(new Set(rideDialogueIds)).toEqual(new Set(compiled.order));
     const authored = new Set(Object.values(jobMaterials).flat()); authored.add('cafe-photo');
-    for (const routes of Object.values(corroboration)) {
-      expect(routes).toHaveLength(2);
-      expect(routes[0].some(id => routes[1].includes(id as never))).toBe(false);
-      for (const route of routes) { expect(new Set(route.map(id => materials[id].source)).size).toBe(route.length); for (const id of route) expect(authored.has(id)).toBe(true); }
+    for (const routes of Object.values(corroboration)) for (const route of routes) {
+      expect(new Set(route.map(id => materials[id].source)).size).toBe(route.length);
+      for (const id of route) expect(authored.has(id)).toBe(true);
     }
-    for (let date = 1; date <= 14; date++) {
-      const g = make(); g.save.campaign.shift = date; g.syncMissionOffers();
+    for (let day = 1; day <= 14; day++) {
+      const g = make(); advance(g, day);
       const identities = [...g.missionOffers.keys()].map(id => jobNames[id] ?? g.missions.mission(id).passenger);
       expect(new Set(identities).size).toBe(identities.length);
     }
   });
 
-  it('starts with paid ordinary work, archives dialogue on pickup and never grants a delivery record early', () => {
-    const g = make(); expect(g.job.missionId).toBe('bea-first-shift');
-    arrive(g, g.job.pickup);
-    expect(g.save.playerRecords.notebook.some(e => e.id === 'ride-bea-first-shift')).toBe(true);
-    arrive(g, g.job.dropoff); const cash = g.save.cash;
-    deliver(g, 'celia-barriers');
-    expect(g.save.cash).toBeGreaterThan(cash);
-    expect(g.save.playerRecords.notebook.find(e => e.id === 'barrier-receipt')).toMatchObject({ kind: 'receipt', shift: 1 });
-    expect(g.save.campaign.submitted).toEqual([]); expect(g.save.campaign.publications).toEqual([]);
+  it('brings story rides through normal dispatch while keeping ordinary work between them', () => {
+    const g = make(); expect(g.job.missionId).toBe('bea-first-shift'); finish(g);
+    expect(g.job.everyday).toBeDefined(); finish(g);
+    expect(g.job.missionId).toBe('celia-barriers'); expect(g.save.story.choices).toEqual({});
+    finish(g); expect(g.save.playerRecords.notebook.some(e => e.id === 'barrier-receipt')).toBe(true);
+    expect(g.job.everyday).toBeDefined(); expect(g.save.campaign.newsroom.received).toEqual({});
+    expect(g.save.campaign.publications).toEqual([]);
+  });
+
+  it('can skip even the opening suggestion without accepting it', () => {
+    const g = make(); g.newJob(false, 'replaced', true);
     expect(g.job.missionId).toBeUndefined(); expect(g.job.everyday).toBeDefined();
+    expect(g.save.story.completed).toEqual([]); expect(g.save.story.choices).toEqual({});
   });
 
-  it('advances only on explicit shift end; pausing, run reset and recovery do not consume dates', () => {
-    const g = make(); step(g, 2); const time = g.save.story.campaignSeconds;
-    g.setMode('paused'); step(g, 1); expect(g.save.story.campaignSeconds).toBe(time);
-    g.resetRun(); expect(g.save.campaign.shift).toBe(1);
-    g.setMode('wasted'); g.recover(); expect(g.save.campaign.shift).toBe(1);
-    g.setMode('paused'); expect(g.endShift()).toBe(true); expect(g.save.campaign.shift).toBe(2);
-    expect(g.endShift()).toBe(false); // already back playing, prevents double clicks
+  it('offers a during-ride exchange only after real movement and retains arrival dialogue across next dispatch', () => {
+    const g = make(); arrive(g, g.job.pickup); g.dialogue.readAll(); step(g, 0.01);
+    expect(g.save.playerRecords.notebook.some(e => e.id === 'ride-bea-first-shift-pickup')).toBe(true);
+    step(g, 8); expect(g.dialogue.active?.beatId).toBe('ride-bea-first-shift-pickup');
+    g.player.body.position.y -= 12; step(g, 0.1);
+    expect(g.dialogue.active?.beatId).toBe('ride-bea-first-shift-during');
+    g.dialogue.readAll(); step(g, 0.01); arrive(g, g.job.dropoff);
+    expect(g.dialogue.active?.beatId).toBe('ride-bea-first-shift-arrival'); expect(g.job.stage).toBe('pickup');
+    expect(g.save.playerRecords.notebook.some(e => e.id === 'ride-bea-first-shift-during')).toBe(true);
   });
 
-  it('does not abandon a passenger or commit choices through a calendar button', () => {
-    const g = make(); arrive(g, g.job.pickup); g.setMode('paused');
-    const saved = structuredClone(g.save); expect(g.endShift()).toBe(false); expect(g.save).toEqual(saved);
+  it('advances while driving, freezes in menus and keeps the canonical time through resets and recovery', () => {
+    const g = make(); g.advanceNarrativeTo(dayMinute(2, 23, 59)); step(g, 2);
+    expect(g.save.campaign.minute).toBeCloseTo(dayMinute(3, 0, 1), 6);
+    expect(g.save.campaign.shift).toBe(2); // the second night ends at 07:00
+    const minute = g.save.campaign.minute; g.setMode('paused'); step(g, 1); expect(g.save.campaign.minute).toBe(minute);
+    g.resetRun(); expect(g.save.campaign.minute).toBe(minute); expect(g.dayNight.snapshot().time).toBe('00:01');
+    g.setMode('wasted'); g.recover(); expect(g.save.campaign.minute).toBe(minute);
+    g.dayNight.configure({ hour: 20, rate: 60 }); step(g, 1); expect(g.save.campaign.minute).toBeCloseTo(minute + 1, 5);
+    expect(g.save.campaign.shift).toBe(2);
   });
 
-  it('closes expired offers permanently while retaining the actual received messages', () => {
-    const g = make(), receipt = g.save.playerRecords.texts.find(t => t.missionId === 'celia-barriers')!;
-    shift(g, 3); expect(g.routeMissionOffer('celia-barriers')).toBe(false);
-    expect(g.save.playerRecords.texts).toContainEqual(receipt);
-    expect(g.campaignBulletin).toContain('windows broken'); expect(g.save.playerRecords.notebook).toEqual([]);
-    g.resetRun(); expect(g.routeMissionOffer('celia-barriers')).toBe(false);
+  it('sleeps only at a safe parked Pit Stop, traverses events, and preserves physics and economy', () => {
+    const g = make(); g.player.body.position = { ...GARAGE }; g.advanceNarrativeTo(dayMinute(2, 20)); g.setMode('paused');
+    const cash = g.save.cash, time = g.time, health = g.health, player = g.player, keys = g.world;
+    expect(g.sleepPreview.label).toBe('Day 3 · 07:00'); expect(g.sleepPreview.expiring).toContain('Temporary barriers');
+    expect(g.sleep()).toBe(true); expect(g.save.campaign.world.cafe).toBe('boarded');
+    expect(g.save.campaign.occurrences['cafe-windows-broken'].at).toBe(dayMinute(2, 23));
+    expect(g.save.playerRecords.notebook).toEqual([]); expect(g.save.cash).toBe(cash);
+    expect(g.player).toBe(player); expect(g.world).toBe(keys); expect(g.health).toBe(health); expect(g.time).toBe(time);
+    expect(g.sleep()).toBe(false); // playing; duplicate clicks cannot consume another day
   });
 
-  it('requires a deliberate physical visit to bookmark the café, without auto-acquiring the observation', () => {
-    const g = make(); expect(g.photographCafe()).toBe(false); shift(g, 3);
-    expect(g.photographCafe()).toBe(false); g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
+  it('rejects sleep with passengers, pursuits, burning vehicles and away from Pit Stop', () => {
+    const g = make(); arrive(g, g.job.pickup); g.player.body.position = { ...GARAGE }; g.setMode('paused');
+    const snapshot = structuredClone(g.save); expect(g.sleep()).toBe(false); expect(g.save).toEqual(snapshot);
+    g.newJob(false, 'shift'); g.heat = 1; expect(g.sleep()).toBe(false);
+    g.heat = 0; g.player.damage.status = 'burning'; expect(g.sleep()).toBe(false);
+    g.player.damage.status = 'intact'; g.player.body.position = vec(84, 58); expect(g.sleep()).toBe(false);
+  });
+
+  it('expires half-open pickup windows permanently without killing contacts or resurrecting offers', () => {
+    const g = make(); const until = jobWindows['celia-barriers'].until;
+    g.advanceNarrativeTo(until - 0.01); g.syncMissionOffers(); expect(g.routeMissionOffer('celia-barriers')).toBe(true);
+    g.advanceNarrativeTo(until); g.syncMissionOffers(); expect(g.routeMissionOffer('celia-barriers')).toBe(false);
+    expect(g.save.story.failed).toContain('celia-barriers'); expect(g.save.story.flags).not.toContain('contact-celia-lost');
+    expect(g.save.playerRecords.texts.some(t => t.missionId === 'celia-barriers')).toBe(true);
+    g.resetRun(); expect(g.missionOffers.has('celia-barriers')).toBe(false);
+  });
+
+  it('requires a deliberate café visit to acquire an observation and projects a real contractor van', () => {
+    const g = make(); g.advanceNarrativeTo(dayMinute(2, 22));
+    const van = g.vehicles.find(v => v.sourceId === 'campaign-ms14'); expect(van).toBeDefined();
+    expect(g.world.props.filter(p => p.alive).some(p => contact(van!.body, p.body))).toBe(false);
+    expect(g.save.playerRecords.notebook).toEqual([]); expect(g.photographCafe()).toBe(false);
+    advance(g, 3); g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
     expect(g.photographCafe()).toBe(true); expect(g.photographCafe()).toBe(true);
     expect(g.save.playerRecords.notebook.filter(e => e.id === 'cafe-photo')).toHaveLength(1);
+    g.advanceNarrativeTo(dayMinute(3, 12)); expect(van!.parked).toBe(false); expect(van!.alive).toBe(true); expect(van!.path.length).toBeGreaterThan(1);
   });
 
-  it('commits the competing safe ride on physical pickup and preserves that outcome through abandonment', () => {
-    const g = make(); shift(g, 3); expect(g.routeMissionOffer('nico-safe-ride')).toBe(true);
+  it('commits competing bookings only at an explicitly selected physical pickup', () => {
+    const g = make(); advance(g, 3); expect(g.routeMissionOffer('nico-safe-ride')).toBe(true);
     expect(g.save.story.choices).toEqual({}); arrive(g, g.job.pickup);
     expect(g.job.name).toBe('Nico'); expect(g.save.story.choices['nico-trip']).toBe('room');
     expect(g.save.story.flags).not.toContain('nico-safe');
     g.setMode('wasted'); g.recover(); g.resetRun();
     expect(g.missionOffers.has('nico-safe-ride')).toBe(true); expect(g.missionOffers.has('celia-roster')).toBe(false);
     deliver(g, 'nico-safe-ride'); expect(g.save.story.flags).toContain('nico-safe');
+    const other = make(); advance(other, 3); other.save.campaign.ordinarySinceStory = 2; other.newJob();
+    expect(other.missions.mission(other.job.missionId!)?.pickupChoice).toBeUndefined(); expect(other.save.story.choices).toEqual({});
   });
 
-  it('keeps an independent corroboration route when a waiting source is killed, without recreating that source', () => {
-    const g = make(); shift(g, 6);
+  it('preserves source loss and an independent evidence path', () => {
+    const g = make(); advance(g, 6);
     const job = g.missionOffers.get('eli-originals')!, person = g.world.people.find(p => p.id === job.customerId)!;
     person.alive = false; g.death(person, vec(), 1, false); step(g);
-    expect(g.save.story.flags).toContain('contact-eli-lost'); expect(g.missionOffers.has('eli-originals')).toBe(false);
-    g.resetRun(); expect(g.missionOffers.has('eli-originals')).toBe(false);
-    expect(g.missionOffers.has('nico-safe-ride')).toBe(true);
+    expect(g.save.story.flags).toContain('contact-eli-lost'); g.resetRun();
+    expect(g.missionOffers.has('eli-originals')).toBe(false); expect(g.missionOffers.has('nico-safe-ride')).toBe(true);
   });
 
-  it('releases a routed booking when its source becomes unavailable', () => {
-    const g = make(); shift(g, 7); expect(g.routeMissionOffer('tom-patrol-copy')).toBe(true);
-    const job = g.missionOffers.get('tom-patrol-copy')!, person = g.world.people.find(p => p.id === job.customerId)!;
-    person.alive = false; g.death(person, vec(), 1, false);
-    expect(g.missionOffers.has('tom-patrol-copy')).toBe(false);
-    expect(g.job.missionId).not.toBe('tom-patrol-copy');
-    expect(g.save.story.flags).toContain('contact-tom-lost');
-  });
-
-  it('submits only acquired material at the newsroom, keeps originals, and rejects election-day publication', () => {
-    const g = make(); deliver(g, 'celia-barriers');
-    expect(g.submitMaterial('barrier-receipt')).toBe(false);
-    g.player.body.position = { ...g.newsroom }; g.player.body.velocity = vec(); g.setMode('paused');
+  it('uses a physical newsroom visit and distinguishes receipt, checks, editorial request, edition and response', () => {
+    const g = make(); deliver(g, 'celia-barriers'); advance(g, 3); deliver(g, 'nico-safe-ride');
+    arrive(g, g.missions.catalogue.stops.byId['garden-cafe'].position); expect(g.photographCafe()).toBe(true);
+    expect(g.submitMaterial('barrier-receipt')).toBe(false); arrive(g, g.newsroom); g.setMode('paused');
     expect(g.submitMaterial('leila-warning')).toBe(false);
-    expect(g.submitMaterial('barrier-receipt')).toBe(true); expect(g.submitMaterial('barrier-receipt')).toBe(false);
-    expect(g.save.playerRecords.notebook.some(e => e.id === 'barrier-receipt')).toBe(true);
-    expect(g.save.campaign.publications).toEqual([]);
-    shift(g, 14); expect(g.submitMaterial('barrier-receipt')).toBe(false);
+    for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
+    const received = g.save.campaign.minute; expect(g.requestPublication('coordination')).toBe(false);
+    g.advanceNarrativeTo(received + 180); expect(g.save.campaign.newsroom.cases.coordination?.approvedAt).toBeNull();
+    expect(g.save.campaign.publications).toEqual([]); expect(g.requestPublication('coordination')).toBe(true);
+    const edition = g.save.campaign.newsroom.cases.coordination!.editionAt!;
+    g.advanceNarrativeTo(edition); expect(g.save.campaign.publications).toHaveLength(1); expect(g.save.campaign.world.security).toBe('contracted');
+    expect(g.campaignBulletin).toContain('pending a response');
+    g.advanceNarrativeTo(edition + 120); expect(g.save.campaign.world.security).toBe('suspended');
+    expect(g.campaignBulletin).toContain('notice has come down'); expect(g.save.playerRecords.notebook.some(e => e.id === 'cafe-photo')).toBe(true);
   });
 
-  it('keeps newsroom navigation separate from accepting a co-located fare', () => {
-    const g = make(); shift(g, 4); g.job.pickup = { ...g.newsroom }; g.navigateNewsroom();
-    arrive(g, g.newsroom);
-    expect(g.job.stage).toBe('pickup'); expect(g.snapshot().navigation).toBe('newsroom'); expect(g.target).toEqual(g.newsroom);
+  it('keeps newsroom navigation separate from a co-located fare', () => {
+    const g = make(); advance(g, 4); g.job.pickup = { ...g.newsroom }; g.navigateNewsroom(); arrive(g, g.newsroom);
+    expect(g.job.stage).toBe('pickup'); expect(g.snapshot().navigation).toBe('newsroom');
     g.navigateNewsroom(); step(g); expect(g.job.stage).toBe('dropoff');
   });
 
-  it('separates a lead, supported allegations, public coverage and a fully substantiated political connection', () => {
-    const state = defaultCampaign(); state.shift = 10;
-    state.submitted = ['barrier-receipt', 'barrier-receipt', 'leila-warning', 'vale-authority'];
-    advanceCampaign(state); expect(state.publications).toEqual([]);
-    state.submitted.push('eli-docket', 'contractor-register'); advanceCampaign(state);
-    expect(state.publications.map(p => p.allegation)).toEqual(['coordination']);
-    state.submitted.push('patrol-register', 'complaint-log'); advanceCampaign(state);
-    expect(state.publications.map(p => p.allegation)).toEqual(['coordination', 'policing', 'knowledge']);
-    expect(state.publications.find(p => p.allegation === 'knowledge')?.publishedShift).toBe(13);
-    expect(migrateCampaign(JSON.parse(JSON.stringify(state)))).toEqual({ ...state, submitted: [...new Set(state.submitted)] });
-  });
-
-  it('supports exposure using only the alternative sources, without Leila or a protected cleaner', () => {
-    const state = defaultCampaign(); state.shift = 12;
-    state.submitted = ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon'];
-    expect(state.publications).toEqual([]); advanceCampaign(state);
-    expect(state.publications.map(p => p.allegation)).toEqual(['coordination', 'policing', 'knowledge']);
-  });
-
-  it('lets a completely uninvolved driver finish fourteen shifts and keep working with no missing-plot score', () => {
-    const g = make(); shift(g, 14);
-    expect(g.campaignBulletin).toContain('remains the favourite'); expect(g.missionOffers.has('bea-vote')).toBe(true);
-    g.setMode('paused'); expect(g.endShift()).toBe(true); expect(g.save.campaign.finished).toBe(true);
-    expect(g.endShift()).toBe(false); g.setMode('playing'); g.newJob();
+  it('ends at the fourteenth-night cutoff once; an uninterested driver can continue working', () => {
+    const g = make(); g.advanceNarrativeTo(CAMPAIGN_END - 1); step(g, 2);
+    expect(g.save.campaign.finished).toBe(true); expect(g.save.campaign.minute).toBe(CAMPAIGN_END);
+    expect(g.campaignBulletin).toContain('remains the favourite'); g.newJob();
     expect(g.job.missionId).toBeUndefined(); expect(g.job.everyday).toBeDefined();
-    expect(g.save.campaign.publications).toEqual([]); expect(g.save.story.completed).toEqual([]);
-    expect(notebookMarkup(g)).not.toMatch(/\d+%|evidence:|truth score/i);
+    expect(g.save.campaign.publications).toEqual([]); expect(notebookMarkup(g)).not.toMatch(/\d+%|truth score/i);
   });
 
-  it('persists dates, outcomes and detached records; old saves invent no past knowledge', () => {
-    const g = make(); deliver(g, 'celia-barriers'); shift(g, 4);
+  it('resumes an accepted ride and preserves all domains, without replaying its choice', () => {
+    const g = make(); advance(g, 3); g.routeMissionOffer('nico-safe-ride'); arrive(g, g.job.pickup); g.persist();
     const stored = JSON.stringify(g.save);
     vi.stubGlobal('localStorage', { getItem: (key: string) => key === storageKeys.save ? stored : null, setItem: vi.fn(), removeItem: vi.fn() });
-    const loaded = new Game(); expect(loaded.save.campaign.shift).toBe(4); expect(loaded.save.playerRecords.notebook).toEqual(g.save.playerRecords.notebook);
-    expect(loaded.missionOffers.has('celia-barriers')).toBe(false);
-    const snapshot = loaded.snapshot(); snapshot.campaign!.shift = 14; expect(loaded.save.campaign.shift).toBe(4);
-    expect(migrateCampaign(undefined)).toEqual(defaultCampaign()); expect(migratePlayerRecords({ version: 1, texts: [] }).notebook).toEqual([]);
+    const loaded = new Game(); expect(loaded.save.campaign.minute).toBeCloseTo(g.save.campaign.minute);
+    expect(loaded.job).toMatchObject({ missionId: 'nico-safe-ride', stage: 'dropoff' });
+    expect(loaded.save.story.choices).toEqual({ 'nico-trip': 'room' });
+    loaded.vehicles = [loaded.player]; loaded.trafficTarget = 0; loaded.settings.noPolice = true; loaded.start(); arrive(loaded, loaded.job.dropoff);
+    expect(loaded.save.story.flags).toContain('nico-safe'); expect(loaded.save.story.completed.filter(id => id === 'nico-safe-ride')).toHaveLength(1);
+    const snap = loaded.snapshot(); snap.campaign!.world.cafe = 'open'; expect(loaded.save.campaign.world.cafe).toBe('boarded');
     loaded.resetStory(); expect(loaded.save.campaign).toEqual(defaultCampaign()); expect(loaded.save.playerRecords.notebook).toEqual([]);
-    expect(loaded.save.deliveries).toBe(g.save.deliveries);
+    expect(loaded.save.deliveries).toBe(1);
   });
 
-  it('does not read or migrate user state in map previews or isolated campaigns', () => {
+  it('isolates map previews and temporary Lab games without reading or writing user storage', () => {
     const storage = { getItem: vi.fn(() => JSON.stringify(defaultSave())), setItem: vi.fn(), removeItem: vi.fn() }; vi.stubGlobal('localStorage', storage);
-    const preview = new Game(defaultCompiledMap, false, false), isolated = make();
+    const preview = new Game(defaultCompiledMap, false, false), laboratory = new Game(defaultCompiledMap, false, true, defaultSave());
+    laboratory.advanceNarrativeTo(dayMinute(8)); laboratory.persist();
     expect(preview.campaignEnabled).toBe(false); expect(preview.missions.catalogue.order).toEqual([]);
-    expect(isolated.save.campaign.shift).toBe(1); expect(storage.getItem).not.toHaveBeenCalled(); expect(storage.setItem).not.toHaveBeenCalled();
+    expect(storage.getItem).not.toHaveBeenCalled(); expect(storage.setItem).not.toHaveBeenCalled();
   });
 
-  it('rejects malformed calendar conditions and notebook records with detached bounded migration', () => {
-    const catalogue = structuredClone(openShoreCatalogue); (catalogue.missions['bea-first-shift'] as { requires: unknown }).requires = { shiftAtLeast: 15 };
-    expect(() => assertMissionCatalogue(catalogue)).toThrow(/14/);
-    const raw = { version: 1, texts: [], notebook: [{ id: 'cafe-photo', ...materials['cafe-photo'], shift: 3, at: 5 }, { id: 'bad', title: 'X', text: 'Y', shift: 99, at: 0, kind: 'observation' }] };
-    const records = migratePlayerRecords(raw); expect(records.notebook).toHaveLength(1); records.notebook[0].text = 'Changed'; expect(raw.notebook[0].text).not.toBe('Changed');
+  it('rejects malformed calendar conditions and malformed record metadata', () => {
+    const catalogue = structuredClone(openShoreCatalogue); (catalogue.missions['bea-first-shift'] as { requires: unknown }).requires = { minuteBefore: 20581 };
+    expect(() => assertMissionCatalogue(catalogue)).toThrow();
+    expect(migrateCampaign(undefined)).toEqual(defaultCampaign());
+    expect(migratePlayerRecords({ version: 1, texts: [], notebook: [{ id: 'bad', title: 'X', text: 'Y', shift: 99, at: 0, kind: 'observation' }] }).notebook).toEqual([]);
   });
 });

@@ -15,8 +15,7 @@ export function dialoguePreviewScene(input: PreviewState, missionId: string, vie
   game.releaseMission('reset');
   Object.assign(game.save.story, structuredClone(preview.state));
   game.save.deliveries = preview.context.careerDeliveries ?? preview.context.deliveries;
-  game.save.campaign.shift = Math.min(preview.context.shift!, 14);
-  game.save.campaign.finished = preview.context.shift === 15;
+  game.advanceNarrativeTo(preview.context.minute!);
   game.save.playerRecords.texts = [];
   game.mode = 'playing';
   if (game.player.model !== preview.context.model || game.player.kind !== preview.context.kind) {

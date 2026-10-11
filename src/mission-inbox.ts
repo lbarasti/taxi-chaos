@@ -1,3 +1,4 @@
+import { jobWindows } from './campaign/content';
 import type { Game } from './game';
 import { characters, isCharacterId } from './characters';
 import { showCharacterPortrait } from './story-view';
@@ -27,7 +28,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
   function refresh() {
     const game = currentGame();
     const ids = game.missions.available({ deliveries: game.save.story.deliveries, careerDeliveries: game.save.deliveries,
-      jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds, shift: game.save.campaign.finished ? 15 : game.save.campaign.shift })
+      jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds, minute: game.save.campaign.minute, shift: game.save.campaign.finished ? 15 : game.save.campaign.shift })
       .filter(id => game.missions.mission(id).offer);
     const receipts = game.save.playerRecords.texts;
     const unread = receipts.filter(t => t.readAt === null).length;
@@ -58,7 +59,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
         const route = document.createElement('button'); route.className = 'secondary';
         const selected = game.job.missionId === id;
         if (!actionable) {
-          route.textContent = game.save.story.failed.includes(id) ? 'Missed · contact lost' : game.save.story.completed.includes(id) ? 'Delivered · message retained' : selected && game.job.stage === 'dropoff' ? 'Passenger on board' : 'Opportunity closed · message retained';
+          route.textContent = game.save.story.failed.includes(id) ? jobWindows[id] && game.save.campaign.minute >= jobWindows[id].until ? 'Missed · pickup deadline passed' : 'Missed · contact lost' : game.save.story.completed.includes(id) ? 'Delivered · message retained' : selected && game.job.stage === 'dropoff' ? 'Passenger on board' : 'Opportunity closed · message retained';
         } else route.textContent = game.job.stage === 'dropoff' ? 'Finish your current ride first' : selected ? 'Pickup routed · choice still open' : 'Route to pickup';
         route.disabled = !actionable || game.job.stage === 'dropoff' || game.onFoot;
         route.addEventListener('click', () => { if (currentGame().routeMissionOffer(id)) close(); });

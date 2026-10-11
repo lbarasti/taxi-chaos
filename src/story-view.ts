@@ -3,7 +3,7 @@ import { portraitLayout } from './portraits';
 import type { Dialogue, DialogueState } from './story';
 
 export const storyMarkup = `
-  <aside id="story" class="story panel" aria-label="Pickup dialogue" hidden>
+  <aside id="story" class="story panel" aria-label="Ride conversation" hidden>
     <div class="story-header"><span id="story-label"></span><button id="story-close" aria-label="Minimize dialogue" title="Minimize dialogue">×</button></div>
     <div class="story-body">
       <div class="story-speaker"><span id="story-portrait-frame" class="story-portrait"><img id="story-portrait" alt=""></span><strong id="story-name"></strong></div>
@@ -28,12 +28,13 @@ export function showCharacterPortrait(portrait: HTMLImageElement, character: Cha
   });
 }
 
-export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focusGame: () => void) {
+export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focusGame: () => void, presented: () => void = () => {}) {
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = get('story'), text = get('story-text'), read = get('story-read');
   const portrait = get('story-portrait') as HTMLImageElement;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let shown: DialogueState | null = null;
+  let recorded: DialogueState | null = null;
   read.addEventListener('click', () => {
     const d = dialogue();
     if (!d.active?.expanded || d.complete || reducedMotion.matches) d.replay(); else d.readAll();
@@ -43,7 +44,7 @@ export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focus
   function refresh(visible: boolean) {
     const d = dialogue(), active = d.active;
     panel.hidden = !visible || !active;
-    if (!active) { shown = null; get('story-accessible').textContent = ''; return; }
+    if (!active) { shown = recorded = null; get('story-accessible').textContent = ''; return; }
     const speaker = messageCharacter(active.message);
     if (shown !== active) {
       shown = active;
@@ -53,6 +54,7 @@ export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focus
       // Announce a whole message once, never each typewriter letter.
       get('story-accessible').textContent = `${speaker.name}: ${active.message.text}`;
     }
+    if (visible && recorded !== active) { recorded = active; presented(); }
     const complete = d.complete || reducedMotion.matches;
     panel.classList.toggle('collapsed', !active.expanded);
     panel.classList.toggle('typing', !complete && active.expanded);

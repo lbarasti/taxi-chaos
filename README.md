@@ -49,9 +49,9 @@ To publish a reviewed map change, export the validated draft to `src/map/default
 ## Mission development
 
 The default story is **Open Shore**, an optional waterfront investigation across
-fourteen player-ended shifts. Its typed authored content lives in
+fourteen continuously advancing days. Its typed authored content lives in
 [`src/campaign/content.ts`](src/campaign/content.ts); see the
-[campaign guide](docs/open-shore.md) for bookings, the notebook and newsroom review.
+[campaign guide](docs/open-shore.md) for mixed dispatch, timed world events, safe sleep and the notebook/editor workflow.
 It compiles through the same immutable, DOM-free mission engine as the original
 JSON catalogue in [`src/missions/catalogue.json`](src/missions/catalogue.json).
 Stops and cast
@@ -121,7 +121,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
 - `src/characters.json`, `src/characters.ts`, `src/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/portrait-manifest.ts` is the DOM-free declared file list.
 - `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
-- `src/campaign/`: Open Shore authored content, shift calendar, newsroom review and searchable notebook.
+- `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.
 - `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.
 - `src/lab.ts`: scenario fixtures, inspector, and test API.
 - `src/map/`: versioned authored map, compiler, validation, editor, and preview.

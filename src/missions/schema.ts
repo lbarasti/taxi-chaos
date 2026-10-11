@@ -16,6 +16,8 @@ export type Condition =
   | { choiceUnset: ChoiceGroupId }
   | { minDeliveries: number }
   | { minCareerDeliveries: number }
+  | { minuteAtLeast: number }
+  | { minuteBefore: number }
   | { shiftAtLeast: number }
   | { shiftAtMost: number }
   | { chapter: number };
@@ -132,6 +134,7 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
         case 'choiceUnset': id(obj.choiceUnset, `${at}.choiceUnset`); return;
         case 'minDeliveries': int(obj.minDeliveries, `${at}.minDeliveries`, 0, 1e9); return;
         case 'minCareerDeliveries': int(obj.minCareerDeliveries, `${at}.minCareerDeliveries`, 0, 1e9); return;
+        case 'minuteAtLeast': case 'minuteBefore': int(obj[key], `${at}.${key}`, 420, 20580); return;
         case 'shiftAtLeast': case 'shiftAtMost': int(obj[key], `${at}.${key}`, 1, 14); return;
         case 'chapter': int(obj.chapter, `${at}.chapter`, 0, 1e6); return;
         case 'choiceEquals': { const p = object(obj.choiceEquals, `${at}.choiceEquals`, ['group', 'choice']); id(p.group, `${at}.choiceEquals.group`); id(p.choice, `${at}.choiceEquals.choice`); return; }

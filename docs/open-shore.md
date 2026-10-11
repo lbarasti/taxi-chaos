@@ -1,136 +1,175 @@
-# Open Shore: first playable narrative build
+# Open Shore: a campaign that advances while you drive
 
-The taxi business is the player's view of an election campaign. The conspiracy
-has fixed facts, but investigating it is optional. A driver can work ordinary
-fares for all fourteen shifts, end on polling day, and continue free driving.
+The taxi business gives the player a view of a fixed election scandal. Driving
+ordinary fares remains a complete way to play; investigating is optional.
+This revision implements the first world-driven thread from PR #23, replacing
+the manual-shift and automatic-publication shortcuts in the initial PR #25.
 
 ## Playing
 
-- **Pause → End shift** advances the campaign by one shift. Finish or explicitly
-  abandon an aboard fare first. Recovery, reloading and Lab run resets preserve
-  the campaign date. The world lighting clock is a separate clock.
-- **Texts** contains dated bookings with named physical pickups. Routing does
-  not accept a booking. Competing bookings commit on the stopped pickup.
-- **Taxi menu → Dispatch notebook** pauses driving and retains authored dialogue,
-  signed receipts, documents and bookmarked observations. Search revisits names,
-  addresses and wording. Nothing connects the clues for the player.
-- Stop near **Garden Café** from shift 3 and choose **Bookmark café frontage**
-  to retain a dated observation of its boarded windows and site-services notice.
-- Route to the **newsroom at Old Town South**, stop nearby, and open the notebook
-  to choose individual material to leave. Originals remain in the notebook.
-  Visiting the newsroom does not accept a co-located fare.
-- Newsroom receipt is distinct from publication. Independent authored material
-  is reviewed on the next shift. Shift 13 is the last submission date for
-  election-day coverage. A lone receipt or repeated rumour does not publish a
-  scandal. The UI shows actual local coverage, not an evidence meter.
+- **Time advances while driving:** one simulated second is one game minute.
+  The HUD shows the working day out of fourteen and HH:MM. A working day starts
+  at 07:00 and includes the following night. The campaign starts on calendar
+  Day 1 at 07:00 and finishes on Day 15 at 07:00, after fourteen full days.
+  Pause, garage menus, hospital recovery and reloading do not advance it.
+- **Normal dispatch alternates ordinary and eligible local authored fares.**
+  After an ordinary delivery, it suggests a recurring customer's booking,
+  prioritising the earliest deadline and then distance. Texts still lets you
+  choose another job. Pause → **Ask dispatch for an ordinary fare** skips a
+  suggestion. The two competing transport pairs require an explicit text-route
+  selection, so automatic dispatch cannot choose a consequential branch.
+- **Conversations unfold during rides:** pickup, a further exchange after at
+  least eight seconds and ten metres of travel, then an arrival line. Departure
+  dialogue carries across the next dispatch. Lines enter the notebook when
+  offered visibly/accessibly or fully revealed; unpresented beats grant nothing.
+  Ordinary customers also comment on visible café changes and public responses.
+- **Sleep at Pit Stop:** park safely, finish or explicitly abandon an aboard
+  fare, then pause and choose **Sleep at Pit Stop**. The menu previews the next
+  07:00, hours skipped and known bookings that close. Sleep is unavailable during
+  a chase, fire, nearby pending blast or an unread expanded conversation.
+  It advances events without running physics, resetting the city, repairing the
+  car, changing cash or carrying a passenger overnight.
+- **Texts** shows named physical pickups and exact **pickup-before** deadlines.
+  Availability is half-open: a booking expires as its deadline begins. An
+  accepted passenger can still be delivered after the pickup deadline.
+- **Taxi menu → Dispatch notebook** retains conversations, signed receipts,
+  documents and deliberately bookmarked observations. Search revisits the
+  wording. New records retain campaign time and source provenance.
+- Stop near the boarded **Garden Café** and select **Bookmark café frontage**.
+  Seeing a changed frontage does not automatically add a photograph or explain
+  who caused it. World happenings never write player records.
+- Visit **Old Town South** and open the notebook to leave chosen copies at the
+  newsroom. Originals remain. Each received source takes **three game hours**
+  to check. Independent supported material produces a ready editorial case,
+  without publishing it.
+- Return to the editor and choose **Ask Ruth to run this story**. Accepted
+  stories appear in the next **06:00 edition**. Institutional responses follow
+  **two game hours after publication**. The last edition is **Day 14 at 06:00**;
+  source checking and the editorial visit must happen before that edition.
+- The campaign concludes before an election result. Fares already aboard may
+  finish, then ordinary free driving continues. Recovery and Lab run reset
+  preserve narrative time; only an explicit new-campaign reset clears it.
 
-## Cast and working life
+## The Garden Café thread
 
-The recurring campaign cast is Mara Velez, Eli Price, Victor Saye, Celia Ward,
+These are author-facing facts, not a player checklist:
+
+| Calendar time | World operation | Potential discovery |
+| --- | --- | --- |
+| Day 2, 21:00 | Waterfront cover withdrawn | Lena's transport docket and later original order |
+| Day 2, 22:00 | Contractor van MS-14 arrives; security contract begins | A real parked van with readable fleet lettering at the café |
+| Day 2, 23:00 | Windows broken | Broken glazing on the existing café building |
+| Day 3, 07:00 | Frontage boarded | Persistent boards and contractor notice; optional bookmarked observation |
+| Day 3, 12:00 | Van departs; cover returns | Existing van rejoins physical traffic rather than disappearing |
+| Day 5, 10:00 | Tenancy hearing | Closure or tenancy review, depending on whether Iris reached the tenant beforehand |
+| A requested 06:00 edition | Verified café material published | Changed local coverage; the contract initially remains |
+| Two hours later | Security contract suspended | Café notice changes to CONTRACT SUSPENDED; ordinary riders react |
+
+Every operation has a stable ID, timestamp and recorded outcome. The same
+operations resolve in chronological order during sleep or active play. A later
+visit cannot change the outcome of an already held hearing. Missing Nico's
+interview can be recovered through Eli's original job card and Tom's filed
+purchase register. The café still changes when neither source is encountered.
+
+## Cast, branches and corroboration
+
+The recurring cast remains Mara Velez, Eli Price, Victor Saye, Celia Ward,
 Adrian Vale, Leila Grant, Captain Frank Harker, Officer Lena Ortiz, Iris Bell,
-Tom Keene, Ruth Okafor and Bea Santos. Their introductions are practical rides:
-parts, uniforms, interviews, printer proofs, forgotten leaflets and hotel work.
-Bea's radio repair resolves independently of the political story.
+Tom Keene, Ruth Okafor and Bea Santos. There are 24 paid authored bookings, now
+with additional travel/arrival exchanges, and five everyday job families.
+Bea's radio repair remains a small independent story.
 
-The catalogue contains 24 paid authored bookings, including the two competing
-transport pairs and the optional election-day ride. Their windows avoid putting
-the same recurring passenger at multiple waiting stops at once. They span the
-city, working docks, beach, hotels, Woodland Estates and Fairway Club.
-
-After the opening job, automatic dispatch supplies ordinary work. Five small
-job families give Sam, June, Ravi, Cleo and Oscar persisted dialogue continuity
-based on their own delivered rides. A birthday cake remains an ordinary job.
-Authored text bookings are available to a driver who deliberately pursues them;
-no numerical 70/20/10 quota restricts that choice.
-
-## Designer facts and corroboration
-
-These are **author-facing spoilers**, not a player checklist. Meridian supplies
-the campaign and prepares closures before the damage; Harker selectively
-withdraws cover; Vale acknowledges a warning on shift 8 and protects Meridian's
-arrangement in his shift-9 authorisation. Breakwater's traders log can be true
-while Mara's motives remain coercive. A meeting photograph alone proves none of
-the political allegation.
-
-Each allegation has two disjoint authored routes:
+Nico's accommodation ride competes with Celia's replacement-roster booking;
+Leila's newsroom departure competes with Celia's return booking. Routing is
+reversible, actual pickup commits the branch, and safe arrival grants completion
+effects. A lost waiting contact remains lost through reload and recovery.
 
 | Allegation | One route | Independent alternative |
 | --- | --- | --- |
-| Coordinated disorder | Barrier receipt, Nico's retained cancellation account, café observation | Eli's original repair docket and the filed contractor register |
-| Withdrawn police cover | Lena's original order and the completed station transport docket | Dispatch carbon copies and traders' timed complaint log |
-| Vale's informed protection | Leila's briefing acknowledgement and council authorisation | Certified committee-clerk account and retained contract carbon |
+| Coordinated disorder | Barrier receipt, Nico's cancellation account, café observation | Eli's original docket and contractor register |
+| Withdrawn police cover | Lena's original order and transport docket | Dispatch carbon copies and traders' complaint log |
+| Vale's informed protection | Leila's warning and council authorisation | Committee-clerk account and contract carbon |
 
-The political connection reaches public coverage only after the coordinated
-disorder and policing allegations can also be substantiated. Smaller stories
-can publish independently. There is no combined investigation score.
+The political story also needs the café and policing reporting. Each case has
+separate verified, editorial-request and publication times. Publication does
+not immediately cancel an appearance or launch an inquiry: those are separately
+recorded responses. No combined investigation score or deduction checklist is
+shown. Author facts do not become player knowledge merely by occurring.
 
-Nico's accommodation ride competes with Celia's replacement-roster booking;
-Leila's newsroom departure competes with Celia's return booking. The messages
-explain the transport tradeoff before pickup. Safety and delivery effects wait
-for arrival, while the selected branch survives abandonment. Iris reaching the
-tenant interview keeps the café tenancy under review independently of exposure.
-
-A lost waiting source is recorded permanently, closes their later bookings,
-and retains their received texts. No identical source is resurrected on the next
-checkpoint or reload. Alternative records give each allegation another route.
-The underlying vehicle/recovery system still supports emergency exits and
-retryable interrupted rides.
-
-Polling-day presentation reflects public coverage and the tenancy intervention.
-Campaign appearances can be cancelled, smaller inquiries can open, or Vale can
-remain the favourite while a local business has secured a hearing. Bea's voting
-fare is optional. The campaign finishes before an election result.
-
-## Implementation
+## Implementation and persistence
 
 | File | Responsibility |
 | --- | --- |
-| `src/campaign/content.ts` | Frozen, typed authored jobs, dialogue, fixed records, corroboration bundles, regulars and public coverage |
-| `src/campaign/state.ts` | Versioned shift calendar, received submissions, dated publications and regular-ride counts |
-| `src/campaign/view.ts` | Searchable notebook and individual submission actions |
-| `src/player-records.ts` | Separate bounded player knowledge, receipt and notebook migration |
-| `src/missions/schema.ts` | Bounded `shiftAtLeast` / `shiftAtMost` prerequisites |
-| `src/missions/compile.ts` | Shared map/character/route validation of the Open Shore catalogue |
-| `src/game.ts` | Physical collection, document receipt, local observations, newsroom routing and explicit shift end |
-| `src/renderer.ts` | Changed frontages and campaign signs drawn on existing map bodies |
+| `src/campaign/clock.ts` | Absolute calendar, dawn boundaries, precise last edition and finale |
+| `src/campaign/events.ts` | Typed persistent world state and immutable authored operations |
+| `src/campaign/scheduler.ts` | Bounded chronological world, authentication, edition and response resolution |
+| `src/campaign/state.ts` | Validated v2 snapshot, legacy-shift migration and accepted story-ride resume |
+| `src/campaign/content.ts` | Bookings, exact pickup windows, material and independent corroboration |
+| `src/campaign/ride-dialogue.ts` | Authored travel/arrival exchanges and ordinary riders' local reactions |
+| `src/campaign/bulletin.ts` | Public coverage and later response selectors |
+| `src/campaign/view.ts` | Notebook, source status, physical submission and editorial requests |
+| `src/game.ts` | Playing clock, safe sleep, shared-map van projection, dispatch and physical gameplay hooks |
 
-`Game` defaults to Open Shore. `new Game(map, false)` creates a fresh isolated
-campaign. `new Game(map, false, false)` keeps map previews narrative-free.
-`new Game(map, persistence, 'legacy')` retains the original Mia/Frankie catalogue
-for the engine's regression fixtures. Existing saved economy, outcomes and text
-history are retained; saves without a campaign start at shift 1 without invented
-historical records. Only explicit story reset clears the campaign and notebook.
+All mutually dependent narrative, record, mission and economy changes share one
+localStorage save envelope. Authored rides aboard at save time resume without
+replaying choice effects; their transient vehicle restarts parked at the pickup.
+Career cash, deliveries, old notebook entries, text history and prior publications
+survive migration. A manual-shift save maps its shift to 07:00 of that working
+day; no historical evidence is invented.
 
-The initial build uses textual scene bookmarks and authored next-shift newsroom
-review. Regulars currently have dialogue continuity rather than fully simulated
-home/work routines. Scheduled city changes are frontage notices, boarded windows
-and public coverage; richer patrol schedules, security operations and editorial
-case handling can build on these separate state domains.
+Lighting follows the campaign normally. Lab sky presets override lighting only.
+Opening Test Lab creates a persistence-disabled copy; campaign advance controls
+operate on that copy. **Return to saved game** restores the original instance
+and its camera/clock. Collapsing the Lab panel keeps the temporary game active.
+Map previews remain fresh and narrative-free.
 
-The supplied Bea, Celia and Vale PNG portraits are used directly. Nine other
-campaign identities have original provisional SVG portraits with initials.
-The portrait manifest also retains supplied legacy PNG assets and is checked
-against the actual folder. All art and sound remain embedded in one HTML file.
+This is one implemented world thread and a reusable scheduler, not a complete
+simulation of every character's home/work routine or every police/security
+operation. Source checks use authored independent records and a fixed delay;
+there is no freeform editor interview system. Other cast bookings share the
+calendar and editorial workflow. The supplied portraits and offline asset
+embedding are retained.
 
 ## Verification
 
-- `npm test`: **42 files, 585 tests passing**. Campaign coverage includes
-  expiry/history, contact loss, unique waiting identities, physical choice
-  boundaries, deliberately acquired observations, newsroom location checks,
-  independent corroboration, delayed publication, uninvolved completion,
-  migration, reset and preview isolation.
-- `npm run build`: strict TypeScript and the single-file production build pass.
-- Isolated production `file://` browser with networking disabled: no external
-  runtime requests; clean console after reload.
-- Physical stock-cab driving through the opening pickups, deliveries and a
-  newsroom visit; receipt submission retained the original without publishing.
-  A later physical visit bookmarked the changed café in shift 3. No mid-drive
-  teleports or upgrades.
-- Desktop 1440×900, portrait 390×844 and 320×568, landscape 844×390: notebook
-  remains within the viewport, scrolls vertically and has 44px action buttons.
-- Actual pause-menu shift advancement checked with the fixed-step Lab active;
-  realtime is restored after automation.
+Automated coverage includes continuous time, safe sleep, identical awake/skipped
+outcomes, exact deadlines, irreversible hearing outcomes, mixed dispatch,
+movement-gated conversation, source loss, accepted-ride reload, independent
+source checks, explicit editorial requests, ordered editions, delayed responses,
+cutoff, old saves and isolated previews. The full automated suite passed 592 tests; the final campaign suite passed
+26 tests, including two additional regressions for skipping dispatch and legacy
+publication reloads. Strict TypeScript, the standalone production build and
+`git diff --check` pass. A partial browser smoke check physically delivered
+Bea’s opening fare, an ordinary fare, Celia’s barriers and Nico’s accommodation
+ride, then bookmarked the boarded café. The automatic driving controller
+stalled at a building corner on the newsroom route, so that browser attempt
+was stopped; full browser investigation and layout checks are not claimed.
 
-![Notebook with a retained signed delivery](screenshots/open-shore-notebook-desktop.png)
-![Readable notebook on a phone](screenshots/open-shore-notebook-mobile.png)
-![A physical visit to the changed café](screenshots/open-shore-cafe-aftermath.png)
+## Manual reproduction
+
+1. Complete Bea’s opening job, then the ordinary fare. Dispatch should suggest
+   Celia’s **Temporary barriers** booking. Complete it and check the signed
+   barrier receipt in the notebook. Watch for additional dialogue after moving
+   at least ten metres and driving for eight seconds, plus an arrival line.
+2. Park at Pit Stop and sleep until Day 2, then Day 3. The sleep menu previews
+   closing bookings; your cash, vehicle health and simulation time stay put.
+   Alternatively, in Test Lab use **Campaign time → Day 3 → Advance to 07:00**;
+   this operates on a temporary copy. Sky presets must not change campaign time.
+3. Visit Garden Café. Its windows are boarded and the Meridian notice is up.
+   Bookmark the frontage. Choose Nico’s **A temporary address** booking in Texts
+   and deliver them; this retains their cancellation account.
+4. Visit Old Town South. Open the notebook and leave copies of the barrier
+   receipt, Nico’s account and the café photo. No publication should appear.
+5. Let three game hours pass (three real minutes of active play), or explicitly
+   advance the temporary Lab campaign by three hours. The source checks become
+   complete and a café story becomes ready, with no automatic publication.
+6. At the newsroom, ask Ruth to run that story. At the next 06:00 edition the
+   coverage changes, while Meridian’s contract remains. Two game hours later,
+   revisit the café: the notice reads **CONTRACT SUSPENDED**.
+7. Reload during an authored ride: the same aboard mission resumes parked at
+   its pickup, without replaying its branch choice. To test missed events, start
+   a fresh temporary campaign and advance straight to Day 7: the café and hearing
+   have resolved, but no photo, source submission or article has been granted.
+
+![Arrival dialogue after the barrier fare](screenshots/open-shore-calendar/dispatch-and-arrival.png)
+![Café frontage after its scheduled boarding](screenshots/open-shore-calendar/cafe-boarded.png)

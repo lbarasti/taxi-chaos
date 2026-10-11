@@ -14,6 +14,8 @@ import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-co
 import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
+import { calendarLabel } from './campaign/clock';
+import { jobWindows, type Allegation } from './campaign/content';
 import { notebookMarkup } from './campaign/view';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
@@ -65,13 +67,15 @@ const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-p
 let game = new Game(undefined, !dialoguePreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
-const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus());
+const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
 const refreshInbox = bindMissionInbox($('app'), () => game, () => $('city').focus());
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
 let lab: LabAPI | undefined;
 let mapEditor: MapEditor | undefined;
+let normalGame: Game | undefined;
+let laboratoryGame: Game | undefined;
 function settingsMarkup() {
   return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio)}`;
 }
@@ -105,10 +109,13 @@ function modal() {
   }
   if (game.mode === 'paused' && !helpOpen && !statsOpen && !notebookOpen) {
     card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
-    if (game.campaignEnabled) card.innerHTML += `<div class="campaign-summary"><small>${game.save.campaign.finished ? 'ELECTION DAY · OFF THE CLOCK' : `OPEN SHORE · SHIFT ${game.save.campaign.shift} OF 14`}</small><p>${game.campaignBulletin}</p><button class="secondary" id="open-notebook">Dispatch notebook</button><button class="secondary" id="end-shift" ${game.job.stage === 'dropoff' || game.save.campaign.finished ? 'disabled' : ''}>${game.save.campaign.finished ? 'Campaign finished · free driving continues' : game.job.stage === 'dropoff' ? 'Finish or abandon your current ride first' : game.save.campaign.shift === 14 ? 'End election-day shift' : `End shift · start shift ${game.save.campaign.shift + 1}`}</button><p class="campaign-hint">Ending a shift advances the campaign and closes dated bookings. Pausing, hospital recovery and reloading leave the date alone.</p>${game.job.stage === 'dropoff' ? '<button class="secondary" id="abandon-ride">Abandon this ride</button>' : ''}</div>`;
+    if (game.campaignEnabled) {
+      const preview = game.sleepPreview;
+      card.innerHTML += `<div class="campaign-summary"><small>${game.save.campaign.finished ? 'ELECTION DAY · OFF THE CLOCK' : `OPEN SHORE · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p><button class="secondary" id="open-notebook">Dispatch notebook</button><button class="secondary" id="sleep" ${game.sleepReason ? 'disabled' : ''}>${game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`}</button><p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>${!game.garageNear && !game.save.campaign.finished ? '<button class="secondary" id="sleep-route">Route to Pit Stop</button>' : ''}${game.job.stage === 'dropoff' ? '<button class="secondary" id="abandon-ride">Abandon this ride</button>' : '<button class="secondary" id="ordinary-fare">Ask dispatch for an ordinary fare</button>'}</div>`;
+    }
   }
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
-  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks of shifts. End a shift from the pause menu when you’re ready.<br>Texts hold bookings. The Taxi menu holds your dispatch notebook.');
+  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the Taxi menu’s notebook.');
   $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
   $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = notebookOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
@@ -117,11 +124,14 @@ function modal() {
   $('show-help')?.addEventListener('click', showHelp);
   $('show-stats')?.addEventListener('click', () => { statsOpen = true; modal(); });
   $('open-notebook')?.addEventListener('click', openNotebook);
-  $('end-shift')?.addEventListener('click', () => { if (game.endShift() && !game.save.campaign.finished) { realtime(); externalClock = false; renderer.camera = { ...game.actor.position }; $('city').focus(); } });
+  $('sleep')?.addEventListener('click', () => { if (game.sleep()) { realtime(); externalClock = false; $('city').focus(); } });
+  $('sleep-route')?.addEventListener('click', () => { realtime(); externalClock = false; game.setMode('playing'); game.garage(); $('city').focus(); });
+  $('ordinary-fare')?.addEventListener('click', () => { game.newJob(false, 'replaced', true); realtime(); externalClock = false; game.setMode('playing'); $('city').focus(); });
   $('abandon-ride')?.addEventListener('click', () => { game.newJob(false, 'shift'); modal(); });
   $('notebook-back')?.addEventListener('click', () => { notebookOpen = false; modal(); });
   $('notebook-route')?.addEventListener('click', () => { notebookOpen = false; realtime(); externalClock = false; game.setMode('playing'); game.navigateNewsroom(); hud(); $('city').focus(); });
-  card.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => button.addEventListener('click', () => { if (game.submitMaterial(button.dataset.submit!)) { button.textContent = 'Copy received · retained here'; button.disabled = true; } }));
+  card.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => button.addEventListener('click', () => { if (game.submitMaterial(button.dataset.submit!)) { modal(); } }));
+  card.querySelectorAll<HTMLButtonElement>('[data-publish]').forEach(button => button.addEventListener('click', () => { if (game.requestPublication(button.dataset.publish as Allegation)) modal(); }));
   $('notebook-search')?.addEventListener('input', e => { const query = (e.target as HTMLInputElement).value.toLocaleLowerCase(); card.querySelectorAll<HTMLElement>('[data-record]').forEach(article => { article.hidden = !article.textContent?.toLocaleLowerCase().includes(query); }); });
   $('stats-back')?.addEventListener('click', () => { statsOpen = false; modal(); $('show-stats').focus(); });
   $('repair')?.addEventListener('click', () => game.repair());
@@ -138,8 +148,8 @@ function hud() {
   const { inSand } = game.map.beach;
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
-  $('clock-time').textContent = dayNight.time; $('clock-period').textContent = dayNight.period.toUpperCase();
-  $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, campaign shift ${g.save.campaign.shift} of 14`);
+  $('clock-time').textContent = g.campaignEnabled && !g.save.campaign.finished ? calendarLabel(g.save.campaign.minute).split(' · ')[1] : dayNight.time; $('clock-period').textContent = g.campaignEnabled ? g.save.campaign.finished ? 'FREE DRIVING' : `DAY ${g.save.campaign.shift} / 14` : dayNight.period.toUpperCase();
+  $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, campaign day ${g.save.campaign.shift} of 14`);
   $('clock-sun').hidden = night; $('clock-moon').hidden = !night;
   $('cash').textContent = `$${g.save.cash.toLocaleString()}`; $('district').textContent = district(g.actor.position, g.map);
   $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
@@ -156,6 +166,7 @@ function hud() {
     $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in yellow to load the parcel.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Base delivery pay guaranteed'} <span class="comfort">${Math.round(job.comfort)}% intact</span>`;
   }
   $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
+  if (pickup && job.missionId && jobWindows[job.missionId]) { $('job-label').textContent = 'DISPATCH / LOCAL BOOKING'; $('mission-description').textContent = `${job.name} · ${g.missions.mission(job.missionId).title}. Pickup before ${calendarLabel(jobWindows[job.missionId].until)}. Texts lets you choose another booking.`; }
   if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
   if (g.navToNewsroom) { $('job-label').textContent = 'CITY DESK'; $('job-status').textContent = 'DROP-IN'; $('mission-title').textContent = 'Newsroom · Old Town South'; $('mission-description').textContent = 'Stop nearby and open the Dispatch notebook to leave selected material.'; $('distance-label').textContent = 'TO NEWSROOM'; $('mission-footer').textContent = 'Stop nearby · Taxi menu → Dispatch notebook to leave copies.'; }
   if (g.onFoot && g.tumble) { $('job-label').textContent = 'BAILOUT'; $('job-status').textContent = g.tumble.grounded ? 'ROLLING' : 'IN THE AIR'; $('mission-title').textContent = 'Brace for impact.'; $('mission-description').textContent = 'You carry the ride’s momentum into the fall. Landing hurts more at higher speeds.'; $('mission-footer').textContent = 'Recover from the roll before taking another ride.'; }
@@ -294,6 +305,9 @@ modal(); hud(); requestAnimationFrame(frame);
 
 // The same test lab works in dev and the standalone HTML. Opt in via ?debug=1 or F2.
 function ensureLab() {
+  if (!laboratoryGame) { normalGame = game; normalGame.persist(); laboratoryGame = new Game(game.map, false, true, game.save); }
+  const activateLab = () => { if (game === normalGame) { audio.silence(game); game = laboratoryGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; modal(); hud(); } };
+  activateLab();
   if (!mapEditor) mapEditor = new MapEditor(game, renderer, {
     clock: () => externalClock,
     freeze: frozen => { externalClock = frozen; accumulator = 0; },
@@ -303,6 +317,8 @@ function ensureLab() {
   });
   if (!lab) lab = setupLab(game, renderer, {
     map: mapEditor.api,
+    enter: activateLab,
+    leave: () => { if (mapEditor?.active) mapEditor.api.close(); audio.silence(game); externalClock = false; accumulator = 0; timeScale = 1; game = normalGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; $('debug-panel').hidden = true; modal(); hud(); $('city').focus(); },
     setExternalClock: frozen => { externalClock = frozen; accumulator = 0; if (frozen) audio.silence(game); },
     setTimeScale: scale => { timeScale = scale; },
     refresh: () => { hud(); renderer.draw(1 / 60); },

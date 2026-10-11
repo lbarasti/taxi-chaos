@@ -1,3 +1,4 @@
+import { calendarLabel, dayMinute } from './clock';
 import type { CharacterId } from '../characters';
 import type { Mission, MissionCatalogue, MissionDialogueBeat, Condition, Effect } from '../missions/schema';
 
@@ -59,17 +60,19 @@ const specs: readonly JobSpec[] = [
   { id: 'bea-vote', character: 'bea', title: 'A lift to vote', pickup: 'dockside-deli', dropoff: 'ocean-walk', from: 14, until: 14, text: 'Polling day. Could you take me down to Ocean Walk? I’d like to get there before I’m back on the phones. Ordinary fare, same as ever.', line: 'Could we go past Garden Café on the way to Ocean Walk? Shops along the waterfront have been closing, and I’d like a look before I vote. You see more from a taxi than you do from an election leaflet.', effects: [{ setFlag: 'election-ride-finished' }] },
 ];
 
+export const jobWindows: Readonly<Record<string, Readonly<{ from: number; until: number }>>> = freezeFacts(Object.fromEntries(specs.map(s => [s.id, { from: dayMinute(s.from), until: s.id === 'celia-barriers' ? dayMinute(2, 23) : dayMinute(s.until + 1) }])));
+
 const dialogue: Record<string, MissionDialogueBeat> = {};
 const missions: Record<string, Mission> = {};
 export const jobMaterials: Readonly<Record<string, readonly string[]>> = Object.freeze(Object.fromEntries(specs.map(s => [s.id, Object.freeze(s.records ?? [])])));
 export const jobNames: Readonly<Record<string, string>> = Object.freeze(Object.fromEntries(specs.filter(s => s.rider).map(s => [s.id, s.rider!])));
 for (const s of specs) {
-  dialogue[s.id] = { character: s.character, category: 'lore', channel: s.rider ? 'sender' : 'passenger', text: s.line };
-  dialogue[`${s.id}-sender`] = { character: s.character, category: 'lore', channel: 'sender', text: s.line };
+  dialogue[s.id] = { character: s.character, category: 'lore', channel: s.rider ? 'sender' : 'passenger', text: s.line.replace(/shift-(\d+)/g, 'day-$1').replace(/shift (\d+)/g, 'day $1') };
+  dialogue[`${s.id}-sender`] = { character: s.character, category: 'lore', channel: 'sender', text: s.line.replace(/shift-(\d+)/g, 'day-$1').replace(/shift (\d+)/g, 'day $1') };
   missions[s.id] = {
     title: s.title, chapter: 1, category: 'lore', repeat: 'once', abandon: { retry: 'always' }, passenger: s.character,
-    ...(s.first ? { dispatchRadius: 120 } : { offer: { character: s.character, text: s.text } }),
-    requires: { all: [{ shiftAtLeast: s.from }, { shiftAtMost: s.until }, { not: { flag: `contact-${(s.rider ?? s.character).toLowerCase()}-lost` } }, ...(s.requires ? [s.requires] : [])] },
+    ...(s.first ? { dispatchRadius: 120 } : { offer: { character: s.character, text: `${s.text.replace(/shift/g, 'day')} Pickup before ${calendarLabel(jobWindows[s.id].until)}.` } }),
+    requires: { all: [{ minuteAtLeast: jobWindows[s.id].from }, { minuteBefore: jobWindows[s.id].until }, { not: { flag: `contact-${(s.rider ?? s.character).toLowerCase()}-lost` } }, ...(s.requires ? [s.requires] : [])] },
     contactLost: { effects: [{ setFlag: `contact-${(s.rider ?? s.character).toLowerCase()}-lost` }] },
     allowed: { jobs: s.first ? ['fare', 'parcel'] : ['fare'] }, stops: { pickup: s.pickup, dropoff: s.dropoff }, beats: { pickup: s.id, pickupSender: `${s.id}-sender` },
     ...(s.choice ? { pickupChoice: { group: s.choice.group, choice: s.choice.option }, ...(s.choice.options ? { choices: [{ id: s.choice.group, commit: 'pickup', options: s.choice.options.map(id => ({ id })) }] } : {}) } : {}),
@@ -93,15 +96,3 @@ export const everydayJobs = freezeFacts([
   { name: 'Cleo', family: 'Vehicle assistance', lines: ['My car won’t start. Mechanic’s meeting me there.', 'New battery, same car. Much cheaper than my last idea.', 'Dropping off the borrowed jump leads.'] },
   { name: 'Oscar', family: 'Event logistics', lines: ['Community hall setup. Please mind the flowers.', 'The reunion went well. Nobody recognised my haircut.', 'Taking the leftover tablecloths back.'] },
 ]);
-
-/** Calendar facts happen without requiring the driver to encounter them. */
-export function cityBulletin(shift: number, published: readonly string[], flags: readonly string[]): string {
-  if (published.includes('knowledge')) return 'Civic Renewal cancels waterfront appearance after paper publishes Vale’s acknowledged warning and retained Meridian agreement. Supporters remain divided.';
-  if (published.includes('policing')) return 'Patrol commander faces inquiry over withdrawn waterfront cover. Vale promises an independent review; campaign appearances continue.';
-  if (published.includes('coordination')) return 'Meridian faces questions over planned closures and waterfront damage. Civic Renewal says Open Shore will restore accountable management.';
-  if (shift === 14) return flags.includes('tenant-interview-reached') ? 'Polling stations open. Vale remains the favourite. Garden Café’s tenants secured a hearing before their account could be closed; redevelopment survey teams continue elsewhere.' : 'Polling stations open. Vale remains the favourite. Open Shore reception preparations continue; redevelopment survey teams are at the waterfront.';
-  if (shift >= 9) return 'Civic Renewal announces preferred waterfront operator talks. Open Shore signs appear at hotels and beach properties.';
-  if (shift >= 5) return flags.includes('tenant-interview-reached') ? 'Garden Café tenants contest their closure notice. The shutters remain up while the tenancy is disputed.' : 'Another waterfront account closes. Meridian Site Services announces expanded security cover.';
-  if (shift >= 3) return 'Garden Café windows broken overnight. Staff shifts cancelled. Campaign posters promise to restore waterfront order.';
-  return 'Open Shore launch: beach maintenance, harbour jobs and safer streets. Adrian Vale visits local businesses as the campaign opens.';
-}

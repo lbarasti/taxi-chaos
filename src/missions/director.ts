@@ -4,7 +4,7 @@ import type { CompiledChoiceGroup, CompiledChoiceOption, CompiledMission, Compil
 import { clearMissionProgress, cloneMissionProgress, type MissionProgress } from './progress';
 import type { ChoiceGroupId, ChoiceId, Condition, Effect, MissionId } from './schema';
 
-export type MissionStatus = 'locked' | 'available' | 'active' | 'completed';
+export type MissionStatus = 'locked' | 'available' | 'active' | 'completed' | 'missed';
 
 export type AbandonReason =
   | 'replaced' | 'customer-lost' | 'left-vehicle' | 'ejected'
@@ -18,6 +18,7 @@ export type DirectorContext = Readonly<{
   kind: VehicleRole;
   time: number;
   shift?: number;
+  minute?: number;
 }>;
 
 export type MissionEvent =
@@ -26,7 +27,7 @@ export type MissionEvent =
   | { type: 'completed'; missionId: MissionId; at: number }
   | { type: 'abandoned'; missionId: MissionId; reason: AbandonReason; at: number }
   | { type: 'choice'; group: ChoiceGroupId; choice: ChoiceId; at: number }
-  | { type: 'missed'; missionId: MissionId; reason: 'contact-lost'; at: number };
+  | { type: 'missed'; missionId: MissionId; reason: 'contact-lost' | 'deadline'; at: number };
 
 export type PickupOutcome = Readonly<{ missionId: MissionId | null; beatId: BeatId | null; message: StoryMessage | null }>;
 
@@ -99,6 +100,7 @@ export class MissionDirector {
 
   status(id: MissionId, ctx: DirectorContext): MissionStatus {
     const mission = this.mission(id);
+    if (this.progress.failed.includes(id)) return 'missed';
     if (this.activeId === id) return 'active';
     if (this.progress.completed.includes(id) && mission.repeat === 'once') return 'completed';
     return this.canOffer(mission, ctx) ? 'available' : 'locked';
@@ -127,7 +129,7 @@ export class MissionDirector {
   pickup(ctx: DirectorContext): PickupOutcome {
     const mission = this.active;
     if (!mission || this.pickedUp) return NOTHING;
-    if (!this.allowedFor(mission, ctx)) return NOTHING;
+    if (!this.allowedFor(mission, ctx) || !this.evaluate(mission.requires, ctx)) return NOTHING;
     const events: MissionEvent[] = [{ type: 'pickup', missionId: mission.id, at: ctx.time }];
     this.transact(events, draft => {
       if (mission.pickupChoice) {
@@ -169,6 +171,21 @@ export class MissionDirector {
     });
     if (this.activeId === id) { this.activeId = null; this.pickedUp = false; this.selections = {}; }
     return true;
+  }
+
+  /** Once-only deadline expiry does not apply contact-death effects. */
+  expire(id: MissionId, time: number): boolean {
+    if (!this.mission(id) || this.progress.completed.includes(id) || this.progress.failed.includes(id)) return false;
+    if (!this.progress.failed.includes(id)) this.progress.failed.push(id);
+    this.push({ type: 'missed', missionId: id, reason: 'deadline', at: time });
+    if (this.activeId === id) { this.activeId = null; this.pickedUp = false; }
+    return true;
+  }
+
+  /** Restore an already accepted ride without replaying pickup choices or effects. */
+  resumeRide(id: MissionId): boolean {
+    if (!this.mission(id) || this.progress.completed.includes(id) || this.progress.failed.includes(id)) return false;
+    this.activeId = id; this.pickedUp = true; this.selections = {}; return true;
   }
 
   /** Records an abandonment and applies the authored retry policy. */
@@ -273,6 +290,8 @@ export class MissionDirector {
     if ('choiceUnset' in condition) return draft.choices[condition.choiceUnset] === undefined;
     if ('minDeliveries' in condition) return (ctx?.deliveries ?? 0) >= condition.minDeliveries;
     if ('minCareerDeliveries' in condition) return (ctx?.careerDeliveries ?? 0) >= condition.minCareerDeliveries;
+    if ('minuteAtLeast' in condition) return (ctx?.minute ?? 420) >= condition.minuteAtLeast;
+    if ('minuteBefore' in condition) return (ctx?.minute ?? 420) < condition.minuteBefore;
     if ('shiftAtLeast' in condition) return (ctx?.shift ?? 1) >= condition.shiftAtLeast;
     if ('shiftAtMost' in condition) return (ctx?.shift ?? 1) <= condition.shiftAtMost;
     return draft.chapter >= condition.chapter;
