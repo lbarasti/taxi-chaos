@@ -62,6 +62,42 @@ code. See the [mission authoring guide](docs/missions.md) for the schema,
 conditions, effects, choices, repeat/retry policies, stop validation and
 progress migration.
 
+### Dialogue PNG previews
+
+Review copy in the actual app UI without driving to each job:
+
+```sh
+npx playwright install chromium # once, after npm install
+npm run dialogue:preview -- --character bea --shift 8
+npm run dialogue:preview -- --character bea --shift 8 --choice nico-trip=roster --flag contact-bea-lost
+npm run dialogue:preview -- --character bea --shift 8 --width 390 --height 844 --touch --output dialogue-previews/bea-phone
+```
+
+The CLI renders **real PNG screenshots** of the text inbox and fully revealed
+pickup dialogue, including portraits, styling and the game HUD. A fresh,
+persistence-disabled game stages each message in an isolated headless Chromium
+context. It reads the current source, so copy edits need no production rebuild.
+No driving, normal saves or settings are involved.
+
+Output includes `manifest.json` with simulated state, eligibility checks,
+prerequisites, outcomes and screenshot bounds, plus `preview.md` for reviewing
+the wording. All matching copy is shown by default, including locked jobs;
+staging a locked message does **not** make its booking eligible. Use
+`--available-only` to filter. Scrollable/cropped panels are recorded rather than
+restyled, so the preview exposes real layout limitations.
+
+Use `--mission bea-radio-repair --view pickup` for one PNG, `--panel-only` to
+crop to the message panel, and `--list` for character/flag/choice IDs.
+`--completed JOB`, `--failed JOB`, and `--job parcel` simulate other states.
+`--catalogue legacy --character frankie --completed mia-meridian-lead` previews
+the original story and side quest. `--help` lists all options.
+
+The default directory is `dialogue-previews/CHARACTER-shift-N` (git-ignored).
+Existing artifacts are never overwritten; select another `--output` directory
+for a new review. For browser-free inspection, use `--markdown` or `--json`;
+invoke `node tools/dialogue-preview.mjs --json ...` for clean machine-readable
+stdout. Set `CHROMIUM_PATH` to use an existing Chromium executable.
+
 ## Deployment
 
 ```sh

@@ -15,6 +15,8 @@ import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 import { notebookMarkup } from './campaign/view';
+import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
+import type { PreviewState } from './missions/dialogue-preview';
 
 const icons = {
   fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
@@ -59,7 +61,8 @@ document.querySelector('#app')!.innerHTML = `
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
-let game = new Game();
+const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
+let game = new Game(undefined, !dialoguePreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus());
@@ -277,7 +280,7 @@ const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HT
   begin: () => { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; },
 });
 window.addEventListener('resize', resetTouch);
-let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = false, timeScale = 1;
+let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode, timeScale = 1;
 const STEP = 1 / 120;
 function frame(now: number) {
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
@@ -309,3 +312,18 @@ function ensureLab() {
   return lab;
 }
 if (new URLSearchParams(location.search).has('debug')) { ensureLab().open(); game.start(); }
+
+// Opt-in CLI screenshot entry point. Uses the actual HUD, inbox, story panel and
+// portrait renderer; each shot replaces only this isolated page's unsaved game.
+if (dialoguePreviewMode) Object.assign(window, {
+  __dialoguePreview: (input: PreviewState, missionId: string, view: 'offer' | 'pickup', legacy = false) => {
+    externalClock = true; accumulator = 0; resetTouch();
+    const scene = dialoguePreviewScene(input, missionId, view, legacy);
+    game = scene.game; renderer.game = game; renderer.camera = { ...game.actor.position };
+    helpOpen = statsOpen = notebookOpen = false;
+    $('mission-inbox').hidden = true;
+    bindGame(); modal(); hud(); refreshStory(true); renderer.draw(0);
+    if (view === 'offer') $('texts-toggle').click();
+    return { job: scene.job, state: scene.preview.state, context: scene.preview.context };
+  },
+});
