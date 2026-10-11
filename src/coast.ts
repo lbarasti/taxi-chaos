@@ -2,6 +2,7 @@ import { BRIDGE_Y, HIGHLAND_OUTLINE, countryAccess, inHighlands } from './countr
 import { add, dist, normalize, scale, sub, vec, type Vec } from './physics';
 
 import { HARBOUR, inHarbour } from './harbour';
+import { inBeach } from './beach';
 
 // These bounds also define the painted city apron. Water is the complement of
 // the two land masses and the bridge decks, so no invisible outer wall remains.
@@ -12,7 +13,7 @@ export function onBridge(p: Vec) {
 }
 export function inOcean(p: Vec): boolean {
   return !(p.x >= CITY_SHORE.min && p.x <= CITY_SHORE.max && p.y >= CITY_SHORE.min && p.y <= CITY_SHORE.max)
-    && !onBridge(p) && !inHighlands(p) && !inHarbour(p);
+    && !onBridge(p) && !inHighlands(p) && !inHarbour(p) && !inBeach(p);
 }
 
 export type CoastRail = { position: Vec; width: number; angle: number };
@@ -28,6 +29,8 @@ for (const outline of [cityOutline, HIGHLAND_OUTLINE]) {
       // Three short panels, then two open panels: generous, visible coastal gaps.
       if (j % 5 >= 3) continue;
       const position = add(add(a, scale(delta, (j + 0.5) / n)), inward);
+      // The former southern sea edge now opens directly onto sand / Ocean Walk.
+      if (outline === cityOutline && (position.y > 252 || position.y > 242 && (position.x < 0 || position.x > 252))) continue;
       if (outline === cityOutline && position.y < 0 && position.x >= HARBOUR.left && position.x <= HARBOUR.right) continue;
       if (onBridge(position) || outline === HIGHLAND_OUTLINE && countryAccess(position).distance < 10) continue;
       COAST_RAILS.push({ position, width, angle: Math.atan2(delta.y, delta.x) });

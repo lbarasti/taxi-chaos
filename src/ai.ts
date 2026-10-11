@@ -1,4 +1,5 @@
 import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
+import { sandHandling, inBeach } from './beach';
 import { createVehicleDynamics } from './vehicles';
 import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
 import { GOLF_CART_ROUTE, countryAccess, countryNeighbours, isCountry } from './countryside';
@@ -37,7 +38,7 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
 
 function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: number } | undefined {
   const node = roadNode(body.position), points: Vec[] = [];
-  if (onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (isCountry(body.position)) {
+  if (onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (isCountry(body.position) && !inBeach(body.position)) {
     for (const point of countryAccess(body.position).road.points) if (dist(point, body.position) >= 5 && dist(point, body.position) <= 24) points.push(point);
   } else {
     // Alley exits preserve the open channel rather than cutting through a building.
@@ -75,6 +76,7 @@ function beginRecovery(v: Vehicle, c: AIContext): boolean {
     const body = new Body(v.body.position.x, v.body.position.y, v.body.mass, v.body.w, v.body.h); body.angle = v.body.angle; body.velocity = { ...v.body.velocity }; body.angularVelocity = v.body.angularVelocity;
     const dynamics = createVehicleDynamics(v.definition); dynamics.engineForce = v.dynamics.engineForce; dynamics.grip = v.dynamics.grip; let penalty = 0;
     for (let i = 0; i < 60; i++) {
+      dynamics.surface = sandHandling(body, v.definition.physics.tyres, v.definition.terrain.sand);
       dynamics.apply(body, { throttle: -0.65, turn, handbrake: false }, 1 / 30); body.integrate(1 / 30);
       if (inOcean(body.position)) penalty += 100;
       for (const prop of c.world.hash.query(body)) { const hit = contact(body, prop.body); if (hit && hit.depth > 0.06) penalty += hit.depth * 12; }

@@ -43,14 +43,14 @@ export class MotorcycleDynamics extends CarDynamics {
     const braking = controls.throttle < 0 && speed > 0.5;
     const drive = braking ? body.mass * this.tuning.brakeDeceleration : controls.throttle < 0 ? this.engineForce * this.tuning.reverseRatio : this.engineForce;
     const throttle = speed < -3 && controls.throttle < 0 ? 0 : controls.throttle;
-    body.addForce(scale(forward, clamp(throttle * drive * (controls.boost && !braking ? 3.1 : 1), -body.mass * 15, body.mass * 20)));
+    body.addForce(scale(forward, clamp(throttle * drive * this.surface.drive * (controls.boost && !braking ? 3.1 : 1), -body.mass * 15, body.mass * 20)));
     body.addForce(scale(body.velocity, -this.tuning.drag * length(body.velocity)));
     if (controls.handbrake) body.addForce(scale(forward, -clamp(speed * body.mass * 3, -body.mass * 10, body.mass * 10)));
     if (!controls.throttle && length(body.velocity) < 4) body.addForce(scale(body.velocity, -body.mass * this.tuning.coastDrag));
 
     // At speed, small steering angles suffice. Limit curvature to the available road grip;
     // full lock is still available for walking-speed manoeuvres. Steering never spins a stopped bike.
-    const maxAcceleration = GRAVITY * Math.tan(MAX_LEAN) * clamp(this.grip / BIKE_GRIP, 0.45, 1.25);
+    const maxAcceleration = Math.min(this.surface.lateralAcceleration, GRAVITY * Math.tan(MAX_LEAN) * clamp(this.grip * this.surface.grip / BIKE_GRIP, 0.1, 1.25));
     const wheelbase = Math.max(...this.tyres.map(t => t.position.x)) - Math.min(...this.tyres.map(t => t.position.x));
     const lock = Math.min(this.tuning.steeringLock, Math.atan2(wheelbase * maxAcceleration, Math.max(4, speed * speed)));
     let sideForce = 0;
@@ -62,11 +62,11 @@ export class MotorcycleDynamics extends CarDynamics {
       const rolling = rotate(vec(1, 0), body.angle + tyre.angle), side = vec(-rolling.y, rolling.x);
       const slip = dot(v, side), rear = !tyre.steered;
       const limit = body.mass * maxAcceleration * 0.5 * (rear ? 1 - this.rearGripLoss : 1);
-      const demand = -this.grip * slip;
+      const demand = -this.grip * this.surface.grip * slip;
       const force = scale(side, clamp(demand, -limit, limit));
       tyre.skidding = Math.abs(slip) > 1.6 && Math.abs(demand) > limit;
       this.skidding ||= tyre.skidding;
-      body.addForce(add(force, scale(rolling, -this.tuning.rollingDrag * dot(v, rolling))), p);
+      body.addForce(add(force, scale(rolling, -(this.tuning.rollingDrag + this.surface.rollingDrag) * dot(v, rolling))), p);
       sideForce += dot(force, lateral);
     }
     this.lateralAcceleration = sideForce / body.mass;

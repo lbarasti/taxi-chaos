@@ -22,6 +22,7 @@ import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
 import { removeStorage, storageKeys } from './storage';
+import { BEACH_PICKUP } from './beach';
 import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles';
 
 const STEP = 1 / 120;
@@ -44,6 +45,9 @@ export type ScenarioName =
   | 'moving-bike-exit'
   | 'eastern-bridges'
   | 'woodland-estates'
+  | 'beach'
+  | 'beach-pickup'
+  | 'promenade'
   | 'harbour'
   | 'commercial-traffic'
   | 'flammable-cargo'
@@ -77,6 +81,9 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'moving-bike-exit', label: 'Moving motorbike / hop off', description: 'A courier bike rolls east at 5 m/s. Press E to jump right; the lighter empty bike recoils and steers left while the rider tumbles. Hold A + E to reverse the recoil; at rest E dismounts safely.' },
   { name: 'eastern-bridges', label: 'Eastern bridges / highlands', description: 'Head east across Pine Bridge, then follow the winding ridge road to Eagle Lookout. The southern Fern Bridge completes a forest loop back to the city. No police for this scenic run.' },
   { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
+  { name: 'beach', label: 'Sunset Beach / soft sand', description: 'Drive south from the city onto sand. Road tyres slide, bog down and leave ruts. Smash pastel lifeguard towers, parasols, deck chairs and sand castles. E to leave your cab and take the parked beach pickup.' },
+  { name: 'beach-pickup', label: 'Beach / off-road pickup', description: 'The same soft-sand run in the beach patrol pickup. Off-road tyres retain drive and cornering grip. The surf still sinks vehicles; head east for the pedestrian promenade and hotels.' },
+  { name: 'promenade', label: 'Ocean Walk / hotel promenade', description: 'On foot on the eastern tiled promenade. Walk past hotels, palms, surf rentals, cafés and beachgoers. Physical bollards admit pedestrians and keep cars and road bikes out.' },
   { name: 'harbour', label: 'Northstar Harbour / car exchange', description: 'Stop at the security gate. E pays $75. Follow cyan into container C-76 and stop fully inside for a fresh car and a completely clean police record. Working ships, cranes and trucks fill the docks.' },
   { name: 'commercial-traffic', label: 'Vans / freight traffic', description: 'A van, empty truck, loaded truck and flammable cargo truck start together on Harbour Ave. Watch their different acceleration and follow them through the junction. NPC only; police disabled.' },
   { name: 'flammable-cargo', label: 'Flammable cargo / impact', description: 'A god-mode cab hits a fuel truck cargo bed at speed. A hard cargo impact starts a readable fire, then a larger blast can ignite the nearby parked car. Commercial vehicles remain NPC only.' },
@@ -268,6 +275,26 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');
+      break;
+    }
+    case 'beach':
+    case 'beach-pickup': {
+      if (name === 'beach-pickup') {
+        player.kind = 'traffic'; player.parked = true;
+        game.player = game.spawnVehicle({ kind: 'taxi', model: 'pickup', position: vec(64, 249), angle: EAST });
+        player.alive = false; game.applyUpgrades();
+      }
+      pose(game, renderer, game.player, 64, 249, EAST, 6);
+      if (name === 'beach') game.spawnVehicle({ model: 'pickup', position: BEACH_PICKUP, parked: true, driverExited: true });
+      game.settings.noPolice = true;
+      game.notify(name === 'beach' ? 'Soft sand: road tyres struggle. E to take the beach pickup, or smash the beach props.' : 'Off-road pickup: more traction on sand. Head east for Ocean Walk; stay clear of the surf.');
+      break;
+    }
+    case 'promenade': {
+      pose(game, renderer, player, 180, 240, EAST);
+      game.interact(); game.driver.position = vec(184, 251.5);
+      if (renderer) renderer.camera = { ...game.driver.position };
+      game.settings.noPolice = true; game.notify('Ocean Walk: pedestrians only. Explore the hotels, cafés and palms.');
       break;
     }
     case 'harbour': {

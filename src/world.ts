@@ -1,19 +1,22 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
 import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
 import { COAST_RAILS } from './coast';
+import { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, beachAccess, beachAccessPath, inBeach, onPromenade } from './beach';
+import type { VehicleModel } from './vehicles';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
-export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate';
+export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
-export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
+export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
+export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
 export type Prop = { id: number; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
-export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean };
+export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean; model?: VehicleModel };
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
 // Clear sidewalk outside Midtown Hospital; the adjacent curb bay is unoccupied.
 export const HOSPITAL = vec(147, 74.6);
-export const district = (p: Vec) => inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y > 270 ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+export const district = (p: Vec) => inBeach(p) ? onPromenade(p) || p.x >= 146 ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y > 270 ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
   pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
@@ -22,7 +25,7 @@ export class World {
   parking: ParkingSpot[] = [];
   add(kind: PropKind, x: number, y: number, w: number, h: number, color: string, label = '', angle = 0) {
     const body = new Body(x, y, Infinity, w, h); body.angle = angle;
-    const hp = ['building', 'rock', 'container', 'fence', 'port-gate'].includes(kind) ? Infinity : kind === 'guardrail' ? 24 : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
+    const hp = ['building', 'rock', 'container', 'fence', 'port-gate', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) ? Infinity : kind === 'lifeguard-tower' ? 18 : kind === 'palm' ? 20 : kind === 'sandcastle' ? 1 : kind === 'guardrail' ? 24 : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
     const prop: Prop = { id: this.props.length, body, kind, alive: true, hp, maxHp: hp, color, label, brokenAt: -1, lastHit: -100, fire: 0, fuelSpent: false, blamed: false };
     this.props.push(prop); this.hash.insert(prop); return prop;
   }
@@ -49,7 +52,7 @@ export class World {
       } else {
         // Four buildings, separated by two genuine drivable/destructible alleys.
         for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) {
-          if (special && iy === 0) continue;
+          if (special && iy === 0 || by === 5 && bx >= 3 && iy === 1) continue;
           this.add('building', x + 14 + ix * 13, y + 14 + iy * 13, 10, 10, colors[(bx * 2 + by + ix + iy) % colors.length], bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length]);
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
@@ -57,12 +60,12 @@ export class World {
         this.add('crate', x + 20.5, y + 13, 1.4, 1.4, '#bc9465');
         this.add('crate', x + 20.5, y + 14.6, 1.4, 1.4, '#bc9465');
         this.add('barrier', x + 20.5, y + 8.8, 3.1, 0.6, '#e9aa5c');
-        this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
+        if (!(by === 5 && bx >= 3)) this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
       }
       for (let i = 0; i < 2; i++) {
         if (!park && special !== 'fuel' && special !== 'parking') this.parking.push({ position: vec(x + 14 + i * 12, y + 34.6), angle: 0, occupied: i === (bx + by) % 2, lot: false });
-        this.add('hydrant', x + 7.5, y + 11 + i * 18, 0.65, 0.65, '#eb735f');
-        this.add('lamp', x + 32.4, y + 9 + i * 20, 0.6, 0.6, '#a7bfbb');
+        if (!(by === 5 && bx >= 3 && i === 1)) this.add('hydrant', x + 7.5, y + 11 + i * 18, 0.65, 0.65, '#eb735f');
+        if (!(by === 5 && bx >= 3 && i === 1)) this.add('lamp', x + 32.4, y + 9 + i * 20, 0.6, 0.6, '#a7bfbb');
         this.add('bin', x + 12 + i * 16, y + 32.5, 0.85, 0.85, '#76a79b');
         this.add('bench', x + 12 + i * 16, y + 7.8, 2.4, 0.75, '#bf9870');
         const home = vec(x + 8, y + 12 + i * 14);
@@ -130,14 +133,35 @@ export class World {
     const portRandom = this.random; this.random = seeded(9076);
     for (const p of [vec(210, -19.5), vec(96, -63), vec(150, -96), vec(180, -64)]) this.addPerson(p, 'civilian', '#e3bd67');
     this.random = portRandom;
+    for (const hotel of BEACH_HOTELS) this.add('building', hotel.position.x, hotel.position.y, 27, 12, hotel.color, hotel.name);
+    for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`);
+    for (const [i, p] of BEACH_SETS.entries()) {
+      this.add('parasol', p.x, p.y, 3.4, 3.4, ['#df8976', '#78b9c0', '#efc468', '#a3a5cb', '#80b5a2'][i]);
+      for (const dx of [-2.8, 2.8]) this.add('beach-chair', p.x + dx, p.y + 2.8, 1.1, 2.4, i % 2 ? '#b9d4d0' : '#e2a18b', '', dx < 0 ? -0.2 : 0.2);
+    }
+    for (const p of SAND_CASTLES) this.add('sandcastle', p.x, p.y, 1.8, 1.6, '#c6a36e');
+    for (const edge of PROMENADE_EDGES) this.add('promenade-edge', edge.position.x, edge.position.y, edge.width, 0.6, '#e2d9c2');
+    for (const gate of PROMENADE_GATES) this.add('pedestrian-gate', gate.position.x, gate.position.y, gate.width, 0.6, '#d8c4a1', '', gate.angle);
+    for (const p of PROMENADE_BOLLARDS) this.add('bollard', p.x, p.y, 0.6, 0.6, '#758e8b');
+    for (const x of [-6, 16, 44, 100]) this.add('palm', x, 247.8, 0.8, 0.8, '#547f66');
+    for (const x of [152, 172, 192, 212, 242]) this.add('palm', x, 258.3, 0.8, 0.8, '#547f66');
+    for (const x of [150, 174, 194, 214, 248]) this.add('lamp', x, 249, 0.6, 0.6, '#a7bfbb');
+    for (const x of [168, 208, 228]) this.add('bench', x, 254.2, 2.4, 0.75, '#c29b76');
+    this.add('kiosk', 158, 261.5, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
+    this.add('kiosk', 202, 259.8, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
+    this.parking.push({ position: { ...BEACH_PICKUP }, angle: 0, occupied: true, lot: false, model: 'pickup' });
+    const beachRandom = this.random; this.random = seeded(1965);
+    for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(x, 251.5), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
+    for (const x of [-8, 20, 64, 88, 110]) this.addPerson(vec(x, 253), 'civilian', '#dcaa84');
+    this.random = beachRandom;
   }
 }
 
 // Street access + a shortest orthogonal route. No compulsory intersection snaps
 // or stair-step zigzags: a grid without closed roads needs at most two turns.
 function gridNode(p: Vec): Vec { return vec(Math.round(Math.max(0, Math.min(SIZE, p.x)) / GRID) * GRID, Math.round(Math.max(0, Math.min(SIZE, p.y)) / GRID) * GRID); }
-export function roadNode(p: Vec): Vec { return onPortRoad(p) ? portNode(p) : isCountry(p) ? countryNode(p) : gridNode(p); }
-export const roadDistance = (p: Vec) => onPortRoad(p) ? portAccess(p).distance : isCountry(p) ? countryAccess(p).distance : Math.min(Math.abs(p.x - gridNode(p).x), Math.abs(p.y - gridNode(p).y));
+export function roadNode(p: Vec): Vec { return inBeach(p) ? gridNode(beachAccess(p)) : onPortRoad(p) ? portNode(p) : isCountry(p) ? countryNode(p) : gridNode(p); }
+export const roadDistance = (p: Vec) => inBeach(p) ? dist(p, beachAccess(p)) : onPortRoad(p) ? portAccess(p).distance : isCountry(p) ? countryAccess(p).distance : Math.min(Math.abs(p.x - gridNode(p).x), Math.abs(p.y - gridNode(p).y));
 export function roadNeighbours(p: Vec): Vec[] {
   const port = portNeighbours(p);
   if (onPortRoad(p)) return port;
@@ -151,7 +175,7 @@ function streetAccess(p: Vec): Access {
   if (dx <= 6 || dy <= 6) return { point: { ...p }, vertical: dx <= 6 ? n.x : undefined, horizontal: dy <= 6 ? n.y : undefined };
   return dx < dy ? { point: vec(n.x, p.y), vertical: n.x } : { point: vec(p.x, n.y), horizontal: n.y };
 }
-export const roadProjection = (p: Vec) => onPortRoad(p) ? portAccess(p).point : isCountry(p) ? countryAccess(p).point : streetAccess(p).point;
+export const roadProjection = (p: Vec) => inBeach(p) ? beachAccess(p) : onPortRoad(p) ? portAccess(p).point : isCountry(p) ? countryAccess(p).point : streetAccess(p).point;
 export function simplifyPath(points: Vec[]): Vec[] {
   const result: Vec[] = [];
   for (const point of points) {
@@ -180,6 +204,11 @@ function gridPath(from: Vec, to: Vec): Vec[] {
 }
 
 export function roadPath(from: Vec, to: Vec): Vec[] {
+  // Sand is accessible from the south street, never via a woodland shortcut over water.
+  if (inBeach(from) || inBeach(to)) {
+    const start = inBeach(from) ? beachAccessPath(from) : [from], end = inBeach(to) ? beachAccessPath(to) : [to];
+    return simplifyPath([...start, ...roadPath(start.at(-1)!, end.at(-1)!), ...end.reverse()]);
+  }
   const portA = onPortRoad(from), portB = onPortRoad(to);
   if (portA && portB) return simplifyPath(portPath(from, to));
   if (portA || portB) {

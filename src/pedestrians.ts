@@ -3,7 +3,8 @@
 // Game state, money, rendering or audio. main.ts owns blood/shred spawning, crime
 // assignment and vehicle momentum loss from the returned events.
 import { Body, add, clamp, dist, dot, length, rotate, scale, sub, vec, type Vec } from './physics';
-import { roadDistance, roadProjection, type Person, type World } from './world';
+import { onPromenade } from './beach';
+import { blocksWalking, roadDistance, roadProjection, type Person, type World } from './world';
 
 export type PedestrianVehicle = { id: number; body: Body; kind: 'taxi' | 'police' | 'traffic' };
 export type PedestrianEvent = {
@@ -76,6 +77,7 @@ function penetration(world: World, center: Vec, radius: number): number {
   const probe = new Body(center.x, center.y, 1, radius * 2, radius * 2);
   let worst = 0;
   for (const prop of world.hash.query(probe)) {
+    if (!blocksWalking(prop.kind)) continue;
     const hit = circleBody(prop.body, center, radius);
     if (hit && hit.depth > worst) worst = hit.depth;
   }
@@ -89,6 +91,7 @@ function separate(world: World, center: Vec, radius: number): Vec {
     const probe = new Body(p.x, p.y, 1, radius * 2, radius * 2);
     let worst = 0, normal = vec();
     for (const prop of world.hash.query(probe)) {
+      if (!blocksWalking(prop.kind)) continue;
       const hit = circleBody(prop.body, p, radius);
       if (hit && hit.depth > worst) { worst = hit.depth; normal = hit.normal; }
     }
@@ -144,7 +147,7 @@ function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: nu
 /** Customers hold near home; ordinary civilians keep the prior local sinusoidal wander. */
 function wanderTarget(person: Person, time: number): Vec {
   if (person.role === 'customer') return person.home;
-  return add(person.home, vec(0, Math.sin(time * 0.3 + person.phase) * 4));
+  return add(person.home, onPromenade(person.home) ? vec(Math.sin(time * 0.3 + person.phase) * 5, 0) : vec(0, Math.sin(time * 0.3 + person.phase) * 4));
 }
 
 /** Integrate a corpse with drag, static separation and bounded speed. */

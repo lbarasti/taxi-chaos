@@ -1,5 +1,36 @@
 # Taxi Chaos — continuation handoff
 
+## Latest checkpoint — Sunset Beach and Ocean Walk, 2026-10-11
+
+- Added a 296 m southern beach with a west-to-east tapered shoreline, sand/wet-sand
+  texture, surf, volleyball court, private seeded beachgoers and palms. Existing
+  woodland/villas stay intact. The old south coastal rails are removed at the join.
+- Three pastel lifeguard towers, five parasols, ten deck chairs and four sand castles
+  have finite HP, physical destruction, visible wreckage and momentum loss. Palms
+  are breakable too. Towers occlude vehicle headlights and police sight.
+- Eastern Ocean Walk adds three pastel beachfront hotels, cafés, surf rentals,
+  pedestrians, lamps/benches and a tiled walking path. Edging/bollards are permanent
+  traffic barriers. Each entrance group has a vehicle collision envelope to prevent
+  narrow bikes squeezing through iterative contacts; walking/civilian collision uses
+  the actual posts. Navigation walks through the real 0.75 m clear gaps.
+- Sand samples every tyre and blends reduced engine/braking force, lateral grip,
+  traction caps and rolling resistance. Motorcycles and AI recovery previews use it
+  too. Road tuning/upgrades restore automatically outside sand. Tracks are tan ruts.
+- A drivable beach patrol pickup is parked at (28,249.5). Its definition adds
+  `terrain.sand` aptitude (0.95 versus car 0), geometry, drivetrain, art and access.
+  Commercial trucks remain NPC-only. Pickup is also eligible for the harbour exchange.
+- Beach dispatch uses three new stops on the existing south street, never on the
+  pedestrian path. Sand navigation exits to the city instead of cutting across the inlet.
+- F2 adds `beach`, `beach-pickup` and `promenade`. Snapshots expose `surface` and
+  `sandCoverage`. Read `docs/beach.md` for references, API, verification and screenshots.
+- Rebased onto the merged moving-exit feature (#11), preserving door opening,
+  launch/tumble/landing damage and coasting for the pickup too. All 391 tests /
+  28 files and the production build pass. There are now 31 LAB fixtures.
+- Production Chromium QA runs fully offline: normal/pickup acceleration, real walking
+  pickup entry, all four destruction classes, protected path, surf death, night and
+  three mobile viewports. After 3 s, stock car on sand: 3.66 m/s; pickup: 13.35 m/s.
+
+
 ## Latest checkpoint — working harbour and paid car exchange, 2026-10-10
 
 - Added Northstar Harbour on the north waterfront: shared 180 × 120 m dry apron,

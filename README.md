@@ -84,6 +84,25 @@ The [vehicle survey, handling measurements, extension API and screenshots](docs/
 cover the existing cars, bikes and golf carts as well as the new fleet. `src/vehicles.ts`
 centralizes model definitions; `game.spawnVehicle(options)` is the named-options spawn API.
 
+## Sunset Beach / Ocean Walk
+
+A nearly 300 m sandy beach extends the south city waterfront, with pastel lifeguard
+towers, striped parasols, deck chairs, sand castles, palms and a volleyball court.
+Towers, parasols, chairs and castles break under vehicle impacts and leave visible
+wreckage. The surf uses the existing sinking and hospital recovery rules.
+
+Road tyres lose acceleration and cornering traction in the sand and leave sandy
+ruts. **A parked beach patrol pickup at the western entrance is drivable with E**;
+its off-road tyres retain useful traction. Model handling lives in the vehicle
+catalogue's `terrain.sand` setting. Eastward, the beach narrows into **Ocean Walk**:
+three pastel hotels, cafés, surf rentals, pedestrians and a tiled promenade.
+Visible bollards protect the path from cars and bikes while admitting walkers.
+Beach/hotel fares stop on the south street, with dry navigation to the city/woods.
+
+**Try it:** F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or
+**Ocean Walk / hotel promenade**. See the [reference study, handling measurements,
+implementation notes and screenshots](docs/beach.md).
+
 ## Working harbour / clean-car escape
 
 **Northstar Harbour** extends the north waterfront with fifteen container stacks,
@@ -202,7 +221,7 @@ npm run build    # strict TypeScript check + standalone build
 
 Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. The same inspector works in the standalone HTML. Its controls include:
 
-- **26 fixtures:** first fare, **Motorbike deliveries**, eastern bridges, woodland estates, **Northstar Harbour / car exchange**, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
+- **31 fixtures:** first fare, **Motorbike deliveries**, **Moving car / jump out**, **Moving bike / jump off**, eastern bridges, woodland estates, **Sunset Beach / soft sand**, **Beach / off-road pickup**, **Ocean Walk / hotel promenade**, **Northstar Harbour / car exchange**, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
 - **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
 - **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
 - **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.
@@ -210,7 +229,7 @@ Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. Th
 - **Difficulty and gore:** change during a run. Scenario presets may enable gore/God mode for their test; the preset's description explains its setup.
 - **Sound FX:** audition every sound, adjust saved FX/siren volume, mute, inspect sample/voice telemetry.
 
-Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving vehicles back. **Reset run** restores the ordinary 23-moving-vehicle / 39-parked-vehicle city plus fairway carts and three harbour freight trucks; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
+Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving vehicles back. **Reset run** restores the ordinary 23-moving-vehicle / 40-parked-vehicle city (including the beach pickup) plus fairway carts and three harbour freight trucks; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
 
 For browser automation, the opt-in `window.__taxi` harness has:
 
@@ -270,6 +289,7 @@ For shared browser sessions, run automated resets in a separate isolated browser
 ## Code map
 
 - `src/physics.ts`: vectors, rigid bodies, four-tyre forces, rotated-rectangle SAT and normal/friction impulses, spatial hash.
+- `src/beach.ts` / `src/beach-renderer.ts`: shared sand/shore geometry, protected promenade entrances, hotel and beach prop art, per-tyre terrain handling.
 - `src/harbour.ts` / `src/harbour-renderer.ts`: harbour geography and road graph, security/exchange definitions, ship/crane loading art and freight circuit.
 - `src/vehicles.ts`: typed model catalogue, named spawn options, body/dynamics factories, commercial cargo, graphics/handling/access profiles and road-traffic mix.
 - `src/world.ts`: seeded city, special structures, stable entity IDs, and simple shortest street routing (same-street trips are direct; street-to-street trips need at most two turns).

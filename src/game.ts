@@ -1,5 +1,5 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, HOSPITAL, World, isStructural, roadNode, roadPath, type Person, type Prop } from './world';
+import { GARAGE, HOSPITAL, World, blocksWalking, isStructural, roadNode, roadPath, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
 import { defaultSettings, difficulties, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
@@ -13,11 +13,12 @@ import { createVehicleBody, createVehicleDynamics, trafficModel, vehicleDefiniti
 import { readStorage, storageKeys } from './storage';
 import { GOLF_CART_ROUTE, HIGHLAND_STOPS, ROAD_NODES, isCountry, pathLength } from './countryside';
 import { RAIL_BREAK_SPEED, inOcean } from './coast';
+import { BEACH_STOPS, inBeach, inSand, onPromenade, sandHandling } from './beach';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, inHarbour } from './harbour';
 
 export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
-export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean };
+export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
 export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
@@ -74,7 +75,7 @@ export class Game {
       const node = roadNode(v.body.position); v.path = [horizontal ? vec(Math.min(240, node.x + 40), node.y + 3) : vec(node.x + 3, Math.max(0, node.y - 40))];
     }
     for (const [i, spot] of this.world.parking.entries()) if (spot.occupied) {
-      const v = this.vehicle('traffic', spot.position.x, spot.position.y, spot.angle, spot.motorcycle ? '#ed9b63' : ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5], spot.motorcycle || i % 7 === 0 ? 'motorcycle' : 'car'); v.parked = true; v.driverExited = true;
+      const v = this.vehicle('traffic', spot.position.x, spot.position.y, spot.angle, spot.model ? vehicleDefinition(spot.model).graphics.color : spot.motorcycle ? '#ed9b63' : ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5], spot.model ?? (spot.motorcycle || i % 7 === 0 ? 'motorcycle' : 'car')); v.parked = true; v.driverExited = true;
     }
     this.populateFreight();
     for (const i of [0, 1, 2]) {
@@ -117,7 +118,7 @@ export class Game {
   private canSpawnTraffic(body: Body, margin = 2) {
     return !inOcean(body.position) && !this.vehicles.some(v => v.alive && bodiesNear(body, v.body, margin)) && ![...this.world.hash.query(body)].some(prop => contact(body, prop.body)) && !this.world.pools.some(pool => contact(body, pool)) && !this.world.parking.some(spot => {
       if (!spot.occupied) return false;
-      const parked = createVehicleBody(vehicleDefinition(spot.motorcycle ? 'motorcycle' : 'car'), spot.position, spot.angle);
+      const parked = createVehicleBody(vehicleDefinition(spot.model ?? (spot.motorcycle ? 'motorcycle' : 'car')), spot.position, spot.angle);
       return bodiesNear(body, parked, margin);
     });
   }
@@ -149,7 +150,7 @@ export class Game {
   get enterableCar() { if (this.tumble) return undefined; const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 0.35);
-    for (let i = 0; i <= steps; i++) { const p = add(a, scale(sub(b, a), i / (steps || 1))), probe = new Body(p.x, p.y, 1, 0.7, 0.7); if (inOcean(p) || [...this.world.hash.query(probe)].some(prop => contact(probe, prop.body)) || this.world.pools.some(pool => contact(probe, pool))) return false; }
+    for (let i = 0; i <= steps; i++) { const p = add(a, scale(sub(b, a), i / (steps || 1))), probe = new Body(p.x, p.y, 1, 0.7, 0.7); if (inOcean(p) || [...this.world.hash.query(probe)].some(prop => blocksWalking(prop.kind) && contact(probe, prop.body)) || this.world.pools.some(pool => contact(probe, pool))) return false; }
     return true;
   }
   /** Select a side with A/D, arrow keys, or the active touch stick; default to the right. */
@@ -185,7 +186,7 @@ export class Game {
     const point = this.exitLocation(this.player, this.exitSide);
     if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger'); return false; }
     const moving = this.speed > MOVING_EXIT_SPEED, b = this.player.body;
-    if (this.player.model === 'car') this.player.door = { side: point.side, at: this.time - (moving ? 0 : 0.17) };
+    if (this.player.definition.physics.dynamics === 'car') this.player.door = { side: point.side, at: this.time - (moving ? 0 : 0.17) };
     if (moving) {
       const fuse = this.player.damage.status === 'burning' ? this.player.damage.fuse : Infinity;
       const delay = Math.min(DOOR_OPEN_TIME, Math.max(0, fuse - 0.05));
@@ -205,7 +206,7 @@ export class Game {
     if (this.mode !== 'playing' || this.onFoot || this.player !== pending.vehicle || this.player.sinking) return;
     const point = this.exitLocation(pending.vehicle, pending.side);
     if (!point) { this.notify('Exit blocked! Try the other side.', 'danger'); return; }
-    if (pending.vehicle.model === 'car' && pending.vehicle.door) pending.vehicle.door.side = point.side;
+    if (pending.vehicle.door) pending.vehicle.door.side = point.side;
     this.finishExit(point.point, point.side);
   }
   private finishExit(point: Vec, side: ExitSide) {
@@ -264,8 +265,8 @@ export class Game {
     }
     const previous = { ...this.driver.position };
     this.driver.integrate(dt);
-    if (tumbling?.grounded && dist(previous, this.driver.position) > 0.02) this.skids.push({ a: previous, b: { ...this.driver.position }, life: 1.3 });
-    for (let pass = 0; pass < 3; pass++) for (const body of [...this.world.hash.query(this.driver)].map(p => p.body).concat(this.world.pools)) {
+    if (tumbling?.grounded && dist(previous, this.driver.position) > 0.02) this.skids.push({ a: previous, b: { ...this.driver.position }, life: 1.3, sand: inSand(this.driver.position) });
+    for (let pass = 0; pass < 3; pass++) for (const body of [...this.world.hash.query(this.driver)].filter(p => blocksWalking(p.kind)).map(p => p.body).concat(this.world.pools)) {
       const c = contact(this.driver, body); if (c) resolveCollision(this.driver, body, c, 0);
     }
     for (let pass = 0; pass < 3; pass++) for (const v of this.vehicles) {
@@ -314,16 +315,17 @@ export class Game {
   get stars() { return this.heat < 20 ? 0 : this.heat < 48 ? 1 : this.heat < 76 ? 2 : 3; }
   get police() { return this.vehicles.filter(v => v.kind === 'police' && v.alive && v.damage.status !== 'wreck'); }
   get policeVisible() { return this.police.some(v => dist(v.body.position, this.actor.position) < 70 && this.lineOfSight(v.body.position, this.actor.position)); }
+  get exchangeCar() { return this.player.definition.access.playerDrivable && this.player.definition.physics.dynamics === 'car'; }
   get portGateNear() { const p = this.actor.position; return !this.onFoot && this.harbour.vehicleId !== this.player.id && Math.abs(p.x - PORT_ENTRY.x) < 4.5 && p.y > -15 && p.y < -2; }
   get insideSwap() { return !this.onFoot && this.player.body.corners().every(p => Math.abs(p.x - SWAP_CONTAINER.x) < 6.7 && Math.abs(p.y - SWAP_CONTAINER.y) < 2.8); }
   get harbourPrompt(): string | null {
-    if (this.portGateNear) return this.policeVisible ? 'SECURITY: lose police line of sight first.' : this.player.model !== 'car' ? 'SECURITY: car exchange only. Return in a car.' : this.player.damage.status === 'burning' || this.player.damage.status === 'wreck' ? 'SECURITY: burning or wrecked cars refused.' : this.speed > 2 ? 'Stop at the gate for harbour entry.' : this.save.cash < PORT_FEE ? `Harbour entry needs $${PORT_FEE}. Earn another fare.` : `E · Pay $${PORT_FEE} for entry + a fresh car.`;
+    if (this.portGateNear) return this.policeVisible ? 'SECURITY: lose police line of sight first.' : !this.exchangeCar ? 'SECURITY: car exchange only. Return in a car.' : this.player.damage.status === 'burning' || this.player.damage.status === 'wreck' ? 'SECURITY: burning or wrecked cars refused.' : this.speed > 2 ? 'Stop at the gate for harbour entry.' : this.save.cash < PORT_FEE ? `Harbour entry needs $${PORT_FEE}. Earn another fare.` : `E · Pay $${PORT_FEE} for entry + a fresh car.`;
     if (this.harbour.vehicleId === this.player.id && !this.harbour.exchanged && this.insideSwap) return this.policeVisible ? 'Police have eyes on you. Exchange paused.' : this.harbour.progress > 0 ? `NEW IDENTITY · ${Math.ceil((SWAP_SECONDS - this.harbour.progress) * 10) / 10}s` : 'Stop fully inside the container to exchange.';
     return null;
   }
   navigateHarbour() { if (this.mode !== 'playing' || this.onFoot) return; this.navToHarbour = !this.navToHarbour; this.navToGarage = false; this.notify(this.navToHarbour ? `Northstar Harbour: $${PORT_FEE} buys entry and a car exchange. H cancels the route.` : 'Back to the fare route.'); }
   enterHarbour() {
-    if (this.mode !== 'playing' || this.player.sinking || !this.portGateNear || this.player.model !== 'car' || this.speed > 2 || this.policeVisible || this.save.cash < PORT_FEE || this.player.damage.status === 'burning' || this.player.damage.status === 'wreck') { this.notify(this.harbourPrompt ?? 'Stop in a car at the harbour entry gate.', 'danger'); return false; }
+    if (this.mode !== 'playing' || this.player.sinking || !this.portGateNear || !this.exchangeCar || this.speed > 2 || this.policeVisible || this.save.cash < PORT_FEE || this.player.damage.status === 'burning' || this.player.damage.status === 'wreck') { this.notify(this.harbourPrompt ?? 'Stop in a car at the harbour entry gate.', 'danger'); return false; }
     this.save.cash -= PORT_FEE; this.persist();
     this.harbour = { vehicleId: this.player.id, entered: false, exchanged: false, progress: 0 };
     this.navToHarbour = true; this.navToGarage = false; this.sounds.emit('purchase', this.time);
@@ -373,7 +375,7 @@ export class Game {
     if (this.job) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.offer = first ? 0 : this.offer + 1;
     const cityStops = [vec(4, 14), vec(44, 14), vec(84, 58), vec(116, 84), vec(164, 108), vec(204, 164), vec(156, 204), vec(76, 164), vec(4, 128), vec(44, 204), vec(204, 44), vec(124, 14)];
-    const stops = [...cityStops, ...HIGHLAND_STOPS.map(s => s.position)];
+    const stops = [...cityStops, ...HIGHLAND_STOPS.map(s => s.position), ...BEACH_STOPS.map(s => s.position)];
     const names = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
     const places = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
     let pickup = first ? stops[0] : stops[(this.offer * 3 + 1) % stops.length];
@@ -384,7 +386,7 @@ export class Game {
     if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.actor.position) < dist(b, this.actor.position) ? a : b);
     const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
-    const destination = HIGHLAND_STOPS.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
+    const destination = [...HIGHLAND_STOPS, ...BEACH_STOPS].find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
     const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
     this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
@@ -462,7 +464,7 @@ export class Game {
     }
   }
   propSound(prop: Prop, impact: number) {
-    const cue = isStructural(prop.kind) ? 'collapse' : ['crate', 'barrier', 'bench', 'tree'].includes(prop.kind) ? 'wood' : prop.kind === 'kiosk' ? 'glass' : 'metal';
+    const cue = isStructural(prop.kind) ? 'collapse' : ['crate', 'barrier', 'bench', 'tree', 'palm', 'lifeguard-tower', 'beach-chair', 'sandcastle'].includes(prop.kind) ? 'wood' : prop.kind === 'kiosk' ? 'glass' : 'metal';
     this.sounds.emit(cue, this.time, { position: prop.body.position, strength: clamp(impact / 14, 0.5, 1.4), key: `prop:${prop.id}`, cooldown: 1 });
   }
   collision(v: Vehicle, other: Vehicle | Prop, dt: number) {
@@ -482,12 +484,13 @@ export class Game {
       const impact = Math.max(0, -((v.body.velocity.x * c.normal.x) + (v.body.velocity.y * c.normal.y)));
       // Objects fracture before the impulse solver stops the car. Momentum carries through.
       const structural = isStructural(other.kind);
+      const tower = other.kind === 'lifeguard-tower';
       if (structural) {
         if (impact > 3 && dt > 0 && this.time - other.lastHit > 0.25) { other.lastHit = this.time; other.hp -= impact * impact * 0.2; other.blamed ||= v.kind === 'taxi'; }
       } else if (impact > 2.5) other.hp -= impact * dt * 120;
       if (other.hp <= 0) {
         if (structural) this.damageImpact(v, impact, c.point, v.kind === 'taxi');
-        this.destroy(other, v, impact); v.body.velocity = scale(v.body.velocity, structural ? 0.6 : other.kind === 'kiosk' ? 0.78 : 0.96); return;
+        this.destroy(other, v, impact); v.body.velocity = scale(v.body.velocity, tower ? 0.72 : structural ? 0.6 : other.kind === 'kiosk' ? 0.78 : 0.96); return;
       }
     }
     const rail = 'hp' in other && other.kind === 'guardrail';
@@ -628,7 +631,7 @@ export class Game {
   }
   lineOfSight(a: Vec, b: Vec) {
     const sweep = new Body((a.x + b.x) / 2, (a.y + b.y) / 2, 1, Math.abs(b.x - a.x) + 0.1, Math.abs(b.y - a.y) + 0.1);
-    for (const prop of this.world.hash.query(sweep)) if (['building', 'rock', 'guardrail', 'container', 'shed', 'barracks', 'station'].includes(prop.kind) && segmentIntersectsBody(a, b, prop.body)) return false;
+    for (const prop of this.world.hash.query(sweep)) if (['building', 'rock', 'guardrail', 'container', 'lifeguard-tower', 'shed', 'barracks', 'station'].includes(prop.kind) && segmentIntersectsBody(a, b, prop.body)) return false;
     return true;
   }
   update(dt: number) {
@@ -655,6 +658,7 @@ export class Game {
         const performance = vehiclePerformance(v.damage);
         v.dynamics.engineForce = (v.kind === 'police' ? this.rules.copEngine : v.baseEngine) * performance.engine;
         v.dynamics.grip = v.baseGrip * performance.grip;
+        v.dynamics.surface = sandHandling(v.body, v.definition.physics.tyres, v.definition.terrain.sand);
         const forwardSpeed = rotate(v.body.velocity, -v.body.angle).x;
         const coasting = v.parked && (v.coastUntil ?? 0) > this.time;
         const controls = coasting ? { throttle: 0, turn: v.exitSteer ?? 0, handbrake: false }
@@ -676,13 +680,17 @@ export class Game {
     this.advanceExit();
     if (this.onFoot) this.walk(dt);
     if (!this.onFoot && !this.player.sinking && this.player.dynamics.skidding) {
-      this.player.dynamics.tyres.forEach((t, i) => { if (t.skidding) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 18 }); });
+      this.player.dynamics.tyres.forEach((t, i) => { if (t.skidding && !inSand(this.player.body.toWorld(t.position))) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 18 }); });
       if (this.speed > 8) this.driftMeter += this.speed * dt;
     } else if (this.driftMeter > 7) {
       if (this.time - this.lastDrift > 1) { const tip = Math.min(20, Math.round(this.driftMeter * 0.35)); this.save.cash += tip; this.shiftEarnings += tip; this.floating(this.player.body.position, `DRIFT +$${tip}`, '#a6dac0'); this.lastDrift = this.time; this.persist(); }
       this.driftMeter = 0;
     } else this.driftMeter = 0;
     if (!this.onFoot && this.settings.gore && this.player.damage.bloodTime > 0 && this.speed > 1) this.player.dynamics.tyres.forEach((t, i) => { if (!t.steered) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 30, blood: true }); });
+    if (!this.onFoot && !this.player.sinking && this.speed > 0.8) this.player.dynamics.tyres.forEach((t, i) => {
+      const p = this.player.body.toWorld(t.position);
+      if (inSand(p) && inSand(this.previousTyres[i])) this.skids.push({ a: this.previousTyres[i], b: p, life: 24, sand: true });
+    });
     this.pedestrianClock += dt;
     // Fast/boosted side impacts need the full contact cadence; ordinary walking
     // stays at 60 Hz, while vehicle and collision physics always use 120 Hz.
@@ -767,7 +775,7 @@ export class Game {
       const rules = difficulties[this.settings.difficulty], desired = Math.min(rules.maxPolice, this.stars + (this.settings.difficulty === 'chaos' ? 3 : 1));
       if (this.police.length < desired) {
         const p = this.actor.position, node = roadNode(p);
-        const candidates = (isCountry(p) ? ROAD_NODES.filter(n => isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
+        const candidates = (isCountry(p) && !inBeach(p) ? ROAD_NODES.filter(n => isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
         const spawn = candidates[Math.floor(this.world.random() * candidates.length)] ?? vec(240, 240);
         const firstPatrol = this.police.length === 0;
         if (firstPatrol) this.policeIntel = { position: { ...p }, velocity: { ...this.actor.velocity }, seenAt: this.time };
@@ -789,7 +797,7 @@ export class Game {
     for (const s of this.skids) s.life -= dt; this.skids = this.skids.filter(s => s.life > 0).slice(-4500);
   }
   snapshot() {
-    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
+    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: inSand(this.actor.position) ? 'sand' : onPromenade(this.actor.position) ? 'promenade' : 'road', sandCoverage: sandHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain.sand).coverage, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
       health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, water: this.player.sinking ? this.player.sinking.pool ? 'pool' : 'ocean' : null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
