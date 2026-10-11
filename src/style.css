@@ -212,3 +212,12 @@
   .story-body{display:flow-root}
   .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
 }
+.texts-toggle{position:fixed;z-index:4;right:24px;top:110px;padding:10px 16px;color:var(--gold);font-size:12px;min-height:44px}
+.mission-inbox{position:fixed;z-index:6;right:24px;top:164px;width:min(380px,calc(100vw - 32px));max-height:calc(100dvh - 190px);overflow:auto;padding:16px;background:#14232af5;touch-action:pan-y}
+.mission-inbox header{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:1px}
+.mission-inbox header button{background:none;border:0;font-size:24px;min-width:44px;min-height:44px}
+.mission-inbox p{font-size:12px;line-height:1.6;color:#c5d0be}
+.mission-inbox article{border-top:1px solid var(--border);padding:14px 0}
+.inbox-sender{display:flex;gap:12px;align-items:center}.inbox-sender .story-portrait{width:44px;height:44px;flex:0 0 44px;position:relative;overflow:hidden}
+.mission-inbox h3{font-size:15px;margin:12px 0 0}.mission-inbox small{display:block;color:var(--mint);font-size:10px;line-height:1.5}.mission-inbox .secondary{width:100%;font-size:11px;margin-top:12px;min-height:44px}
+@media(max-width:700px),(max-height:500px){.texts-toggle{top:calc(var(--top-height,70px) + 70px);right:12px;font-size:10px;padding:6px 10px}.mission-inbox{top:16px;right:16px;max-height:calc(100dvh - 32px)}}

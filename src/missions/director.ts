@@ -128,6 +128,12 @@ export class MissionDirector {
     if (!this.allowedFor(mission, ctx)) return NOTHING;
     const events: MissionEvent[] = [{ type: 'pickup', missionId: mission.id, at: ctx.time }];
     this.transact(events, draft => {
+      if (mission.pickupChoice) {
+        const group = this.findGroup(mission.pickupChoice.group)!;
+        const option = group.options.find(o => o.id === mission.pickupChoice!.choice)!;
+        if (option.requires && !this.evaluateWith(draft, option.requires, ctx)) throw new Error(`Pickup choice ${option.id} is no longer eligible`);
+        this.commitOptionTo(draft, group, option, ctx.time, events);
+      }
       for (const group of mission.choices) if (group.commit === 'pickup') this.commitDefaultTo(draft, group, ctx, events);
     });
     this.pickedUp = true;
@@ -216,6 +222,13 @@ export class MissionDirector {
   }
 
   private canOffer(mission: CompiledMission, ctx: DirectorContext): boolean {
+    if (mission.pickupChoice) {
+      const { group, choice } = mission.pickupChoice;
+      const existing = this.progress.choices[group];
+      if (existing !== undefined && existing !== choice) return false;
+      const option = this.findGroup(group)!.options.find(o => o.id === choice)!;
+      if (option.requires && !this.evaluate(option.requires, ctx)) return false;
+    }
     if (this.activeId === mission.id) return false;
     if (this.progress.failed.includes(mission.id)) return false;
     if (mission.repeat === 'once' && this.progress.completed.includes(mission.id)) return false;

@@ -61,6 +61,11 @@ Add a dialogue beat and a mission to `src/missions/catalogue.json`:
   `passenger`. An optional `beats.pickupSender` plays instead when the pickup is
   a parcel run (for example on a courier bike).
 - `effects` run once on delivery. `requires` gates availability.
+- Optional `offer: { "character": "mia", "text": "Meet me at Garden Café?" }`
+  introduces a mission through the Texts inbox. Eligible texts coexist regardless
+  of dispatch radius, with physical passengers at their authored pickups. Routing
+  a text only changes navigation; it does not accept, abandon or commit a mission.
+  Without `offer`, the existing local automatic dispatch remains supported.
 - Optional `dispatchRadius` (10–1000 m; default 160) bounds how far from the actor
   dispatch assigns an authored pickup. Out-of-range stories remain available in
   the director and are never relocated. Mia uses 120 m so hospital dispatch stays local.
@@ -98,8 +103,7 @@ conflicting `setChoice` rejects the whole batch.
 A mission may declare choice groups that lock in at the pickup stop or on
 delivery. Options are mutually exclusive: committing a second option for the
 same group is rejected, while re-committing the same option is an idempotent
-no-op. An option may be marked `"default": true` so the current single-offer
-flow can commit it without the upcoming choice UI.
+no-op. An option may be marked `"default": true` for automatic commitment.
 
 ```json
 "choices": [
@@ -114,9 +118,29 @@ flow can commit it without the upcoming choice UI.
 ```
 
 Group ids must be unique across the whole catalogue; option ids are unique
-within their group. The third PR adds simultaneous offers and the pickup choice
-UI; the director already emits a bounded lifecycle event log
-(`accepted`, `pickup`, `completed`, `abandoned`, `choice`) for it.
+within their group. Competing missions can reference the same pickup-bound group
+using `pickupChoice: { "group": "meridian-trail", "choice": "cafe" }`.
+Declare the group once, on one participating mission, and reference its options
+from each branch. The compiler checks the group, option, pickup boundary and
+unconditional conflicts. Driving into a pickup ring and stopping for 0.8 seconds
+accepts the physically visited offer and commits its choice atomically, even if
+another text was routed. The other branch becomes unavailable immediately.
+Abandonment preserves that choice and the selected mission's retry policy;
+pickup effects do not run again on retry. Delivery effects wait for delivery.
+Independent texts stay available and can be delivered before or after the plot
+branch. A loaded fare cannot be replaced by a text; finish or abandon it first.
+
+The default content demonstrates this after `mia-meridian-lead`: Mia's café trail,
+Frankie's competing dock-ledger trail, and an independent arcade lift. The inbox
+shows sender portraits, full messages, named pickups and explicit branch cues;
+other available pickups receive cyan world and radar markers. Its scrollable layout and
+44px buttons support desktop, compact portrait and landscape screens.
+
+The director emits a bounded lifecycle event log (`accepted`, `pickup`,
+`completed`, `abandoned`, `choice`). Offers are keyed by stable mission IDs,
+bounded by the validated catalogue limit, and reuse their waiting passengers
+when the player changes routes. Their initial pose is deterministic and does
+not consume the procedural RNG stream. Lab snapshots include detached offers.
 
 `commitChoice(group, option, context)` selects an option only for the active
 mission, before its authored boundary: before pickup for pickup groups, and
@@ -202,7 +226,9 @@ a data URL at build time, so no runtime asset request is ever made.
 
 Legacy saves without a `story` field default to a fresh chapter 1; unknown
 future versions also fall back rather than corrupting progress. The transient
-active mission, current offer and dialogue are **not** saved. Games constructed
+active mission, routed offer and dialogue are **not** saved. Eligible text offers
+are reconstructed from saved prerequisites, completed missions and choices on
+reload, recovery and new shifts. Games constructed
 with persistence disabled (map previews, the test lab) use fresh progress and
 never read the save.
 

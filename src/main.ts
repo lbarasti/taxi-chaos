@@ -13,6 +13,7 @@ import { AudioFX } from './audio';
 import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
 import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
+import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 
 const icons = {
   fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
@@ -44,6 +45,8 @@ document.querySelector('#app')!.innerHTML = `
     <div class="job-progress"><i id="job-progress"></i></div>
   </aside>
   ${storyMarkup}
+  <button id="texts-toggle" class="texts-toggle panel" aria-expanded="false" aria-controls="mission-inbox">Texts · 0</button>
+  ${inboxMarkup}
   <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div><div class="heat-panel" id="heat-panel" role="status"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div></section>
   <div class="critical-status panel" id="critical-status" hidden><strong id="condition">ENGINE DAMAGE</strong><span id="components"></span></div>
   <button id="interact" class="context-action" hidden>Get in</button>
@@ -59,6 +62,7 @@ let game = new Game();
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus());
+const refreshInbox = bindMissionInbox($('app'), () => game, () => $('city').focus());
 let helpOpen = false;
 let statsOpen = false;
 let lab: LabAPI | undefined;
@@ -112,6 +116,7 @@ function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && g
 function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();
 function hud() {
+  refreshInbox();
   const { inSand } = game.map.beach;
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
