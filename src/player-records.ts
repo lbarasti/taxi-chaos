@@ -3,9 +3,11 @@ export type TextReceipt = {
   messageId: string; missionId: string; character: string; sender: string;
   title: string; text: string; pickup: string; receivedAt: number; readAt: number | null;
 };
-export type PlayerRecords = { version: 1; texts: TextReceipt[] };
-export const defaultPlayerRecords = (): PlayerRecords => ({ version: 1, texts: [] });
+export type NotebookEntry = { id: string; title: string; text: string; kind: 'receipt' | 'conversation' | 'document' | 'observation'; shift: number; at: number };
+export type PlayerRecords = { version: 1; texts: TextReceipt[]; notebook: NotebookEntry[] };
+export const defaultPlayerRecords = (): PlayerRecords => ({ version: 1, texts: [], notebook: [] });
 export const MAX_TEXT_RECEIPTS = 400;
+export const MAX_NOTEBOOK_ENTRIES = 400;
 
 export function migratePlayerRecords(raw: unknown): PlayerRecords {
   const records = defaultPlayerRecords();
@@ -21,6 +23,14 @@ export function migratePlayerRecords(raw: unknown): PlayerRecords {
     records.texts.push({ messageId: t.messageId, missionId: t.missionId, character: t.character, sender: t.sender,
       title: t.title, text: t.text, pickup: t.pickup, receivedAt: t.receivedAt, readAt });
     seen.add(t.messageId);
+  }
+  if ('notebook' in raw && Array.isArray(raw.notebook)) for (const value of raw.notebook.slice(0, MAX_NOTEBOOK_ENTRIES)) {
+    if (!value || typeof value !== 'object') continue;
+    const e = value as NotebookEntry;
+    if (typeof e.id !== 'string' || !/^[a-z][a-z0-9-]{0,99}$/.test(e.id) || records.notebook.some(old => old.id === e.id)) continue;
+    if (![e.title, e.text].every(t => typeof t === 'string' && t.length > 0 && t.length <= 1200)) continue;
+    if (!['receipt', 'conversation', 'document', 'observation'].includes(e.kind) || !Number.isInteger(e.shift) || e.shift < 1 || e.shift > 14 || !Number.isFinite(e.at) || e.at < 0) continue;
+    records.notebook.push({ id: e.id, title: e.title, text: e.text, kind: e.kind, shift: e.shift, at: e.at });
   }
   return records;
 }

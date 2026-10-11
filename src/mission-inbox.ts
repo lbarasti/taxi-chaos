@@ -27,7 +27,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
   function refresh() {
     const game = currentGame();
     const ids = game.missions.available({ deliveries: game.save.story.deliveries, careerDeliveries: game.save.deliveries,
-      jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds })
+      jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds, shift: game.save.campaign.finished ? 15 : game.save.campaign.shift })
       .filter(id => game.missions.mission(id).offer);
     const receipts = game.save.playerRecords.texts;
     const unread = receipts.filter(t => t.readAt === null).length;
@@ -54,7 +54,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
         const name = document.createElement('strong'); name.textContent = receipt.sender; sender.append(name);
         const title = document.createElement('h3'); title.textContent = receipt.title;
         const text = document.createElement('p'); text.textContent = receipt.text;
-        const stop = document.createElement('small'); stop.textContent = `Pickup: ${receipt.pickup}${actionable ? mission.pickupChoice ? ' · Branch choice at pickup' : ' · Independent mission' : ' · Message history'}`;
+        const stop = document.createElement('small'); stop.textContent = `Pickup: ${receipt.pickup}${actionable ? mission.pickupChoice ? ' · Competing booking · choice at pickup' : ' · Independent booking' : ' · Message history'}`;
         const route = document.createElement('button'); route.className = 'secondary';
         const selected = game.job.missionId === id;
         if (!actionable) {

@@ -26,6 +26,23 @@ Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to 
 
 You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Wallet, upgrades, and completed-job progress persist between runs. The pause menu's **Shift stats** shows earnings, completed jobs, smashed objects, and pedestrian fatalities.
 
+### Open Shore, texts and your notebook
+
+The campaign lasts **fourteen shifts**, ending on polling day. You choose when
+to advance it with **Pause → End shift**. Finish or abandon an aboard ride first.
+Hospital recovery, reloading and test-run resets preserve the campaign date.
+Bookings in **Texts** include their last available shift; routing is reversible,
+and competing bookings commit only at pickup. Ordinary driving can continue
+through the whole campaign and after its ending.
+
+The **Taxi menu → Dispatch notebook** keeps signed receipts, authored ride dialogue
+and documents. Search it whenever you want to revisit something. Stop near
+Garden Café from shift 3 and use **Bookmark café frontage** to keep an observation.
+You can route to the newsroom at **Old Town South**, stop nearby, and leave
+selected material from the notebook. Copies remain readable afterward. Review
+needs independent material and another shift; leaving one receipt does not
+guarantee a story. Shift 13 is the final submission date for election-day coverage.
+
 ### Cars, fire, and recovery
 
 Impacts can damage the engine, fuel system, and tyres, changing how a car drives. Severe damage may start a visible fire countdown, followed by an explosion that leaves a solid wreck. Pit Stop repairs extinguish fires and restore components. Smaller objects and some buildings can also break or collapse; fuel pumps and the Last Chance Fuel station can ignite and trigger chain blasts.

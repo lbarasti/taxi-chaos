@@ -7,7 +7,7 @@ import { messageCharacter } from './characters';
 import { resolvePortrait } from './portraits';
 
 const make = () => {
-  const g = new Game(defaultCompiledMap, false);
+  const g = new Game(defaultCompiledMap, false, 'legacy');
   g.vehicles = [g.player]; g.trafficTarget = 0; g.settings.noPolice = true; g.start();
   return g;
 };

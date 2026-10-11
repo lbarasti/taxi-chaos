@@ -17,6 +17,7 @@ export type DirectorContext = Readonly<{
   model: VehicleModel;
   kind: VehicleRole;
   time: number;
+  shift?: number;
 }>;
 
 export type MissionEvent =
@@ -272,6 +273,8 @@ export class MissionDirector {
     if ('choiceUnset' in condition) return draft.choices[condition.choiceUnset] === undefined;
     if ('minDeliveries' in condition) return (ctx?.deliveries ?? 0) >= condition.minDeliveries;
     if ('minCareerDeliveries' in condition) return (ctx?.careerDeliveries ?? 0) >= condition.minCareerDeliveries;
+    if ('shiftAtLeast' in condition) return (ctx?.shift ?? 1) >= condition.shiftAtLeast;
+    if ('shiftAtMost' in condition) return (ctx?.shift ?? 1) <= condition.shiftAtMost;
     return draft.chapter >= condition.chapter;
   }
 
