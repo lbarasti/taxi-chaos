@@ -3,6 +3,7 @@ import { Game } from './game';
 import { defaultCompiledMap } from './map/compile';
 import { vec } from './physics';
 import { STORY_LETTERS_PER_SECOND } from './story';
+import { messageCharacter, resolvePortrait } from './characters';
 
 const make = () => {
   const g = new Game(defaultCompiledMap, false);
@@ -24,8 +25,12 @@ describe('authored pickup conversations', () => {
     run(g, 0.3); expect(g.dialogue.active).toBeNull();
     collect(g);
     expect(g.job.stage).toBe('dropoff');
-    expect(g.dialogue.active?.message).toMatchObject({ speaker: 'Mia', channel: 'passenger', category: 'plot' });
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: 'mia', channel: 'passenger', category: 'plot' });
     expect(g.dialogue.active?.message.text).toContain('Meridian vans');
+    // The view resolves the display name and raster portrait from the character catalogue.
+    const speaker = messageCharacter(g.dialogue.active!.message);
+    expect(speaker.name).toBe('Mia');
+    expect(resolvePortrait(speaker)).toMatchObject({ source: 'mia.png', format: 'png' });
     const active = g.dialogue.active;
     run(g, 1); expect(g.dialogue.active).toBe(active); expect(g.dialogue.letters).toBeGreaterThan(STORY_LETTERS_PER_SECOND);
   });

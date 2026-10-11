@@ -67,6 +67,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/world.ts`: seeded city generation, structures, and road routing.
 - `src/ai.ts`: civilian traffic and police behavior.
 - `src/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
+- `src/characters.ts`, `src/portraits.ts`: immutable character catalogue and the build-time inlined portrait registry (SVG, PNG and JPEG).
 - `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.
 - `src/lab.ts`: scenario fixtures, inspector, and test API.
 - `src/map/`: versioned authored map, compiler, validation, editor, and preview.

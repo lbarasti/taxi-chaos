@@ -1,14 +1,17 @@
+import type { CharacterId } from './characters';
+
 /** Authored pickup beats. IDs belong to missions, never to a recurring dispatch name. */
 export type StoryCategory = 'plot' | 'side-quest' | 'lore';
 export type StoryMessage = Readonly<{
-  speaker: string; portrait: 'mia'; category: StoryCategory;
+  /** Stable character identity; the display name and portrait resolve from the catalogue. */
+  speaker: CharacterId; category: StoryCategory;
   channel: 'passenger' | 'sender'; text: string;
 }>;
 const meridianClue = 'I saw two Meridian vans outside the café again… and the usual police car never showed up.';
 export const storyBeats = Object.freeze({
   'mia-meridian-vans': Object.freeze({
-    fare: Object.freeze({ speaker: 'Mia', portrait: 'mia', category: 'plot', channel: 'passenger', text: meridianClue } satisfies StoryMessage),
-    parcel: Object.freeze({ speaker: 'Mia', portrait: 'mia', category: 'plot', channel: 'sender', text: `Thanks for taking my parcel. ${meridianClue}` } satisfies StoryMessage),
+    fare: Object.freeze({ speaker: 'mia', category: 'plot', channel: 'passenger', text: meridianClue } satisfies StoryMessage),
+    parcel: Object.freeze({ speaker: 'mia', category: 'plot', channel: 'sender', text: `Thanks for taking my parcel. ${meridianClue}` } satisfies StoryMessage),
   }),
 });
 export type StoryBeatId = keyof typeof storyBeats;
