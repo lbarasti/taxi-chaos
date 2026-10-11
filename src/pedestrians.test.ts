@@ -45,6 +45,18 @@ const nearestSolidGap = (w: World, p: Person) => {
 };
 
 describe('pedestrian impacts and gore gating', () => {
+  it.each([false, true])('tumbling riders still take vehicle hits with gore=%s', gore => {
+    const w = clearWorld(), person = w.addPerson(vec(12.2, 10));
+    person.fall = { elapsed: 0.3, duration: 1.5, angularVelocity: 4 };
+    const vehicle = car(10, 10, 0, vec(18, 0));
+    const events = updatePedestrians(w, [vehicle], { gore }, 1 / 120, 1);
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe(gore ? 'killed' : 'hit');
+    expect(events[0].blamed).toBe(true);
+    expect(person.alive).toBe(!gore);
+    expect(person.health).toBeLessThan(100);
+  });
+
   it('kills on a real high-speed approach in gore mode and reports blamed once', () => {
     const w = clearWorld();
     const person = w.addPerson(vec(10, 10));

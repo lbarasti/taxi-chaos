@@ -2,6 +2,7 @@ import './style.css';
 import { bindTouchControls } from './touch-controls';
 import { bindFullscreen } from './fullscreen';
 import { Game, upgradeInfo, type Upgrade } from './game';
+import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { Renderer } from './renderer';
 import { dist } from './physics';
 import { PORT_FEE } from './harbour';
@@ -141,7 +142,7 @@ function hud() {
     $('mobile-hint').textContent = admitted ? g.harbour.exchanged ? 'New car ready · use the exit' : g.harbourPrompt ?? 'Stop fully inside container C-76' : g.policeVisible ? 'Lose the tail before paying' : g.portGateNear ? `Stop and pay $${PORT_FEE} at security` : 'Follow cyan to port security';
     $('job-progress').style.width = `${g.harbour.progress / 2.5 * 100}%`; $('job-progress').style.background = '#8edbe8';
   } else document.querySelector('.mission-data small')!.textContent = 'BASE FARE';
-  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? g.tumble ? 'TUMBLING' : 'ON FOOT' : g.pendingExit ? bike ? 'JUMPING OFF' : 'DOOR OPENING' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
+  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? g.tumble ? 'TUMBLING' : 'ON FOOT' : g.pendingExit ? bike ? 'JUMPING OFF' : 'DOOR OPENING' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : bike && !motorcycleEngineWorks(g.player.damage) ? 'ENGINE STALLED' : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
   document.querySelector('.dashboard')!.setAttribute('aria-label', g.onFoot ? 'Driver health' : bike ? 'Motorbike condition' : 'Cab condition');
@@ -160,16 +161,16 @@ function hud() {
   const damage = g.player.damage;
   $('critical-status').hidden = g.mode !== 'playing' || (g.onFoot ? damage.status !== 'burning' : damage.status === 'intact' && damage.critical.engine + damage.critical.fuel + damage.critical.tyres < 15);
   $('critical-status').classList.toggle('burning', damage.status === 'burning');
-  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : 'COMPONENT DAMAGE';
-  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
-  $('interact').textContent = g.onFoot ? g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : g.pendingExit ? bike ? 'Jumping…' : 'Opening door…' : damage.status === 'burning' ? 'Bail out!' : g.speed > 1.2 ? bike ? 'Jump off' : 'Jump out' : bike ? 'Dismount' : 'Get out';
+  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : bike && !motorcycleEngineWorks(damage) ? 'BIKE ENGINE STALLED' : 'COMPONENT DAMAGE';
+  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : g.bikeTowable ? 'Motorbike will not start · R to tow & repair' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : bike && !motorcycleEngineWorks(damage) ? 'Engine will not start · Repair or find another ride' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
+  $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' && (g.enterableCar.dynamics as MotorcycleDynamics).fallen ? 'Lift motorbike' : g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : g.pendingExit ? bike ? 'Jumping…' : 'Opening door…' : damage.status === 'burning' ? 'Bail out!' : g.speed > 1.2 ? bike ? 'Jump off' : 'Jump out' : bike ? 'Dismount' : 'Get out';
   ($('interact') as HTMLButtonElement).disabled = !!g.pendingExit;
   $('interact').hidden = g.mode !== 'playing' || (g.onFoot ? !g.enterableCar : !!g.player.sinking);
-  const wreck = damage.status === 'wreck' && !g.player.sinking && g.onFoot && g.mode === 'playing' && dist(g.driver.position, g.player.body.position) < 6;
-  $('roadside').hidden = !wreck || g.time - g.player.wreckAt < 0.65;
-  $('roadside').querySelector('strong')!.textContent = `${vehicleName} DESTROYED`;
-  $('roadside').querySelector('p')!.textContent = 'The wreck stays here. Walk to a parked car or motorbike and keep your shift going.';
-  ($('tow') as HTMLButtonElement).disabled = g.time - g.player.wreckAt < 1.2;
+  const wreck = (damage.status === 'wreck' && !g.player.sinking && g.onFoot && dist(g.driver.position, g.player.body.position) < 6 || g.bikeTowable) && g.mode === 'playing';
+  $('roadside').hidden = !wreck || damage.status === 'wreck' && g.time - g.player.wreckAt < 0.65;
+  $('roadside').querySelector('strong')!.textContent = g.bikeDisabled && damage.status !== 'wreck' ? 'BIKE ENGINE DEAD' : `${vehicleName} DESTROYED`;
+  $('roadside').querySelector('p')!.textContent = g.bikeDisabled && damage.status !== 'wreck' ? 'This motorbike is too damaged to start. Tow it for a repair or find another ride.' : 'The wreck stays here. Walk to a parked car or motorbike and keep your shift going.';
+  ($('tow') as HTMLButtonElement).disabled = damage.status === 'wreck' && g.time - g.player.wreckAt < 1.2;
   $('tow-price').textContent = `Optional tow & repair: $${Math.min(g.save.cash, 60)} · or take another ride for free`;
   if (g.harbourPrompt && g.mode === 'playing' && damage.status !== 'burning') {
     $('critical-status').hidden = false; $('condition').textContent = g.portGateNear ? 'PORT SECURITY' : 'CONTAINER C-76'; $('components').textContent = g.harbourPrompt;
@@ -186,7 +187,7 @@ function hud() {
 }
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
 function interact() { if (game.mode !== 'playing') return; if (externalClock && lab) lab.realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
-function tow() { if (game.mode !== 'playing' || !game.onFoot || game.player.damage.status !== 'wreck' || dist(game.driver.position, game.player.body.position) >= 6) return; lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
+function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
 $('sound-toggle').addEventListener('click', toggleSound);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
