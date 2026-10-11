@@ -176,7 +176,8 @@
 .story-header button{width:44px;height:32px;padding:0;border:0;background:none;color:#a8bdb2;font-size:22px;line-height:1}
 .story-header button:hover{color:var(--gold)}
 .story-body{display:grid;grid-template-columns:100px minmax(0,1fr);gap:18px;align-items:center;padding:4px 0 8px}
-.story-speaker img{display:block;width:100%;height:auto;border-radius:8px;border:1px solid #c3b9d340}
+.story-portrait{position:relative;display:block;aspect-ratio:100/116;overflow:hidden;border-radius:8px;border:1px solid #c3b9d340;background:#101c24}
+.story-portrait img{display:block}
 .story-speaker strong{display:block;text-align:center;color:var(--gold);font-size:13px;letter-spacing:1.8px;margin-top:7px}
 .story-copy{min-width:0;align-self:start;padding-top:8px}
 .story-copy p{margin:0;font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#edeedf;overflow-wrap:break-word;min-height:116px}
