@@ -1,8 +1,8 @@
 # Taxi Chaos
 
-A frontend-only TypeScript driving game: taxi fares, motorcycle parcel deliveries, four-tyre car and single-track bike physics, smashable shortcuts, intelligent traffic, police tactics, critical damage, vehicle fires and fuel-station chain reactions. Desktop/keyboard first. Opt-in **pulp gore** adds fatal pedestrian impacts, blood, corpses and blood-stained tyre tracks. All visuals are procedural Canvas art; a sample-based **sound FX** mixer adds driving, destruction and gameplay feedback. No backend, API keys or runtime network requests.
+A frontend-only TypeScript driving game with fixed-step vehicle physics, procedural Canvas visuals, and locally embedded sound. There is no backend or runtime network access. For controls and gameplay, see [HOW_TO.md](HOW_TO.md).
 
-## Run
+## Development
 
 Requires Node.js 22.12+ (or 24+) and npm.
 
@@ -11,376 +11,72 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173**. The dev server supports instant TypeScript/CSS updates.
+Open **http://localhost:5173**. Vite serves the game with instant TypeScript and CSS updates.
 
-## Single HTML deployment
+## Testing
+
+```sh
+npm test
+npm run build
+npm run map:check -- --input src/map/default-map.json --json
+```
+
+`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map.
+
+For interactive testing, open **http://localhost:5173/?debug=1**, then press **F2** or choose **Test Lab**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
+
+The opt-in browser automation harness is exposed as `window.__taxi` after opening the lab:
+
+```js
+__taxi.reset();
+__taxi.scenario('alley');
+__taxi.step(1.1, ['KeyW']);
+__taxi.state();
+__taxi.vehicles();
+__taxi.realtime(); // restore interactive play after automation
+```
+
+Other useful harness methods include `step`, `scenario`, `spawnVehicle`, `contacts`, `configure`, `upgrades`, `traffic`, `damageVehicle`, `repair`, `props`, `people`, `audio`, `sound`, `dayNight`, and `resetSave`. Map authoring and its browser/CLI API are documented in the [Map studio guide](docs/map-editor.md).
+
+Automated browser tests should use an isolated browser context, especially when working with shared browser sessions or saved progress. The test API supports deterministic stepping without wall-clock waits. `loadScenario(game, name)` in `src/lab.ts` is also available to Node tests without a DOM.
+
+## Map development
+
+[`src/map/default-map.json`](src/map/default-map.json) is the authored source for the shipped map. Validate it with `npm run map:check -- --input src/map/default-map.json --json`. Map studio drafts are in memory until exported; the [Map studio guide](docs/map-editor.md) covers editing, validation, preview, import/export, and CLI workflows.
+
+To publish a reviewed map change, export the validated draft to `src/map/default-map.json`, run the map check, tests, and build, then open a pull request with any affected fixtures and documentation updated. Merging to `main` triggers the Pages deployment workflow.
+
+## Deployment
 
 ```sh
 npm run build
 ```
 
-**`dist/index.html` is the entire game.** JavaScript, CSS, icons, sound samples and the downloaded font are embedded. Double-click it to play via `file://`, or deploy that one file to any static host. Internet access is not required. Save data stays in the browser's local storage when available; storage restrictions do not prevent playing.
+The complete game is emitted as **`dist/index.html`**: scripts, styles, icons, sound samples, and the font are embedded in this one file. It can be opened directly with `file://` or published to a static host; internet access is not required. Save data stays in browser storage when available, but storage restrictions do not prevent playing.
 
-```sh
-npm run preview
-```
+To serve the production build locally, run `npm run preview`.
 
 ### GitHub Pages
 
-Play online at **https://lbarasti.com/taxi-chaos/**. The GitHub Pages URL, `https://lbarasti.github.io/taxi-chaos/`, redirects to the account's custom domain.
+The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitHub Pages** workflow in `.github/workflows/pages.yml` runs on pushes to `main` and can also be started manually from GitHub Actions. It installs dependencies, runs tests, builds the standalone HTML, and publishes `dist/`. The repository's **Settings → Pages → Source** is set to **GitHub Actions**.
 
-The **Deploy GitHub Pages** workflow in `.github/workflows/pages.yml` runs on pushes to `main` and can also be started manually from GitHub Actions. It installs dependencies, runs the tests, builds the standalone HTML, and publishes `dist/`. The repository's **Settings → Pages → Source** is set to **GitHub Actions**.
+## Project map
 
-## Eastern bridges & highlands
+- `src/physics.ts`: rigid bodies, tyre forces, collision detection, and impulses.
+- `src/vehicles.ts`: typed vehicle catalogue and handling/model definitions.
+- `src/world.ts`: seeded city generation, structures, and road routing.
+- `src/ai.ts`: civilian traffic and police behavior.
+- `src/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
+- `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.
+- `src/lab.ts`: scenario fixtures, inspector, and test API.
+- `src/map/`: versioned authored map, compiler, validation, editor, and preview.
+- `src/renderer.ts`: Canvas rendering and debug overlays.
+- `vite.config.ts`: standalone single-file build; fails if external assets remain.
 
-Two bridges extend the eastern waterfront into **Pine Woods** and the **Eagle Highlands**.
-Follow the roads east at the northern crossing (y = 80) for **Pine Bridge**, or the southern
-crossing (y = 200) for **Fern Bridge**. Across the river, smooth forest bends lead to Pine
-Junction, Fern Hollow, Highland Lodge and Eagle Lookout. The ridge loop connects both
-crossings; there is no city grid in the woods. Trees, rock outcrops, bridge rails and the
-irregular shoreline are solid scenery. Mountain relief is drawn from above; driving uses
-the existing planar physics.
+## Credits and licences
 
-The minimap includes both land masses. Navigation, civilian traffic and police follow the
-curved road network, and later taxi/parcel jobs include the seven rural stops with travel
-time and pay based on road distance. The first fare stays in Old Town.
+Driving and rigid-body fundamentals are adapted from **Pat Kerr's [Motion Lab v0.8.2](https://patkerr.co.uk/motion-lab/)**; attribution is included in the source and game welcome screen.
 
-**Try it:** F2 → **Eastern bridges / highlands** → Run starts at Pine Bridge facing east
-with a delivery to Eagle Lookout and police disabled for that scenario. Automation can use
-`__taxi.scenario('eastern-bridges')`.
+The locally embedded **Space Grotesk** font is by Florian Karsten and distributed under the SIL Open Font License. Font attribution and licence are in [`src/assets/`](src/assets/).
 
-See the [screenshots and map notes](docs/eastern-highlands.md) for the bridge crossing,
-ridge road and highlands at night.
-
-## Woodland villas & country club
-
-The eastern woods now wrap south and west **beneath the city**, forming a mirrored L.
-Southwoods Drive and Highland Descent lead into a continuous southern loop through
-Millionaires Row, Woodland Estates and Cedar Woods. Twelve villas are scattered through
-both the original highlands and the extension, with private drives, guest wings, pools,
-terraces, landscaped gardens and residents. Warm house and garden lights come on at night.
-
-**Fairway Country Club** has three striped fairways, tees, putting greens with flags,
-sand bunkers, a pond, golfers, a clubhouse and physical golf carts patrolling the fairways. Carts crumple on impact;
-strong collisions can overturn them and leave a solid wreck. Woodland
-Estates, Fairway Club and Cedar Crescent are taxi and parcel stops. Traffic, police,
-navigation and road-distance fares use the expanded curved road network.
-
-**Try it:** F2 → **Woodland villas / golf club** → Run starts in Woodland Estates with a
-passenger for Fairway Club. Automation: `__taxi.scenario('woodland-estates')`.
-See the [map overview and screenshots](docs/woodland-estates.md).
-
-## Commercial NPC fleet
-
-City traffic now includes **delivery vans, empty flatbed trucks, loaded freight trucks and
-trucks carrying flammable fuel barrels**. They have distinct body sizes, mass, acceleration,
-braking and cornering limits; payload increases yaw inertia and collision resistance. Fuel
-cargo can catch fire after a hard cargo-area hit or nearby blast and produces a larger
-chain-reaction explosion. These four models are **NPC only** until a later player unlock.
-
-**Try it:** F2 → **Vans / freight traffic**, or **Flammable cargo / impact** for a collision
-and cargo explosion fixture. The latter enables God mode for inspection.
-The [vehicle survey, handling measurements, extension API and screenshots](docs/vehicles.md)
-cover the existing cars, bikes and golf carts as well as the new fleet. `src/vehicles.ts`
-centralizes model definitions; `game.spawnVehicle(options)` is the named-options spawn API.
-
-## Sunset Beach / Ocean Walk
-
-A nearly 300 m sandy beach extends the south city waterfront, with pastel lifeguard
-towers, striped parasols, deck chairs, sand castles, palms and a volleyball court.
-Towers, parasols, chairs and castles break under vehicle impacts and leave visible
-wreckage. The surf uses the existing sinking and hospital recovery rules.
-
-Road tyres lose acceleration and cornering traction in the sand and leave sandy
-ruts. **A parked beach patrol pickup at the western entrance is drivable with E**;
-its off-road tyres retain useful traction. Model handling lives in the vehicle
-catalogue's `terrain.sand` setting. Eastward, the beach narrows into **Ocean Walk**:
-three oversized hotel blocks occupy the **sand between the promenade and surf**,
-with 9/14/18-storey balcony walls, penthouses, private pools and guests-only
-frontage. They consume most of the eastern beach, leaving two narrow public
-passages. Cafés, surf rentals and palms stay on the public tiled promenade.
-Visible bollards protect the path from cars and bikes while admitting walkers.
-Beach/hotel fares and vehicle navigation stop on the south street. Walking
-navigation threads through the public entrances and hotel gaps. Sand ruts are
-distance-sampled, merged and rendered in batches; mobile fare cues stay visible.
-
-**Try it:** F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or
-**Ocean Walk / hotel promenade**. See the [reference study, handling measurements,
-implementation notes and screenshots](docs/beach.md).
-
-## Working harbour / clean-car escape
-
-**Northstar Harbour** extends the north waterfront with fifteen container stacks,
-two cargo ships, four cranes visibly loading cargo, workers, warehouses and three
-freight trucks using separate entrance/exit lanes. The terminal is drivable and the
-open quay still leads into the ocean.
-
-Press **H** or tap **Harbour · $75** to navigate there. Stop at security in a car
-with police out of line of sight; **E / Pay $75** buys entry and one exchange.
-Follow cyan to **C-76**, drive fully inside and stop for 2.5 seconds while unseen.
-A new healthy car emerges and **all police heat, warnings and pursuit intel clear**.
-Wallet, upgrades and the current passenger/fare carry over. Follow cyan out; a
-return visit requires payment again. New offences still attract cops.
-
-**Try it:** F2 → **Northstar Harbour / car exchange**. See the
-[reference study, rules, implementation notes and screenshots](docs/harbour.md).
-
-## Controls & game loop
-
-The first pickup introduces **Mia's Meridian-van clue** through a portrait dialogue
-panel, with a sender-note variant for her parcel. See the
-[pickup dialogue guide](docs/pickup-dialogue.md) for controls, authoring and screenshots.
-
-| Input | Action |
-| --- | --- |
-| WASD / arrows | Drive; move in screen directions while on foot |
-| Space | Car handbrake / drift; motorcycle rear brake |
-| Shift + accelerate | Rechargeable nitro boost (blue jets + active HUD) |
-| E / mobile action | Pay harbour security at the gate; exit / dismount at any speed; take a nearby parked ride |
-| A or D while pressing E | Pick the left or right side of a moving vehicle (touch: tilt joystick left/right before tapping Jump) |
-| R | Optional tow & repair after a wreck |
-| H / harbour button | Set/cancel a route to harbour security |
-| G / garage button | Set/cancel a garage route; enter when stopped nearby |
-| P / Escape | Pause / resume |
-| M / speaker button | Mute / unmute sound FX |
-| F2 / Test Lab button | Open the scenario and cheat inspector |
-
-On phones and tablets, drag the bottom-right joystick: up accelerates, down brakes/reverses, and sideways steers. On foot it walks in screen directions, with proportional speed. Hold BOOST or DRIFT in the bottom centre with your left thumb while steering with your right. Vehicle actions appear only when available. The taxi icon opens How to play and Test lab; the top-right button toggles fullscreen on browsers that support it. Speed, health, boost and police status share a transparent bottom-left stack. The radar remains collapsible; touch gameplay suppresses text selection and long-press callouts. Pulp gore and **Cruise / Street / Chaos** difficulty can be changed on the welcome or pause screen as well as in the lab.
-
-**Pause → Shift stats** shows earnings, completed jobs (fares and parcels), smashed objects and pedestrian fatalities for the current shift. The fatality count is kept off the driving HUD.
-
-- Slow down in a **yellow ring** to pick up; deliver to the **green ring** for base fare plus time/comfort tips.
-- Late delivery still pays: the timer affects the bonus, not whether a job can finish.
-- Drifts and near-misses earn small skill bonuses. Boost recharges automatically.
-- Hydrants, crates, benches, bins, barriers, trees and kiosks break. **Civic Barracks**, **Freight Depot** and the **Last Chance Fuel** shop are larger destructible structures. Damage cracks their roofs; collapse opens drivable rubble. Fuel pumps and the station can ignite and cause chain blasts.
-- Cars track **engine, fuel-system and tyre damage**. Front, rear and side impacts damage different components, reducing performance. Severe/accumulated damage starts a visible fire countdown, then an area blast leaves a solid wreck. Repair at Pit Stop extinguishes fires and restores all components.
-- **Cab on fire? Press E to bail out, then run clear with WASD/arrows.** The abandoned fuse keeps counting down and the car still explodes. Follow the blue route/radar markers to a parked replacement and press E beside it. Wallet, upgrades and heat carry over; an aboard passenger evacuates and dispatch sends a new fare without paying the abandoned trip. Burning cars and wrecks cannot be entered. Normal and emergency exits now work at speed. Cars open their side door before the player jumps; the player inherits momentum, tumbles along the road and loses health on landing. Abandoned vehicles coast away briefly. Hold A/D or use the touch joystick sideways to choose the jump side; stationary exits are safe, immediate dismounts. See [moving-exit physics and QA](docs/moving-exits.md).
-- The city starts with **39 physical parked vehicles**, including courier motorbikes, in marked curb bays and two open public parking lots. One bike is beside the starting cab at Pit Stop. Empty bays make parking legible. Parked vehicles remain still, can be hit/pushed/damaged, and do not count toward the moving-traffic slider.
-- Nitro now applies **3.1× engine force** (previously 1.9×). Blue twin exhaust jets/speed streaks and a cyan **NITRO ACTIVE** dashboard show actual activation. The existing rechargeable tank/upgrades still control duration.
-- Driving into a villa swimming pool triggers a splash and a short sinking animation before **WASTED**. Submerged rides cannot be entered or towed; respawn returns you to the hospital.
-- The entire coast has intermittent guardrails and open gaps instead of solid perimeter walls. Cars and motorbikes can drive into the ocean: hard impacts break individual panels, scatter metal and carry the ride offshore with reduced speed. Slower or glancing impacts deflect and slow the ride without breaking the rail. Ocean entries splash, sink and end in **WASTED**, followed by hospital respawn. Bridge decks remain safe, with breakable side rails.
-- On foot, intact guardrails stop you and cannot be broken by walking. Open gaps and broken panels let you walk into the ocean and get **WASTED**. F2 has **Coast / guardrail crash**, **Coast / open gap**, **Coast / motorbike crash**, and **Coast / walk into ocean** fixtures.
-- **WASTED** and **BUSTED** share a compact game-over banner: a headline, itemized deductions and **Press space bar to continue** (**Tap to continue** on touch devices). High-contrast text without a background or blur keeps the street visible.
-- If your occupied car or motorbike explodes, **WASTED** ends play and freezes the world. **Respawn** returns you on foot outside Midtown Hospital and deducts a **$50 medical bill plus $60 in repairs for a destroyed ride**, capped at your wallet balance. The banner shows the actual charges; payment is saved and upgrades are retained. The wreck stays at the crash site; find a parked ride to continue. Bail out with **E before detonation** and run beyond the blast to survive. On-foot drivers have separate health: nearby explosions cause damage and knockback, and moving cars can run them over. Fatal injuries also lead to hospital respawn at full health, with only the medical charge if your ride survived. An abandoned wreck offers optional **R** tow/repair (up to $60) only while you are nearby; tow is unavailable for the first 1.2 seconds. Pit Stop can extinguish a burning vehicle before its fuse expires.
-- Civilian drivers sense obstacles, slow for turns, pass where there is room, and back out using physically previewed reversing arcs. Alley exits are part of recovery. Impossible traps enter an **Awaiting tow** state; off-screen cleanup keeps the city flowing without visibly teleporting cars. Drivers abandon burning cars.
-- Police share sightings and use **pursuit, predictive interception and junction-blocking** roles. They brake for excessive closing speed, aim for the cab's rear quarter, search last-known locations after losing contact, and can recover from collisions themselves.
-- Property damage, pedestrian impacts and sustained speeding build heat. Street difficulty fields up to four cops; Cruise allows two and Chaos allows six.
-- On Street, break line of sight for eight seconds to escape; a contained slow cab is arrested after 3.5 seconds. Cruise gives a six-second escape/five-second arrest window; Chaos uses ten/2.6 seconds. Arrest costs **$75 impound plus $45 bail per wanted star**, capped at the wallet balance. The itemized banner shows actual deductions, saved on continuation, before returning you to Old Town with a repaired ride and full boost.
-- Gore is off by default. With it enabled, fast impacts and severe blast exposure can kill pedestrians, including a waiting customer. Dispatch replaces a lost customer without awarding a fare. With gore disabled, street hits are nonfatal. Blood/effects are bounded and old off-screen corpses are cleared; civilian population replenishes off-screen.
-- Buy engine, grip, armor and boost upgrades at **Pit Stop** in Old Town. Wallet, upgrades and completed-fare count persist. Repairs and bail return you to the driving loop.
-
-Saved progress, gameplay settings and audio preferences use the `taxi-chaos-*` browser storage keys. Existing saves from the previous project name migrate automatically on the same browser origin.
-
-## Motorbike deliveries & lean
-
-- **Try it:** start your shift, press **E** to leave the cab, walk a little down/right to the orange bike beside Pit Stop, and press **E** to ride. Bikes are also parked throughout town. **F2 → Motorbike deliveries → Run** isolates this loop.
-- Mounting a bike changes dispatch to **parcel deliveries**. Stop in yellow for 0.8 seconds to load a visible parcel onto the rear rack, then stop in green to earn base pay plus speed/cargo-condition tips. Further jobs stay parcels until you take a car again. Dismounting with cargo cancels that delivery without payment; taking a car restores passenger fares. Wallet, upgrades, boost, heat and shift totals carry across vehicles.
-- Bikes are 2.6 × 0.8 m, with a 260 kg bike/rider body, two inline tyre contact points, their own engine/grip tuning, speed-sensitive steering, limited cornering traction, strong brakes and walking-speed reverse. Existing collision, fire, repair, police and lighting systems apply. Space uses the rear brake; Shift boosts with a single exhaust jet. The engine uses a higher-pitched version of the existing embedded sample.
-- **Jumping off a moving motorcycle:** pushing off to the right sends a proportionate opposite lateral impulse through the lighter riderless bike, together with a leftward yaw/lean disturbance (mirrored for jumping left). The disturbance is strongest close to walking pace and fades at speed; below 1.2 m/s the rider simply dismounts. A higher-speed leap carries the rider into a longer roll with more HP loss. The [moving-exit design](docs/moving-exits.md) explains this stylized momentum exchange and the research basis.
-- **Research basis:** [Bicycle and motorcycle dynamics](https://en.wikipedia.org/wiki/Bicycle_and_motorcycle_dynamics) explains inward lean, smaller steering angles at speed and countersteering; [Steve Munden's cornering derivation](https://www.stevemunden.com/leanangle.html) gives `tan(lean) = lateral acceleration / g = v² / (radius × g)`. `src/motorcycle.ts` derives target lean from actual tyre forces, capped at 46.8°, and uses a critically damped roll transition. Steering alone at rest cannot yaw or lean the bike. This is an assisted, grip-limited planar model rather than a full multibody/countersteering simulation.
-- **Top-down depth cue:** roll is around the road-contact line. Frame, rack, arms and helmet shift inward by `height × sin(lean)` while their transverse width and height scale by `cos(lean)`. Higher parts shift farther; the tyre contact line stays on the pavement and cast shadows shorten. The rider plants a foot at stops, empty parked bikes lean onto their stand, and wrecks lie on their side.
-- Lab snapshots expose `vehicleModel` and signed `lean` (radians); `vehicles()` includes `model` and `lean` for each vehicle. The driving HUD shows the bike's lean angle.
-
-## Day/night cycle
-
-- New runs start at **07:00** on day 1. One simulated second advances one in-game minute, so a full day lasts **24 minutes** at the normal rate.
-- Periods: morning 05:00–12:00, afternoon 12:00–17:00, evening 17:00–21:00, night 21:00–05:00. Labels change at those boundaries; lighting, moving sun shadows and local lights interpolate smoothly across every transition, including midnight.
-- Time advances only while playing. It freezes in intro/pause/garage/arrest/wasted and follows fixed lab stepping. Changing the hour never alters existing fare/fire timers and never consumes gameplay RNG.
-- The top-bar HUD clock shows zero-padded **HH:MM**, the period name and a sun/moon icon, and stays visible on tablet/mobile widths.
-- Lab controls (F2): an hour slider, morning/afternoon/evening/night presets (07:00/14:00/19:00/23:00), a cycle-rate slider and a cycle-only freeze. These affect the day/night clock only; the simulation speed and Step controls are unchanged.
-
-Automation defaults and API: `__taxi.dayNight(options)` accepts `{ hour?, rate?, frozen? }`. `hour` is fractional 0–24 (wrapped; default 07:00), `rate` is in-game minutes per simulated second (default `1`; `0` pauses the cycle, capped at `240`), and `frozen` pauses the cycle without pausing the world. It returns the refreshed `LabSnapshot`, whose `dayNight` field is `{ hour, minutes, day, time, period, rate, frozen }`.
-
-## Sound FX
-
-Audio starts only after a click/tap or keyboard interaction; loading the page creates no
-AudioContext. **FX volume, mute and a separate siren volume** are on the welcome/pause
-screen and in F2, and persist independently of progress/difficulty. Defaults: FX 65%,
-sirens 25%. Set sirens to 0% to disable them. A browser without audio support still plays.
-
-- Recorded taxi engine loop follows speed/throttle/boost, with smooth pitch, load and filter changes.
-- Tyre squeal follows actual rear-tyre slip and speed; holding Space while stationary is quiet.
-- Boost has onset, rush and release sounds. Impacts use severity thresholds, per-contact
-  cooldowns and alternating variants. God mode still produces physical impact sounds.
-- Wood, metal, glass, body impacts, collapse, burning and explosions have separate samples.
-  The pulp layer plays only with gore enabled; there are no voices or music.
-- Pickup/payment, purchase/repair, escape and arrest have brief generated confirmation cues.
-- World sounds fade with distance and pan gently by screen X. Only the nearest two traffic
-  engines/two sirens/three fires contribute loops. One-shots are capped at 20, prioritising
-  explosions over clutter; a compressor controls dense peaks.
-- World sounds stop during pause/garage/arrest, on focus loss and in background tabs.
-   Garage confirmations still play. Roadside fires and chain blasts continue while those
-  hazards are simulated. Fixed lab stepping is silent and does not replay old events on Live.
-- **F2 → Sound FX audition** plays an isolated sound for two seconds without changing the
-  simulation; mute and volume still apply. Stop cancels it early. Use Live to hear fixtures
-  in context: Alley, Wall, Police chase, Fire, Chain reaction or Gas station.
-
-The palette includes 25 locally embedded samples plus generated cues. PCM WAV loops avoid
-codec padding; one-shots use compact MP3. Full credits, source links, licences and edit
-instructions: [`src/assets/audio/CREDITS.md`](src/assets/audio/CREDITS.md). Credits are also
-in the welcome/pause UI and the standalone HTML. `tools/prepare-audio.py` reproduces edits
-from downloaded source files with Python 3 and ffmpeg (not required to build/play).
-
-## Fast testing loop
-
-```sh
-npm test          # physics, collisions, jobs, destruction, pursuit, economy
-npm run build    # strict TypeScript check + standalone build
-```
-
-Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. The same inspector works in the standalone HTML. Its controls include:
-
-- **33 fixtures:** first fare, **Motorbike deliveries**, **Moving car / jump out**, **Moving bike / jump off**, **Motorbike / collision ejection**, **Motorbike / rider knocked off**, eastern bridges, woodland estates, **Sunset Beach / soft sand**, **Beach / off-road pickup**, **Ocean Walk / hotel promenade**, **Northstar Harbour / car exchange**, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
-- **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
-- **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
-- **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.
-- **Debug views:** collider outlines, AI paths/roles/recovery phases, density 0–40, and live damage/police/kill/blast/recovery telemetry.
-- **Difficulty and gore:** change during a run. Scenario presets may enable gore/God mode for their test; the preset's description explains its setup.
-- **Sound FX:** audition every sound, adjust saved FX/siren volume, mute, inspect sample/voice telemetry.
-
-Fixtures clear incidental moving/parked vehicles and preserve cash/upgrades/difficulty. Use the traffic slider to add moving vehicles back. **Reset run** restores the ordinary 23-moving-vehicle / 40-parked-vehicle city (including the beach pickup) plus fairway carts and three harbour freight trucks; **Erase saved progress** is a separate action. Upgrade/cash cheats use the usual browser save. Inspector controls stay usable over arrest/recovery UI, so a test can be reset or repaired without paying a gameplay fee.
-
-For browser automation, the opt-in `window.__taxi` harness has:
-
-```js
-__taxi.reset();                    // fresh city; freezes the automatic physics clock
-__taxi.step(1.25, ['KeyW']);        // 150 fixed simulation steps; returns state
-__taxi.step(0.45, ['KeyS']);        // brake
-__taxi.step(1);                    // coast / test pickup dwell
-__taxi.state();                    // isolated serializable snapshot
-__taxi.vehicles();                 // live vehicle transforms for impact checks
-__taxi.vehicleModels();            // typed catalogue with graphics/physics/cargo settings
-__taxi.spawnVehicle({model: 'van', position: {x: 80, y: 83}}); // returns the NPC ID
-__taxi.contacts();                 // current static contact penetration depths
-__taxi.scenario('alley');           // resets and positions cab at the alley entrance
-__taxi.step(1.1, ['KeyW']);         // burst through a barrier and stacked crates
-__taxi.scenario('arrest');
-__taxi.step(4.2);                   // verifies containment / arrest UI
-__taxi.scenario('npc-recovery');
-__taxi.step(10);                    // car backs out and rejoins a street
-__taxi.scenario('chain-reaction');
-__taxi.step(6);                     // three damaged cars detonate exactly once each
-__taxi.scenario('cab-fire');        // burning player cab + parked replacement
-__taxi.interact();                 // same exit/enter action as E
-__taxi.step(1.3, ['KeyD']);         // physically walk east
-__taxi.step(0.4, ['KeyS']);         // approach the parked replacement
-__taxi.interact();                 // take it; old cab keeps burning
-__taxi.scenario('gas-station');
-__taxi.step(7, ['KeyW']);           // pumps + shop produce a four-blast chain
-__taxi.scenario('pedestrians');
-__taxi.step(1.5, ['KeyW']);         // fatal impacts; gore enabled for the fixture
-__taxi.configure({gore: false});
-__taxi.upgrades({engine: 3, grip: 3, armor: 3, boost: 3});
-__taxi.configure({difficulty: 'chaos', invincible: true, infiniteBoost: true});
-__taxi.traffic(40);                // live density adjustment
-__taxi.damageVehicle(0, {engine: 60, tyres: 70});
-__taxi.ignite(0, 5);               // explicit ignition; overrides impact immunity
-__taxi.repair();                   // free lab repair; also clears wasted mode
-__taxi.props();                    // finite-HP structures / fuel states
-__taxi.people();                   // pedestrian state, including alive/aboard
-__taxi.audio();                    // audio readiness, sample failures, loops, voice counts, output peak
-await __taxi.sound('explosion');    // isolated audition; requires browser audio activation
-__taxi.stopSound();                // stop audition; world sound resumes if Live
-__taxi.dayNight({hour: 19});        // world clock: 19:00 evening; lighting updates immediately
-__taxi.dayNight({rate: 4});         // 4× cycle speed (in-game minutes per simulated second)
-__taxi.dayNight({frozen: true});    // freeze the cycle only; simulation clocks keep running
-__taxi.dayNight();                  // refreshed LabSnapshot, including .dayNight
-__taxi.teleport(4, 14);             // isolate a specific location/contact
-__taxi.garage();                   // open garage for UI testing
-__taxi.realtime();                 // return to keyboard/touch play
-__taxi.resetSave();                // clear progression and reload
-```
-
-The API is exposed only after opting into the lab. `step()` has no wall-clock waits; modal/paused gameplay stays paused. `realtime()` resumes a paused world, but does not waive arrest/tow or auto-repair a wreck. Always call it after automated checks when leaving a page for interactive play. City generation, traffic choices and particles use seeded RNGs. Pedestrians use 60 Hz updates, automatically rising to 120 Hz for boosted/fast impacts.
-
-For shared browser sessions, run automated resets in a separate isolated browser context. The `loadScenario(game, name)` function in `src/lab.ts` also works in Node tests without a DOM.
-
-## Map studio
-
-**F2 → Map studio** opens an independent whole-map overview. Select Southern
-Estates and translate it, or move villas, golf, hotels, beach sets, shoreline
-points and road anchors with numeric controls or dragging. **Author content** adds,
-duplicates, deletes and re-properties bounded **country props**, **parking bays**
-and **traffic spawns** as first-class, stable-ID descriptors with their own
-validation. Layers, snapping, measurements, collision/access validation, undo/redo
-and local JSON import/export use the same versioned map document as agents and the
-headless CLI; schema-version-1 drafts migrate on import.
-
-**Preview gameplay** rebuilds a fresh map-aware game with normal physics, AI and
-fares. Preview progress does not read or write normal saves. Returning restores
-the original game/camera/clock and keeps your draft. The shipped baseline retains
-the existing beachfront and estate positions.
-
-```sh
-npm run map:check -- --input src/map/default-map.json --json
-```
-
-Browser automation: `__taxi.map.snapshot()`, `.describe(id)`, `.apply(batch)`,
-`.validate()`, `.undo()`, `.redo()`, `.export()`, `.import(json)` and `.preview()`.
-See [the editor guide](docs/map-editor.md) for API/CLI examples, ownership rules,
-extension instructions, validation tolerances and desktop/mobile screenshots.
-
-### Publish a draft as the main map
-
-**`src/map/default-map.json` is the authored source for the shipped map.** Editing,
-importing or previewing in Map studio changes only the in-memory draft; export it
-before reloading. To make a reviewed draft the default for all players:
-
-1. Start from the latest `main` on a feature branch. Edit the map in Map studio
-   or through `__taxi.map` / the headless CLI. Resolve validation errors and use
-   **Preview gameplay** to check driving, collisions, water, routes and fares.
-2. Export the document with **Export JSON**, `__taxi.map.export()`, or the CLI's
-   `--output` option. CLI operation batches require an explicit output path that
-   does not already exist; see the [CLI examples](docs/map-editor.md#headless-cli).
-3. Replace **`src/map/default-map.json`** with the reviewed exported JSON using
-   your editor or file tools. Keep the document's schema, stable IDs and ownership
-   rules intact; generated collision/navigation geometry is rebuilt from this file.
-4. Validate the new baseline, run the tests and rebuild the standalone game:
-
-   ```sh
-   npm run map:check -- --input src/map/default-map.json --json
-   npm test
-   npm run build
-   ```
-
-   Review findings and any affected regression tests. Update map-dependent
-   fixtures, documented measurements and example batch `baseRevision` values
-   where necessary; revisions change when the authored map changes.
-5. Open the newly built **`dist/index.html`**, start ordinary gameplay and confirm
-   that the edited map is the default. Check affected areas on desktop/mobile and
-   capture screenshots for review.
-6. Commit the map and corresponding fixture/documentation updates, push the
-   feature branch and open a PR. Merge after review and passing CI.
-7. The push to `main` triggers **Deploy GitHub Pages**, which tests, rebuilds and
-   publishes the new map. Confirm the deployment succeeds and refresh the online
-   game. For other static hosts, publish the rebuilt `dist/index.html` yourself.
-
-## Code map
-
-- `src/physics.ts`: vectors, rigid bodies, four-tyre forces, rotated-rectangle SAT and normal/friction impulses, spatial hash.
-- `src/beach.ts` / `src/beach-renderer.ts`: shared sand/shore geometry, protected promenade entrances, hotel and beach prop art, per-tyre terrain handling.
-- `src/harbour.ts` / `src/harbour-renderer.ts`: harbour geography and road graph, security/exchange definitions, ship/crane loading art and freight circuit.
-- `src/vehicles.ts`: typed model catalogue, named spawn options, body/dynamics factories, commercial cargo, graphics/handling/access profiles and road-traffic mix.
-- `src/world.ts`: seeded city, special structures, stable entity IDs, and simple shortest street routing (same-street trips are direct; street-to-street trips need at most two turns).
-- `src/ai.ts`: obstacle sensing, budgeted physical recovery, road rejoin, police prediction/memory and containment.
-- `src/damage.ts`: component damage, armor, fire fuses, blast falloff and bounded impulses.
-- `src/pedestrians.ts`: all-car anticipation, collision-free escape, fatal/nonfatal contacts and corpse physics.
-- `src/effects.ts`: bounded, deterministic blood, chunks, fire, smoke and expanding blast rings. No camera shake or fullscreen flash.
-- `src/sound.ts`: DOM-free bounded event queue, contact cooldowns and pure mix signals; audio does not consume gameplay RNG.
-- `src/audio.ts`, `audio-assets.ts`, `audio-controls.ts`: lazy Web Audio mixer, embedded sample palette, saved settings and audition controls.
-- `src/game.ts` / `src/vehicle-exit.ts`: fixed-step orchestration, moving exits/door choreography/landing damage, motorcycle jump reaction, on-foot vehicle switching, parked cars, explosions, jobs and save data.
-- `src/renderer.ts`: city/cab/structure drawing, camera, corpses, rubble, routes, minimap and debug overlays.
-- `src/lab.ts` / `src/lab.css`: scenario fixtures, inspector, cheats and serializable test API.
-- `src/map/`: versioned authored map (including bounded country props, parking and traffic-spawn descriptors), immutable per-world compiler, atomic operations/history, geometry validation, version-1 migration and Map studio UI/preview.
-- `src/main.ts`: accessible HTML HUD, dialogs, input, fixed-step clock and opt-in automation harness.
-- `vite.config.ts`: small single-file build plugin; fails the build if external assets remain.
-
-## Foundation & assets
-
-Driving and rigid-body fundamentals are adapted from **Pat Kerr's [Motion Lab v0.8.2](https://patkerr.co.uk/motion-lab/)** (`math.js`, `physics.js`, `dynamics.js`): tyre-point forces, angular contact velocity, handbrake grip loss and semi-implicit integration. The city, general collision solver and game systems are new. Credit is included in the source and game welcome screen.
-
-**Space Grotesk** by Florian Karsten is downloaded from Google Fonts and embedded locally under the SIL Open Font License. Attribution and the full license are in `src/assets/`; the built HTML includes the font license too. City visuals are procedural, with no textures to load.
-
-**Sound FX:** domasx2 (engine), Kenney (impacts/explosions), aquinn (siren),
-audible-edge / Tom Haigh and qubodup (tyres), Iwan Gabovitch / qubodup (boost),
-qubodup (fire). CC0 or CC BY 3.0; full attribution and changes in `src/assets/audio/CREDITS.md`.
+Sound sample credits, source links, licences, and edit instructions are in [`src/assets/audio/CREDITS.md`](src/assets/audio/CREDITS.md). The audio preparation script, `tools/prepare-audio.py`, requires Python 3 and ffmpeg and is not needed to build or play the game.
