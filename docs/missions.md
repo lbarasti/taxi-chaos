@@ -136,6 +136,39 @@ shows sender portraits, full messages, named pickups and explicit branch cues;
 other available pickups receive cyan world and radar markers. Its scrollable layout and
 44px buttons support desktop, compact portrait and landscape screens.
 
+### Received texts are player knowledge
+
+`Save.playerRecords` is a separate versioned record, independent of mission flags
+and opportunity eligibility. Each delivered offer records a stable
+`messageId` (`<mission-id>-text`), `receivedAt`, nullable `readAt`, and a snapshot
+of its sender, title, text and named pickup. Receipt happens once when the game
+introduces an eligible offer. Read time is recorded only when its complete text
+body is actually shown inside the open inbox's scroll viewport. Off-screen texts
+remain unread. Both operations persist immediately; legacy saves default to empty
+records, never fabricated historical knowledge.
+
+The inbox renders received records, including closed branches, delivered missions
+and missed opportunities. Only action buttons and physical markers use current
+availability. Routing is disabled on historical messages, and the Texts badge
+counts unread receipts. Records survive reloads and shifts; explicit story reset
+clears them. Records are bounded to 400 stable messages without evicting knowledge.
+
+### Waiting contact loss and co-located pickups
+
+An unselected or routed text-offer contact who dies (or goes missing) permanently
+misses that opportunity: the director records a `missed` event and saved `failed`
+mission ID, then applies optional authored `contactLost.effects` atomically once.
+The default leads author dedicated missed-opportunity flags. No identical contact
+is recreated on the next update, on a shift reset or after loading. Other offers
+and received information remain intact; this mission outcome does not introduce
+the future world-character condition system.
+
+Offers may share pickup stops. When pickup rings overlap, the already-routed offer
+wins if it is inside its ring; otherwise the first eligible nearby offer is used.
+Physical offer reconciliation runs at discrete dispatch, routing, vehicle-change,
+pickup and contact-loss events, plus a bounded 0.5-second narrative checkpoint
+for cooldown expiry and prerequisite changes, rather than every 120 Hz tick.
+
 The director emits a bounded lifecycle event log (`accepted`, `pickup`,
 `completed`, `abandoned`, `choice`). Offers are keyed by stable mission IDs,
 bounded by the validated catalogue limit, and reuse their waiting passengers

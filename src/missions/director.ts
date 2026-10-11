@@ -24,7 +24,8 @@ export type MissionEvent =
   | { type: 'pickup'; missionId: MissionId; at: number }
   | { type: 'completed'; missionId: MissionId; at: number }
   | { type: 'abandoned'; missionId: MissionId; reason: AbandonReason; at: number }
-  | { type: 'choice'; group: ChoiceGroupId; choice: ChoiceId; at: number };
+  | { type: 'choice'; group: ChoiceGroupId; choice: ChoiceId; at: number }
+  | { type: 'missed'; missionId: MissionId; reason: 'contact-lost'; at: number };
 
 export type PickupOutcome = Readonly<{ missionId: MissionId | null; beatId: BeatId | null; message: StoryMessage | null }>;
 
@@ -155,6 +156,18 @@ export class MissionDirector {
     });
     this.activeId = null; this.pickedUp = false; this.selections = {};
     return mission.id;
+  }
+
+  /** A lost waiting contact misses the opportunity once, independently of retry. */
+  loseContact(id: MissionId, time: number): boolean {
+    const mission = this.mission(id);
+    if (!mission || this.progress.failed.includes(id) || this.progress.completed.includes(id)) return false;
+    this.transact([{ type: 'missed', missionId: id, reason: 'contact-lost', at: time }], draft => {
+      this.applyEffectsTo(draft, mission.contactLost.effects);
+      draft.failed.push(id);
+    });
+    if (this.activeId === id) { this.activeId = null; this.pickedUp = false; this.selections = {}; }
+    return true;
   }
 
   /** Records an abandonment and applies the authored retry policy. */

@@ -28,6 +28,7 @@
   },
   "missions": {
     "mia-cafe-trail": {
+      "contactLost": { "effects": [{ "setFlag": "cafe-lead-missed" }] },
       "title": "Follow the café trail", "chapter": 2, "category": "plot", "repeat": "once",
       "abandon": { "retry": "always" }, "passenger": "mia",
       "offer": { "character": "mia", "text": "The café owner will talk. Meet me at Garden Café? Frankie has another lead, but we can only chase one. Picking me up chooses the café trail." },
@@ -43,6 +44,7 @@
       "effects": [{ "setFlag": "cafe-witness-found" }, { "setChapter": 2 }]
     },
     "frankie-ledger-trail": {
+      "contactLost": { "effects": [{ "setFlag": "ledger-lead-missed" }] },
       "title": "Follow the paper trail", "chapter": 2, "category": "plot", "repeat": "once",
       "abandon": { "retry": "always" }, "passenger": "frankie",
       "offer": { "character": "frankie", "text": "Mia told me about the vans. I've got a different angle: a dock ledger. I'm at Midtown North. Pick me up to choose the paper trail instead." },
@@ -54,6 +56,7 @@
       "effects": [{ "setFlag": "dock-ledger-found" }, { "setChapter": 2 }]
     },
     "frankie-arcade-lift": {
+      "contactLost": { "effects": [{ "setFlag": "arcade-lift-missed" }] },
       "title": "A night off", "chapter": 2, "category": "side-quest", "repeat": "once",
       "abandon": { "retry": "always" },
       "offer": { "character": "frankie", "text": "While you're out: a friend needs a lift from Market Quarter to the arcade. No Meridian business. This can wait while you chase either lead." },

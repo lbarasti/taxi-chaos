@@ -23,8 +23,9 @@ export type CompiledMission = Readonly<{
   repeat: 'once' | 'repeatable';
   abandon: Readonly<{ retry: 'always' | 'cooldown' | 'never'; cooldownSeconds?: number }>;
   passenger?: CharacterId;
-  offer?: Readonly<{ character: CharacterId; text: string }>;
+  offer?: Readonly<{ messageId: string; character: CharacterId; text: string }>;
   pickupChoice?: Readonly<{ group: ChoiceGroupId; choice: ChoiceId }>;
+  contactLost: Readonly<{ effects: readonly Effect[] }>;
   requires: Condition;
   allowed: Readonly<{ jobs: readonly ('fare' | 'parcel')[]; models?: readonly VehicleModel[]; kinds?: readonly VehicleRole[] }>;
   stopIds: Readonly<{ pickup: string; dropoff: string }>;
@@ -149,6 +150,8 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
     });
 
     const effects = mission.effects ?? [];
+    const contactLostEffects = mission.contactLost?.effects ?? [];
+    for (const effect of contactLostEffects) effectRefs(effect, (g, c) => requireGroup(g, c, `${where}.contactLost`), ref => { if (!isCharacterId(ref)) throw new Error(`${where}: unknown relationship character ${ref}`); });
     for (const effect of effects) effectRefs(effect, (g, c) => requireGroup(g, c, where), ref => { if (!isCharacterId(ref)) throw new Error(`${where}: unknown relationship character ${ref}`); });
 
     // Deterministic conflicts between unconditional assignments (mission effects
@@ -180,8 +183,9 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
       repeat: mission.repeat,
       abandon: Object.freeze({ retry: mission.abandon.retry, ...(mission.abandon.cooldownSeconds !== undefined ? { cooldownSeconds: mission.abandon.cooldownSeconds } : {}) }),
       ...(passenger ? { passenger } : {}),
-      ...(mission.offer ? { offer: { ...mission.offer, character: mission.offer.character as CharacterId } } : {}),
+      ...(mission.offer ? { offer: { ...mission.offer, messageId: `${missionId}-text`, character: mission.offer.character as CharacterId } } : {}),
       ...(mission.pickupChoice ? { pickupChoice: { ...mission.pickupChoice } } : {}),
+      contactLost: { effects: [...contactLostEffects] },
       requires: mission.requires,
       allowed: Object.freeze(allowed),
       stopIds: Object.freeze({ pickup: mission.stops.pickup, dropoff: mission.stops.dropoff }),

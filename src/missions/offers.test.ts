@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../game';
 import { defaultCompiledMap } from '../map/compile';
 import { vec } from '../physics';
@@ -7,6 +7,7 @@ import { MissionDirector } from './director';
 import { compileMissions } from './compile';
 import catalogue from './catalogue.json';
 import type { MissionCatalogue } from './schema';
+import { migratePlayerRecords } from '../player-records';
 
 const step = (g: Game, seconds = 0.9) => { for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); };
 const arrive = (g: Game, point: { x: number; y: number }) => {
@@ -20,6 +21,58 @@ const ready = () => {
 };
 
 describe('parallel text offers and physical branches', () => {
+  it('retains received/read information after a competing pickup closes its opportunity', () => {
+    const g = ready(), receipt = g.save.playerRecords.texts.find(t => t.missionId === 'frankie-ledger-trail')!;
+    expect(receipt.readAt).toBeNull();
+    g.readTextMessages([receipt.messageId]); const readAt = receipt.readAt;
+    arrive(g, g.missionOffers.get('mia-cafe-trail')!.pickup);
+    expect(g.save.playerRecords.texts.find(t => t.messageId === receipt.messageId)).toEqual(receipt);
+    expect(receipt.readAt).toBe(readAt);
+    expect(g.routeMissionOffer(receipt.missionId)).toBe(false);
+    expect(migratePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords))).texts).toContainEqual(receipt);
+    g.resetRun(); expect(g.save.playerRecords.texts).toHaveLength(3);
+    expect(g.save.playerRecords.texts.find(t => t.messageId === receipt.messageId)?.readAt).toBe(readAt);
+    g.resetStory(); expect(g.save.playerRecords.texts).toEqual([]);
+  });
+
+  it('records an authored missed outcome when an unselected offer contact dies, without respawning', () => {
+    const g = ready(), lost = g.missionOffers.get('frankie-ledger-trail')!;
+    g.routeMissionOffer('mia-cafe-trail');
+    const person = g.world.people.find(p => p.id === lost.customerId)!;
+    person.alive = false; person.deathTime = g.time; g.death(person, vec(), 0, false);
+    const count = g.world.people.length;
+    step(g, 1);
+    expect(g.world.people.length).toBe(count);
+    expect(g.missionOffers.has('frankie-ledger-trail')).toBe(false);
+    expect(g.save.story.failed).toContain('frankie-ledger-trail');
+    expect(g.save.story.flags).toContain('ledger-lead-missed');
+    expect(g.save.playerRecords.texts.some(t => t.missionId === 'frankie-ledger-trail')).toBe(true);
+    expect(g.job.missionId).toBe('mia-cafe-trail');
+    expect(g.missions.loseContact('frankie-ledger-trail', g.time)).toBe(false);
+    const progress = migrateMissionProgress(JSON.parse(JSON.stringify(g.save.story)));
+    expect(new MissionDirector(g.missions.catalogue, progress).available({deliveries:1,jobType:'fare',model:'car',kind:'taxi',time:progress.campaignSeconds})).not.toContain('frankie-ledger-trail');
+    g.resetRun(); expect(g.missionOffers.has('frankie-ledger-trail')).toBe(false);
+  });
+
+  it('prefers the routed offer when two authored pickups share a stop', () => {
+    const doc = structuredClone(catalogue);
+    doc.missions['frankie-ledger-trail'].stops.pickup = 'garden-cafe';
+    const g = new Game(defaultCompiledMap, false);
+    g.missions = new MissionDirector(compileMissions(g.map, doc as unknown as MissionCatalogue), g.save.story);
+    g.save.story.completed.push('mia-meridian-lead'); g.newJob();
+    g.vehicles = [g.player]; g.trafficTarget = 0; g.settings.noPolice = true; g.start();
+    g.routeMissionOffer('frankie-ledger-trail'); arrive(g, g.job.pickup);
+    expect(g.job.missionId).toBe('frankie-ledger-trail');
+    expect(g.save.story.choices['meridian-trail']).toBe('ledger');
+  });
+
+  it('bounds reconciliation to narrative checkpoints instead of every physics tick', () => {
+    const g = ready(), sync = vi.spyOn(g, 'syncMissionOffers');
+    step(g, 1);
+    expect(sync.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(sync.mock.calls.length).toBeGreaterThan(0);
+  });
+
   it('introduces three concurrent unaccepted offers after the opening delivery', () => {
     const g = ready();
     expect([...g.missionOffers.keys()]).toEqual(['mia-cafe-trail', 'frankie-ledger-trail', 'frankie-arcade-lift']);

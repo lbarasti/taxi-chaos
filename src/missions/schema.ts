@@ -59,6 +59,8 @@ export type Mission = Readonly<{
   /** Text offers stay unaccepted until the physical pickup. */
   offer?: Readonly<{ character: string; text: string }>;
   pickupChoice?: Readonly<{ group: ChoiceGroupId; choice: ChoiceId }>;
+  /** A missing/dead waiting contact closes this opportunity, without resurrection. */
+  contactLost?: Readonly<{ effects?: readonly Effect[] }>;
   requires: Condition;
   allowed: Readonly<{ jobs: readonly ('fare' | 'parcel')[]; models?: readonly string[]; kinds?: readonly ('taxi' | 'traffic' | 'police')[] }>;
   stops: Readonly<{ pickup: string; dropoff: string }>;
@@ -169,7 +171,11 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
   for (const [missionId, raw] of entries(root.missions, 'missions', 1, missionLimits.missions)) {
     const path = `missions.${missionId}`;
     id(missionId, path);
-    const mission = object(raw, path, missionKeys, ['passenger', 'choices', 'effects', 'dispatchRadius', 'offer', 'pickupChoice']);
+    const mission = object(raw, path, missionKeys, ['passenger', 'choices', 'effects', 'dispatchRadius', 'offer', 'pickupChoice', 'contactLost']);
+    if (mission.contactLost !== undefined) {
+      const lost = object(mission.contactLost, `${path}.contactLost`, [], ['effects']);
+      if (lost.effects !== undefined) effects(lost.effects, `${path}.contactLost.effects`);
+    }
     if (mission.offer !== undefined) {
       const offer = object(mission.offer, `${path}.offer`, ['character', 'text']);
       id(offer.character, `${path}.offer.character`); text(offer.text, `${path}.offer.text`, missionLimits.text);
