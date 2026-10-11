@@ -22,8 +22,7 @@ import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
 import { removeStorage, storageKeys } from './storage';
-import { BEACH_PICKUP } from './beach';
-import { HIGHLAND_STOPS } from './countryside';
+import type { MapAPI } from './map/editor';
 import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles';
 
 const STEP = 1 / 120;
@@ -146,6 +145,7 @@ export type PersonSummary = { id: number; role: string; position: Vec; velocity:
 export type ContactSummary = { id: number; kind: string; depth: number };
 
 export type LabHooks = {
+  map?: MapAPI;
   setExternalClock: (frozen: boolean) => void;
   setTimeScale: (scale: number) => void;
   refresh: () => void;
@@ -154,6 +154,7 @@ export type LabHooks = {
 };
 
 export type LabAPI = {
+  map?: MapAPI;
   toggle(force?: boolean): boolean;
   open(): boolean;
   close(): boolean;
@@ -236,6 +237,7 @@ function parked(game: Game, kind: Vehicle['kind'], x: number, y: number, angle: 
 
 /** Apply a scenario to a live Game. Returns the name so callers can chain/assert. */
 export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer): ScenarioName {
+  const { HIGHLAND_STOPS } = game.map.country, { BEACH_PICKUP } = game.map.beach;
   prepare(game, name === 'woodland-estates');
   const player = game.player;
   switch (name) {
@@ -540,6 +542,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     <div class="lab-body" data-lab="body">
       <div class="lab-head">
         <strong>Taxi Chaos Lab</strong>
+        ${hooks.map ? '<button data-lab="map" class="lab-primary">Map studio</button>' : ''}
         <span class="lab-pill" data-lab="clock-2">LIVE</span>
         <span class="lab-tele" data-lab="tele"></span>
         <button data-lab="collapse" aria-label="Collapse LAB panel">Collapse ▾</button>
@@ -753,6 +756,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   const findVehicle = (id: number) => game.vehicles.find(v => v.id === id);
 
   const api: LabAPI = {
+    map: hooks.map,
     toggle: (force?: boolean) => {
       expanded = force ?? !expanded;
       panel.hidden = false;
@@ -911,6 +915,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   // ---- UI events -----------------------------------------------------------------------------
 
   expandButton.addEventListener('click', () => api.toggle());
+  q<HTMLButtonElement>('map')?.addEventListener('click', () => hooks.map?.open());
   if (hooks.audio) {
     bindAudioControls(panel, hooks.audio);
     q<HTMLButtonElement>('sound-play')!.addEventListener('click', () => { void api.sound(q<HTMLSelectElement>('sound-cue')!.value as SoundCue); });

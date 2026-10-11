@@ -1,24 +1,28 @@
-import { BRIDGE_Y, HIGHLAND_OUTLINE, countryAccess, inHighlands } from './countryside';
+import { createCountryside, type Countryside } from './countryside';
 import { add, dist, normalize, scale, sub, vec, type Vec } from './physics';
 
 import { HARBOUR, inHarbour } from './harbour';
-import { inBeach } from './beach';
+import { createBeach, type Beach } from './beach';
+import { defaultMap } from './map/default';
 
 // These bounds also define the painted city apron. Water is the complement of
 // the two land masses and the bridge decks, so no invisible outer wall remains.
 export const CITY_SHORE = { min: -14, max: 254 };
 export const BRIDGE_HALF_WIDTH = 7.5;
-export function onBridge(p: Vec) {
+export type CoastRail = { position: Vec; width: number; angle: number };
+export function createCoast(country: Countryside, beach: Beach) {
+const { BRIDGE_Y, HIGHLAND_OUTLINE, countryAccess, inHighlands } = country;
+const { inBeach } = beach;
+function onBridge(p: Vec) {
   return p.x >= 240 && p.x <= 310 && BRIDGE_Y.some(y => Math.abs(p.y - y) <= BRIDGE_HALF_WIDTH);
 }
-export function inOcean(p: Vec): boolean {
+function inOcean(p: Vec): boolean {
   return !(p.x >= CITY_SHORE.min && p.x <= CITY_SHORE.max && p.y >= CITY_SHORE.min && p.y <= CITY_SHORE.max)
     && !onBridge(p) && !inHighlands(p) && !inHarbour(p) && !inBeach(p);
 }
 
-export type CoastRail = { position: Vec; width: number; angle: number };
 const cityOutline = [vec(-14, -14), vec(254, -14), vec(254, 254), vec(-14, 254)];
-export const COAST_RAILS: CoastRail[] = [];
+const COAST_RAILS: CoastRail[] = [];
 for (const outline of [cityOutline, HIGHLAND_OUTLINE]) {
   for (let i = 0; i < outline.length; i++) {
     const a = outline[i], b = outline[(i + 1) % outline.length], delta = sub(b, a);
@@ -41,6 +45,9 @@ for (const outline of [cityOutline, HIGHLAND_OUTLINE]) {
 for (const y of BRIDGE_Y) for (const side of [-1, 1]) for (let i = 0; i < 9; i++) {
   COAST_RAILS.push({ position: vec(246 + (i + 0.5) * 66 / 9, y + side * BRIDGE_HALF_WIDTH), width: 66 / 9, angle: 0 });
 }
+return { onBridge, inOcean, COAST_RAILS };
+}
+export const { onBridge, inOcean, COAST_RAILS } = createCoast(createCountryside(defaultMap), createBeach(defaultMap));
 
 // Normal approach speed, rather than total speed, makes fast glancing hits slide
 // along the rail. Bikes can breach it too; walking never damages a panel.

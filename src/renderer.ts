@@ -1,18 +1,17 @@
 import { Game, type Vehicle } from './game';
 import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from './physics';
-import { GARAGE, district, roadPath, type Prop } from './world';
+import { GARAGE, district, type Prop } from './world';
 import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from './motorcycle';
 import { doorOpenness, LANDING_TIME } from './vehicle-exit';
-import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, SOUTH_COAST_OFFSET, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry, southPoint } from './countryside';
+import { isCountry } from './countryside';
 import { radarMarker, radarView } from './radar';
 import { CITY_SHORE } from './coast';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
-import { BEACH_HOTELS, BEACH_OUTLINE, PROMENADE } from './beach';
 import { drawBeachGround, drawBeachProp } from './beach-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
@@ -23,14 +22,6 @@ function trace(c: CanvasRenderingContext2D, points: Vec[], closed = false) {
   for (const p of points.slice(1)) c.lineTo(p.x, p.y);
   if (closed) c.closePath();
 }
-
-const RIDGES = [
-  [vec(368, 19), vec(400, -4), vec(444, 6), vec(478, 26), vec(450, 34), vec(432, 48), vec(404, 44), vec(393, 29)],
-  [vec(410, 126), vec(432, 91), vec(454, 97), vec(469, 124), vec(454, 155), vec(427, 166), vec(405, 149)],
-  [vec(355, 220), vec(376, 202), vec(394, 224), vec(429, 235), vec(460, 224), vec(494, 234), vec(486, 250), vec(404, 255)],
-  [southPoint(16, 291), southPoint(88, 280), southPoint(152, 282), southPoint(218, 290), southPoint(250, 309), southPoint(185, 311), southPoint(118, 303), southPoint(52, 305)],
-  [southPoint(281, 406), southPoint(314, 414), southPoint(383, 417), southPoint(451, 400), southPoint(481, 380), southPoint(456, 393), southPoint(380, 405)],
-];
 
 function mixHex(a: string, b: string, t: number): string {
   const parse = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] as [number, number, number]; };
@@ -260,6 +251,7 @@ export class Renderer {
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
   }
   countrysideGround() {
+    const { HIGHLAND_OUTLINE, RIDGES, HIGHLAND_STOPS, COUNTRY_ROADS, BRIDGE_Y, LABELS } = this.game.map.country;
     const c = this.ctx;
     trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = mixHex('#29483a', '#6b835e', this.daylight * 0.35); c.fill();
     c.strokeStyle = '#9da17b'; c.lineWidth = 2; c.stroke();
@@ -297,13 +289,11 @@ export class Renderer {
       this.label('WOODS / RIDGE →', 233, y - 10, 0.8, '#b9d5bc', '600');
     }
     for (const stop of HIGHLAND_STOPS) this.label(stop.name.toUpperCase(), stop.position.x, stop.position.y + 10, 0.9, '#c7d5ad', '700');
-    this.label('P I N E   W O O D S', 335, 140, 1.5, '#a7bd9180');
-    this.label('E A G L E   R I D G E', 441, 78, 1.5, '#d6d1ad80');
-    this.label('C E D A R   W O O D S', 78, 354 + SOUTH_COAST_OFFSET, 1.3, '#c7d5ad80');
-    this.label('M I L L I O N A I R E S   R O W', 288, 290 + SOUTH_COAST_OFFSET, 1.1, '#e8d5ac');
+    for (const l of LABELS) this.label(l.text, l.position.x, l.position.y, l.size, l.color);
     c.lineJoin = 'miter'; c.lineCap = 'butt';
   }
   countryEstates() {
+    const { VILLAS, VILLA_DRIVES, VILLA_POOLS, GOLF_COURSE, GOLF_HOLES, GOLF_PATH } = this.game.map.country;
     const c = this.ctx;
     for (const [i, villa] of VILLAS.entries()) {
       const p = villa.position;
@@ -327,7 +317,7 @@ export class Renderer {
     }
     const club = GOLF_COURSE;
     this.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8, '#3b6346');
-    trace(c, [southPoint(132, 338), southPoint(119, 345), southPoint(116, 367), southPoint(140, 385), southPoint(218, 386)]);
+    trace(c, GOLF_PATH);
     c.strokeStyle = '#b8b395'; c.lineWidth = 2.4; c.stroke();
     this.rect(club.clubhouse.x - 10, club.clubhouse.y - 9, 20, 22, '#b8aa87');
     for (const [i, hole] of GOLF_HOLES.entries()) {
@@ -715,6 +705,9 @@ export class Renderer {
     this.label(`${Math.round(dist(g.target, g.actor.position))} m`, x, y + 24, 11, '#e9e9da', '600');
   }
   minimap() {
+    const { HIGHLAND_OUTLINE, RIDGES, GOLF_COURSE, VILLAS, COUNTRY_ROADS } = this.game.map.country;
+    const { BEACH_OUTLINE, PROMENADE, BEACH_HOTELS } = this.game.map.beach;
+    const { roadPath } = this.game.world.navigation;
     const width = this.map.clientWidth, height = this.map.clientHeight;
     if (!width || !height) return; // Collapsed radar needs no drawing work.
     const pixelsW = Math.round(width * this.dpr), pixelsH = Math.round(height * this.dpr);
@@ -749,6 +742,6 @@ export class Renderer {
     c.lineWidth = 1.5; c.beginPath();
     if (marker.offscreen) { c.rotate(marker.angle); c.moveTo(5, 0); c.lineTo(-4, -4); c.lineTo(-2, 0); c.lineTo(-4, 4); c.closePath(); c.fill(); }
     else { c.arc(0, 0, 4, 0, Math.PI * 2); c.stroke(); }
-    c.restore(); c.fillStyle = '#b4c5c2'; c.font = '8px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position), 8, height - 5, width - 35); c.textAlign = 'right'; c.fillText('N ↑', width - 7, height - 5);
+    c.restore(); c.fillStyle = '#b4c5c2'; c.font = '8px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position, g.map), 8, height - 5, width - 35); c.textAlign = 'right'; c.fillText('N ↑', width - 7, height - 5);
   }
 }

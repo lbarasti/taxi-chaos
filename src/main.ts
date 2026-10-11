@@ -5,13 +5,13 @@ import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { Renderer } from './renderer';
 import { dist } from './physics';
-import { inSand } from './beach';
 import { PORT_FEE } from './harbour';
 import { district } from './world';
 import { difficulties, type Difficulty } from './rules';
 import { setupLab, type LabAPI } from './lab';
 import { AudioFX } from './audio';
 import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
+import { MapEditor } from './map/editor';
 
 const icons = {
   fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
@@ -53,12 +53,13 @@ document.querySelector('#app')!.innerHTML = `
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
-const game = new Game();
+let game = new Game();
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 let helpOpen = false;
 let statsOpen = false;
 let lab: LabAPI | undefined;
+let mapEditor: MapEditor | undefined;
 function settingsMarkup() {
   return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio)}`;
 }
@@ -91,9 +92,9 @@ function modal() {
   }
   if (game.mode === 'paused' && !helpOpen && !statsOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
-  $('start')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
-  $('resume')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; statsOpen = false; game.setMode('playing'); $('city').focus(); });
-  $('recover')?.addEventListener('click', () => { lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
+  $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
+  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = false; game.setMode('playing'); $('city').focus(); });
+  $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
   $('difficulty-option')?.addEventListener('change', e => game.configure({ difficulty: (e.target as HTMLSelectElement).value as Difficulty }));
   $('show-help')?.addEventListener('click', showHelp);
@@ -105,14 +106,16 @@ function modal() {
   if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
 function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = false; helpOpen = true; game.setMode('paused'); }
-game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); };
+function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
+bindGame();
 function hud() {
+  const { inSand } = game.map.beach;
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
   $('clock-time').textContent = dayNight.time; $('clock-period').textContent = dayNight.period.toUpperCase();
   $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, day ${dayNight.day}`);
   $('clock-sun').hidden = night; $('clock-moon').hidden = !night;
-  $('cash').textContent = `$${g.save.cash.toLocaleString()}`; $('district').textContent = district(g.actor.position);
+  $('cash').textContent = `$${g.save.cash.toLocaleString()}`; $('district').textContent = district(g.actor.position, g.map);
   $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
   $('job-status').textContent = pickup ? 'PICKUP' : 'ON BOARD'; $('job-status').classList.toggle('green', !pickup);
   $('mission-title').textContent = pickup ? `Meet ${job.name}.` : `${job.destination}.`;
@@ -187,13 +190,14 @@ function hud() {
   $('sound-toggle').classList.toggle('sound-muted', muted);
 }
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
-function interact() { if (game.mode !== 'playing') return; if (externalClock && lab) lab.realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
-function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; lab?.realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
+function realtime() { if (mapEditor?.active) mapEditor.api.live(); else lab?.realtime(); }
+function interact() { if (game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
+function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
 $('sound-toggle').addEventListener('click', toggleSound);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
-function pause() { if (game.mode === 'playing') { statsOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { lab?.realtime(); externalClock = false; helpOpen = false; statsOpen = false; game.setMode('playing'); } }
+function pause() { if (game.mode === 'playing') { statsOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = false; game.setMode('playing'); } }
 bindFullscreen($('fullscreen'), message => game.notify(message));
 $('harbour').addEventListener('click', () => { game.navigateHarbour(); hud(); });
 $('pause').addEventListener('click', pause); $('garage').addEventListener('click', () => game.garage()); $('help').addEventListener('click', showHelp);
@@ -217,6 +221,7 @@ $('taxi-menu').addEventListener('keydown', event => {
 });
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
+  if (mapEditor?.handleKey(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
   if (e.code === 'Escape' && !$('taxi-menu').hidden) { e.preventDefault(); setMenu(false); $('taxi-menu-toggle').focus(); return; }
@@ -230,17 +235,17 @@ window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
    if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') game.garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
-  if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) lab.realtime(); externalClock = false; }
+  if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; }
   if (game.mode === 'playing') game.keys.add(e.code);
 });
 window.addEventListener('keyup', e => game.keys.delete(e.code));
-window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (game.mode === 'playing') game.setMode('paused'); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (game.mode === 'playing') game.setMode('paused'); } });
+window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (!mapEditor?.editing && game.mode === 'playing') game.setMode('paused'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (!mapEditor?.editing && game.mode === 'playing') game.setMode('paused'); } });
 const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HTMLButtonElement>('[data-key]'), {
-  active: () => game.mode === 'playing',
+  active: () => !mapEditor?.editing && game.mode === 'playing',
   move: value => { game.touchMove = value; },
   action: (key, pressed) => { if (pressed) game.keys.add(key); else game.keys.delete(key); },
-  begin: () => { if (externalClock && lab) lab.realtime(); externalClock = false; },
+  begin: () => { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; },
 });
 window.addEventListener('resize', resetTouch);
 let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = false, timeScale = 1;
@@ -249,7 +254,7 @@ function frame(now: number) {
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
   if (!externalClock) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
   audio.update(game, !externalClock, !document.hidden && document.hasFocus());
-  renderer.draw(dt);
+  if (!mapEditor?.editing) renderer.draw(dt);
   hudClock += dt; if (hudClock > 0.1) { hud(); hudClock = 0; }
   requestAnimationFrame(frame);
 }
@@ -257,7 +262,15 @@ modal(); hud(); requestAnimationFrame(frame);
 
 // The same test lab works in dev and the standalone HTML. Opt in via ?debug=1 or F2.
 function ensureLab() {
+  if (!mapEditor) mapEditor = new MapEditor(game, renderer, {
+    clock: () => externalClock,
+    freeze: frozen => { externalClock = frozen; accumulator = 0; },
+    clearInput: () => { resetTouch(); game.keys.clear(); game.touchMove = null; game.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; },
+    activate: active => { game = active; renderer.game = active; bindGame(); modal(); hud(); },
+    silence: () => audio.silence(game),
+  });
   if (!lab) lab = setupLab(game, renderer, {
+    map: mapEditor.api,
     setExternalClock: frozen => { externalClock = frozen; accumulator = 0; if (frozen) audio.silence(game); },
     setTimeScale: scale => { timeScale = scale; },
     refresh: () => { hud(); renderer.draw(1 / 60); },

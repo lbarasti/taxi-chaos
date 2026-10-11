@@ -1,10 +1,53 @@
 # Map editor — implementation plan and agent handoff
 
 - **Date:** 2026-10-11
-- **Status:** Proposed implementation; this document adds no editor code.
+- **Status:** Reviewed, amended and implemented. See [the editor guide](map-editor.md)
+  for final API/CLI contracts, verification evidence and screenshots.
 - **Baseline:** `main` after merged [PR #14](https://github.com/lbarasti/taxi-chaos/pull/14), commit `afffba2`; 410 tests across 29 files.
 
 ## 1. Goal and motivating workflow
+
+### Critical review and amendments (2026-10-11)
+
+The motivating workflow and staged gates are appropriate. The original proposal
+under-specified several implementation contracts that would otherwise produce a
+visually convincing but mechanically stale editor:
+
+- **Runtime identity:** compilation returns independent countryside, beach and
+  coast factories. Each World owns that compiled map and bound navigation;
+  Game, AI, pedestrians and renderers consume it. Default exports are compatibility
+  adapters only. Never install a draft into a global geometry singleton.
+- **Connector ownership:** every named geometry point declares its district and
+  translation weight. Southwoods' intermediate attachment has weight 0.5;
+  fixed northern attachments have weight 0. Shared endpoints are single IDs.
+- **Composite moves:** golf geometry uses offsets from its authored centre;
+  villas derive wings, pools and residents. A district translation moves owned
+  points and composite placements once. The envelope is explicit and is expanded
+  by a separate operation when needed, rather than silently resized.
+- **Invalid drafts:** structural validation rejects unsupported versions, extra
+  fields, non-finite/unsafe magnitudes and invalid references before compilation.
+  Geometric errors remain editable, but block gameplay preview. Compilation must
+  tolerate disconnected graphs and unavailable generated-stop clearings without
+  hanging or dereferencing an absent position.
+- **Validation honesty:** findings include resolution and probe dimensions.
+  Vehicle-road checks sample complete car/truck footprints along the actual
+  curve; walking entrances use the walking body. Intended composite attachment
+  overlaps and scenery exclusions are explicit, rather than a global exemption.
+  Sampled checks are not claims of an exact mathematical clearance proof.
+- **Preview lifecycle:** retain the original Game object untouched; swap the
+  active game/renderer only for a separately constructed, persistence-disabled
+  preview. Returning restores its exact clock, camera and mode. Failed preview
+  creation leaves the editor open. Preview settings cannot migrate/write saves.
+- **Authoring limits:** bridges, city and harbour are pinned read-only context.
+  Beach shore x-order and promenade entry ordering are structural invariants;
+  moving these into invalid order must fail atomically. Bounded document sizes
+  prevent imported curves/envelopes from causing unbounded generation work.
+- **Reviewability:** one feature PR includes the migration, editor and evidence,
+  with default-coordinate regression tests and a documented CLI that uses Vite's
+  TypeScript module runner (already installed), not unsupported Node resolution.
+
+The phases below remain the implementation order; acceptance requires actual
+runtime integration, not merely successful document operations.
 
 Build a map-editing mode inside the existing F2 LAB, backed by a structured map
 document that agents can inspect, edit, validate and commit directly.
@@ -343,22 +386,21 @@ Restore the appropriate clock on exit and leave the user's existing tabs alone.
 
 ## 10. Final acceptance checklist
 
-- [ ] F2 Map mode has a useful whole-map overview and independent camera.
-- [ ] District movement updates all owned authored geometry and derived content.
-- [ ] Shared shoreline/road seams stay coherent, with fixed attachments preserved.
-- [ ] Object, shoreline-point and road-anchor edits work by pointer and API.
-- [ ] Inspector/measurements explain what moved and how much room remains.
-- [ ] Validation reports actionable structured findings visible on the map.
-- [ ] Transactions, revisions and undo/redo behave identically for UI and agents.
-- [ ] Browser and CLI import/export the same versioned, canonical document.
-- [ ] Edited maps preview through actual gameplay with isolated saves/state.
-- [ ] The shipped default retains PR #14's open beachfront and working estates.
-- [ ] The offline single-HTML build, tests and CI pass.
-- [ ] Documentation includes API/CLI examples, extension guidance and screenshots.
+- [x] F2 Map mode has a useful whole-map overview and independent camera.
+- [x] District movement updates all owned authored geometry and derived content.
+- [x] Shared shoreline/road seams stay coherent, with fixed attachments preserved.
+- [x] Object, shoreline-point and road-anchor edits work by pointer and API.
+- [x] Inspector/measurements explain what moved and how much room remains.
+- [x] Validation reports actionable structured findings visible on the map.
+- [x] Transactions, revisions and undo/redo behave identically for UI and agents.
+- [x] Browser and CLI import/export the same versioned, canonical document.
+- [x] Edited maps preview through actual gameplay with isolated saves/state.
+- [x] The shipped default retains PR #14's open beachfront and working estates.
+- [x] The offline single-HTML build and local CI commands pass; PR CI is tracked.
+- [x] Documentation includes API/CLI examples, extension guidance and screenshots.
 
 ## 11. Suggested first action for the next agent
 
-Start Phase A with the current southern-estates data and its seam points. Prove
-that compiling the extracted document reproduces the existing map before adding
-drag controls. Then implement the translation/validation transaction in Phase B;
-that is the core capability both agents and the visual editor will share.
+Phases A–D are complete. Read `docs/map-editor.md` for the shipped implementation
+and extension workflow. Keep new fields map-aware and preserve immutable per-world
+geometry and preview isolation when extending the editor.

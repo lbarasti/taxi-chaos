@@ -291,6 +291,28 @@ The API is exposed only after opting into the lab. `step()` has no wall-clock wa
 
 For shared browser sessions, run automated resets in a separate isolated browser context. The `loadScenario(game, name)` function in `src/lab.ts` also works in Node tests without a DOM.
 
+## Map studio
+
+**F2 → Map studio** opens an independent whole-map overview. Select Southern
+Estates and translate it, or move villas, golf, hotels, beach sets, shoreline
+points and road anchors with numeric controls or dragging. Layers, snapping,
+measurements, collision/access validation, undo/redo and local JSON import/export
+use the same versioned map document as agents and the headless CLI.
+
+**Preview gameplay** rebuilds a fresh map-aware game with normal physics, AI and
+fares. Preview progress does not read or write normal saves. Returning restores
+the original game/camera/clock and keeps your draft. The shipped baseline retains
+the existing beachfront and estate positions.
+
+```sh
+npm run map:check -- --input src/map/default-map.json --json
+```
+
+Browser automation: `__taxi.map.snapshot()`, `.describe(id)`, `.apply(batch)`,
+`.validate()`, `.undo()`, `.redo()`, `.export()`, `.import(json)` and `.preview()`.
+See [the editor guide](docs/map-editor.md) for API/CLI examples, ownership rules,
+extension instructions, validation tolerances and desktop/mobile screenshots.
+
 ## Code map
 
 - `src/physics.ts`: vectors, rigid bodies, four-tyre forces, rotated-rectangle SAT and normal/friction impulses, spatial hash.
@@ -307,6 +329,7 @@ For shared browser sessions, run automated resets in a separate isolated browser
 - `src/game.ts` / `src/vehicle-exit.ts`: fixed-step orchestration, moving exits/door choreography/landing damage, motorcycle jump reaction, on-foot vehicle switching, parked cars, explosions, jobs and save data.
 - `src/renderer.ts`: city/cab/structure drawing, camera, corpses, rubble, routes, minimap and debug overlays.
 - `src/lab.ts` / `src/lab.css`: scenario fixtures, inspector, cheats and serializable test API.
+- `src/map/`: versioned authored map, immutable per-world compiler, atomic operations/history, geometry validation and Map studio UI/preview.
 - `src/main.ts`: accessible HTML HUD, dialogs, input, fixed-step clock and opt-in automation harness.
 - `vite.config.ts`: small single-file build plugin; fails the build if external assets remain.
 

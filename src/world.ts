@@ -1,7 +1,7 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
-import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, SOUTH_WOODS_Y, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
-import { COAST_RAILS } from './coast';
-import { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, beachAccess, beachAccessPath, beachVehicleTarget, inBeach, onPromenade } from './beach';
+import { pathLength } from './countryside';
+import { defaultCompiledMap, type CompiledMap } from './map/compile';
+import { defaultMap } from './map/default';
 import type { VehicleModel } from './vehicles';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
@@ -9,17 +9,21 @@ export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'la
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
-export type Prop = { id: number; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
+export type Prop = { id: number; sourceId?: string; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
 export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean; model?: VehicleModel };
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
 // Clear sidewalk outside Midtown Hospital; the adjacent curb bay is unoccupied.
 export const HOSPITAL = vec(147, 74.6);
-export const district = (p: Vec) => inBeach(p) ? onPromenade(p) || p.x >= 146 ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+export function district(p: Vec, map = defaultCompiledMap) {
+  const { inBeach, onPromenade, PROMENADE } = map.beach, { SOUTH_WOODS_Y } = map.country;
+  return inBeach(p) ? onPromenade(p) || p.x >= PROMENADE.left ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+}
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
-  pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
+  pools: Body[];
+  navigation: ReturnType<typeof createNavigation>;
   props: Prop[] = []; people: Person[] = []; blocks: Block[] = []; hash = new SpatialHash<Prop>(); random = seeded(1976);
   private personSerial = 0;
   parking: ParkingSpot[] = [];
@@ -33,7 +37,12 @@ export class World {
     const person: Person = { id: this.personSerial++, position: { ...p }, home: { ...p }, phase: this.random() * Math.PI * 2, color, panic: 0, alive: true, aboard: false, health: 100, velocity: vec(), angle: this.random() * 6, deathTime: -1, role, hitAt: -100 };
     this.people.push(person); return person;
   }
-  constructor() {
+  constructor(public readonly map: CompiledMap = defaultCompiledMap) {
+    const { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, inCountryClearing, inHighlands } = map.country;
+    const { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, PROMENADE } = map.beach;
+    const { COAST_RAILS } = map.coast;
+    this.navigation = createNavigation(map);
+    this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
     const colors = ['#334850', '#3c485b', '#4d4b59', '#3d5554', '#535045', '#394a5a'];
     const shops = ['NOODLE CLUB', 'VINYL & CO.', '24/7 DELI', 'LAUNDROMAT', 'COFFEE', 'BODEGA', 'FLOWERS', 'HOTEL', 'ARCADE', 'PIZZA', 'BOOK SHOP', 'NIGHT OWL'];
     for (let bx = 0; bx < 6; bx++) for (let by = 0; by < 6; by++) {
@@ -84,18 +93,29 @@ export class World {
       }
     }
     // Separate RNG preserves the existing city's layouts, traffic and deterministic fixtures.
-    const ruralRandom = seeded(8642);
-    for (let i = 0; i < 1050; i++) {
-      const p = vec(ruralRandom() * MAP_WIDTH, ruralRandom() * MAP_HEIGHT);
+    const ruralRandom = seeded(map.document.generation.ruralSeed);
+    // Keep the original candidate lattice/RNG draws; carry the southern stream in
+    // local coordinates. Envelope edits never reshuffle the fixed city/highlands.
+    const southernIds = defaultMap.points.filter(p => p.owner === 'southern-estates' && defaultMap.highlandOutline.includes(p.id)).map(p => p.id);
+    const shift = southernIds.reduce((sum, id) => {
+      const old = defaultMap.points.find(p => p.id === id)!.position, now = map.document.points.find(p => p.id === id)?.position ?? old;
+      return vec(sum.x + (now.x - old.x) / southernIds.length, sum.y + (now.y - old.y) / southernIds.length);
+    }, vec());
+    for (let i = 0; i < map.document.generation.candidates; i++) {
+      const p = vec(ruralRandom() * 530, ruralRandom() * 550);
+      const baseline = defaultCompiledMap.country;
+      if (!baseline.inHighlands(p) || baseline.countryAccess(p).distance < 12 || baseline.inCountryClearing(p) || baseline.HIGHLAND_STOPS.some(s => dist(s.position, p) < 15)) continue;
+      // Optional RNG draws depend on the baseline stream, never current edits.
+      const rock = i % 8 === 0, size = rock ? 3 + ruralRandom() * 4 : 1.6, angle = ruralRandom() * Math.PI;
+      if (p.y >= 392) { p.x += shift.x; p.y += shift.y; }
       if (!inHighlands(p) || countryAccess(p).distance < 12 || inCountryClearing(p) || HIGHLAND_STOPS.some(s => dist(s.position, p) < 15)) continue;
-      const rock = i % 8 === 0, size = rock ? 3 + ruralRandom() * 4 : 1.6;
-      this.add(rock ? 'rock' : 'tree', p.x, p.y, size, rock ? size * 0.8 : size, rock ? '#788278' : ['#3d654f', '#426e58', '#315747'][i % 3], '', ruralRandom() * Math.PI);
+      this.add(rock ? 'rock' : 'tree', p.x, p.y, size, rock ? size * 0.8 : size, rock ? '#788278' : ['#3d654f', '#426e58', '#315747'][i % 3], '', angle);
     }
     const cityRandom = this.random; this.random = ruralRandom;
     for (const villa of VILLAS) {
       const p = villa.position;
-      this.add('building', p.x, p.y, 16, 10, villa.color, `VILLA ${villa.name}`);
-      this.add('building', p.x - 5, p.y - 6, 6, 3, villa.color, 'VILLA GUEST HOUSE'); // attached guest wing
+      this.add('building', p.x, p.y, 16, 10, villa.color, `VILLA ${villa.name}`).sourceId = villa.id;
+      this.add('building', p.x - 5, p.y - 6, 6, 3, villa.color, 'VILLA GUEST HOUSE').sourceId = villa.id;
       const entry = VILLA_DRIVES[VILLAS.indexOf(villa)][0];
       const lamp = vec(p.x + (entry.x > p.x ? -18 : 18), p.y + (entry.y > p.y ? -12 : 12));
       this.add('lamp', lamp.x, lamp.y, 0.6, 0.6, '#a7bfbb');
@@ -103,16 +123,15 @@ export class World {
       this.addPerson(vec(p.x - 12, p.y + 6), 'civilian', '#d7c9e7');
     }
     const club = GOLF_COURSE.clubhouse;
-    this.add('building', club.x, club.y, 10, 14, '#b89a74', 'FAIRWAY CLUB');
+    this.add('building', club.x, club.y, 10, 14, '#b89a74', 'FAIRWAY CLUB').sourceId = map.document.golf.id;
     this.add('lamp', club.x - 7, club.y + 7, 0.6, 0.6, '#a7bfbb');
     for (const hole of GOLF_HOLES) this.addPerson(vec(hole.tee.x + 2, hole.tee.y - 2), 'civilian', '#f0e6c8');
     for (const stop of HIGHLAND_STOPS) {
       const p = stop.position;
-      const clearing = (radius: number, clearance: number) => Array.from({ length: 16 }, (_, i) => vec(p.x + Math.cos(i * Math.PI / 8) * radius, p.y + Math.sin(i * Math.PI / 8) * radius)).find(point => inHighlands(point) && countryAccess(point).distance > clearance)!;
+      const clearing = (radius: number, clearance: number) => Array.from({ length: 16 }, (_, i) => vec(p.x + Math.cos(i * Math.PI / 8) * radius, p.y + Math.sin(i * Math.PI / 8) * radius)).find(point => inHighlands(point) && countryAccess(point).distance > clearance);
       const kiosk = clearing(14, 10), bench = clearing(11, 7);
-      this.add('kiosk', kiosk.x, kiosk.y, 3.8, 3, '#987c59', stop.name.toUpperCase());
-      this.add('bench', bench.x, bench.y, 2.4, 0.75, '#bf9870');
-      this.addPerson(vec(bench.x + 2, bench.y + 2), 'civilian', '#b0cbaa');
+      if (kiosk) this.add('kiosk', kiosk.x, kiosk.y, 3.8, 3, '#987c59', stop.name.toUpperCase()).sourceId = stop.id;
+      if (bench) { this.add('bench', bench.x, bench.y, 2.4, 0.75, '#bf9870').sourceId = stop.id; this.addPerson(vec(bench.x + 2, bench.y + 2), 'civilian', '#b0cbaa'); }
     }
     this.random = cityRandom;
     for (const box of PORT_CONTAINERS) this.add('container', box.position.x, box.position.y, 14, 5.6, box.color, box.label);
@@ -133,25 +152,26 @@ export class World {
     const portRandom = this.random; this.random = seeded(9076);
     for (const p of [vec(210, -19.5), vec(96, -63), vec(150, -96), vec(180, -64)]) this.addPerson(p, 'civilian', '#e3bd67');
     this.random = portRandom;
-    for (const hotel of BEACH_HOTELS) this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name);
-    for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`);
+    for (const hotel of BEACH_HOTELS) this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name).sourceId = hotel.id;
+    for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i % 3], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`).sourceId = map.document.beach.towers[i].id;
     for (const [i, p] of BEACH_SETS.entries()) {
-      this.add('parasol', p.x, p.y, 3.4, 3.4, ['#df8976', '#78b9c0', '#efc468', '#a3a5cb', '#80b5a2'][i]);
-      for (const dx of [-2.8, 2.8]) this.add('beach-chair', p.x + dx, p.y + 2.8, 1.1, 2.4, i % 2 ? '#b9d4d0' : '#e2a18b', '', dx < 0 ? -0.2 : 0.2);
+      this.add('parasol', p.x, p.y, 3.4, 3.4, ['#df8976', '#78b9c0', '#efc468', '#a3a5cb', '#80b5a2'][i % 5]).sourceId = map.document.beach.sets[i].id;
+      for (const dx of [-2.8, 2.8]) this.add('beach-chair', p.x + dx, p.y + 2.8, 1.1, 2.4, i % 2 ? '#b9d4d0' : '#e2a18b', '', dx < 0 ? -0.2 : 0.2).sourceId = map.document.beach.sets[i].id;
     }
-    for (const p of SAND_CASTLES) this.add('sandcastle', p.x, p.y, 1.8, 1.6, '#c6a36e');
+    for (const [i, p] of SAND_CASTLES.entries()) this.add('sandcastle', p.x, p.y, 1.8, 1.6, '#c6a36e').sourceId = map.document.beach.castles[i].id;
     for (const edge of PROMENADE_EDGES) this.add('promenade-edge', edge.position.x, edge.position.y, edge.width, 0.6, '#e2d9c2');
     for (const gate of PROMENADE_GATES) this.add('pedestrian-gate', gate.position.x, gate.position.y, gate.width, 0.6, '#d8c4a1', '', gate.angle);
     for (const p of PROMENADE_BOLLARDS) this.add('bollard', p.x, p.y, 0.6, 0.6, '#758e8b');
     for (const x of [-6, 16, 44, 100]) this.add('palm', x, 247.8, 0.8, 0.8, '#547f66');
-    for (const x of [154, 174, 194, 214, 244]) this.add('palm', x, 254.2, 0.8, 0.8, '#547f66');
-    for (const x of [150, 174, 194, 214, 248]) this.add('lamp', x, 249, 0.6, 0.6, '#a7bfbb');
-    for (const x of [168, 208, 228]) this.add('bench', x, 254.2, 2.4, 0.75, '#c29b76');
-    this.add('kiosk', 158, 253.7, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
-    this.add('kiosk', 202, 253.7, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
+    const walkX = (x: number) => PROMENADE.left + (x - 146) * (PROMENADE.right - PROMENADE.left) / 106;
+    for (const x of [154, 174, 194, 214, 244]) this.add('palm', walkX(x), PROMENADE.bottom - 1.8, 0.8, 0.8, '#547f66');
+    for (const x of [150, 174, 194, 214, 248]) this.add('lamp', walkX(x), PROMENADE.top + 2, 0.6, 0.6, '#a7bfbb');
+    for (const x of [168, 208, 228]) this.add('bench', walkX(x), PROMENADE.bottom - 1.8, 2.4, 0.75, '#c29b76');
+    this.add('kiosk', walkX(158), PROMENADE.bottom - 2.3, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
+    this.add('kiosk', walkX(202), PROMENADE.bottom - 2.3, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
     this.parking.push({ position: { ...BEACH_PICKUP }, angle: 0, occupied: true, lot: false, model: 'pickup' });
     const beachRandom = this.random; this.random = seeded(1965);
-    for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(x, 251.5), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
+    for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(walkX(x), (PROMENADE.top + PROMENADE.bottom) / 2), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
     for (const x of [-8, 20, 64, 88, 110]) this.addPerson(vec(x, 253), 'civilian', '#dcaa84');
     this.random = beachRandom;
   }
@@ -159,10 +179,13 @@ export class World {
 
 // Street access + a shortest orthogonal route. No compulsory intersection snaps
 // or stair-step zigzags: a grid without closed roads needs at most two turns.
+export function createNavigation(map: CompiledMap) {
+const { ROAD_NODES, countryAccess, countryNeighbours, countryNode, countryPath, isCountry } = map.country;
+const { beachAccess, beachAccessPath, beachVehicleTarget, inBeach } = map.beach;
 function gridNode(p: Vec): Vec { return vec(Math.round(Math.max(0, Math.min(SIZE, p.x)) / GRID) * GRID, Math.round(Math.max(0, Math.min(SIZE, p.y)) / GRID) * GRID); }
-export function roadNode(p: Vec): Vec { return inBeach(p) ? gridNode(beachAccess(p)) : onPortRoad(p) ? portNode(p) : isCountry(p) ? countryNode(p) : gridNode(p); }
-export const roadDistance = (p: Vec) => inBeach(p) ? dist(p, beachAccess(p)) : onPortRoad(p) ? portAccess(p).distance : isCountry(p) ? countryAccess(p).distance : Math.min(Math.abs(p.x - gridNode(p).x), Math.abs(p.y - gridNode(p).y));
-export function roadNeighbours(p: Vec): Vec[] {
+function roadNode(p: Vec): Vec { return inBeach(p) ? gridNode(beachAccess(p)) : onPortRoad(p) ? portNode(p) : isCountry(p) ? countryNode(p) : gridNode(p); }
+const roadDistance = (p: Vec) => inBeach(p) ? dist(p, beachAccess(p)) : onPortRoad(p) ? portAccess(p).distance : isCountry(p) ? countryAccess(p).distance : Math.min(Math.abs(p.x - gridNode(p).x), Math.abs(p.y - gridNode(p).y));
+function roadNeighbours(p: Vec): Vec[] {
   const port = portNeighbours(p);
   if (onPortRoad(p)) return port;
   const country = countryNeighbours(p);
@@ -175,8 +198,8 @@ function streetAccess(p: Vec): Access {
   if (dx <= 6 || dy <= 6) return { point: { ...p }, vertical: dx <= 6 ? n.x : undefined, horizontal: dy <= 6 ? n.y : undefined };
   return dx < dy ? { point: vec(n.x, p.y), vertical: n.x } : { point: vec(p.x, n.y), horizontal: n.y };
 }
-export const roadProjection = (p: Vec) => inBeach(p) ? beachAccess(p) : onPortRoad(p) ? portAccess(p).point : isCountry(p) ? countryAccess(p).point : streetAccess(p).point;
-export function simplifyPath(points: Vec[]): Vec[] {
+const roadProjection = (p: Vec) => inBeach(p) ? beachAccess(p) : onPortRoad(p) ? portAccess(p).point : isCountry(p) ? countryAccess(p).point : streetAccess(p).point;
+function simplifyPath(points: Vec[]): Vec[] {
   const result: Vec[] = [];
   for (const point of points) {
     if (result.length && dist(result[result.length - 1], point) < 0.01) continue;
@@ -203,7 +226,7 @@ function gridPath(from: Vec, to: Vec): Vec[] {
   return routes.reduce((best, route) => score(route) < score(best) ? route : best, routes[0]);
 }
 
-export function roadPath(from: Vec, to: Vec, travel: 'drive' | 'walk' = 'drive'): Vec[] {
+function roadPath(from: Vec, to: Vec, travel: 'drive' | 'walk' = 'drive'): Vec[] {
   if (travel === 'drive') {
     to = beachVehicleTarget(to);
     // No vehicle-sized route exists inside the protected hotel/promenade strip.
@@ -231,3 +254,6 @@ export function roadPath(from: Vec, to: Vec, travel: 'drive' | 'walk' = 'drive')
     : [...gridPath(from, bridge), ...countryPath(bridge, to)]);
   return simplifyPath(routes.reduce((best, route) => pathLength(route) < pathLength(best) ? route : best));
 }
+return { roadNode, roadDistance, roadNeighbours, roadProjection, simplifyPath, roadPath };
+}
+export const { roadNode, roadDistance, roadNeighbours, roadProjection, simplifyPath, roadPath } = createNavigation(defaultCompiledMap);
