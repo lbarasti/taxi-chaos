@@ -127,6 +127,10 @@ return visit requires payment again. New offences still attract cops.
 
 ## Controls & game loop
 
+The first pickup introduces **Mia's Meridian-van clue** through a portrait dialogue
+panel, with a sender-note variant for her parcel. See the
+[pickup dialogue guide](docs/pickup-dialogue.md) for controls, authoring and screenshots.
+
 | Input | Action |
 | --- | --- |
 | WASD / arrows | Drive; move in screen directions while on foot |

@@ -7,6 +7,7 @@ import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
+import { Dialogue, type StoryBeatId } from './story';
 import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
@@ -19,7 +20,7 @@ import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EX
 export type Vehicle = { id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
-export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
+export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; storyBeat?: StoryBeatId };
 export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
@@ -51,6 +52,7 @@ export class Game {
   fx = new Effects(); blasts: Blast[] = []; kills = 0; explosions = 0; buildingsSmashed = 0; offer = 0; trafficTarget = 23; recoveryBudget = { used: 0, rejoin: 0 }; private serial = 0; private pedestrianClock = 0; private maintenanceClock = 0;
   sounds = new SoundEvents();
   dayNight = new DayNight();
+  dialogue = new Dialogue();
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   touchMove: Vec | null = null;
@@ -398,6 +400,7 @@ export class Game {
   start() { this.setMode('playing'); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   newJob(first = false) {
+    this.dialogue.clear();
     const { HIGHLAND_STOPS } = this.map.country, { BEACH_STOPS } = this.map.beach, { roadPath } = this.world.navigation;
     if (this.job) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.offer = first ? 0 : this.offer + 1;
@@ -416,7 +419,7 @@ export class Game {
     const destination = [...HIGHLAND_STOPS, ...BEACH_STOPS].find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
     const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
-    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
+    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, ...(first && this.jobsDone === 0 ? { storyBeat: 'mia-meridian-vans' as const } : {}) };
   }
   setJobType() {
     const type = this.player.definition.access.job;
@@ -843,13 +846,14 @@ export class Game {
   }
   jobs(dt: number) {
     if (this.mode !== 'playing' || this.onFoot) { this.job.wait = 0; return; }
+    this.dialogue.update(dt);
     const j = this.job;
     if (j.stage === 'dropoff') j.elapsed += dt;
     const jobTarget = j.stage === 'pickup' ? j.pickup : j.dropoff;
     if (dist(this.player.body.position, jobTarget) < 5.3 && this.speed < 2.8) {
       j.wait += dt;
       if (j.wait >= 0.8) {
-        if (j.stage === 'pickup') { j.stage = 'dropoff'; j.wait = 0; const person = this.world.people.find(p => p.id === j.customerId); if (person) { person.aboard = true; person.alive = false; } this.sounds.emit('pickup', this.time); this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`); this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55'); }
+        if (j.stage === 'pickup') { j.stage = 'dropoff'; j.wait = 0; const person = this.world.people.find(p => p.id === j.customerId); if (person) { person.aboard = true; person.alive = false; } this.dialogue.start(j.storyBeat, j.type); this.sounds.emit('pickup', this.time); this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`); this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55'); }
         else {
           const timeBonus = Math.max(0, Math.round((j.time - j.elapsed) * 0.8)), comfortBonus = Math.round(j.comfort * 0.3), payout = j.fare + timeBonus + comfortBonus;
           this.save.cash += payout; this.save.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
@@ -903,6 +907,7 @@ export class Game {
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),
+      dialogue: this.dialogue.snapshot(),
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
       job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }
