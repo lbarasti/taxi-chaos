@@ -36,22 +36,56 @@ The critical review and amended contracts are recorded in
    fixed geometry catalogue; the inspector shows their generated collision sizes.
 6. Turn on **Points / anchors** to select named shoreline vertices and road nodes.
    Selecting a road exposes its anchors; pinned bridge points show READ ONLY.
-7. Check findings. Clicking one fits its location and selects an affected entity.
+7. Add, duplicate, delete or re-property bounded content in **Author content**.
+   Choose **Country prop**, **Parking bay** or **Traffic spawn**, set the stable ID,
+   owner district and descriptor fields, then **Add at view centre**. Selecting an
+   existing descriptor reuses the form; **Duplicate** uses Δ X / Δ Y and **Delete**
+   removes it. Every one of these is a single undoable transaction.
+8. Check findings. Clicking one fits its location and selects an affected entity.
    **Measure** takes two map clicks and reports Euclidean distance. The inspector
    separately reports the minimum sampled vertical beach-to-facing-land water gap.
-8. Increase the explicit envelope when moving geometry beyond it. For the example
+9. Increase the explicit envelope when moving geometry beyond it. For the example
    extra 20 m south move, set max y to 600 m; the default is already the PR #14 map.
-9. **Preview gameplay** starts a fresh cab near the chosen road stop, facing its
-   first test delivery. Normal physics, AI, collisions, water and fares run.
-10. **Return to editor / Esc** discards preview damage/progress and retains the
+10. **Preview gameplay** starts a fresh cab near the chosen road stop, facing its
+    first test delivery. Normal physics, AI, collisions, water and fares run.
+11. **Return to editor / Esc** discards preview damage/progress and retains the
     draft/history. **Close editor / F2** restores the original game and clock.
-11. Export JSON to download the draft; Import chooses a local JSON file. Import is
+12. Export JSON to download the draft; Import chooses a local JSON file. Import is
     undoable. Drafts remain in memory when the editor closes; export before reloading.
 
 The city, bridges and harbour are visible read-only context. Whole-district
 translation is supported for Southern Estates. Highlands and beach child geometry
 is editable individually; their whole-district attachment rules are pinned.
 Rotation, scaling, new districts and terrain painting are later milestones.
+
+## Authored content collections
+
+Three bounded descriptor collections make previously hard-coded gameplay content
+first-class and editable. Each entry has a stable ID, an owner district, a
+position/angle, a colour and its own strict schema and workload budget.
+
+- **`countryProps`** — individually placed country objects (`building`, `tree`,
+  `rock`, `hydrant`, `crate`, `bench`, `lamp`, `kiosk`, `bin`, `barrier`, `shed`,
+  `pump`, `guardrail`, `palm`) with explicit `kind`, `width`, `height` and `label`.
+  World generation instantiates each descriptor with a `sourceId` link, so it is
+  selectable, movable, resizable, collidable and damageable exactly like a villa.
+  Seeded woodland scenery stays procedural; props you want to own become descriptors.
+- **`parking`** — every curb bay and public-lot bay, including `occupied`, `lot`,
+  `model` and `colour`. The game spawns one parked vehicle per occupied bay at its
+  authored position, angle, model and colour; empty bays still reserve clearance.
+  Retrofitted from the previous hard-coded 74-bay layout, including the beach pickup.
+- **`trafficSpawns`** — initial road vehicles with a `model`, `colour` and an
+  authored `path` (initial waypoints). Density changes, off-screen wreck
+  replacement and `resetRun` replenish from these descriptors; deleting all of them
+  disables road-traffic replenishment rather than inventing unseen cars.
+
+The bridge attachments and the read-only city/harbour `Props` remain generated.
+Unlike those, every authored descriptor is editable and can be created or removed.
+Imports from schema version 1 are migrated losslessly: the four bridge lamps become
+`countryProps`, the fixed parking/traffic layout becomes explicit descriptors, and
+the legacy `beach.pickup` point becomes the beach pickup bay's position. Version 2
+output sorts and fingerprints the full document, so old `v1-*` revisions are stale
+by design and a fresh revision must be taken.
 
 ## Agent API
 
@@ -91,7 +125,19 @@ Other operation shapes:
 { type: 'move', targetId: 'villa-the-laurels', position: { x: 107, y: 414 } }
 { type: 'move', targetId: 'fairway-a', position: { x: 208, y: 446 } }
 { type: 'resize', targetId: 'golf-course', width: 96, height: 36 }
+// Bounded content: descriptor is a full CountryProp, Parking or TrafficSpawn.
+{ type: 'add', collection: 'countryProps', descriptor: { id: 'trail-kiosk', owner: 'southern-estates', position: { x: 300, y: 420 }, kind: 'kiosk', width: 3.8, height: 3, angle: 0, color: '#987c59', label: 'TRAIL KIOSK' } }
+{ type: 'duplicate', targetId: 'parking-73', newId: 'beach-second-pickup', delta: { x: 10, y: 0 } }
+{ type: 'replace', targetId: 'traffic-00', descriptor: { id: 'traffic-00', owner: 'city', position: { x: 100, y: 3 }, angle: 0, model: 'van', color: '#c9d8ce', path: [{ x: 140, y: 3 }] } }
+{ type: 'delete', targetId: 'parking-00' }
 ```
+
+`add`, `replace`, `duplicate` and `delete` apply to `countryProps`, `parking` and
+`trafficSpawns` only. IDs must stay unique across the whole document, `replace`
+must retain the stable ID, and `duplicate` moves both a traffic spawn and its
+authored route. Deleting a descriptor is permanent for that draft; `undo` restores
+it. A batch that would collide, leave land/water or reference a missing vehicle
+rejects atomically with its history intact.
 
 Operations use the current content revision. Unknown targets, stale revisions,
 non-finite values, extra fields or structural violations reject the entire batch,
@@ -132,13 +178,13 @@ For machine-readable stdout without npm's command banner, use
 | Module | Responsibility |
 | --- | --- |
 | `src/map/default-map.json` | Resolved authored positions, ownership, references, composites, envelope, generation and constraints |
-| `src/map/schema.ts` | Strict runtime shape/reference checks, fixed attachments, ordered beach/entrance invariants and workload budgets |
+| `src/map/schema.ts` | Strict runtime shape/reference checks for the three content collections, fixed attachments, ordered beach/entrance invariants and workload budgets |
 | `src/map/compile.ts` | Detached, recursively frozen map factories and content revision |
 | `src/countryside.ts`, `beach.ts`, `coast.ts` | Per-map derived roads, drives, pools, surfaces, access and rails; default adapters remain for compatibility |
-| `src/world.ts` | Per-world map, bound navigation, collision hash and generated source-ID links |
-| `src/map/operations.ts` | Shared atomic transactions, descriptions and 100-entry undo/redo history |
-| `src/map/serialization.ts` | Stable sorted object keys, semantic array order, lossless numeric JSON and import/export |
-| `src/map/validation.ts` | Geometry, road bodies, drives, pool/solid overlap, stop reachability, walking entrances, envelope and water clearance |
+| `src/world.ts` | Per-world map, bound navigation, collision hash, authored country props and descriptor parking |
+| `src/map/operations.ts` | Shared atomic transactions (including add/replace/duplicate/delete), descriptions and 100-entry undo/redo history |
+| `src/map/serialization.ts` | Stable sorted object keys, semantic array order, lossless numeric JSON, version-1 migration and import/export |
+| `src/map/validation.ts` | Geometry, road bodies, drives, pool/solid overlap, stop reachability, walking entrances, envelope, water clearance and vehicle placement/route clearance |
 | `src/map/editor*.ts`, `editor.css` | Independent overview camera, layers, selection, gestures, inspector and draft lifecycle |
 | `src/map/preview.ts` | Real-game preview construction, safe road spawn and test fare |
 | `tools/map-check.mjs` | Headless entry point sharing the same compiler/operations/validator |
@@ -148,6 +194,16 @@ checks, transactional editable fields, derived factory geometry and source-ID
 links. Add it to `entities()` / descriptions and validation, and make runtime
 consumers use the compiled map. Never mutate default module exports to install a
 draft. A field needs the same derivation in artwork, collisions, surfaces and routes.
+
+Adding a bounded collection (the same path `countryProps`, `parking` and
+`trafficSpawns` follow) needs a strict entry shape in `schema.ts`, an
+`entities()`/`describe()` inclusion and `authoredCollection()` mapping in
+`operations.ts`, an `add/replace/duplicate/delete` branch there, a `descriptorBody`
+for selection bounds and route sweeping, a generated `sourceId` link in the
+consumer (`world.ts` / `game.ts`), and validation findings for land, overlap,
+clearance, envelope and workload. Descriptors should be bounded (size, angle,
+count and total route length) so an imported document cannot create an unbounded
+workload.
 
 Golf clubhouse/holes/cart route/path are local offsets from the golf centre.
 Villas derive wings, pools, terraces and resident homes from their placement.
@@ -165,6 +221,28 @@ remains intact. Physical coastline flora/rails may visually straddle a shore;
 authored composites are checked against their intended land.
 
 ## Verification evidence (2026-10-11)
+
+### Authored content retrofit
+
+- **448 tests / 31 files**, strict TypeScript and production single-HTML build.
+- `src/map/content.test.ts` covers add/duplicate/replace/move/delete transactions,
+  detached results and exact history restoration, atomic rejection of id/collision/
+  pinned/collection errors, route movement with spawn duplication and district
+  translation, strict import bounds, version-1 migration and lossless v2 round
+  trips, runtime `sourceId`/model/colour/path/parking links, descriptor
+  replenishment, and every new geometric finding (pool overlap, water, static,
+  vehicle-vehicle, route and envelope).
+- The default revision moved to `v2-abda267`; the checker still reports zero
+  errors/warnings and a 121.1 m water gap. The +20 m move example is zero errors,
+  141.1 m gap and 9 regenerated connections; the invalid road example exits 1.
+- Offline production Chromium, 1440×900: added a country prop, parking bay and
+  traffic spawn through the form, duplicated/deleted with Undo, confirmed the
+  validation blocks an on-sand traffic spawn, ran a persistence-disabled preview
+  (16.06 m/s at 100 HP), and migrated a version-1 document to v2 with its legacy
+  pickup position retained. Editor close restored the original clock/mode.
+- Only local HTML and the embedded font were requested; no external HTTP(S).
+
+### Earlier baseline
 
 - **432 tests / 30 files**, strict TypeScript and production single-HTML build.
 - Default checker: zero errors/warnings, **121.1 m** minimum sampled water gap.
@@ -191,3 +269,6 @@ authored composites are checked against their intended land.
 ![Invalid road, actionable findings and blocked preview](screenshots/map-editor-validation.png)
 ![Paid delivery through the relocated gameplay map](screenshots/map-editor-preview.png)
 ![Mobile editor](screenshots/map-editor-mobile.png)
+![Country prop authoring](screenshots/map-content-country-prop.png)
+![Authored parking bays and duplication](screenshots/map-content-parking.png)
+![Authored traffic spawn and its initial route](screenshots/map-content-traffic-spawn.png)

@@ -1,5 +1,35 @@
 # Taxi Chaos — continuation handoff
 
+## Authored map content, 2026-10-11
+
+- Acted on review feedback that the editor only supported fixed villa placements
+  and not arbitrary country props, parking or traffic spawns. Added three bounded,
+  stable-ID descriptor collections to the versioned map document (`schemaVersion: 2`)
+  and retrofitted the previously hard-coded content into them.
+- `countryProps` (kind/width/height/label, 14 kinds), `parking` (occupied/lot/model/
+  colour) and `trafficSpawns` (model/colour/initial waypoints). Every entry is owned,
+  selectable, movable, resizable and damageable, and is instantiated with a `sourceId`
+  link in `World`/`Game`. Retrofitted 4 bridge lamps, 74 parking bays (including the
+  beach pickup) and 23 initial road vehicles. Seeded woodland scenery stays procedural.
+- Operations gained `add`, `replace`, `duplicate` and `delete` (bounded to the three
+  collections), atomic with the existing 100-entry history. `duplicate` moves a traffic
+  spawn and its route together; district translation carries authored content once.
+- Validation gained pool/water/static clearance for props, vehicle-placement and
+  vehicle-overlap checks (empty bays too), initial-route sweeping, envelope checks and
+  a total-route workload budget. Findings use the descriptor's stable ID.
+- Version-1 imports migrate losslessly: bridge lamps become `countryProps`, the fixed
+  parking/traffic layout becomes explicit descriptors and the legacy `beach.pickup`
+  becomes the beach pickup bay's position. Revisions are now `v2-*`.
+- `Map studio` gained an **Author content** panel: choose collection, ID, owner and
+  descriptor fields, then add/duplicate/delete/re-property. Traffic routes render with
+  a direction arrow; parking bays render with bay markings.
+- 448 tests / 31 files, strict TypeScript and the single-HTML build pass. Default
+  revision `v2-eabda267`: 0 errors/warnings, 121.1 m gap. The +20 m move example is
+  0 errors/141.1 m; the invalid-road example exits 1. Offline production QA at
+  1440×900 exercised add/duplicate/delete, blocked on-sand spawn rejection, preview
+  driving and v1→v2 migration, then restored the original clock. Docs, examples and
+  three new screenshots updated.
+
 ## Map studio, 2026-10-11
 
 - Critically reviewed and amended `docs/map-editor-plan.md`, then implemented the

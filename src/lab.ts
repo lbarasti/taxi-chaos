@@ -132,7 +132,7 @@ export type LabSnapshot = ReturnType<Game['snapshot']> & { lab: LabClock };
 export type VehiclePatch = { health?: number; engine?: number; fuel?: number; tyres?: number; ignite?: boolean; fuse?: number };
 
 export type VehicleSummary = {
-  id: number; kind: Vehicle['kind']; model: Vehicle['model']; lean: number; alive: boolean; parked: boolean;
+  id: number; sourceId?: string; kind: Vehicle['kind']; model: Vehicle['model']; lean: number; alive: boolean; parked: boolean;
   position: Vec; velocity: Vec; angle: number;
   mass: number; inertia: number; size: { length: number; width: number }; playerDrivable: boolean;
   cargo: { kind: VehicleDefinition['cargo']['kind']; mass: number; flammable: boolean };
@@ -140,7 +140,7 @@ export type VehicleSummary = {
   ai: { phase: Vehicle['ai']['phase']; role: Vehicle['ai']['role']; attempts: number; path: Vec[] };
 };
 
-export type PropSummary = { id: number; kind: string; position: Vec; hp: number; maxHp: number; alive: boolean; fire: number; fuelSpent: boolean; blamed: boolean };
+export type PropSummary = { id: number; sourceId?: string; kind: string; position: Vec; hp: number; maxHp: number; alive: boolean; fire: number; fuelSpent: boolean; blamed: boolean };
 export type PersonSummary = { id: number; role: string; position: Vec; velocity: Vec; angle: number; alive: boolean; aboard: boolean; panic: number; health: number };
 export type ContactSummary = { id: number; kind: string; depth: number };
 
@@ -773,7 +773,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     scenarios: scenarioInfo,
     state: snapshot,
     vehicles: () => structuredClone(game.vehicles.filter(v => v.alive).map(v => ({
-      id: v.id, kind: v.kind, model: v.model, lean: v.dynamics instanceof MotorcycleDynamics ? v.dynamics.lean : 0, alive: v.alive, parked: v.parked,
+      id: v.id, sourceId: v.sourceId, kind: v.kind, model: v.model, lean: v.dynamics instanceof MotorcycleDynamics ? v.dynamics.lean : 0, alive: v.alive, parked: v.parked,
       position: { ...v.body.position }, velocity: { ...v.body.velocity }, angle: v.body.angle,
       mass: v.body.mass, inertia: v.body.inertia, size: { length: v.body.w, width: v.body.h }, playerDrivable: v.definition.access.playerDrivable,
       cargo: { kind: v.definition.cargo.kind, mass: v.definition.cargo.mass, flammable: v.definition.cargo.flammable },
@@ -898,7 +898,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       return snapshot();
     },
     props: () => game.world.props.filter(p => Number.isFinite(p.maxHp)).map(p => ({
-      id: p.id, kind: p.kind, position: { ...p.body.position }, hp: p.hp, maxHp: p.maxHp,
+      id: p.id, sourceId: p.sourceId, kind: p.kind, position: { ...p.body.position }, hp: p.hp, maxHp: p.maxHp,
       alive: p.alive, fire: p.fire, fuelSpent: p.fuelSpent, blamed: p.blamed,
     })),
     people: () => game.world.people.map(p => ({

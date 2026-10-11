@@ -3,8 +3,10 @@ import { Game } from '../game';
 import type { Renderer } from '../renderer';
 import { add, dist, scale, sub, vec, type Vec } from '../physics';
 import { World } from '../world';
+import { vehicleDefinitions } from '../vehicles';
 import { compileMap } from './compile';
-import { MapHistory, entities, type MapBatch, type MapOperation } from './operations';
+import { MapHistory, entities, nextEntityId, type MapBatch, type MapOperation } from './operations';
+import { countryPropKinds, type AuthoredCollection, type AuthoredDescriptor } from './schema';
 import { EditorRenderer, type Layers } from './editor-renderer';
 import { validateMap, type Validation } from './validation';
 import { createPreview } from './preview';
@@ -34,6 +36,7 @@ export class MapEditor {
       <header class="editor-header"><div><span class="editor-eyebrow">TAXI CHAOS / WORLD AUTHORING</span><h1>Map studio<span class="editor-draft">DRAFT</span></h1></div><div class="editor-toolbar"><button data-map="undo">Undo</button><button data-map="redo">Redo</button><button data-map="import">Import</button><button data-map="export">Export JSON</button><button data-map="close">Close editor</button></div></header>
       <div class="editor-main"><div class="editor-stage"><div class="editor-camera"><button data-map="fit">Fit map</button><button data-map="fit-selection">Fit selection</button><button data-map="zoom-in" aria-label="Zoom in">+</button><button data-map="zoom-out" aria-label="Zoom out">−</button><button data-map="measure" aria-pressed="false">Measure</button><label>Snap <select data-map="snap" aria-label="Grid snapping"><option value="0">Off</option><option value="1" selected>1 m</option><option value="5">5 m</option><option value="10">10 m</option></select></label></div><canvas data-map="canvas" tabindex="0" aria-label="Map overview. Drag selected geometry to move; Shift-drag or middle-drag to pan; wheel to zoom."></canvas><div class="editor-stage-note">Select → drag or enter metres. Shift-drag pans · wheel zooms · Ctrl/⌘ Z undoes</div></div>
       <aside class="editor-inspector"><section><div class="editor-section-title">INSPECT / EDIT <span data-map="revision"></span></div><label>Selection<select data-map="selection" aria-label="Map selection"></select></label><div data-map="description" class="editor-description"></div><div data-map="placement"><div class="editor-fields"><label>X (m)<input data-map="x" type="number" step="0.1"></label><label>Y (m)<input data-map="y" type="number" step="0.1"></label></div><button data-map="move">Set position</button></div><div data-map="dimensions"><div class="editor-fields"><label>Width (m)<input data-map="width" type="number" step="0.1" min="1"></label><label>Height (m)<input data-map="height" type="number" step="0.1" min="1"></label></div><button data-map="resize">Set dimensions</button></div><div class="editor-fields"><label>Δ X (m)<input data-map="dx" type="number" step="1" value="0"></label><label>Δ Y (m)<input data-map="dy" type="number" step="1" value="20"></label></div><button data-map="translate" class="editor-primary">Translate selection</button></section>
+      <section><div class="editor-section-title">AUTHOR CONTENT</div><label>Content type<select data-map="collection" name="map-collection" aria-label="Content type"><option value="countryProps">Country prop</option><option value="parking">Parking bay</option><option value="trafficSpawns">Traffic spawn</option></select></label><label>New / duplicate ID<input data-map="new-id" name="map-new-id" maxlength="160"></label><label>Owner district<select data-map="owner" name="map-owner" aria-label="Owner district"></select></label><div data-map="prop-fields"><label>Prop kind<select data-map="prop-kind" name="map-prop-kind" aria-label="Prop kind">${countryPropKinds.map(k => `<option>${k}</option>`).join('')}</select></label><div class="editor-fields"><label>Prop width (m)<input data-map="prop-width" name="map-prop-width" type="number" min="0.2" max="100" step="0.1"></label><label>Prop height (m)<input data-map="prop-height" name="map-prop-height" type="number" min="0.2" max="100" step="0.1"></label></div><label>Label<input data-map="label" name="map-label" maxlength="160"></label></div><div data-map="vehicle-fields"><label>Vehicle model<select data-map="model" name="map-model" aria-label="Vehicle model"></select></label></div><div class="editor-fields"><label>Angle (rad)<input data-map="angle" name="map-angle" type="number" min="-6.2832" max="6.2832" step="0.1"></label><label>Colour<input data-map="color" name="map-color" type="color"></label></div><div data-map="parking-fields" class="editor-layers"><label><input data-map="occupied" name="map-occupied" type="checkbox">Occupied</label><label><input data-map="lot" name="map-lot" type="checkbox">Public lot marking</label></div><label data-map="path-field">Initial waypoints (JSON, metres)<textarea data-map="path" name="map-path" rows="3" aria-label="Initial traffic waypoints"></textarea></label><button data-map="add" class="editor-primary">Add at view centre</button><button data-map="properties">Apply selected properties</button><div class="editor-fields"><button data-map="duplicate">Duplicate selection</button><button data-map="delete">Delete selection</button></div><small>Duplicates use Δ X / Δ Y above. All edits support Undo.</small></section>
       <section><div class="editor-section-title">LAYERS</div><div class="editor-layers">${Object.entries(this.viewLayers()).map(([key, value]) => `<label><input type="checkbox" data-layer="${key}" ${value ? 'checked' : ''}>${key === 'points' ? 'Points / anchors' : key}</label>`).join('')}</div></section>
       <section><div class="editor-section-title">MAP ENVELOPE / METRES</div><div class="editor-fields">${['min-x', 'min-y', 'max-x', 'max-y'].map(key => `<label>${key.replace('-', ' ')}<input type="number" data-map="${key}" step="1"></label>`).join('')}</div><button data-map="envelope">Set envelope</button></section>
       <section><div class="editor-section-title">VALIDATION <span data-map="summary"></span></div><strong data-map="gap" class="editor-gap"></strong><small data-map="resolution"></small><div data-map="findings" class="editor-findings"></div></section>
@@ -60,6 +63,8 @@ export class MapEditor {
     select.innerHTML = [...d.districts.map(e => ({ id: e.id, label: e.name })), ...entities(d).map(e => ({ id: e.id, label: e.id })), ...d.roads.map(e => ({ id: e.id, label: `${e.name} · anchors` }))].map(e => `<option value="${escapeHTML(e.id)}">${escapeHTML(e.label)}</option>`).join(''); select.value = this.selection;
     this.q('revision').textContent = snapshot.revision;
     const p = description.position, descriptor = description.descriptor;
+    this.authorForm(description.collection ?? this.q<HTMLSelectElement>('collection').value as AuthoredCollection, description.collection ? descriptor as AuthoredDescriptor : undefined);
+    for (const key of ['properties', 'duplicate', 'delete']) this.q<HTMLButtonElement>(key).disabled = !description.collection;
     this.q('description').textContent = `${description.id} · ${description.kind}${description.editable ? '' : ' · READ ONLY'}\n${description.policy}\n${description.members.length} members · ${description.connections.length} road connections${description.seams.length ? '\nSeams: ' + description.seams.filter(s => s.weight !== 1).map(s => `${s.id} ×${s.weight}`).join(', ') : ''}`;
     if (description.bounds) { const { min, max } = description.bounds; this.q('description').append(document.createTextNode(`\nBounds: (${min.x.toFixed(1)}, ${min.y.toFixed(1)}) → (${max.x.toFixed(1)}, ${max.y.toFixed(1)}) m`)); }
     const footprints = this.world.props.filter(p => p.sourceId === this.selection).map(p => `${p.kind}: ${p.body.w} × ${p.body.h} m`);
@@ -88,12 +93,44 @@ export class MapEditor {
     spawn.innerHTML = d.stops.map(s => `<option value="${escapeHTML(s.id)}">${escapeHTML(s.name)}</option>`).join(''); spawn.value = d.stops.some(s => s.id === old) ? old : d.stops[0].id;
     this.q<HTMLButtonElement>('preview').disabled = this.validation.errors > 0;
   }
+  private authorForm(key: AuthoredCollection, descriptor?: AuthoredDescriptor) {
+    const d = this.history.snapshot().document;
+    this.q<HTMLSelectElement>('collection').value = key;
+    this.q<HTMLInputElement>('new-id').value = nextEntityId(d, descriptor?.id ?? (key === 'countryProps' ? 'country-prop' : key === 'parking' ? 'parking' : 'traffic'));
+    this.q<HTMLSelectElement>('owner').innerHTML = d.districts.map(o => `<option value="${escapeHTML(o.id)}">${escapeHTML(o.name)}</option>`).join('');
+    this.q<HTMLSelectElement>('owner').value = descriptor?.owner ?? 'southern-estates';
+    this.q('prop-fields').hidden = key !== 'countryProps'; this.q('vehicle-fields').hidden = key === 'countryProps'; this.q('parking-fields').hidden = key !== 'parking'; this.q('path-field').hidden = key !== 'trafficSpawns';
+    this.q<HTMLSelectElement>('model').innerHTML = Object.entries(vehicleDefinitions).filter(([, v]) => key !== 'trafficSpawns' || v.ai.controller === 'road').map(([m]) => `<option>${m}</option>`).join('');
+    this.q<HTMLSelectElement>('model').value = descriptor && 'model' in descriptor ? descriptor.model : 'car';
+    this.q<HTMLSelectElement>('prop-kind').value = descriptor && 'kind' in descriptor ? descriptor.kind : 'tree';
+    this.q<HTMLInputElement>('prop-width').value = String(descriptor && 'width' in descriptor ? descriptor.width : 1.6);
+    this.q<HTMLInputElement>('prop-height').value = String(descriptor && 'height' in descriptor ? descriptor.height : 1.6);
+    this.q<HTMLInputElement>('label').value = descriptor && 'label' in descriptor ? descriptor.label : '';
+    this.q<HTMLInputElement>('angle').value = String(descriptor?.angle ?? 0);
+    this.q<HTMLInputElement>('color').value = descriptor?.color ?? (key === 'countryProps' ? '#426e58' : '#91b5b0');
+    this.q<HTMLInputElement>('occupied').checked = descriptor && 'occupied' in descriptor ? descriptor.occupied : true;
+    this.q<HTMLInputElement>('lot').checked = descriptor && 'lot' in descriptor ? descriptor.lot : false;
+    this.q<HTMLTextAreaElement>('path').value = JSON.stringify(descriptor && 'path' in descriptor ? descriptor.path : [add(this.view.camera, vec(40, 0))]);
+  }
+  private authoredDescriptor(id: string, position: Vec): AuthoredDescriptor {
+    const key = this.q<HTMLSelectElement>('collection').value as AuthoredCollection;
+    const base = { id, owner: this.q<HTMLSelectElement>('owner').value, position: { ...position }, angle: this.number('angle'), color: this.q<HTMLInputElement>('color').value };
+    if (key === 'countryProps') return { ...base, kind: this.q<HTMLSelectElement>('prop-kind').value as typeof countryPropKinds[number], width: this.number('prop-width'), height: this.number('prop-height'), label: this.q<HTMLInputElement>('label').value };
+    const model = this.q<HTMLSelectElement>('model').value as keyof typeof vehicleDefinitions;
+    if (key === 'parking') return { ...base, model, occupied: this.q<HTMLInputElement>('occupied').checked, lot: this.q<HTMLInputElement>('lot').checked };
+    return { ...base, model, path: JSON.parse(this.q<HTMLTextAreaElement>('path').value) };
+  }
   private bind() {
     const on = (key: string, action: () => unknown) => this.q(key).addEventListener('click', () => this.attempt(action));
     on('close', () => this.api.close()); on('fit', () => { this.view.fit(this.compiled.document.envelope); this.draw(); });
     on('fit-selection', () => { const b = this.history.describe(this.selection).bounds; if (b) { this.view.fit(b); this.draw(); } });
     on('zoom-in', () => this.zoom(1.4)); on('zoom-out', () => this.zoom(1 / 1.4));
     on('undo', () => this.api.undo()); on('redo', () => this.api.redo());
+    this.q<HTMLSelectElement>('collection').addEventListener('change', () => { this.authorForm(this.q<HTMLSelectElement>('collection').value as AuthoredCollection); this.q<HTMLButtonElement>('properties').disabled = this.history.describe(this.selection).collection !== this.q<HTMLSelectElement>('collection').value; });
+    on('add', () => { const id = this.q<HTMLInputElement>('new-id').value; this.apply([{ type: 'add', collection: this.q<HTMLSelectElement>('collection').value as AuthoredCollection, descriptor: this.authoredDescriptor(id, this.view.camera) }]); this.api.select(id); });
+    on('properties', () => this.apply([{ type: 'replace', targetId: this.selection, descriptor: this.authoredDescriptor(this.selection, this.history.describe(this.selection).position!) }]));
+    on('duplicate', () => { const id = this.q<HTMLInputElement>('new-id').value; this.apply([{ type: 'duplicate', targetId: this.selection, newId: id, delta: vec(this.number('dx'), this.number('dy')) }]); this.api.select(id); });
+    on('delete', () => this.apply([{ type: 'delete', targetId: this.selection }]));
     on('move', () => this.apply([{ type: 'move', targetId: this.selection, position: vec(this.number('x'), this.number('y')) }]));
     on('resize', () => this.apply([{ type: 'resize', targetId: this.selection, width: this.number('width'), height: this.number('height') }]));
     on('translate', () => this.apply([{ type: 'translate', targetId: this.selection, delta: vec(this.number('dx'), this.number('dy')) }]));

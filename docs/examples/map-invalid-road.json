@@ -1,5 +1,5 @@
 {
-  "baseRevision": "v1-e3228605",
+  "baseRevision": "v2-eabda267",
   "operations": [
     { "type": "move", "targetId": "fairway-a", "position": { "x": 208, "y": 310 } }
   ]

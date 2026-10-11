@@ -1,17 +1,33 @@
-import { add, scale, sub, vec, type Vec } from '../physics';
+import { Body, add, scale, sub, vec, type Vec } from '../physics';
+import { createVehicleBody, vehicleDefinition } from '../vehicles';
 import { copyDefaultMap } from './default';
-import { assertMap, type MapDocument } from './schema';
+import { assertMap, type AuthoredCollection, type AuthoredDescriptor, type MapDocument } from './schema';
 import { exportMap, importMap, revision } from './serialization';
 
 export type MapOperation =
   | { type: 'translate'; targetId: string; delta: Vec }
   | { type: 'move'; targetId: string; position: Vec }
   | { type: 'resize'; targetId: string; width: number; height: number }
+  | { type: 'add'; collection: AuthoredCollection; descriptor: AuthoredDescriptor }
+  | { type: 'replace'; targetId: string; descriptor: AuthoredDescriptor }
+  | { type: 'delete'; targetId: string }
+  | { type: 'duplicate'; targetId: string; newId: string; delta: Vec }
   | { type: 'envelope'; min: Vec; max: Vec };
 export type MapBatch = { baseRevision: string; operations: MapOperation[] };
 
 export function entities(d: MapDocument) {
-  return [...d.points, ...d.villas, ...d.stops, d.golf, ...d.ridges, ...d.labels, d.beach.promenade, ...d.beach.hotels, ...d.beach.towers, ...d.beach.sets, ...d.beach.castles];
+  return [...d.points, ...d.villas, ...d.countryProps, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, d.beach.promenade, ...d.beach.hotels, ...d.beach.towers, ...d.beach.sets, ...d.beach.castles];
+}
+export function authoredCollection(d: MapDocument, id: string): AuthoredCollection | undefined {
+  return (['countryProps', 'parking', 'trafficSpawns'] as const).find(key => d[key].some(e => e.id === id));
+}
+export function nextEntityId(d: MapDocument, prefix: string) {
+  const used = new Set([...entities(d), ...d.districts, ...d.roads, ...d.constraints].map(e => e.id));
+  for (let i = 1; ; i++) if (!used.has(`${prefix}-${i}`)) return `${prefix}-${i}`;
+}
+export function descriptorBody(e: AuthoredDescriptor): Body {
+  if ('width' in e) { const b = new Body(e.position.x, e.position.y, 1, e.width, e.height); b.angle = e.angle; return b; }
+  return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
 }
 export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   const e = entities(d).find(e => e.id === id);
@@ -29,7 +45,12 @@ export function describe(d: MapDocument, id: string) {
   const positions: Vec[] = [];
   const rectangle = (p: Vec, w: number, h: number) => positions.push(vec(p.x - w / 2, p.y - h / 2), vec(p.x + w / 2, p.y + h / 2));
   for (const e of members) {
-    if ('points' in e) positions.push(...e.points);
+    if (authoredCollection(d, e.id)) {
+      const authored = e as AuthoredDescriptor; positions.push(...descriptorBody(authored).corners());
+      if ('occupied' in authored) { const bay = new Body(authored.position.x, authored.position.y, 1, 5.4, 2.6); bay.angle = authored.angle; positions.push(...bay.corners()); }
+      if ('path' in authored) positions.push(...authored.path);
+    }
+    else if ('points' in e) positions.push(...e.points);
     else if ('center' in e) { rectangle(e.center, e.width + 14, e.height + 8); rectangle(add(e.center, e.clubhouse), 20, 22); positions.push(...[...e.route, ...e.path].map(p => add(e.center, p))); }
     else if ('left' in e) positions.push(vec(e.left, e.top), vec(e.right, e.bottom));
     else {
@@ -48,7 +69,8 @@ export function describe(d: MapDocument, id: string) {
   if (road) positions.push(...[road.from, ...road.via, road.to].map(id => entityPosition(d, id)!));
   const connections = d.roads.filter(r => r.id === id || [r.from, ...r.via, r.to].some(p => members.some(m => m.id === p)));
   return structuredClone({ id, kind: district ? 'district' : road ? 'road' : 'point' in entity! ? 'destination' : 'position' in entity! && 'weight' in entity! ? 'point' : 'object',
-    editable: district ? id === 'southern-estates' : road ? false : 'editable' in entity! ? entity.editable : d.districts.find(o => o.id === entity!.owner)!.editable,
+    editable: district ? id === 'southern-estates' : road ? false : authoredCollection(d, id) ? true : 'editable' in entity! ? entity.editable : d.districts.find(o => o.id === entity!.owner)!.editable,
+    collection: authoredCollection(d, id),
     descriptor: district ?? entity ?? road,
     position: district || road ? undefined : entityPosition(d, id),
     bounds: positions.length ? { min: vec(Math.min(...positions.map(p => p.x)), Math.min(...positions.map(p => p.y))), max: vec(Math.max(...positions.map(p => p.x)), Math.max(...positions.map(p => p.y))) } : undefined,
@@ -65,9 +87,9 @@ function finitePoint(p: unknown): asserts p is Vec {
 function moveEntity(d: MapDocument, id: string, delta: Vec, changed: Set<string>) {
   const e = entities(d).find(e => e.id === id);
   if (!e) throw new Error(`Unknown movable ID: ${id}`);
-  if ('editable' in e && !e.editable || !d.districts.find(o => o.id === e.owner)!.editable) throw new Error(`${id} is read-only`);
+  if (!authoredCollection(d, id) && ('editable' in e && !e.editable || !d.districts.find(o => o.id === e.owner)!.editable)) throw new Error(`${id} is read-only`);
   if ('point' in e) { moveEntity(d, e.point, delta, changed); changed.add(id); return; }
-  if ('position' in e) e.position = add(e.position, delta);
+  if ('position' in e) { e.position = add(e.position, delta); const spawn = d.trafficSpawns.find(s => s.id === id); if (spawn) spawn.path = spawn.path.map(p => add(p, delta)); }
   else if ('center' in e) e.center = add(e.center, delta);
   else if ('points' in e) e.points = e.points.map(p => add(p, delta));
   else { e.left += delta.x; e.right += delta.x; e.top += delta.y; e.bottom += delta.y; e.entries = e.entries.map(x => x + delta.x); e.southEntries = e.southEntries.map(x => x + delta.x); }
@@ -83,9 +105,28 @@ export function applyOperations(input: MapDocument, batch: MapBatch) {
   const d = structuredClone(input), changed = new Set<string>();
   for (const op of batch.operations) {
     if (!op || typeof op !== 'object') throw new Error('Malformed operation');
-    const expected = op.type === 'envelope' ? ['type', 'min', 'max'] : op.type === 'resize' ? ['type', 'targetId', 'width', 'height'] : op.type === 'move' ? ['type', 'targetId', 'position'] : ['type', 'targetId', 'delta'];
+    const expected = op.type === 'add' ? ['type', 'collection', 'descriptor'] : op.type === 'replace' ? ['type', 'targetId', 'descriptor'] : op.type === 'delete' ? ['type', 'targetId'] : op.type === 'duplicate' ? ['type', 'targetId', 'newId', 'delta'] : op.type === 'envelope' ? ['type', 'min', 'max'] : op.type === 'resize' ? ['type', 'targetId', 'width', 'height'] : op.type === 'move' ? ['type', 'targetId', 'position'] : ['type', 'targetId', 'delta'];
     if (Object.keys(op).sort().join(',') !== expected.sort().join(',')) throw new Error('Unknown operation fields');
-    if (op.type === 'envelope') { finitePoint(op.min); finitePoint(op.max); d.envelope = { min: { ...op.min }, max: { ...op.max } }; changed.add('envelope'); }
+    if (op.type === 'add') {
+      if (!['countryProps', 'parking', 'trafficSpawns'].includes(op.collection)) throw new Error('Unknown authored collection');
+      if (!op.descriptor || typeof op.descriptor !== 'object') throw new Error('Malformed descriptor');
+      (d[op.collection] as AuthoredDescriptor[]).push(structuredClone(op.descriptor));
+      assertMap(d); changed.add(op.descriptor.id);
+    } else if (op.type === 'delete' || op.type === 'duplicate' || op.type === 'replace') {
+      const key = authoredCollection(d, op.targetId);
+      if (!key) throw new Error('Add/delete/duplicate/replace supports countryProps, parking and trafficSpawns only');
+      const items: AuthoredDescriptor[] = d[key], index = items.findIndex(e => e.id === op.targetId);
+      if (op.type === 'delete') items.splice(index, 1);
+      else if (op.type === 'replace') {
+        if (op.descriptor?.id !== op.targetId) throw new Error('Replacement must retain the stable ID');
+        items[index] = structuredClone(op.descriptor);
+      } else {
+        finitePoint(op.delta);
+        const e = structuredClone(items[index]); e.id = op.newId; items.push(e);
+        assertMap(d); moveEntity(d, e.id, op.delta, changed);
+      }
+      assertMap(d); changed.add(op.targetId);
+    } else if (op.type === 'envelope') { finitePoint(op.min); finitePoint(op.max); d.envelope = { min: { ...op.min }, max: { ...op.max } }; changed.add('envelope'); }
     else if (op.type === 'translate') {
       finitePoint(op.delta);
       const district = d.districts.find(e => e.id === op.targetId);
@@ -104,10 +145,10 @@ export function applyOperations(input: MapDocument, batch: MapBatch) {
     } else if (op.type === 'resize') {
       if (!Number.isFinite(op.width) || !Number.isFinite(op.height) || op.width <= 0 || op.height <= 0) throw new Error('Dimensions must be positive finite metres');
       const e = entities(d).find(e => e.id === op.targetId);
-      if (!e || !d.districts.find(o => o.id === e.owner)!.editable) throw new Error('Unknown/read-only object');
+      if (!e || !authoredCollection(d, e.id) && !d.districts.find(o => o.id === e.owner)!.editable) throw new Error('Unknown/read-only object');
       if ('width' in e) { e.width = op.width; e.height = op.height; }
       else if ('left' in e) { const center = entityPosition(d, e.id)!; e.left = center.x - op.width / 2; e.right = center.x + op.width / 2; e.top = center.y - op.height / 2; e.bottom = center.y + op.height / 2; }
-      else throw new Error('Dimensions are editable only for golf, hotels and promenade');
+      else throw new Error('Dimensions are editable only for country props, golf, hotels and promenade');
       changed.add(e.id);
     } else throw new Error('Unknown operation type');
   }
@@ -119,7 +160,7 @@ export class MapHistory {
   private document: MapDocument;
   private past: MapDocument[] = []; private future: MapDocument[] = [];
   constructor(document = copyDefaultMap()) { assertMap(document); this.document = structuredClone(document); }
-  snapshot() { return { schemaVersion: 1, revision: revision(this.document), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
+  snapshot() { return { schemaVersion: 2, revision: revision(this.document), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
   describe(id: string) { return describe(this.document, id); }
   apply(batch: MapBatch) {
     const result = applyOperations(this.document, batch);
