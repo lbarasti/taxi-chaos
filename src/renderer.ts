@@ -138,6 +138,9 @@ export class Renderer {
     if (this.visible(PORT_ENTRY, 10)) this.label('HARBOUR / $75', PORT_ENTRY.x, PORT_ENTRY.y + 3, 0.9, '#a3ddc2', '700');
     this.marker(GARAGE, '#a7bcca', 'PIT STOP', true);
     const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
+    if (g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
+      this.marker(offer.pickup, '#8edbe8', `TEXT / ${offer.name.toUpperCase()}`, true);
+    }
     for (const person of g.world.people) if (person.alive && !person.aboard && person.panic > 0 && this.visible(person.position, 2)) this.label('!', person.position.x, person.position.y - 1, 1.1, GOLD, '700');
     if (g.job.stage === 'pickup') {
       const person = g.world.people.find(p => p.id === g.job.customerId), waiting = person?.position ?? add(g.job.pickup, vec(3.4, 0));
@@ -731,6 +734,9 @@ export class Renderer {
     for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
     c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke();
     const markerScale = 0.66 / s;
+    if (!g.onFoot && g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
+      c.strokeStyle = '#8edbe8'; c.lineWidth = 1 / s; c.beginPath(); c.arc(offer.pickup.x, offer.pickup.y, 4 * markerScale, 0, Math.PI * 2); c.stroke();
+    }
     if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage))) { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
     c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
     for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }

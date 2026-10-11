@@ -17,6 +17,7 @@ import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } 
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
+import { defaultPlayerRecords, migratePlayerRecords, MAX_TEXT_RECEIPTS, type PlayerRecords } from './player-records';
 import { isCountry, pathLength } from './countryside';
 import { RAIL_BREAK_SPEED } from './coast';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
@@ -26,7 +27,7 @@ export type Vehicle = { id: number; sourceId?: string; body: Body; dynamics: Car
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId };
-export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number; story: MissionProgress };
+export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number; story: MissionProgress; playerRecords: PlayerRecords };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
 export const upgradeInfo = {
@@ -36,8 +37,8 @@ export const upgradeInfo = {
   boost: { name: 'Bigger boost tank', subtitle: 'A little extra getaway.', detail: '+35% boost capacity per level', price: 180 },
 };
 export type Upgrade = keyof typeof upgradeInfo;
-export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0, story: defaultMissionProgress() });
-function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = migrateMissionProgress(s.story); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
+export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords() });
+function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = migrateMissionProgress(s.story); d.playerRecords = migratePlayerRecords(s.playerRecords); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
 const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
@@ -61,6 +62,9 @@ export class Game {
   dayNight = new DayNight();
   dialogue = new Dialogue();
   missions!: MissionDirector;
+  /** Unaccepted physical pickups, keyed by stable mission identity. */
+  missionOffers = new Map<MissionId, Job>();
+  private offerCheckpoint = 0;
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   touchMove: Vec | null = null;
@@ -105,6 +109,7 @@ export class Game {
     }
   }
   resetRun() {
+    this.missionOffers.clear();
     this.sounds.reset(); this.touchMove = null;
     this.sandRuts = []; this.rutVehicleId = -1;
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
@@ -119,9 +124,9 @@ export class Game {
     this.eventLog = []; this.newJob(true, 'reset'); this.applyUpgrades(); this.setMode('playing');
   }
   /** Explicit new-story reset. Ordinary new shifts preserve persistent story. */
-  resetStory() { this.missions.reset(); this.newJob(true, 'reset'); this.persist(); }
+  resetStory() { this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.newJob(true, 'reset'); this.persist(); }
   /** Abandons any active mission and detaches it from the current job. */
-  releaseMission(reason: AbandonReason = 'shift') { if (this.missions.activeId) { const persistent = this.missions.active?.abandon.retry !== 'always'; this.missions.abandon(reason, this.save.story.campaignSeconds); if (persistent) this.persist(); } if (this.job) delete this.job.missionId; }
+  releaseMission(reason: AbandonReason = 'shift') { const active = this.missions.activeId; if (active) { const persistent = this.missions.active?.abandon.retry !== 'always'; this.missions.abandon(reason, this.save.story.campaignSeconds); if (persistent) this.persist(); } if (this.job && (active || !this.missionOffers.has(this.job.missionId ?? ''))) delete this.job.missionId; }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
     return this.spawnVehicle({ kind, position: vec(x, y), angle, color, model });
   }
@@ -417,27 +422,86 @@ export class Game {
   private missionContext(): DirectorContext {
     return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds };
   }
-  private newMissionJob(missionId: MissionId) {
+  private makeMissionJob(missionId: MissionId): Job {
     const mission = this.missions.mission(missionId), { roadPath } = this.world.navigation;
     const pickup = { ...mission.stops.pickup }, dropoff = { ...mission.stops.dropoff };
     const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
     const destination = this.missions.catalogue.stops.destinations.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? PLACES[this.jobsDone % PLACES.length];
     const type = this.player.definition.access.job;
-    const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
-    this.missions.begin(missionId, this.missionContext());
+    const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55', mission.offer ? { phase: 0, angle: 0 } : undefined) : undefined;
     const name = mission.passenger ? characters[mission.passenger].name : PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length];
-    this.job = { type, pickup, dropoff, name, destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, missionId };
+    return { type, pickup, dropoff, name, destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, missionId };
+  }
+  private newMissionJob(missionId: MissionId) {
+    this.missions.begin(missionId, this.missionContext());
+    this.job = this.makeMissionJob(missionId);
+  }
+  /** Reconcile bounded authored offers without consuming the simulation RNG. */
+  syncMissionOffers() {
+    this.offerCheckpoint = this.save.story.campaignSeconds + 0.5;
+    // Missing contacts resolve before eligibility is recomputed, so the same
+    // opportunity cannot be recreated in this pass or after reloading the save.
+    let changed = false;
+    for (const [id, job] of this.missionOffers) if (job.customerId !== -1 && !this.world.people.find(p => p.id === job.customerId)?.alive) {
+      changed = this.missions.loseContact(id, this.save.story.campaignSeconds) || changed;
+    }
+    const available = this.missions.available(this.missionContext()).filter(id => this.missions.mission(id).offer);
+    for (const [id, job] of this.missionOffers) {
+      const person = this.world.people.find(p => p.id === job.customerId);
+      if (!available.includes(id) || job.type !== this.player.definition.access.job || (job.customerId !== -1 && !person?.alive)) {
+        if (person?.alive) { person.role = 'civilian'; person.color = '#d4b487'; }
+        this.missionOffers.delete(id);
+      }
+    }
+    let arriving = 0;
+    for (const id of available) {
+      const mission = this.missions.mission(id), offer = mission.offer!;
+      const records = this.save.playerRecords.texts;
+      if (!records.some(t => t.messageId === offer.messageId) && records.length < MAX_TEXT_RECEIPTS) {
+        records.push({ messageId: offer.messageId, missionId: id, character: offer.character, sender: characters[offer.character].name,
+          title: mission.title, text: offer.text, pickup: this.missions.catalogue.stops.byId[mission.stopIds.pickup].name,
+          receivedAt: this.save.story.campaignSeconds, readAt: null });
+        arriving++; changed = true;
+      }
+      if (!this.missionOffers.has(id)) this.missionOffers.set(id, this.makeMissionJob(id));
+    }
+    if (changed) this.persist();
+    if (arriving && this.mode === 'playing') this.notify(`${arriving} new text${arriving === 1 ? '' : 's'} · Open Texts to read your mission offers. Pickup chooses the ride.`);
+  }
+  readTextMessages(messageIds: readonly string[]) {
+    let changed = false;
+    for (const text of this.save.playerRecords.texts) if (text.readAt === null && messageIds.includes(text.messageId)) {
+      text.readAt = this.save.story.campaignSeconds; changed = true;
+    }
+    if (changed) this.persist();
+  }
+  /** Routing a text is reversible; acceptance and branch effects happen at pickup. */
+  routeMissionOffer(id: MissionId): boolean {
+    if (this.mode !== 'playing' || this.onFoot || this.job.stage === 'dropoff') return false;
+    this.syncMissionOffers();
+    const offer = this.missionOffers.get(id);
+    if (!offer) return false;
+    if (this.job !== offer && !this.missionOffers.has(this.job.missionId ?? '')) {
+      const old = this.world.people.find(p => p.id === this.job.customerId);
+      if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; }
+      this.releaseMission('replaced');
+    }
+    this.job.wait = 0; offer.wait = 0; this.job = offer;
+    this.dialogue.clear(); this.navToGarage = false; this.navToHarbour = false;
+    return true;
   }
   newJob(first = false, reason?: AbandonReason) {
     this.dialogue.clear();
-    if (this.job) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
+    if (this.job && !this.missionOffers.has(this.job.missionId ?? '')) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.releaseMission(reason ?? 'replaced');
+    if (this.job) this.job.wait = 0;
     this.offer = first ? 0 : this.offer + 1;
     // Config drives every dispatch: a due story mission takes the fare slot,
     // otherwise dispatch falls back to the procedural job below.
     // Keep recovery dispatch local without moving an authored story pickup.
-    const offered = this.missions.available(this.missionContext()).find(id => dist(this.missions.mission(id).stops.pickup, this.actor.position) <= this.missions.mission(id).dispatchRadius);
+    this.syncMissionOffers();
+    const offered = this.missions.available(this.missionContext()).find(id => !this.missions.mission(id).offer && dist(this.missions.mission(id).stops.pickup, this.actor.position) <= this.missions.mission(id).dispatchRadius);
     if (offered) { this.newMissionJob(offered); return; }
     const { roadPath } = this.world.navigation;
     // Authored stop identities resolve through the same registry as story missions.
@@ -456,6 +520,7 @@ export class Game {
     this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
   }
   setJobType() {
+    this.syncMissionOffers();
     const type = this.player.definition.access.job;
     // Explicit mission vehicle policy: a mission that does not allow this kind,
     // model or variant is abandoned rather than silently rewritten.
@@ -659,6 +724,12 @@ export class Game {
     this.kills++; this.fx.bloodHit(person.position, force, severity, person.color);
     this.sounds.emit('pulp', this.time, { position: person.position, strength: clamp(severity, 0.5, 1.2) });
     if (blamed) this.crime(person.role === 'officer' ? 35 : 28);
+    const lostOffer = [...this.missionOffers.values()].find(j => j.customerId === person.id);
+    if (lostOffer?.missionId) {
+      this.missions.loseContact(lostOffer.missionId, this.save.story.campaignSeconds);
+      this.missionOffers.delete(lostOffer.missionId); this.persist();
+      this.syncMissionOffers();
+    }
     if (person.id === this.job.customerId && this.job.stage === 'pickup') { this.notify(`${this.job.name} won't be taking that ride. Dispatch sent another fare.`, 'danger'); this.newJob(false, 'customer-lost'); }
   }
   queueBlast(position: Vec, radius: number, power: number, blamed: boolean, sourceVehicle?: number, sourceProp?: number) {
@@ -871,7 +942,7 @@ export class Game {
     this.world.people = this.world.people.filter(p => p.aboard ? p.id === this.job.customerId : p.alive || this.time - p.deathTime < 90 || dist(p.position, this.actor.position) < 80);
     if (this.world.people.length > 240) {
       let excess = this.world.people.length - 240;
-      this.world.people = this.world.people.filter(p => { if (excess > 0 && p.id !== this.job.customerId && dist(p.position, this.actor.position) > 80) { excess--; return false; } return true; });
+      this.world.people = this.world.people.filter(p => { if (excess > 0 && p.id !== this.job.customerId && ![...this.missionOffers.values()].some(j => j.customerId === p.id) && dist(p.position, this.actor.position) > 80) { excess--; return false; } return true; });
     }
     if (this.world.people.filter(p => p.alive && p.role === 'civilian').length < 112) {
       for (let i = 0; i < 10; i++) {
@@ -894,6 +965,14 @@ export class Game {
   jobs(dt: number) {
     if (this.mode !== 'playing' || this.onFoot) { this.job.wait = 0; return; }
     this.dialogue.update(dt);
+    if (this.save.story.campaignSeconds >= this.offerCheckpoint) this.syncMissionOffers();
+    // All text pickups remain live. Driving to a different ring chooses that
+    // offer, regardless of which message supplied the current radar route.
+    if (this.job.stage === 'pickup' && !this.navToGarage && !this.navToHarbour && this.speed < 2.8) {
+      const routed = this.missionOffers.get(this.job.missionId ?? '');
+      const nearby = routed && dist(this.player.body.position, routed.pickup) < 5.3 ? routed : [...this.missionOffers.values()].find(j => dist(this.player.body.position, j.pickup) < 5.3);
+      if (nearby && nearby !== this.job) this.routeMissionOffer(nearby.missionId!);
+    }
     const j = this.job;
     if (j.stage === 'dropoff') j.elapsed += dt;
     const jobTarget = j.stage === 'pickup' ? j.pickup : j.dropoff;
@@ -901,14 +980,19 @@ export class Game {
       j.wait += dt;
       if (j.wait >= 0.8) {
         if (j.stage === 'pickup') {
+          if (j.missionId && this.missions.activeId !== j.missionId && !this.missions.begin(j.missionId, this.missionContext())) {
+            this.newJob(); return;
+          }
           const outcome = j.missionId ? this.missions.pickup(this.missionContext()) : null;
           if (j.missionId && outcome?.missionId !== j.missionId) {
             this.releaseMission('vehicle-change'); this.newJob(false, 'vehicle-change');
             this.notify('That ride cannot take this mission. Dispatch sent a new job.', 'danger'); return;
           }
           j.stage = 'dropoff'; j.wait = 0;
+          if (j.missionId) this.missionOffers.delete(j.missionId);
           const person = this.world.people.find(p => p.id === j.customerId);
           if (person) { person.aboard = true; person.alive = false; }
+          this.syncMissionOffers();
           this.dialogue.start(outcome?.beatId ?? undefined, outcome?.message ?? null);
           if (j.missionId) this.persist();
           this.sounds.emit('pickup', this.time);
@@ -971,6 +1055,8 @@ export class Game {
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),
       dialogue: this.dialogue.snapshot(),
       story: this.missions.snapshot(),
+      playerRecords: this.save.playerRecords,
+      missionOffers: [...this.missionOffers.values()],
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
       job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }

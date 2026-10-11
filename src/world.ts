@@ -33,8 +33,8 @@ export class World {
     const prop: Prop = { id: this.props.length, body, kind, alive: true, hp, maxHp: hp, color, label, brokenAt: -1, lastHit: -100, fire: 0, fuelSpent: false, blamed: false };
     this.props.push(prop); this.hash.insert(prop); return prop;
   }
-  addPerson(p: Vec, role: Person['role'] = 'civilian', color = '#d4b487') {
-    const person: Person = { id: this.personSerial++, position: { ...p }, home: { ...p }, phase: this.random() * Math.PI * 2, color, panic: 0, alive: true, aboard: false, health: 100, velocity: vec(), angle: this.random() * 6, deathTime: -1, role, hitAt: -100 };
+  addPerson(p: Vec, role: Person['role'] = 'civilian', color = '#d4b487', pose?: { phase: number; angle: number }) {
+    const person: Person = { id: this.personSerial++, position: { ...p }, home: { ...p }, phase: pose?.phase ?? this.random() * Math.PI * 2, color, panic: 0, alive: true, aboard: false, health: 100, velocity: vec(), angle: pose?.angle ?? this.random() * 6, deathTime: -1, role, hitAt: -100 };
     this.people.push(person); return person;
   }
   constructor(public readonly map: CompiledMap = defaultCompiledMap) {

@@ -56,6 +56,11 @@ export type Mission = Readonly<{
   abandon: Readonly<{ retry: 'always' | 'cooldown' | 'never'; cooldownSeconds?: number }>;
   /** Optional fare character used for the HUD name. */
   passenger?: string;
+  /** Text offers stay unaccepted until the physical pickup. */
+  offer?: Readonly<{ character: string; text: string }>;
+  pickupChoice?: Readonly<{ group: ChoiceGroupId; choice: ChoiceId }>;
+  /** A missing/dead waiting contact closes this opportunity, without resurrection. */
+  contactLost?: Readonly<{ effects?: readonly Effect[] }>;
   requires: Condition;
   allowed: Readonly<{ jobs: readonly ('fare' | 'parcel')[]; models?: readonly string[]; kinds?: readonly ('taxi' | 'traffic' | 'police')[] }>;
   stops: Readonly<{ pickup: string; dropoff: string }>;
@@ -166,7 +171,19 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
   for (const [missionId, raw] of entries(root.missions, 'missions', 1, missionLimits.missions)) {
     const path = `missions.${missionId}`;
     id(missionId, path);
-    const mission = object(raw, path, missionKeys, ['passenger', 'choices', 'effects', 'dispatchRadius']);
+    const mission = object(raw, path, missionKeys, ['passenger', 'choices', 'effects', 'dispatchRadius', 'offer', 'pickupChoice', 'contactLost']);
+    if (mission.contactLost !== undefined) {
+      const lost = object(mission.contactLost, `${path}.contactLost`, [], ['effects']);
+      if (lost.effects !== undefined) effects(lost.effects, `${path}.contactLost.effects`);
+    }
+    if (mission.offer !== undefined) {
+      const offer = object(mission.offer, `${path}.offer`, ['character', 'text']);
+      id(offer.character, `${path}.offer.character`); text(offer.text, `${path}.offer.text`, missionLimits.text);
+    }
+    if (mission.pickupChoice !== undefined) {
+      const choice = object(mission.pickupChoice, `${path}.pickupChoice`, ['group', 'choice']);
+      id(choice.group, `${path}.pickupChoice.group`); id(choice.choice, `${path}.pickupChoice.choice`);
+    }
     text(mission.title, `${path}.title`, 160);
     int(mission.chapter, `${path}.chapter`, 0, 1e6);
     if (Object.hasOwn(mission, 'dispatchRadius')) num(mission.dispatchRadius, `${path}.dispatchRadius`, 10, 1000);

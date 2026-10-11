@@ -24,7 +24,8 @@ export type MissionEvent =
   | { type: 'pickup'; missionId: MissionId; at: number }
   | { type: 'completed'; missionId: MissionId; at: number }
   | { type: 'abandoned'; missionId: MissionId; reason: AbandonReason; at: number }
-  | { type: 'choice'; group: ChoiceGroupId; choice: ChoiceId; at: number };
+  | { type: 'choice'; group: ChoiceGroupId; choice: ChoiceId; at: number }
+  | { type: 'missed'; missionId: MissionId; reason: 'contact-lost'; at: number };
 
 export type PickupOutcome = Readonly<{ missionId: MissionId | null; beatId: BeatId | null; message: StoryMessage | null }>;
 
@@ -128,6 +129,12 @@ export class MissionDirector {
     if (!this.allowedFor(mission, ctx)) return NOTHING;
     const events: MissionEvent[] = [{ type: 'pickup', missionId: mission.id, at: ctx.time }];
     this.transact(events, draft => {
+      if (mission.pickupChoice) {
+        const group = this.findGroup(mission.pickupChoice.group)!;
+        const option = group.options.find(o => o.id === mission.pickupChoice!.choice)!;
+        if (option.requires && !this.evaluateWith(draft, option.requires, ctx)) throw new Error(`Pickup choice ${option.id} is no longer eligible`);
+        this.commitOptionTo(draft, group, option, ctx.time, events);
+      }
       for (const group of mission.choices) if (group.commit === 'pickup') this.commitDefaultTo(draft, group, ctx, events);
     });
     this.pickedUp = true;
@@ -149,6 +156,18 @@ export class MissionDirector {
     });
     this.activeId = null; this.pickedUp = false; this.selections = {};
     return mission.id;
+  }
+
+  /** A lost waiting contact misses the opportunity once, independently of retry. */
+  loseContact(id: MissionId, time: number): boolean {
+    const mission = this.mission(id);
+    if (!mission || this.progress.failed.includes(id) || this.progress.completed.includes(id)) return false;
+    this.transact([{ type: 'missed', missionId: id, reason: 'contact-lost', at: time }], draft => {
+      this.applyEffectsTo(draft, mission.contactLost.effects);
+      draft.failed.push(id);
+    });
+    if (this.activeId === id) { this.activeId = null; this.pickedUp = false; this.selections = {}; }
+    return true;
   }
 
   /** Records an abandonment and applies the authored retry policy. */
@@ -216,6 +235,13 @@ export class MissionDirector {
   }
 
   private canOffer(mission: CompiledMission, ctx: DirectorContext): boolean {
+    if (mission.pickupChoice) {
+      const { group, choice } = mission.pickupChoice;
+      const existing = this.progress.choices[group];
+      if (existing !== undefined && existing !== choice) return false;
+      const option = this.findGroup(group)!.options.find(o => o.id === choice)!;
+      if (option.requires && !this.evaluate(option.requires, ctx)) return false;
+    }
     if (this.activeId === mission.id) return false;
     if (this.progress.failed.includes(mission.id)) return false;
     if (mission.repeat === 'once' && this.progress.completed.includes(mission.id)) return false;

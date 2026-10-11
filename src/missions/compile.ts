@@ -23,6 +23,9 @@ export type CompiledMission = Readonly<{
   repeat: 'once' | 'repeatable';
   abandon: Readonly<{ retry: 'always' | 'cooldown' | 'never'; cooldownSeconds?: number }>;
   passenger?: CharacterId;
+  offer?: Readonly<{ messageId: string; character: CharacterId; text: string }>;
+  pickupChoice?: Readonly<{ group: ChoiceGroupId; choice: ChoiceId }>;
+  contactLost: Readonly<{ effects: readonly Effect[] }>;
   requires: Condition;
   allowed: Readonly<{ jobs: readonly ('fare' | 'parcel')[]; models?: readonly VehicleModel[]; kinds?: readonly VehicleRole[] }>;
   stopIds: Readonly<{ pickup: string; dropoff: string }>;
@@ -100,6 +103,12 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
   const warnings: { missionId: MissionId; message: string }[] = [];
   for (const [missionId, mission] of Object.entries(catalogue.missions)) {
     const where = `mission ${missionId}`;
+    if (mission.offer && !isCharacterId(mission.offer.character)) throw new Error(`${where}: unknown offer character ${mission.offer.character}`);
+    if (mission.pickupChoice) {
+      requireGroup(mission.pickupChoice.group, mission.pickupChoice.choice, where);
+      const group = Object.values(catalogue.missions).flatMap(m => m.choices ?? []).find(g => g.id === mission.pickupChoice!.group)!;
+      if (group.commit !== 'pickup') throw new Error(`${where}: pickupChoice requires a pickup group`);
+    }
     if (mission.chapter > 1 && 'all' in mission.requires && mission.requires.all.length === 0) {
       warnings.push({ missionId, message: `Chapter ${mission.chapter} only ranks offers; empty prerequisites make this mission eligible in chapter 1. Add an explicit chapter prerequisite if intended.` });
     }
@@ -141,6 +150,8 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
     });
 
     const effects = mission.effects ?? [];
+    const contactLostEffects = mission.contactLost?.effects ?? [];
+    for (const effect of contactLostEffects) effectRefs(effect, (g, c) => requireGroup(g, c, `${where}.contactLost`), ref => { if (!isCharacterId(ref)) throw new Error(`${where}: unknown relationship character ${ref}`); });
     for (const effect of effects) effectRefs(effect, (g, c) => requireGroup(g, c, where), ref => { if (!isCharacterId(ref)) throw new Error(`${where}: unknown relationship character ${ref}`); });
 
     // Deterministic conflicts between unconditional assignments (mission effects
@@ -154,6 +165,7 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
       unconditional.set(group, { choice, source });
     };
     for (const effect of effects) if ('setChoice' in effect) assign(effect.setChoice.group, effect.setChoice.choice, 'effects');
+    if (mission.pickupChoice) assign(mission.pickupChoice.group, mission.pickupChoice.choice, 'pickupChoice');
     for (const group of choices) {
       const fallback = group.options.find(o => o.default);
       if (!fallback) continue;
@@ -171,6 +183,9 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
       repeat: mission.repeat,
       abandon: Object.freeze({ retry: mission.abandon.retry, ...(mission.abandon.cooldownSeconds !== undefined ? { cooldownSeconds: mission.abandon.cooldownSeconds } : {}) }),
       ...(passenger ? { passenger } : {}),
+      ...(mission.offer ? { offer: { ...mission.offer, messageId: `${missionId}-text`, character: mission.offer.character as CharacterId } } : {}),
+      ...(mission.pickupChoice ? { pickupChoice: { ...mission.pickupChoice } } : {}),
+      contactLost: { effects: [...contactLostEffects] },
       requires: mission.requires,
       allowed: Object.freeze(allowed),
       stopIds: Object.freeze({ pickup: mission.stops.pickup, dropoff: mission.stops.dropoff }),
