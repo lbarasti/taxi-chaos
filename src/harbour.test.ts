@@ -146,7 +146,7 @@ describe('harbour security and paid exchange', () => {
     expect(visited.has(0)).toBe(true); expect(visited.has(7)).toBe(true); expect(visited.has(9)).toBe(true);
     expect(truck.alive).toBe(true); expect(truck.sinking).toBeUndefined(); expect(truck.damage.health).toBe(100);
     expect(dist(truck.body.position, start)).toBeGreaterThan(5); expect(length(truck.body.velocity)).toBeGreaterThan(0.5);
-  });
+  }, 20000); // Five simulated minutes need headroom on shared CI runners.
   it('exposes a reproducible harbour fixture with security, fee and freight', () => {
     const g = new Game(); loadScenario(g, 'harbour'); expect(g.portGateNear).toBe(true); expect(g.save.cash).toBe(180);
     expect(g.snapshot().harbour.fee).toBe(PORT_FEE); expect(g.vehicles.filter(v => v.freight)).toHaveLength(3);

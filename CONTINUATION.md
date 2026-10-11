@@ -17,6 +17,9 @@
   at 100 HP, a paid club delivery, surf drowning and 390×844 mobile without overflow.
   No console errors/warnings or external requests. Before/after and production
   screenshots plus geometry notes are in `docs/beach.md`.
+- PR #14 CI exposed the existing 300-second freight simulation exceeding Vitest's
+  default 5-second wall-clock timeout. That test now has an explicit 20-second
+  budget, retaining its full simulation and assertions.
 
 ## PR #13 revision — hotel appropriation and review fixes, 2026-10-11
 
