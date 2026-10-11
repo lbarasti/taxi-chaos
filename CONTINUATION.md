@@ -1,5 +1,53 @@
 # Taxi Chaos — continuation handoff
 
+## Map studio, 2026-10-11
+
+- Critically reviewed and amended `docs/map-editor-plan.md`, then implemented the
+  complete first-release editor. See `docs/map-editor.md` for workflow, API, CLI,
+  extension contracts and five production screenshots.
+- F2 → Map studio provides overview pan/zoom/fit, district/object/point selection,
+  numeric/drag movement, dimensions, snapping, layers, distance measurement,
+  actionable findings, undo/redo, local JSON upload/download and gameplay preview.
+- `src/map/default-map.json` contains actual PR #14 coordinates with stable IDs,
+  explicit point ownership and weights. Southwoods seam uses 0.5; northern bridge
+  attachments are pinned. The envelope extends to y=560 to contain an existing
+  rail footprint (551.3), while all shipped geometry remains in place.
+- `compileMap()` creates independent recursively frozen country/beach/coast
+  geometry. World binds navigation to it; Game, AI, pedestrians, renderer, radar,
+  terrain, pools, cart spawns/routes, fare dispatch and effects use the same map.
+  Compatibility defaults remain for existing tests. Rural generation keeps its
+  original source lattice/RNG stream and moves the southern local region; changed
+  connector exclusions/rails are deliberately regenerated.
+- `__taxi.map` exposes snapshot/describe/select/apply/validate/undo/redo/export/
+  import/preview/previewState/step/live/edit/close. `npm run map:check -- --json`
+  uses the same DOM-free compiler/validator/operation engine. Canonical examples
+  are in `docs/examples/`; stale or structurally invalid batches reject atomically.
+- Default revision `v1-e3228605`: 0 errors/warnings, 121.1 m sampled water gap.
+  Reversible +20 m south move + envelope max y=600: revision `v1-672fb050`, 0
+  errors/warnings, 141.1 m gap and 9 regenerated connections. Invalid road example
+  exits 1 with car/truck footprint-water errors and blocks gameplay preview.
+- Preview constructs a persistence-disabled fresh Game, never reads/migrates
+  normal saves/settings, and leaves original Game state untouched. Closing
+  restores original mode/camera/clock; draft/history stay in memory until reload.
+  Original LAB API addresses the original game; use map previewState/step/live
+  for preview automation. City/harbour/bridges are read-only; whole-district
+  translation is limited to Southern Estates, with other authored children editable.
+- 432 tests / 30 files, normal `npm test`, strict TypeScript, standalone build,
+  default/moved/invalid CLI fixtures and whitespace checks pass. `npm test` now
+  caps workers at 2 to avoid wall-clock contention; freight retains its 300 s
+  simulation and existing 20 s timeout. CI also runs the default map checker.
+- Offline production QA at 1440×900 verifies drag/numeric equivalence, one undo
+  per drag, point/object editing, stale rejection, findings/blocked preview,
+  import/export, and a physical moved Fairway Club → Woodland Estates delivery:
+  16.6 simulated seconds, 100 HP, $241 payout, no mid-drive teleports/upgrades.
+  Original snapshot/save keys/clock are identical on return, including pause/resume.
+- 390×844 touch-menu editor and local CLI-file import/undo/redo/measurement pass
+  without horizontal overflow. No console errors/warnings or external requests;
+  only local HTML and embedded font. Main user's tabs were left alone.
+- Final review repaired selection after import undo/redo removes an entity ID and
+  checks pools/vehicles before turning the preview spawn. All checks and offline
+  production import-selection/preview QA pass after these fixes.
+
 ## South coast breathing room, 2026-10-11
 
 - Expanded the beach-facing inlet by translating the southern woodland shore,

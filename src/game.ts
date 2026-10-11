@@ -1,5 +1,5 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, HOSPITAL, World, blocksWalking, isStructural, roadNode, roadPath, type Person, type Prop } from './world';
+import { GARAGE, HOSPITAL, World, blocksWalking, isStructural, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
 import { defaultSettings, difficulties, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
@@ -11,9 +11,9 @@ import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } 
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, trafficModel, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
-import { GOLF_CART_ROUTE, HIGHLAND_STOPS, ROAD_NODES, isCountry, pathLength } from './countryside';
-import { RAIL_BREAK_SPEED, inOcean } from './coast';
-import { BEACH_STOPS, inBeach, inSand, onPromenade, sandHandling } from './beach';
+import { isCountry, pathLength } from './countryside';
+import { RAIL_BREAK_SPEED } from './coast';
+import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, inHarbour } from './harbour';
 
 export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
@@ -35,9 +35,9 @@ function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.s
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 export type Blast = { position: Vec; radius: number; power: number; blamed: boolean; due: number; sourceVehicle?: number; sourceProp?: number };
 export class Game {
-  world = new World(); save = loadSave(); mode: Mode = 'intro'; keys = new Set<string>();
-  settings: Settings = loadSettings(); policeIntel = { position: vec(4, 32), velocity: vec(), seenAt: -100 };
-  private preferences = { gore: this.settings.gore, difficulty: this.settings.difficulty };
+  world: World; save: Save; mode: Mode = 'intro'; keys = new Set<string>();
+  settings: Settings; policeIntel = { position: vec(4, 32), velocity: vec(), seenAt: -100 };
+  private preferences: Pick<Settings, 'gore' | 'difficulty'>;
   player!: Vehicle; vehicles: Vehicle[] = []; feedback: Feedback[] = []; skids: Skid[] = [];
   harbour = { vehicleId: null as number | null, entered: false, exchanged: false, progress: 0 }; navToHarbour = false;
   onFoot = false; driver = new Body(4, 32, 75, 0.7, 0.7); wreckedAt = -1;
@@ -57,10 +57,14 @@ export class Game {
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
   private sandRuts: { anchor: Vec; segment?: Skid }[] = [];
   private rutVehicleId = -1;
-  constructor() {
+  constructor(public readonly map: CompiledMap = defaultCompiledMap, private readonly persistence = true) {
+    this.world = new World(map); this.fx = new Effects(map.document.envelope); this.save = persistence ? loadSave() : defaultSave();
+    this.settings = persistence ? loadSettings() : defaultSettings();
+    this.preferences = { gore: this.settings.gore, difficulty: this.settings.difficulty };
     this.populateVehicles(); this.newJob(true); this.applyUpgrades();
   }
   populateVehicles() {
+    const { roadNode } = this.world.navigation, { GOLF_CART_ROUTE } = this.map.country;
     this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, '#f7ce55');
     for (let i = 0; i < 23; i++) {
       const horizontal = i % 2 === 0, street = (i % 7) * 40, along = 45 + this.world.random() * 160;
@@ -101,7 +105,7 @@ export class Game {
     this.onFoot = false; this.wreckedAt = -1; this.driver = new Body(4, 32, 75, 0.7, 0.7);
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.pendingExit = null; this.tumble = null; this.wastedReason = 'explosion';
     this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
-    this.world = new World(); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles(); this.feedback = []; this.skids = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
+    this.world = new World(this.map); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles(); this.feedback = []; this.skids = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
     this.time = 0; this.health = 100; this.boost = 100; this.heat = 0; this.escape = 0; this.arrest = 0; this.combo = 0; this.comboTimer = 0;
     this.smashed = 0; this.shiftEarnings = 0; this.jobsDone = 0; this.crashCooldown = 0; this.speedingTime = 0; this.driftMeter = 0; this.lastDrift = 0; this.nearMiss.clear(); this.navToGarage = false;
     this.kills = 0; this.explosions = 0; this.buildingsSmashed = 0; this.offer = 0; this.pedestrianClock = 0; this.maintenanceClock = 0; this.policeIntel = { position: vec(4, 32), velocity: vec(), seenAt: -100 };
@@ -119,6 +123,7 @@ export class Game {
     this.vehicles.push(v); return v;
   }
   private canSpawnTraffic(body: Body, margin = 2) {
+    const { inOcean } = this.map.coast;
     return !inOcean(body.position) && !this.vehicles.some(v => v.alive && bodiesNear(body, v.body, margin)) && ![...this.world.hash.query(body)].some(prop => contact(body, prop.body)) && !this.world.pools.some(pool => contact(body, pool)) && !this.world.parking.some(spot => {
       if (!spot.occupied) return false;
       const parked = createVehicleBody(vehicleDefinition(spot.model ?? (spot.motorcycle ? 'motorcycle' : 'car')), spot.position, spot.angle);
@@ -126,6 +131,7 @@ export class Game {
     });
   }
   setTrafficCount(count: number) {
+    const { roadNode } = this.world.navigation;
     this.trafficTarget = clamp(Math.floor(Number.isFinite(count) ? count : 0), 0, 60);
     const cars = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && !v.freight && v.alive);
     for (const v of cars.slice(this.trafficTarget)) v.alive = false;
@@ -155,6 +161,7 @@ export class Game {
     && length(this.player.body.velocity) < 2 && dist(this.driver.position, this.player.body.position) < 6; }
   get enterableCar() { if (this.tumble) return undefined; const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
+    const { inOcean } = this.map.coast;
     const steps = Math.ceil(dist(a, b) / 0.35);
     for (let i = 0; i <= steps; i++) { const p = add(a, scale(sub(b, a), i / (steps || 1))), probe = new Body(p.x, p.y, 1, 0.7, 0.7); if (inOcean(p) || [...this.world.hash.query(probe)].some(prop => blocksWalking(prop.kind) && contact(probe, prop.body)) || this.world.pools.some(pool => contact(probe, pool))) return false; }
     return true;
@@ -260,6 +267,7 @@ export class Game {
     this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.');
   }
   walk(dt: number) {
+    const { inOcean } = this.map.coast, { inSand } = this.map.beach;
     const tumbling = this.tumble;
     if (tumbling) {
       tumbling.elapsed += dt;
@@ -377,7 +385,7 @@ export class Game {
     this.sounds.emit('escape', this.time); this.notify('FRESH CAR. CLEAN RECORD. All police warnings cleared. Follow cyan to the exit.', 'success'); this.onChange();
   }
   get garageNear() { return !this.onFoot && dist(this.player.body.position, GARAGE) < 9; }
-  persist() { try { localStorage.setItem(storageKeys.save, JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
+  persist() { if (!this.persistence) return; try { localStorage.setItem(storageKeys.save, JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
   configure(settings: Partial<Settings>) {
     const enableGod = settings.invincible === true && !this.settings.invincible;
     if (settings.difficulty && Object.hasOwn(difficulties, settings.difficulty)) this.preferences.difficulty = this.settings.difficulty = settings.difficulty;
@@ -385,13 +393,14 @@ export class Game {
     for (const key of ['gore', 'invincible', 'infiniteBoost', 'noPolice'] as const) if (typeof settings[key] === 'boolean') this.settings[key] = settings[key]!;
     if (enableGod) { this.player.damage = createVehicleDamage(); this.driverHealth = 100; }
     if (this.settings.noPolice) { this.heat = 0; for (const v of this.police) v.alive = false; }
-    try { localStorage.setItem(storageKeys.settings, JSON.stringify(this.preferences)); } catch {}
+    if (this.persistence) try { localStorage.setItem(storageKeys.settings, JSON.stringify(this.preferences)); } catch {}
     this.onChange();
   }
   setMode(mode: Mode) { if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
   start() { this.setMode('playing'); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   newJob(first = false) {
+    const { HIGHLAND_STOPS } = this.map.country, { BEACH_STOPS } = this.map.beach, { roadPath } = this.world.navigation;
     if (this.job) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.offer = first ? 0 : this.offer + 1;
     const cityStops = [vec(4, 14), vec(44, 14), vec(84, 58), vec(116, 84), vec(164, 108), vec(204, 164), vec(156, 204), vec(76, 164), vec(4, 128), vec(44, 204), vec(204, 44), vec(124, 14)];
@@ -703,6 +712,7 @@ export class Game {
     return true;
   }
   update(dt: number) {
+    const { sandHandling, inSand } = this.map.beach, { inOcean } = this.map.coast;
     if (this.mode === 'wasted') { this.effects(dt); return; }
     if (this.mode !== 'playing') return;
     this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
@@ -774,6 +784,7 @@ export class Game {
     this.updateHarbour(dt); this.jobs(dt); this.law(dt); this.effects(dt); this.maintenance(dt);
   }
   private recordSandRuts() {
+    const { inSand } = this.map.beach;
     if (this.onFoot || this.player.sinking || this.speed <= 0.8 || this.rutVehicleId !== this.player.id) {
       this.sandRuts = []; this.rutVehicleId = this.player.id;
       if (this.onFoot || this.player.sinking || this.speed <= 0.8) return;
@@ -861,6 +872,7 @@ export class Game {
     }
   }
   law(dt: number) {
+    const { roadNode } = this.world.navigation, { ROAD_NODES } = this.map.country, { inBeach } = this.map.beach;
     if (this.mode !== 'playing' || this.settings.noPolice) return;
     if (!this.onFoot && this.speed > 24) { this.speedingTime += dt; if (this.speedingTime > 2) this.crime(dt * 3); }
     else this.speedingTime = 0;
@@ -890,6 +902,7 @@ export class Game {
     for (const s of this.skids) s.life -= dt; this.skids = this.skids.filter(s => s.life > 0).slice(-4500);
   }
   snapshot() {
+    const { inSand, onPromenade, sandHandling } = this.map.beach, { roadPath } = this.world.navigation;
     return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: inSand(this.actor.position) ? 'sand' : onPromenade(this.actor.position) ? 'promenade' : 'road', sandCoverage: sandHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain.sand).coverage, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
       health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, water: this.player.sinking ? this.player.sinking.pool ? 'pool' : 'ocean' : null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),

@@ -3,8 +3,7 @@
 // Game state, money, rendering or audio. main.ts owns blood/shred spawning, crime
 // assignment and vehicle momentum loss from the returned events.
 import { Body, add, clamp, dist, dot, length, rotate, scale, sub, vec, type Vec } from './physics';
-import { onPromenade } from './beach';
-import { blocksWalking, roadDistance, roadProjection, type Person, type World } from './world';
+import { blocksWalking, type Person, type World } from './world';
 
 export type PedestrianVehicle = { id: number; body: Body; kind: 'taxi' | 'police' | 'traffic' };
 export type PedestrianEvent = {
@@ -115,6 +114,7 @@ function moveTo(world: World, person: Person, candidate: Vec, radius: number): v
 
 /** Pick a clear escape step that maximises distance from threats. */
 function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: number): Vec {
+  const { roadDistance, roadProjection } = world.navigation;
   const step = ESCAPE_SPEED * dt;
   const dirs: Vec[] = [];
   let nearest: PedestrianVehicle | undefined, nearestD = Infinity;
@@ -145,7 +145,8 @@ function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: nu
 }
 
 /** Customers hold near home; ordinary civilians keep the prior local sinusoidal wander. */
-function wanderTarget(person: Person, time: number): Vec {
+function wanderTarget(world: World, person: Person, time: number): Vec {
+  const { onPromenade } = world.map.beach;
   if (person.role === 'customer') return person.home;
   return add(person.home, onPromenade(person.home) ? vec(Math.sin(time * 0.3 + person.phase) * 5, 0) : vec(0, Math.sin(time * 0.3 + person.phase) * 4));
 }
@@ -324,7 +325,7 @@ export function updatePedestrians(
       moveTo(world, person, add(flee(world, person, threats, dt), impulse), PERSON_RADIUS);
       person.panic = Math.max(0, person.panic - dt * 0.35);
     } else {
-      const target = wanderTarget(person, time);
+      const target = wanderTarget(world, person, time);
       const delta = sub(target, person.position), d = length(delta);
       let candidate = person.position;
       if (d > 0.05) {

@@ -1,7 +1,6 @@
 import type { Renderer } from './renderer';
 import type { Prop } from './world';
 import { vec, type Vec } from './physics';
-import { BEACH, BEACH_HOTELS, BEACH_OUTLINE, BEACH_SETS, BEACH_SHORE, PROMENADE, PROMENADE_ENTRIES } from './beach';
 
 function path(r: Renderer, points: readonly Vec[], color: string, width = 0.12, closed = false) {
   const c = r.ctx; c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y));
@@ -16,11 +15,13 @@ function label(r: Renderer, text: string, x: number, y: number, size: number, co
 }
 
 export function drawBeachGround(r: Renderer) {
+  const { BEACH, BEACH_HOTELS, BEACH_OUTLINE, BEACH_SETS, BEACH_SHORE, PROMENADE, PROMENADE_ENTRIES } = r.game.map.beach;
   const c = r.ctx;
   c.save(); path(r, BEACH_OUTLINE, '#e2c68e', 0, true); c.clip();
-  const sand = c.createLinearGradient(0, BEACH.top, 0, 274);
+  const bottom = Math.max(...BEACH_SHORE.map(p => p.y));
+  const sand = c.createLinearGradient(0, BEACH.top, 0, bottom);
   sand.addColorStop(0, '#eddaa8'); sand.addColorStop(0.58, '#e1c28a'); sand.addColorStop(1, '#bfa579');
-  c.fillStyle = sand; c.fillRect(BEACH.left, BEACH.top, BEACH.right - BEACH.left, 30);
+  c.fillStyle = sand; c.fillRect(BEACH.left, BEACH.top, BEACH.right - BEACH.left, bottom - BEACH.top);
   // Stipple, wind ripples and darker wet sand, authored without gameplay RNG.
   for (let i = 0; i < 420; i++) {
     const p = vec(BEACH.left + (i * 37 % 296), BEACH.top + (i * 17 % 283) / 10);
@@ -56,24 +57,26 @@ export function drawBeachGround(r: Renderer) {
   // Ocean Walk becomes a wider, tiled, protected pedestrian destination eastward.
   r.rect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top, '#d8d5c3');
   for (let x = PROMENADE.left; x < PROMENADE.right; x += 2) {
-    r.rect(x, PROMENADE.top, 0.035, 9, '#9caaa777');
-    for (const y of [249, 251, 253, 255]) r.rect(x, y, 2, 0.035, '#9caaa757');
+    r.rect(x, PROMENADE.top, 0.035, PROMENADE.bottom - PROMENADE.top, '#9caaa777');
+    for (let y = PROMENADE.top + 2; y < PROMENADE.bottom; y += 2) r.rect(x, y, 2, 0.035, '#9caaa757');
   }
-  r.rect(PROMENADE.left, 250.8, 106, 1.2, '#eee7d14a');
-  label(r, 'O C E A N   W A L K', 184, 251.5, 1, '#647d7a', '700');
-  label(r, 'PEDESTRIANS ONLY', 232, 251.5, 0.67, '#647d7a', '700');
+  r.rect(PROMENADE.left, (PROMENADE.top + PROMENADE.bottom) / 2 - 0.7, PROMENADE.right - PROMENADE.left, 1.2, '#eee7d14a');
+  label(r, 'O C E A N   W A L K', PROMENADE.left + 38, (PROMENADE.top + PROMENADE.bottom) / 2, 1, '#647d7a', '700');
+  label(r, 'PEDESTRIANS ONLY', PROMENADE.right - 20, (PROMENADE.top + PROMENADE.bottom) / 2, 0.67, '#647d7a', '700');
   for (const x of PROMENADE_ENTRIES) {
-    path(r, [vec(x, 244.7), vec(x, 246.3)], '#f4ebcf', 0.2);
-    r.circle(vec(x, 245.1), 0.15, '#718984');
+    path(r, [vec(x, PROMENADE.top - 2.3), vec(x, PROMENADE.top - 0.7)], '#f4ebcf', 0.2);
+    r.circle(vec(x, PROMENADE.top - 1.9), 0.15, '#718984');
   }
   for (const hotel of BEACH_HOTELS) {
-    r.rect(hotel.position.x - hotel.width / 2, 256.7, hotel.width, 1.3, '#b4b4a4');
-    label(r, 'PRIVATE FRONTAGE', hotel.position.x, 257.3, 0.48, '#6d7772', '700');
+    const front = hotel.position.y - hotel.height / 2;
+    r.rect(hotel.position.x - hotel.width / 2, front - 1.3, hotel.width, 1.3, '#b4b4a4');
+    label(r, 'PRIVATE FRONTAGE', hotel.position.x, front - 0.7, 0.48, '#6d7772', '700');
   }
   if (r.visible(vec(28, 249.5), 12)) label(r, 'BEACH PATROL / OFF-ROAD PARKING', 28, 246.8, 0.6, '#84744e', '700');
 }
 
 function drawHotel(r: Renderer, prop: Prop) {
+  const { BEACH_HOTELS } = r.game.map.beach;
   const c = r.ctx, b = prop.body, hotel = BEACH_HOTELS.find(h => h.name === prop.label)!;
   const w = b.w, h = b.h, left = -w / 2, top = -h / 2;
   c.save(); c.translate(b.position.x, b.position.y);
@@ -112,6 +115,7 @@ function drawHotel(r: Renderer, prop: Prop) {
 }
 
 export function drawBeachProp(r: Renderer, prop: Prop): boolean {
+  const { BEACH_HOTELS } = r.game.map.beach;
   if (prop.kind === 'building' && BEACH_HOTELS.some(h => h.name === prop.label)) { drawHotel(r, prop); return true; }
   if (!['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(prop.kind)) return false;
   const c = r.ctx, b = prop.body;

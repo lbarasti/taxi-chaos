@@ -5,7 +5,7 @@
 // All coordinates are WORLD METRES, matching renderer.ts's scaled camera space.
 import { add, clamp, length, normalize, scale, vec, type Vec } from './physics';
 import { seeded, type Person } from './world';
-import { MAP_HEIGHT, MAP_WIDTH } from './countryside';
+import { defaultMap } from './map/default';
 
 export type GoreKind = 'pulp' | 'cloth' | 'shard';
 export type BloodLobe = { x: number; y: number; r: number };
@@ -44,7 +44,6 @@ export const BLAST_TTL = 0.7;
 export const MAX_BLAST_RADIUS = 34;
 
 const CHUNK_TTL = 4.5;
-const BOUNDS_MIN = -30;
 const BLOOD_TONES = ['#7e1420', '#8f1b22', '#5c1018', '#6d141c', '#a3242a'];
 
 function parseHex(hex: string): [number, number, number] | null {
@@ -181,6 +180,7 @@ export function drawCorpse(ctx: CanvasRenderingContext2D, person: Person) {
  * at draw time, so all blood is hidden instantly when gore is off.
  */
 export class Effects {
+  constructor(private readonly envelope = defaultMap.envelope) {}
   bloodMarks: BloodMark[] = [];
   chunks: GoreChunk[] = [];
   blasts: BlastRing[] = [];
@@ -208,7 +208,7 @@ export class Effects {
 
   private nextSeed(): number { return (this.seedTick++ * 2654435761) >>> 0; }
 
-  private inBounds(p: Vec): boolean { return p.x > BOUNDS_MIN && p.x < MAP_WIDTH + 30 && p.y > BOUNDS_MIN && p.y < MAP_HEIGHT + 30; }
+  private inBounds(p: Vec): boolean { return p.x > this.envelope.min.x - 30 && p.x < this.envelope.max.x + 30 && p.y > this.envelope.min.y - 30 && p.y < this.envelope.max.y + 30; }
 
   private trim(): void {
     if (this.bloodMarks.length > MAX_BLOOD_MARKS) this.bloodMarks.splice(0, this.bloodMarks.length - MAX_BLOOD_MARKS);
