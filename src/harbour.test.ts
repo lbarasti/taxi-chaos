@@ -19,7 +19,7 @@ describe('working harbour geography', () => {
   it('routes from the city and woodland through gates, then along clear yard lanes', () => {
     const world = new World();
     expect(roadDistance(vec(117, -3))).toBe(3); expect(roadDistance(vec(203, 24))).toBe(3);
-    for (const start of [vec(4, 32), vec(204, 164), vec(358, 114), vec(132, 338)]) {
+    for (const start of [vec(4, 32), vec(204, 164), vec(358, 114), vec(132, 458)]) {
       const path = roadPath(start, SWAP_CONTAINER);
       expect(path.at(-1)).toEqual(SWAP_CONTAINER); expect(path.some(p => p.y === 0 && (p.x === 200 || p.x === 220))).toBe(true);
       expect(roadPath(SWAP_CONTAINER, start).at(-1)).toEqual(start);
@@ -146,7 +146,7 @@ describe('harbour security and paid exchange', () => {
     expect(visited.has(0)).toBe(true); expect(visited.has(7)).toBe(true); expect(visited.has(9)).toBe(true);
     expect(truck.alive).toBe(true); expect(truck.sinking).toBeUndefined(); expect(truck.damage.health).toBe(100);
     expect(dist(truck.body.position, start)).toBeGreaterThan(5); expect(length(truck.body.velocity)).toBeGreaterThan(0.5);
-  });
+  }, 20000); // Five simulated minutes need headroom on shared CI runners.
   it('exposes a reproducible harbour fixture with security, fee and freight', () => {
     const g = new Game(); loadScenario(g, 'harbour'); expect(g.portGateNear).toBe(true); expect(g.save.cash).toBe(180);
     expect(g.snapshot().harbour.fee).toBe(PORT_FEE); expect(g.vehicles.filter(v => v.freight)).toHaveLength(3);

@@ -1,5 +1,26 @@
 # Taxi Chaos — continuation handoff
 
+## South coast breathing room, 2026-10-11
+
+- Expanded the beach-facing inlet by translating the southern woodland shore,
+  seven villas and golf course 120 m south. At least 110 m of clear sea now fronts
+  the entire beach; map height grows from 430 to 550 m.
+- `SOUTH_COAST_OFFSET` / `southPoint()` in `src/countryside.ts` translate the estate
+  loop, stops, golf holes/cart routes and renderer ridges. Extended the two eastern
+  approach roads; drives, pools, colliders, residents and radar follow shared data.
+- Woodland LAB now uses live stop descriptors: Estates (242,450), club (132,458).
+  Southern district threshold follows the shifted woodland shore.
+- 410 tests / 29 files, strict TypeScript, production build and diff whitespace
+  check pass. New regression samples the entire open inlet and checks dry road
+  body corners; existing traffic, clearance, carts/pools and fare tests pass.
+- Offline standalone browser QA verifies desktop beach/golf, physical road driving
+  at 100 HP, a paid club delivery, surf drowning and 390×844 mobile without overflow.
+  No console errors/warnings or external requests. Before/after and production
+  screenshots plus geometry notes are in `docs/beach.md`.
+- PR #14 CI exposed the existing 300-second freight simulation exceeding Vitest's
+  default 5-second wall-clock timeout. That test now has an explicit 20-second
+  budget, retaining its full simulation and assertions.
+
 ## PR #13 revision — hotel appropriation and review fixes, 2026-10-11
 
 - Moved hotels onto the actual sand south of Ocean Walk: 33×10, 33×11 and

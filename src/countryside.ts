@@ -1,21 +1,26 @@
 import { add, clamp, dist, dot, scale, sub, vec, type Vec } from './physics';
 
-export const MAP_WIDTH = 530, MAP_HEIGHT = 430;
+// Translate the southern estates as a whole: the beach needs open sea in front
+// of it, without shrinking the gardens, golf course or their winding road loop.
+export const SOUTH_COAST_OFFSET = 120;
+export const southPoint = (x: number, y: number) => vec(x, y + SOUTH_COAST_OFFSET);
+export const SOUTH_WOODS_Y = 272 + SOUTH_COAST_OFFSET;
+export const MAP_WIDTH = 530, MAP_HEIGHT = 430 + SOUTH_COAST_OFFSET;
 export const BRIDGE_Y = [80, 200] as const;
 // Mirrored L: the eastern ridge continues south, then wraps west beneath the city.
 // The inlet along the inside corner preserves the city's southern waterfront.
-export const HIGHLAND_OUTLINE = [vec(298, -14), vec(390, -12), vec(472, 2), vec(516, 30), vec(532, 90), vec(520, 150), vec(526, 211), vec(528, 315), vec(504, 386), vec(458, 420), vec(336, 430), vec(220, 424), vec(94, 414), vec(18, 394), vec(-10, 365), vec(-12, 300), vec(24, 280), vec(142, 272), vec(232, 277), vec(280, 272), vec(296, 220), vec(292, 158), vec(300, 118), vec(298, 48)];
+export const HIGHLAND_OUTLINE = [vec(298, -14), vec(390, -12), vec(472, 2), vec(516, 30), vec(532, 90), vec(520, 150), vec(526, 211), southPoint(528, 315), southPoint(504, 386), southPoint(458, 420), southPoint(336, 430), southPoint(220, 424), southPoint(94, 414), southPoint(18, 394), southPoint(-10, 365), southPoint(-12, 300), southPoint(24, 280), southPoint(142, 272), southPoint(232, 277), southPoint(280, 272), vec(296, 220), vec(292, 158), vec(300, 118), vec(298, 48)];
 export const isCountry = (p: Vec) => p.x > 246 || p.y > 246;
 export const HIGHLAND_STOPS = [
   { position: vec(358, 114), name: 'Pine Junction' },
   { position: vec(474, 58), name: 'Eagle Lookout' },
   { position: vec(482, 184), name: 'Highland Lodge' },
   { position: vec(378, 170), name: 'Fern Hollow' },
-  { position: vec(242, 330), name: 'Woodland Estates' },
-  { position: vec(132, 338), name: 'Fairway Club' },
-  { position: vec(60, 316), name: 'Cedar Crescent' },
+  { position: southPoint(242, 330), name: 'Woodland Estates' },
+  { position: southPoint(132, 338), name: 'Fairway Club' },
+  { position: southPoint(60, 316), name: 'Cedar Crescent' },
 ];
-export const ROAD_NODES = [vec(240, 80), vec(310, 80), vec(358, 114), vec(474, 58), vec(482, 184), vec(378, 170), vec(310, 200), vec(240, 200), vec(360, 304), vec(242, 330), vec(132, 338), vec(60, 316), vec(164, 390), vec(306, 390), vec(410, 366)];
+export const ROAD_NODES = [vec(240, 80), vec(310, 80), vec(358, 114), vec(474, 58), vec(482, 184), vec(378, 170), vec(310, 200), vec(240, 200), southPoint(360, 304), southPoint(242, 330), southPoint(132, 338), southPoint(60, 316), southPoint(164, 390), southPoint(306, 390), southPoint(410, 366)];
 
 export const VILLAS = [
   { position: vec(334, 35), name: 'PINECREST', color: '#c07858' },
@@ -23,22 +28,22 @@ export const VILLAS = [
   { position: vec(324, 137), name: 'FERN VILLA', color: '#b88360' },
   { position: vec(429, 181), name: 'RIDGE ESTATE', color: '#ab7159' },
   { position: vec(477, 236), name: 'SKYLINE', color: '#c29b70' },
-  { position: vec(54, 301), name: 'CEDAR HOUSE', color: '#be8661' },
-  { position: vec(105, 294), name: 'THE LAURELS', color: '#957768' },
-  { position: vec(209, 295), name: 'OAK MANOR', color: '#bf916a' },
-  { position: vec(267, 365), name: 'BELVEDERE', color: '#a87259' },
-  { position: vec(349, 351), name: 'WOODLAND VILLA', color: '#c49c74' },
-  { position: vec(453, 324), name: 'LAKE HOUSE', color: '#b27b62' },
-  { position: vec(97, 367), name: 'CEDAR LODGE', color: '#9d7360' },
+  { position: southPoint(54, 301), name: 'CEDAR HOUSE', color: '#be8661' },
+  { position: southPoint(105, 294), name: 'THE LAURELS', color: '#957768' },
+  { position: southPoint(209, 295), name: 'OAK MANOR', color: '#bf916a' },
+  { position: southPoint(267, 365), name: 'BELVEDERE', color: '#a87259' },
+  { position: southPoint(349, 351), name: 'WOODLAND VILLA', color: '#c49c74' },
+  { position: southPoint(453, 324), name: 'LAKE HOUSE', color: '#b27b62' },
+  { position: southPoint(97, 367), name: 'CEDAR LODGE', color: '#9d7360' },
 ];
-export const GOLF_COURSE = { center: vec(174, 367), width: 96, height: 36, clubhouse: vec(127, 361) };
+export const GOLF_COURSE = { center: southPoint(174, 367), width: 96, height: 36, clubhouse: southPoint(127, 361) };
 // Pool water bounds are shared by drawing and gameplay; terraces stay solid ground.
 export const VILLA_POOLS = VILLAS.map(v => ({ position: vec(v.position.x + 14.25, v.position.y + 3), width: 6.5, height: 12 }));
-export const GOLF_CART_ROUTE = [vec(144, 350), vec(204, 350), vec(204, 384), vec(144, 384)];
+export const GOLF_CART_ROUTE = [southPoint(144, 350), southPoint(204, 350), southPoint(204, 384), southPoint(144, 384)];
 export const GOLF_HOLES = [
-  { tee: vec(146, 360), green: vec(193, 359), bunker: vec(195, 354) },
-  { tee: vec(210, 366), green: vec(167, 369), bunker: vec(165, 363) },
-  { tee: vec(148, 378), green: vec(202, 378), bunker: vec(207, 381) },
+  { tee: southPoint(146, 360), green: southPoint(193, 359), bunker: southPoint(195, 354) },
+  { tee: southPoint(210, 366), green: southPoint(167, 369), bunker: southPoint(165, 363) },
+  { tee: southPoint(148, 378), green: southPoint(202, 378), bunker: southPoint(207, 381) },
 ];
 // Shared exclusions keep trees/rocks out of gardens, fairways and access drives.
 export function estateDrive(position: Vec): Vec[] {
@@ -87,15 +92,15 @@ export const COUNTRY_ROADS: CountryRoad[] = [
   road(4, 5, 'Lodge Road', [vec(450, 210), vec(410, 194)]),
   road(5, 6, 'Fern Road', [vec(350, 178), vec(330, 196)]),
   road(2, 5, 'Woodland Pass', [vec(368, 138), vec(362, 153)]),
-  road(5, 8, 'Southwoods Drive', [vec(368, 219), vec(337, 264)]),
-  road(4, 8, 'Highland Descent', [vec(496, 232), vec(445, 277), vec(393, 279)]),
-  road(8, 9, 'Millionaires Row', [vec(324, 314), vec(286, 306)]),
-  road(9, 10, 'Fairway Drive', [vec(208, 325), vec(169, 340)]),
-  road(10, 11, 'Cedar Crescent', [vec(96, 333), vec(76, 314)]),
-  road(11, 12, 'Cedar Loop', [vec(36, 342), vec(99, 394)]),
-  road(12, 13, 'Country Club Way', [vec(211, 399), vec(257, 393)]),
-  road(13, 14, 'Lake Drive', [vec(358, 386), vec(386, 365)]),
-  road(14, 8, 'Woodland Rise', [vec(411, 331), vec(386, 320)]),
+  road(5, 8, 'Southwoods Drive', [vec(368, 219), vec(337, 264 + SOUTH_COAST_OFFSET / 2)]),
+  road(4, 8, 'Highland Descent', [vec(496, 232), southPoint(445, 277), southPoint(393, 279)]),
+  road(8, 9, 'Millionaires Row', [southPoint(324, 314), southPoint(286, 306)]),
+  road(9, 10, 'Fairway Drive', [southPoint(208, 325), southPoint(169, 340)]),
+  road(10, 11, 'Cedar Crescent', [southPoint(96, 333), southPoint(76, 314)]),
+  road(11, 12, 'Cedar Loop', [southPoint(36, 342), southPoint(99, 394)]),
+  road(12, 13, 'Country Club Way', [southPoint(211, 399), southPoint(257, 393)]),
+  road(13, 14, 'Lake Drive', [southPoint(358, 386), southPoint(386, 365)]),
+  road(14, 8, 'Woodland Rise', [southPoint(411, 331), southPoint(386, 320)]),
 ];
 export const VILLA_DRIVES = VILLAS.map(v => estateDrive(v.position));
 export type RoadAccess = { road: CountryRoad; point: Vec; segment: number; along: number; distance: number };

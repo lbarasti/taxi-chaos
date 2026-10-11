@@ -7,7 +7,7 @@ import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from './motorcycle';
 import { doorOpenness, LANDING_TIME } from './vehicle-exit';
-import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry } from './countryside';
+import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, SOUTH_COAST_OFFSET, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry, southPoint } from './countryside';
 import { radarMarker, radarView } from './radar';
 import { CITY_SHORE } from './coast';
 
@@ -28,8 +28,8 @@ const RIDGES = [
   [vec(368, 19), vec(400, -4), vec(444, 6), vec(478, 26), vec(450, 34), vec(432, 48), vec(404, 44), vec(393, 29)],
   [vec(410, 126), vec(432, 91), vec(454, 97), vec(469, 124), vec(454, 155), vec(427, 166), vec(405, 149)],
   [vec(355, 220), vec(376, 202), vec(394, 224), vec(429, 235), vec(460, 224), vec(494, 234), vec(486, 250), vec(404, 255)],
-  [vec(16, 291), vec(88, 280), vec(152, 282), vec(218, 290), vec(250, 309), vec(185, 311), vec(118, 303), vec(52, 305)],
-  [vec(281, 406), vec(314, 414), vec(383, 417), vec(451, 400), vec(481, 380), vec(456, 393), vec(380, 405)],
+  [southPoint(16, 291), southPoint(88, 280), southPoint(152, 282), southPoint(218, 290), southPoint(250, 309), southPoint(185, 311), southPoint(118, 303), southPoint(52, 305)],
+  [southPoint(281, 406), southPoint(314, 414), southPoint(383, 417), southPoint(451, 400), southPoint(481, 380), southPoint(456, 393), southPoint(380, 405)],
 ];
 
 function mixHex(a: string, b: string, t: number): string {
@@ -299,8 +299,8 @@ export class Renderer {
     for (const stop of HIGHLAND_STOPS) this.label(stop.name.toUpperCase(), stop.position.x, stop.position.y + 10, 0.9, '#c7d5ad', '700');
     this.label('P I N E   W O O D S', 335, 140, 1.5, '#a7bd9180');
     this.label('E A G L E   R I D G E', 441, 78, 1.5, '#d6d1ad80');
-    this.label('C E D A R   W O O D S', 78, 354, 1.3, '#c7d5ad80');
-    this.label('M I L L I O N A I R E S   R O W', 288, 290, 1.1, '#e8d5ac');
+    this.label('C E D A R   W O O D S', 78, 354 + SOUTH_COAST_OFFSET, 1.3, '#c7d5ad80');
+    this.label('M I L L I O N A I R E S   R O W', 288, 290 + SOUTH_COAST_OFFSET, 1.1, '#e8d5ac');
     c.lineJoin = 'miter'; c.lineCap = 'butt';
   }
   countryEstates() {
@@ -327,9 +327,9 @@ export class Renderer {
     }
     const club = GOLF_COURSE;
     this.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8, '#3b6346');
-    trace(c, [vec(132, 338), vec(119, 345), vec(116, 367), vec(140, 385), vec(218, 386)]);
+    trace(c, [southPoint(132, 338), southPoint(119, 345), southPoint(116, 367), southPoint(140, 385), southPoint(218, 386)]);
     c.strokeStyle = '#b8b395'; c.lineWidth = 2.4; c.stroke();
-    this.rect(117, 352, 20, 22, '#b8aa87');
+    this.rect(club.clubhouse.x - 10, club.clubhouse.y - 9, 20, 22, '#b8aa87');
     for (const [i, hole] of GOLF_HOLES.entries()) {
       const center = scale(add(hole.tee, hole.green), 0.5), angle = Math.atan2(hole.green.y - hole.tee.y, hole.green.x - hole.tee.x);
       c.save(); c.beginPath(); c.ellipse(center.x, center.y, dist(hole.tee, hole.green) / 2 + 6, 4.3, angle, 0, Math.PI * 2); c.clip();
@@ -345,8 +345,8 @@ export class Renderer {
       this.label(String(i + 1), hole.tee.x - 3, hole.tee.y, 0.65, '#efe6bb', '700');
     }
     // Carts are rendered from physical vehicles, rather than painted decorations.
-    c.beginPath(); c.ellipse(215, 355, 6, 3.3, 0.4, 0, Math.PI * 2); c.fillStyle = '#569097'; c.fill(); c.strokeStyle = '#bec79a'; c.lineWidth = 0.5; c.stroke();
-    this.label('FAIRWAY COUNTRY CLUB', 174, 346, 0.95, '#e8dfb4', '700');
+    c.beginPath(); c.ellipse(club.center.x + 41, club.center.y - 12, 6, 3.3, 0.4, 0, Math.PI * 2); c.fillStyle = '#569097'; c.fill(); c.strokeStyle = '#bec79a'; c.lineWidth = 0.5; c.stroke();
+    this.label('FAIRWAY COUNTRY CLUB', club.center.x, club.center.y - 21, 0.95, '#e8dfb4', '700');
   }
   marker(p: Vec, color: string, label: string, garage = false) {
     if (!this.visible(p, 10)) return; const c = this.ctx, g = this.game;

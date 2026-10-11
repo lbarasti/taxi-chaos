@@ -23,6 +23,7 @@ import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
 import { removeStorage, storageKeys } from './storage';
 import { BEACH_PICKUP } from './beach';
+import { HIGHLAND_STOPS } from './countryside';
 import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles';
 
 const STEP = 1 / 120;
@@ -293,9 +294,10 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       break;
     }
     case 'woodland-estates': {
-      pose(game, renderer, player, 242, 330, WEST, 0);
+      const estates = HIGHLAND_STOPS[4].position, club = HIGHLAND_STOPS[5].position;
+      pose(game, renderer, player, estates.x, estates.y, WEST, 0);
       game.settings.noPolice = true;
-      game.job.pickup = vec(242, 330); game.job.dropoff = vec(132, 338); game.job.destination = 'Fairway Club'; game.job.stage = 'dropoff'; game.job.time = 140;
+      game.job.pickup = { ...estates }; game.job.dropoff = { ...club }; game.job.destination = 'Fairway Club'; game.job.stage = 'dropoff'; game.job.time = 140;
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');

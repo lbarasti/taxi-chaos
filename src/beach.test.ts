@@ -27,7 +27,7 @@ describe('southern beach geography and access', () => {
     expect(inBeach(vec(80, 258))).toBe(true); expect(inSand(vec(184, 251))).toBe(false);
     expect(onPromenade(vec(184, 251))).toBe(true);
     expect(district(vec(80, 258))).toBe('SUNSET BEACH'); expect(district(vec(184, 251))).toBe('OCEAN WALK');
-    expect(inOcean(vec(100, 278))).toBe(false); // woodland remains intact
+    expect(inOcean(vec(100, 278))).toBe(true); // open inlet beyond the surf
   });
   it('opens the former south rails and gives the parked pickup and hotels clear footprints', () => {
     const g = new Game();
@@ -45,7 +45,7 @@ describe('southern beach geography and access', () => {
   });
   it('routes western sand, eastern sand and promenade walkers to the city and woods on dry land', () => {
     for (const from of [vec(-40, 248), vec(80, 258), vec(220.675, 260), vec(253, 250), vec(184, 251.5), vec(200, 270.5)]) {
-      for (const to of [vec(4, 32), vec(132, 338)]) {
+      for (const to of [vec(4, 32), vec(132, 458)]) {
         const path = roadPath(from, to, 'walk');
         expect(path.at(-1)).toEqual(to);
         for (let i = 1; i < path.length; i++) for (let t = 0; t <= 1; t += 0.1) {
