@@ -8,7 +8,7 @@
   and retrofitted the previously hard-coded content into them.
 - `countryProps` (kind/width/height/label, 14 kinds), `parking` (occupied/lot/model/
   colour) and `trafficSpawns` (model/colour/initial waypoints). Every entry is owned,
-  selectable, movable, resizable and damageable, and is instantiated with a `sourceId`
+  selectable and movable, with catalogue-specific sizing/damage, and instantiated with a `sourceId`
   link in `World`/`Game`. Retrofitted 4 bridge lamps, 74 parking bays (including the
   beach pickup) and 23 initial road vehicles. Seeded woodland scenery stays procedural.
 - Operations gained `add`, `replace`, `duplicate` and `delete` (bounded to the three
@@ -29,6 +29,12 @@
   1440×900 exercised add/duplicate/delete, blocked on-sand spawn rejection, preview
   driving and v1→v2 migration, then restored the original clock. Docs, examples and
   three new screenshots updated.
+- PR #17 CI identified the all-33-fixtures LAB catalogue check exceeding its
+  five-second budget. Parameterized it into one test per scenario, retaining every
+  assertion. Also fixed angle input validity for exact π/2 and small prop dimension
+  limits, and clarified editable invalid drafts and v2 revisions in the guide.
+  All 480 tests / 31 files, strict TypeScript and production build pass after the
+  follow-up; CLI fixtures and production form validity checks pass too.
 
 ## Map studio, 2026-10-11
 

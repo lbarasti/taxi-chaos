@@ -56,7 +56,8 @@ The critical review and amended contracts are recorded in
 The city, bridges and harbour are visible read-only context. Whole-district
 translation is supported for Southern Estates. Highlands and beach child geometry
 is editable individually; their whole-district attachment rules are pinned.
-Rotation, scaling, new districts and terrain painting are later milestones.
+Authored country props, parking and traffic spawns expose rotation in radians.
+Composite rotation/scaling, new districts and terrain painting are later milestones.
 
 ## Authored content collections
 
@@ -136,8 +137,9 @@ Other operation shapes:
 `trafficSpawns` only. IDs must stay unique across the whole document, `replace`
 must retain the stable ID, and `duplicate` moves both a traffic spawn and its
 authored route. Deleting a descriptor is permanent for that draft; `undo` restores
-it. A batch that would collide, leave land/water or reference a missing vehicle
-rejects atomically with its history intact.
+it. Structural violations (including unknown vehicle models) reject the entire
+batch with its history intact. Collision, water and envelope violations remain
+editable drafts with actionable findings; they block gameplay preview.
 
 Operations use the current content revision. Unknown targets, stale revisions,
 non-finite values, extra fields or structural violations reject the entire batch,
@@ -158,7 +160,7 @@ npm run map:check -- --input src/map/default-map.json \
 npm run map:check -- --input /tmp/taxi-map-moved.json --json
 ```
 
-The example batch is based on shipped revision `v1-e3228605`; take a new revision
+The example batch is based on shipped revision `v2-eabda267`; take a new revision
 from the checker/snapshot after changing the baseline. Output paths must be
 explicit for operation batches and **must not already exist**. This avoids
 accidentally overwriting an authored map. Copy the reviewed exported JSON into the
@@ -224,7 +226,9 @@ authored composites are checked against their intended land.
 
 ### Authored content retrofit
 
-- **448 tests / 31 files**, strict TypeScript and production single-HTML build.
+- **480 tests / 31 files**, strict TypeScript and production single-HTML build.
+  The all-scenarios catalogue check is parameterized per fixture to avoid a
+  cumulative five-second CI timeout while retaining all 33 scenario checks.
 - `src/map/content.test.ts` covers add/duplicate/replace/move/delete transactions,
   detached results and exact history restoration, atomic rejection of id/collision/
   pinned/collection errors, route movement with spawn duplication and district
@@ -232,7 +236,7 @@ authored composites are checked against their intended land.
   trips, runtime `sourceId`/model/colour/path/parking links, descriptor
   replenishment, and every new geometric finding (pool overlap, water, static,
   vehicle-vehicle, route and envelope).
-- The default revision moved to `v2-abda267`; the checker still reports zero
+- The default revision moved to `v2-eabda267`; the checker still reports zero
   errors/warnings and a 121.1 m water gap. The +20 m move example is zero errors,
   141.1 m gap and 9 regenerated connections; the invalid road example exits 1.
 - Offline production Chromium, 1440×900: added a country prop, parking bay and
@@ -241,6 +245,8 @@ authored composites are checked against their intended land.
   (16.06 m/s at 100 HP), and migrated a version-1 document to v2 with its legacy
   pickup position retained. Editor close restored the original clock/mode.
 - Only local HTML and the embedded font were requested; no external HTTP(S).
+- Follow-up production QA confirms exact ±π/2 angles and 0.6 m country-prop
+  dimensions are valid inspector values.
 
 ### Earlier baseline
 

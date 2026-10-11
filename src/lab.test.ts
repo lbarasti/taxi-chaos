@@ -30,14 +30,12 @@ describe('LAB scenario catalogue', () => {
     expect(isScenarioName('nope')).toBe(false);
   });
 
-  it('loads every fixture deterministically without a DOM', () => {
-    for (const name of scenarioNames) {
-      const g = make();
-      expect(loadScenario(g, name)).toBe(name);
-      expect(g.mode).toBe('playing');
-      expect(Number.isFinite(g.player.body.position.x)).toBe(true);
-      expect(Number.isFinite(g.player.body.position.y)).toBe(true);
-    }
+  it.each(scenarioNames)('loads %s deterministically without a DOM', name => {
+    const g = make();
+    expect(loadScenario(g, name)).toBe(name);
+    expect(g.mode).toBe('playing');
+    expect(Number.isFinite(g.player.body.position.x)).toBe(true);
+    expect(Number.isFinite(g.player.body.position.y)).toBe(true);
   });
 });
 

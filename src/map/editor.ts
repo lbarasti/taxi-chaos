@@ -78,6 +78,7 @@ export class MapEditor {
     else if (descriptor && 'left' in descriptor) dimensions = { width: descriptor.right - descriptor.left, height: descriptor.bottom - descriptor.top };
     this.q('dimensions').hidden = !dimensions;
     if (dimensions) { this.q<HTMLInputElement>('width').value = String(dimensions.width); this.q<HTMLInputElement>('height').value = String(dimensions.height); }
+    for (const key of ['width', 'height']) this.q<HTMLInputElement>(key).min = description.collection === 'countryProps' ? '0.2' : '1';
     for (const key of ['move', 'resize', 'translate']) this.q<HTMLButtonElement>(key).disabled = !description.editable;
     this.q<HTMLButtonElement>('undo').disabled = !snapshot.canUndo; this.q<HTMLButtonElement>('redo').disabled = !snapshot.canRedo;
     for (const edge of ['min', 'max'] as const) for (const axis of ['x', 'y'] as const) this.q<HTMLInputElement>(`${edge}-${axis}`).value = String(d.envelope[edge][axis]);
@@ -107,6 +108,9 @@ export class MapEditor {
     this.q<HTMLInputElement>('prop-height').value = String(descriptor && 'height' in descriptor ? descriptor.height : 1.6);
     this.q<HTMLInputElement>('label').value = descriptor && 'label' in descriptor ? descriptor.label : '';
     this.q<HTMLInputElement>('angle').value = String(descriptor?.angle ?? 0);
+    // Catalogue angles include exact π/2 values, so a decimal step anchored to
+    // the -2π limit would mark otherwise valid descriptors as invalid inputs.
+    this.q<HTMLInputElement>('angle').step = 'any';
     this.q<HTMLInputElement>('color').value = descriptor?.color ?? (key === 'countryProps' ? '#426e58' : '#91b5b0');
     this.q<HTMLInputElement>('occupied').checked = descriptor && 'occupied' in descriptor ? descriptor.occupied : true;
     this.q<HTMLInputElement>('lot').checked = descriptor && 'lot' in descriptor ? descriptor.lot : false;
