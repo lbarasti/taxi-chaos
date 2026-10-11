@@ -203,7 +203,7 @@ describe('protected eastern promenade', () => {
     run(g, 0.5); expect(g.onFoot).toBe(true); expect(g.tumble).not.toBeNull(); expect(g.driverHealth).toBeLessThan(100); expect(g.player.coastUntil).toBeGreaterThan(g.time);
   });
   it('dispatches a beach fare to the south road without sending cars onto the walking path', () => {
-    const g = quiet(); g.offer = 19; g.newJob();
+    const g = new Game(undefined, false, false); g.offer = 19; g.newJob();
     expect(g.job.dropoff).toEqual(vec(160, 240)); expect(g.job.destination).toBe('Ocean Walk'); expect(onPromenade(g.job.dropoff)).toBe(false);
   });
   it('loads cab, pickup and walking fixtures with no solid player overlaps', () => {

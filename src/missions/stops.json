@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "stops": [
+    { "id": "old-town-rank", "name": "Old Town Rank", "kind": "city", "position": { "x": 4, "y": 14 } },
+    { "id": "dockside-deli", "name": "Dockside Deli", "kind": "city", "position": { "x": 44, "y": 14 } },
+    { "id": "garden-cafe", "name": "Garden Café", "kind": "city", "position": { "x": 84, "y": 58 } },
+    { "id": "the-arcade", "name": "The Arcade", "kind": "city", "position": { "x": 116, "y": 84 } },
+    { "id": "moonlight-hotel", "name": "Moonlight Hotel", "kind": "city", "position": { "x": 164, "y": 108 } },
+    { "id": "east-village", "name": "East Village", "kind": "city", "position": { "x": 204, "y": 164 } },
+    { "id": "flower-market", "name": "Flower Market", "kind": "city", "position": { "x": 156, "y": 204 } },
+    { "id": "market-quarter", "name": "Market Quarter", "kind": "city", "position": { "x": 76, "y": 164 } },
+    { "id": "old-town-south", "name": "Old Town South", "kind": "city", "position": { "x": 4, "y": 128 } },
+    { "id": "garden-south", "name": "Garden South", "kind": "city", "position": { "x": 44, "y": 204 } },
+    { "id": "the-docks", "name": "The Docks", "kind": "city", "position": { "x": 204, "y": 44 } },
+    { "id": "midtown-north", "name": "Midtown North", "kind": "city", "position": { "x": 124, "y": 14 } },
+    { "id": "sunset-beach", "name": "Sunset Beach", "kind": "beach", "position": { "x": 40, "y": 240 } },
+    { "id": "ocean-walk", "name": "Ocean Walk", "kind": "beach", "position": { "x": 160, "y": 240 } },
+    { "id": "pacific-palm-hotel", "name": "Pacific Palm Hotel", "kind": "beach", "position": { "x": 200, "y": 240 } }
+  ]
+}

@@ -7,7 +7,12 @@ import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
-import { Dialogue, type StoryBeatId } from './story';
+import { Dialogue } from './story';
+import { characters } from './characters';
+import { missionsFor, neutralMissions } from './missions/compile';
+import { MissionDirector, type AbandonReason, type DirectorContext } from './missions/director';
+import { defaultMissionProgress, migrateMissionProgress, type MissionProgress } from './missions/progress';
+import type { MissionId } from './missions/schema';
 import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
@@ -20,8 +25,8 @@ import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EX
 export type Vehicle = { id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
-export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; storyBeat?: StoryBeatId };
-export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number };
+export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId };
+export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number; story: MissionProgress };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
 export const upgradeInfo = {
@@ -31,9 +36,11 @@ export const upgradeInfo = {
   boost: { name: 'Bigger boost tank', subtitle: 'A little extra getaway.', detail: '+35% boost capacity per level', price: 180 },
 };
 export type Upgrade = keyof typeof upgradeInfo;
-export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0 });
-function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
+export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0, story: defaultMissionProgress() });
+function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = migrateMissionProgress(s.story); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
+const PASSENGER_NAMES = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
+const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
 export type Blast = { position: Vec; radius: number; power: number; blamed: boolean; due: number; sourceVehicle?: number; sourceProp?: number };
 export class Game {
   world: World; save: Save; mode: Mode = 'intro'; keys = new Set<string>();
@@ -53,16 +60,20 @@ export class Game {
   sounds = new SoundEvents();
   dayNight = new DayNight();
   dialogue = new Dialogue();
+  missions!: MissionDirector;
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   touchMove: Vec | null = null;
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
   private sandRuts: { anchor: Vec; segment?: Skid }[] = [];
   private rutVehicleId = -1;
-  constructor(public readonly map: CompiledMap = defaultCompiledMap, private readonly persistence = true) {
+  constructor(public readonly map: CompiledMap = defaultCompiledMap, private readonly persistence = true, story = true) {
     this.world = new World(map); this.fx = new Effects(map.document.envelope); this.save = persistence ? loadSave() : defaultSave();
     this.settings = persistence ? loadSettings() : defaultSettings();
     this.preferences = { gore: this.settings.gore, difficulty: this.settings.difficulty };
+    // Isolated map previews opt out of story compilation; the lab and normal
+    // persistence-disabled gameplay keep fresh missions for story QA.
+    this.missions = new MissionDirector(story ? missionsFor(map) : neutralMissions(map), this.save.story);
     this.populateVehicles(); this.newJob(true); this.applyUpgrades();
   }
   populateVehicles() {
@@ -94,6 +105,7 @@ export class Game {
     }
   }
   resetRun() {
+    this.missions.restartClock(this.time);
     this.sounds.reset(); this.touchMove = null;
     this.sandRuts = []; this.rutVehicleId = -1;
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
@@ -105,8 +117,12 @@ export class Game {
     this.smashed = 0; this.shiftEarnings = 0; this.jobsDone = 0; this.crashCooldown = 0; this.speedingTime = 0; this.driftMeter = 0; this.lastDrift = 0; this.nearMiss.clear(); this.navToGarage = false;
     this.kills = 0; this.explosions = 0; this.buildingsSmashed = 0; this.offer = 0; this.pedestrianClock = 0; this.maintenanceClock = 0; this.policeIntel = { position: vec(4, 32), velocity: vec(), seenAt: -100 };
     this.dayNight.reset();
-    this.eventLog = []; this.newJob(true); this.applyUpgrades(); this.setMode('playing');
+    this.eventLog = []; this.newJob(true, 'reset'); this.applyUpgrades(); this.setMode('playing');
   }
+  /** Explicit new-story reset. Ordinary new shifts preserve persistent story. */
+  resetStory() { this.missions.reset(); this.newJob(true, 'reset'); this.persist(); }
+  /** Abandons any active mission and detaches it from the current job. */
+  releaseMission(reason: AbandonReason = 'shift') { if (this.missions.activeId) { const failed = this.save.story.failed.length; this.missions.abandon(reason, this.time); if (this.save.story.failed.length !== failed) this.persist(); } if (this.job) delete this.job.missionId; }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
     return this.spawnVehicle({ kind, position: vec(x, y), angle, color, model });
   }
@@ -261,7 +277,7 @@ export class Game {
     if (this.job.stage === 'dropoff') {
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
       if (passenger && this.job.type === 'fare') { passenger.aboard = false; passenger.alive = true; passenger.position = { ...point }; passenger.home = add(point, rotate(vec(0, 18), b.angle)); passenger.panic = 3; }
-      this.newJob();
+      this.newJob(false, 'left-vehicle');
     }
     this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing');
     this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.');
@@ -377,7 +393,7 @@ export class Game {
     const color = colors.find(c => c !== old.color)!;
     old.alive = false; old.driverExited = true;
     this.player = this.spawnVehicle({ kind: 'taxi', position: { ...SWAP_EXIT }, angle: 0, color });
-    this.applyUpgrades(); this.boost = 100; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.keys.clear();
+    this.applyUpgrades(); this.setJobType(); this.boost = 100; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.keys.clear();
     h.vehicleId = this.player.id; h.exchanged = true; h.progress = 0;
     this.heat = 0; this.escape = 0; this.arrest = 0; this.speedingTime = 0; this.driftMeter = 0;
     this.policeIntel = { position: vec(), velocity: vec(), seenAt: -100 };
@@ -399,15 +415,34 @@ export class Game {
   setMode(mode: Mode) { if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
   start() { this.setMode('playing'); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
-  newJob(first = false) {
+  private missionContext(): DirectorContext {
+    return { deliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.time };
+  }
+  private newMissionJob(missionId: MissionId) {
+    const mission = this.missions.mission(missionId), { roadPath } = this.world.navigation;
+    const pickup = { ...mission.stops.pickup }, dropoff = { ...mission.stops.dropoff };
+    const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
+    const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
+    const destination = this.missions.catalogue.stops.destinations.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? PLACES[this.jobsDone % PLACES.length];
+    const type = this.player.definition.access.job;
+    const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
+    this.missions.begin(missionId, this.missionContext());
+    const name = mission.passenger ? characters[mission.passenger].name : PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length];
+    this.job = { type, pickup, dropoff, name, destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, missionId };
+  }
+  newJob(first = false, reason?: AbandonReason) {
     this.dialogue.clear();
-    const { HIGHLAND_STOPS } = this.map.country, { BEACH_STOPS } = this.map.beach, { roadPath } = this.world.navigation;
     if (this.job) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
+    this.releaseMission(reason ?? 'replaced');
     this.offer = first ? 0 : this.offer + 1;
-    const cityStops = [vec(4, 14), vec(44, 14), vec(84, 58), vec(116, 84), vec(164, 108), vec(204, 164), vec(156, 204), vec(76, 164), vec(4, 128), vec(44, 204), vec(204, 44), vec(124, 14)];
-    const stops = [...cityStops, ...HIGHLAND_STOPS.map(s => s.position), ...BEACH_STOPS.map(s => s.position)];
-    const names = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
-    const places = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
+    // Config drives every dispatch: a due story mission takes the fare slot,
+    // otherwise dispatch falls back to the procedural job below.
+    // Keep recovery dispatch local without moving an authored story pickup.
+    const offered = this.missions.available(this.missionContext()).find(id => dist(this.missions.mission(id).stops.pickup, this.actor.position) <= this.missions.mission(id).dispatchRadius);
+    if (offered) { this.newMissionJob(offered); return; }
+    const { roadPath } = this.world.navigation;
+    // Authored stop identities resolve through the same registry as story missions.
+    const stops = this.missions.catalogue.stops.routeStops;
     let pickup = first ? stops[0] : stops[(this.offer * 3 + 1) % stops.length];
     // Short trips first; later fares branch into the full city.
     const dropoff = first ? stops[1] : stops[(this.offer * 3 + 4) % stops.length];
@@ -416,13 +451,23 @@ export class Game {
     if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.actor.position) < dist(b, this.actor.position) ? a : b);
     const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
-    const destination = [...HIGHLAND_STOPS, ...BEACH_STOPS].find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? places[this.jobsDone % places.length];
+    const destination = this.missions.catalogue.stops.destinations.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? PLACES[this.jobsDone % PLACES.length];
     const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
-    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: names[this.offer % names.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, ...(first && this.jobsDone === 0 ? { storyBeat: 'mia-meridian-vans' as const } : {}) };
+    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
   }
   setJobType() {
     const type = this.player.definition.access.job;
+    // Explicit mission vehicle policy: a mission that does not allow this kind,
+    // model or variant is abandoned rather than silently rewritten.
+    if (this.job.missionId && !this.missions.canRide(this.job.missionId, this.missionContext())) {
+      const mission = this.missions.mission(this.job.missionId);
+      const who = mission.passenger ? characters[mission.passenger].name : 'Your passenger';
+      this.releaseMission('vehicle-change');
+      this.notify(`${who} will not ride like this. Mission abandoned — switch back to retry.`, 'danger');
+      this.newJob(undefined, 'vehicle-change');
+      return;
+    }
     if (this.job.type === type) return;
     const customer = this.world.people.find(p => p.id === this.job.customerId);
     if (type === 'parcel') {
@@ -456,7 +501,7 @@ export class Game {
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = [];
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
       for (const v of this.police) v.alive = false;
-      this.newJob(); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
+      this.newJob(false, 'hospital'); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
       return;
     }
     if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking &&
@@ -473,7 +518,7 @@ export class Game {
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.player.sinking = undefined;
     if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
     for (const v of this.police) v.alive = false;
-    this.newJob(true); this.setMode('playing'); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`);
+    this.newJob(true, 'arrested'); this.setMode('playing'); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`);
     this.sounds.emit('repair', this.time);
   }
   crime(amount: number) { if (this.settings.noPolice) return; this.heat = clamp(this.heat + amount, 0, 100); this.escape = 0; }
@@ -524,7 +569,7 @@ export class Game {
         const fallSpeed = Math.max(length(incomingVelocity), closingSpeed);
         this.tumble = { elapsed: 0, duration: tumbleDuration(fallSpeed) * 1.15, speed: fallSpeed, side, bike: true, grounded: false };
         this.onFoot = true; this.pendingExit = null; this.navToGarage = false;
-        if (this.job.stage === 'dropoff') this.newJob();
+        if (this.job.stage === 'dropoff') this.newJob(false, 'ejected');
         this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
         this.notify('THROWN OFF THE MOTORBIKE! Brace for the landing.', 'danger');
       } else {
@@ -615,7 +660,7 @@ export class Game {
     this.kills++; this.fx.bloodHit(person.position, force, severity, person.color);
     this.sounds.emit('pulp', this.time, { position: person.position, strength: clamp(severity, 0.5, 1.2) });
     if (blamed) this.crime(person.role === 'officer' ? 35 : 28);
-    if (person.id === this.job.customerId && this.job.stage === 'pickup') { this.notify(`${this.job.name} won't be taking that ride. Dispatch sent another fare.`, 'danger'); this.newJob(); }
+    if (person.id === this.job.customerId && this.job.stage === 'pickup') { this.notify(`${this.job.name} won't be taking that ride. Dispatch sent another fare.`, 'danger'); this.newJob(false, 'customer-lost'); }
   }
   queueBlast(position: Vec, radius: number, power: number, blamed: boolean, sourceVehicle?: number, sourceProp?: number) {
     this.blasts.push({ position: { ...position }, radius, power, blamed, due: this.time, sourceVehicle, sourceProp });
@@ -853,9 +898,24 @@ export class Game {
     if (dist(this.player.body.position, jobTarget) < 5.3 && this.speed < 2.8) {
       j.wait += dt;
       if (j.wait >= 0.8) {
-        if (j.stage === 'pickup') { j.stage = 'dropoff'; j.wait = 0; const person = this.world.people.find(p => p.id === j.customerId); if (person) { person.aboard = true; person.alive = false; } this.dialogue.start(j.storyBeat, j.type); this.sounds.emit('pickup', this.time); this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`); this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55'); }
+        if (j.stage === 'pickup') {
+          const outcome = j.missionId ? this.missions.pickup(this.missionContext()) : null;
+          if (j.missionId && outcome?.missionId !== j.missionId) {
+            this.releaseMission('vehicle-change'); this.newJob(false, 'vehicle-change');
+            this.notify('That ride cannot take this mission. Dispatch sent a new job.', 'danger'); return;
+          }
+          j.stage = 'dropoff'; j.wait = 0;
+          const person = this.world.people.find(p => p.id === j.customerId);
+          if (person) { person.aboard = true; person.alive = false; }
+          this.dialogue.start(outcome?.beatId ?? undefined, outcome?.message ?? null);
+          if (j.missionId) this.persist();
+          this.sounds.emit('pickup', this.time);
+          this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`);
+          this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55');
+        }
         else {
           const timeBonus = Math.max(0, Math.round((j.time - j.elapsed) * 0.8)), comfortBonus = Math.round(j.comfort * 0.3), payout = j.fare + timeBonus + comfortBonus;
+          if (j.missionId) this.missions.complete(this.missionContext());
           this.save.cash += payout; this.save.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
           this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next pickup marked.`, 'success');
           this.sounds.emit('payment', this.time);
@@ -908,6 +968,7 @@ export class Game {
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),
       dialogue: this.dialogue.snapshot(),
+      story: this.missions.snapshot(),
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
       job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }

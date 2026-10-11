@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "dialogue": {
+    "mia-meridian-vans": {
+      "character": "mia",
+      "category": "plot",
+      "channel": "passenger",
+      "text": "I saw two Meridian vans outside the café again… and the usual police car never showed up."
+    },
+    "mia-meridian-parcel": {
+      "character": "mia",
+      "category": "plot",
+      "channel": "sender",
+      "text": "Thanks for taking my parcel. I saw two Meridian vans outside the café again… and the usual police car never showed up."
+    }
+  },
+  "missions": {
+    "mia-meridian-lead": {
+      "title": "The Meridian lead",
+      "chapter": 1,
+      "dispatchRadius": 120,
+      "category": "plot",
+      "repeat": "once",
+      "abandon": { "retry": "always" },
+      "passenger": "mia",
+      "requires": { "all": [] },
+      "allowed": { "jobs": ["fare", "parcel"] },
+      "stops": { "pickup": "old-town-rank", "dropoff": "dockside-deli" },
+      "beats": { "pickup": "mia-meridian-vans", "pickupSender": "mia-meridian-parcel" }
+    }
+  }
+}

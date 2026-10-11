@@ -1,4 +1,5 @@
-import { portraits, type PortraitFormat, type PortraitSourceId } from './portraits';
+import characterData from './characters.json';
+import { portraitSourceIds, type PortraitSourceId } from './portrait-manifest';
 
 /** Normalised source rectangle (0..1) used to crop a portrait inside its frame. */
 export type PortraitCrop = Readonly<{ x: number; y: number; width: number; height: number }>;
@@ -19,6 +20,8 @@ export type Character = Readonly<{
   attribution: string;
 }>;
 
+export type CharacterId = keyof typeof characterData;
+
 const deepFreeze = <T>(value: T): Readonly<T> => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value);
@@ -28,28 +31,13 @@ const deepFreeze = <T>(value: T): Readonly<T> => {
 };
 
 /**
- * Authored characters with immutable metadata. Names are display labels; the
- * stable `id` is what story beats reference, so a name can change without
- * rewriting dialogue.
+ * Authored characters with immutable metadata. The source of truth is
+ * `characters.json` so new cast members are config + assets, never game or view
+ * code. Names are display labels; the stable `id` is what story beats reference,
+ * so a name can change without rewriting dialogue.
  */
-const catalogue = {
-  mia: {
-    id: 'mia',
-    name: 'Mia',
-    // Raster first for consistent framing; the original vector is retained as the authored alternate.
-    portrait: { sources: ['mia.png', 'mia.svg'], objectPosition: '50% 14%' },
-    attribution: 'Portrait art created for Taxi Chaos (mia.svg vector, mia.png raster).',
-  },
-  frankie: {
-    id: 'frankie',
-    name: 'Frankie',
-    portrait: { sources: ['frankie.jpg'], objectPosition: '50% 50%', crop: { x: 0.06, y: 0, width: 0.88, height: 1 } },
-    attribution: 'Portrait art created for Taxi Chaos (frankie.jpg raster).',
-  },
-} satisfies Record<string, Character>;
-
-export type CharacterId = keyof typeof catalogue;
-export const characters = deepFreeze(catalogue);
+const catalogue = characterData as Record<CharacterId, Character>;
+export const characters: Readonly<Record<CharacterId, Character>> = deepFreeze(catalogue);
 
 const OBJECT_POSITION = /^(?:left|center|right|top|bottom|-?\d*\.?\d+(?:%|px|em|rem))\s+(?:left|center|right|top|bottom|-?\d*\.?\d+(?:%|px|em|rem))$/;
 const inUnitRange = (value: number) => Number.isFinite(value) && value >= 0 && value <= 1;
@@ -62,7 +50,7 @@ export function validateCharacterCatalogue(entries: Readonly<Record<string, Char
     if (!character.attribution.trim()) throw new Error(`Character ${id} needs attribution`);
     const { sources, objectPosition, crop } = character.portrait;
     if (!sources.length) throw new Error(`Character ${id} needs at least one portrait source`);
-    for (const source of sources) if (!Object.hasOwn(portraits, source)) throw new Error(`Character ${id} references unknown portrait ${source}`);
+    for (const source of sources) if (!(portraitSourceIds as readonly string[]).includes(source)) throw new Error(`Character ${id} references unknown portrait ${source}`);
     if (objectPosition && !OBJECT_POSITION.test(objectPosition.trim())) throw new Error(`Character ${id} has an invalid objectPosition: ${objectPosition}`);
     if (crop) {
       const { x, y, width, height } = crop;
@@ -71,35 +59,6 @@ export function validateCharacterCatalogue(entries: Readonly<Record<string, Char
       }
     }
   }
-}
-
-export type ResolvedPortrait = Readonly<{ source: PortraitSourceId; src: string; format: PortraitFormat }>;
-
-/** Picks the first authored source that exists, so portraits can be swapped by format. */
-export function resolvePortrait(character: Character): ResolvedPortrait {
-  for (const source of character.portrait.sources) {
-    const portrait = portraits[source];
-    if (portrait) return Object.freeze({ source, src: portrait.src, format: portrait.format });
-  }
-  throw new Error(`No bundled portrait for character ${character.id}`);
-}
-
-export type PortraitLayout = Readonly<{
-  src: string; objectFit: 'cover'; objectPosition: string;
-  width: string; height: string; left: string; top: string;
-}>;
-
-/** DOM-free layout maths shared by the view and its tests. */
-export function portraitLayout(character: Character): PortraitLayout {
-  const { src } = resolvePortrait(character);
-  const { objectPosition = '50% 50%', crop } = character.portrait;
-  const percent = (value: number) => `${Math.round(value * 1e6) / 1e4}%`;
-  if (!crop) return Object.freeze({ src, objectFit: 'cover' as const, objectPosition, width: '100%', height: '100%', left: '0%', top: '0%' });
-  return Object.freeze({
-    src, objectFit: 'cover' as const, objectPosition,
-    width: percent(1 / crop.width), height: percent(1 / crop.height),
-    left: percent(-crop.x / crop.width), top: percent(-crop.y / crop.height),
-  });
 }
 
 export function getCharacter(id: CharacterId): Character { return characters[id]; }

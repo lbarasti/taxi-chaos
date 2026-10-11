@@ -15,20 +15,23 @@ priority over dialogue.
 
 ## Authoring
 
-`src/story.ts` contains the immutable beat catalogue with **plot**, **side-quest**
-and **lore** categories and passenger/sender variants. A message names its
-**speaker** with a typed character ID; the display name and portrait are resolved
-from `src/characters.ts` at render time. Attach an optional `storyBeat` ID to a
-job to play it at successful pickup. Recurring names such as Mia are not treated
-as story identifiers.
+The opening mission and its dialogue are now authored content in
+[`src/missions/catalogue.json`](missions.md): a **plot** mission
+(`mia-meridian-lead`) with a passenger beat (`mia-meridian-vans`) and a sender
+variant (`mia-meridian-parcel`) that plays when the pickup becomes a parcel
+run. A message names its **speaker** with a stable character ID; the display
+name and portrait are resolved from the character catalogue at render time.
+Recurring names such as Mia are not treated as story identifiers.
 
-Characters live in the immutable catalogue in `src/characters.ts`. Each entry has
-a stable `id`, a display `name`, portrait metadata and attribution. Portrait
-files live in `src/assets/characters/` and are discovered at build time by the
-eager `import.meta.glob` registry in `src/portraits.ts`, which supports **SVG**,
-**PNG** and **JPEG** side by side. Every file is imported with `?inline`, so it is
-embedded as a data URL in the standalone HTML and never becomes a runtime request;
-the single-file build does not depend on the generic asset inline threshold.
+Characters live in `src/characters.json` with an immutable `id`, display `name`,
+portrait metadata and attribution. Portrait files live in
+`src/assets/characters/` and are discovered at build time by the eager
+`import.meta.glob` registry in `src/portraits.ts`, which supports **SVG**,
+**PNG** and **JPEG** side by side. The DOM-free `src/portrait-manifest.ts` holds
+the declared file names so character and mission validation never import the
+image registry. Every file is imported with `?inline`, so it is embedded as a
+data URL in the standalone HTML and never becomes a runtime request; the
+single-file build does not depend on the generic asset inline threshold.
 `portraitSourceIds` lists the authored files; the test suite runs
 `validatePortraitRegistry`, which throws if that listing and the folder drift
 apart, before the build runs.
@@ -47,11 +50,14 @@ The display name sits beside the portrait, so the image keeps a decorative empty
 `alt`.
 
 Dialogue is run-only, is exposed in detached lab snapshots, and does not alter
-physics, random generation, fares or stored progress. Resetting a run restores
-the opening mission; completing or abandoning a job clears its conversation.
-There are no voice samples or external image requests. The portrait art created
-for Taxi Chaos is embedded in the standalone HTML; provenance is recorded in
-[`src/assets/ATTRIBUTION.md`](../src/assets/ATTRIBUTION.md).
+physics, random generation, fares or stored progress. The opening story mission
+is offered from persistent progress on the opening dispatch; a new shift,
+hospital stay or arrest preserves it, while the explicit
+`game.resetStory()` restores the opening mission. Completing or abandoning a job
+clears its conversation. There are no voice samples or external image requests.
+The portrait art created for Taxi Chaos is embedded in the standalone HTML;
+provenance is recorded in [`src/assets/ATTRIBUTION.md`](../src/assets/ATTRIBUTION.md).
+See the [mission authoring guide](missions.md) for the config schema.
 
 ## Screenshots
 
@@ -62,9 +68,12 @@ for Taxi Chaos is embedded in the standalone HTML; provenance is recorded in
 
 ## Verification
 
-- `npm test`: 32 test files, 485 tests passing. Story integration covers stopped
-  pickups, sender variants, pause/game-over clocks, replay, detached snapshots,
-  completion/abandonment/reset, recurring names and unchanged simulation/RNG.
+- `npm test`: 39 test files, 536 tests passing. Story and mission integration
+  covers stopped pickups, sender variants, pause/game-over clocks, replay,
+  detached snapshots, completion/abandonment/reset, config schema errors and
+  missing references, prerequisite cycles, choice exclusivity, pickup vs
+  completion commitment, retry policies, progress migration, RNG isolation,
+  recurring names and unchanged simulation/fare economics.
 - `npm run build`: strict TypeScript and standalone production build passing.
 - Isolated browser QA of the production HTML via `file://` with networking
   disabled: no console errors and only embedded image/font assets requested.

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  characters, getCharacter, isCharacterId, messageCharacter, portraitLayout, resolvePortrait, validateCharacterCatalogue,
+  characters, getCharacter, isCharacterId, messageCharacter, validateCharacterCatalogue,
   type Character, type CharacterPortrait,
 } from './characters';
-import { portraits, portraitSourceIds, validatePortraitRegistry, type PortraitFormat } from './portraits';
+import { portraitLayout, portraits, portraitSourceIds, resolvePortrait, validatePortraitRegistry, type PortraitFormat } from './portraits';
 
 const mime: Record<PortraitFormat, string> = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
 

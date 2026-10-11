@@ -11,7 +11,7 @@ export function createPreview(document: MapDocument, spawnId = 'fairway-club') {
   if (result.errors) throw new Error(`Preview blocked by ${result.errors} map errors. Fix the findings first.`);
   const requested = entityPosition(document, spawnId);
   if (!requested) throw new Error(`Unknown preview spawn: ${spawnId}`);
-  const game = new Game(map, false), p = game.world.navigation.roadProjection(requested);
+  const game = new Game(map, false, false), p = game.world.navigation.roadProjection(requested);
   const candidates = [p, ...map.country.countryAccess(p).road.points.filter(q => Math.hypot(q.x - p.x, q.y - p.y) < 20)];
   const spawn = candidates.map(position => {
     const access = map.country.countryAccess(position), a = access.road.points[Math.max(0, access.segment - 1)], b = access.road.points[access.segment], angle = Math.atan2(b.y - a.y, b.x - a.x);

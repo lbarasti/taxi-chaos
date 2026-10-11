@@ -290,6 +290,7 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       pose(game, renderer, player, 236, 80, EAST, 0);
       game.settings.noPolice = true;
       game.job.pickup = vec(236, 80); game.job.dropoff = vec(474, 58); game.job.destination = 'Eagle Lookout'; game.job.stage = 'dropoff'; game.job.time = 140;
+      game.releaseMission('shift');
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Cross Pine Bridge, then follow the ridge road to Eagle Lookout.');
@@ -300,6 +301,7 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
       pose(game, renderer, player, estates.x, estates.y, WEST, 0);
       game.settings.noPolice = true;
       game.job.pickup = { ...estates }; game.job.dropoff = { ...club }; game.job.destination = 'Fairway Club'; game.job.stage = 'dropoff'; game.job.time = 140;
+      game.releaseMission('shift');
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }
       game.notify('Explore the woodland villas and deliver your passenger to Fairway Club.');

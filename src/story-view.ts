@@ -1,4 +1,5 @@
-import { messageCharacter, portraitLayout, type Character } from './characters';
+import { messageCharacter, type Character } from './characters';
+import { portraitLayout } from './portraits';
 import type { Dialogue, DialogueState } from './story';
 
 export const storyMarkup = `
