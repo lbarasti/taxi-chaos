@@ -110,6 +110,34 @@ describe('motorcycle impact / laid-down bike dynamics', () => {
     expect(g.interact()).toBe(true);
     expect(g.onFoot).toBe(false); expect(bike.body.mass).toBe(bike.definition.chassis.mass);
   });
+
+  it('lifting another fallen bike preserves the active ride and job until mounting', () => {
+    const { g, bike, car } = collisionScene(false);
+    g.collision(car, bike, 1 / 120);
+    bike.body.velocity = vec(); car.body.velocity = vec();
+    g.onFoot = true; car.driverExited = true; car.parked = true;
+    g.driver.position = bike.body.toWorld(vec(0, 2));
+    const job = g.job, boost = g.boost = 42;
+    expect(g.enterableCar).toBe(bike);
+    expect(g.interact()).toBe(true);
+    expect(g.player).toBe(car); expect(g.job).toBe(job);
+    expect(g.boost).toBe(boost); expect(bike.kind).toBe('traffic');
+    expect(g.interact()).toBe(true);
+    expect(g.player).toBe(bike); expect(g.job.type).toBe('parcel');
+    expect(g.onFoot).toBe(false);
+  });
+
+  it('hospital respawn leaves the abandoned motorcycle fallen and damaged', () => {
+    const { g, bike, car, dynamics } = collisionScene(true);
+    g.collision(car, bike, 1 / 120);
+    const health = bike.damage.health, mass = bike.body.mass;
+    g.driverHealth = 1; g.hurtDriver(10, 'impact');
+    expect(g.mode).toBe('wasted');
+    g.recover();
+    expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true);
+    expect(dynamics.fallen).toBe(true);
+    expect(bike.damage.health).toBe(health); expect(bike.body.mass).toBe(mass);
+  });
 });
 
 describe('motorcycle HP, engine failure and recovery', () => {

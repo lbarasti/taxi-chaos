@@ -186,7 +186,6 @@ export class Game {
           : 'Walk up to a parked car or motorbike, then press E to take it.');
         return false;
       }
-      if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
       if (next.model === 'motorcycle' && (next.dynamics as MotorcycleDynamics).fallen) {
         const dynamics = next.dynamics as MotorcycleDynamics;
         dynamics.resetLean(); next.body.velocity = vec(); next.body.angularVelocity = 0;
@@ -194,6 +193,7 @@ export class Game {
         this.notify('Motorbike back on its wheels. Press E again to ride.');
         return true;
       }
+      if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
       if (next.model === 'motorcycle') next.body.mass = next.definition.chassis.mass;
@@ -432,9 +432,8 @@ export class Game {
       this.save.cash -= bill.total; this.persist();
       // Leave the destroyed vehicle behind. Acknowledgment brings the driver back on foot.
       this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true;
-      // The hospital path also handles an abandoned motorcycle; keep its riderless
-      // visual state neutral rather than carrying a fractional pre-blast roll.
-      if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
+      // Hospital recovery does not lift or repair the abandoned motorcycle.
+      if (this.player.dynamics instanceof MotorcycleDynamics && !this.player.dynamics.fallen) this.player.dynamics.resetLean();
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
       if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
       this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...HOSPITAL }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;

@@ -28,4 +28,12 @@ Once the rider is no longer balancing the vehicle, a motorcycle's roll is no lon
 
 Unit/integration coverage is in `src/motorcycle-crash.test.ts`: both fall sides, friction, rest without reversing, contact-trigger and soft-contact suppression, NPC and player ejections, single landing injury, prop impacts, righting/re-entry, HP/engine thresholds and roadside repair. The catalogue and initial positions are checked in `src/lab.test.ts`. Run `npm test && npm run build`.
 
-Manual QA priorities: verify top-down silhouettes while the bike lies on its side, NPC rider separation, road scrape effect and contact audio, mobile Lift action, damaged-bike refusal, and test-lab collision playback at different frame cadences. Screenshot/browser QA is still needed when an interactive browser is available.
+## PR review verification (2026-10-11)
+
+Review fixes keep tumbling NPC riders subject to normal vehicle injury/gore rules, preserve fallen abandoned bikes after hospital respawn, and defer changing the active vehicle, boost and job until mounting rather than lifting another bike. Four added regression cases cover these behaviors.
+
+- All **383 tests / 28 files** pass with `npm test -- --testTimeout=20000`; the extended timeout accommodates the existing CPU-heavy AI recovery fixture in this environment. Strict TypeScript checking and `npm run build` pass.
+- Offline standalone Chromium at **1440 × 900** verifies both crash fixtures, rider/bike separation, 185 kg riderless mass, sustained side roll, and player landing injury. At **390 × 844**, the actual tow button repairs a disabled bike and returns the player to riding at 100 HP. No runtime errors or external requests occurred.
+- Screenshots: [NPC collision](screenshots/motorcycle-impact.png), [player collision](screenshots/rider-impact.png), [mobile roadside repair](screenshots/motorcycle-mobile-tow.png).
+
+Subjective contact audio, native iOS touch behavior and playback at different frame cadences remain manual QA items.
