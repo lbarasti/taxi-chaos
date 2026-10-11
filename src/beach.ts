@@ -48,7 +48,9 @@ const BEACH_STOPS = [
   { position: vec(160, 240), name: 'Ocean Walk' },
   { position: vec(200, 240), name: 'Pacific Palm Hotel' },
 ];
-const BEACH_PICKUP = { ...document.beach.pickup };
+// Compatibility fixture location follows the authored bay. A deleted bay does
+// not respawn a pickup; the fallback only supplies a LAB camera location.
+const BEACH_PICKUP = { ...(document.parking.find(p => p.owner === 'beach' && p.model === 'pickup')?.position ?? vec(28, 249.5)) };
 const BEACH_HOTELS = structuredClone(document.beach.hotels);
 const LIFEGUARD_TOWERS = document.beach.towers.map(t => ({ ...t.position }));
 const BEACH_SETS = document.beach.sets.map(t => ({ ...t.position }));

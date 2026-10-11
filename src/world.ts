@@ -2,7 +2,7 @@ import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physi
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
-import type { VehicleModel } from './vehicles';
+import type { Parking } from './map/schema';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
 export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
@@ -12,7 +12,7 @@ export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
 export type Prop = { id: number; sourceId?: string; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
-export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean; model?: VehicleModel };
+export type ParkingSpot = Parking & { sourceId: string };
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
 // Clear sidewalk outside Midtown Hospital; the adjacent curb bay is unoccupied.
 export const HOSPITAL = vec(147, 74.6);
@@ -39,9 +39,10 @@ export class World {
   }
   constructor(public readonly map: CompiledMap = defaultCompiledMap) {
     const { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, inCountryClearing, inHighlands } = map.country;
-    const { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, PROMENADE } = map.beach;
+    const { BEACH_HOTELS, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, PROMENADE } = map.beach;
     const { COAST_RAILS } = map.coast;
     this.navigation = createNavigation(map);
+    this.parking = map.document.parking.map(p => ({ ...structuredClone(p), sourceId: p.id }));
     this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
     const colors = ['#334850', '#3c485b', '#4d4b59', '#3d5554', '#535045', '#394a5a'];
     const shops = ['NOODLE CLUB', 'VINYL & CO.', '24/7 DELI', 'LAUNDROMAT', 'COFFEE', 'BODEGA', 'FLOWERS', 'HOTEL', 'ARCADE', 'PIZZA', 'BOOK SHOP', 'NIGHT OWL'];
@@ -56,9 +57,7 @@ export class World {
         this.add('station', x + 14, y + 27, 10, 10, '#765952', 'LAST CHANCE FUEL');
         for (let i = 0; i < 3; i++) this.add('pump', x + 13 + i * 8, y + 13, 1.2, 2.4, '#d39060', 'FUEL');
         this.add('bin', x + 26, y + 28, 0.85, 0.85, '#76a79b');
-      } else if (special === 'parking') {
-        for (let row = 0; row < 2; row++) for (let i = 0; i < 3; i++) this.parking.push({ position: vec(x + 13 + i * 7, y + 12 + row * 16), angle: Math.PI / 2, occupied: i !== row, lot: true });
-      } else {
+      } else if (special !== 'parking') {
         // Four buildings, separated by two genuine drivable/destructible alleys.
         for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) {
           if (special && iy === 0) continue;
@@ -72,7 +71,6 @@ export class World {
         this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
       }
       for (let i = 0; i < 2; i++) {
-        if (!park && special !== 'fuel' && special !== 'parking') this.parking.push({ position: vec(x + 14 + i * 12, y + 34.6), angle: 0, occupied: i === (bx + by) % 2, lot: false });
         this.add('hydrant', x + 7.5, y + 11 + i * 18, 0.65, 0.65, '#eb735f');
         this.add('lamp', x + 32.4, y + 9 + i * 20, 0.6, 0.6, '#a7bfbb');
         this.add('bin', x + 12 + i * 16, y + 32.5, 0.85, 0.85, '#76a79b');
@@ -83,15 +81,13 @@ export class World {
         this.addPerson(home2, 'civilian', '#c3b7d7');
       }
     }
-    // Dedicated courier bay beside Pit Stop; x=6.5 clears the hydrants on the first pickup run.
-    this.parking.push({ position: vec(6.5, 34.6), angle: -Math.PI / 2, occupied: true, lot: false, motorcycle: true });
     for (const rail of COAST_RAILS) this.add('guardrail', rail.position.x, rail.position.y, rail.width, 0.8, '#a7b9b1', '', rail.angle);
     for (const y of BRIDGE_Y) {
       for (const side of [-1, 1]) {
         this.add('lamp', 249, y + side * 9, 0.6, 0.6, '#a7bfbb');
-        this.add('lamp', 307, y + side * 9, 0.6, 0.6, '#a7bfbb');
       }
     }
+    for (const p of map.document.countryProps) this.add(p.kind, p.position.x, p.position.y, p.width, p.height, p.color, p.label, p.angle).sourceId = p.id;
     // Separate RNG preserves the existing city's layouts, traffic and deterministic fixtures.
     const ruralRandom = seeded(map.document.generation.ruralSeed);
     // Keep the original candidate lattice/RNG draws; carry the southern stream in
@@ -169,7 +165,6 @@ export class World {
     for (const x of [168, 208, 228]) this.add('bench', walkX(x), PROMENADE.bottom - 1.8, 2.4, 0.75, '#c29b76');
     this.add('kiosk', walkX(158), PROMENADE.bottom - 2.3, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
     this.add('kiosk', walkX(202), PROMENADE.bottom - 2.3, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
-    this.parking.push({ position: { ...BEACH_PICKUP }, angle: 0, occupied: true, lot: false, model: 'pickup' });
     const beachRandom = this.random; this.random = seeded(1965);
     for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(walkX(x), (PROMENADE.top + PROMENADE.bottom) / 2), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
     for (const x of [-8, 20, 64, 88, 110]) this.addPerson(vec(x, 253), 'civilian', '#dcaa84');

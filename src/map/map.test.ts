@@ -21,7 +21,7 @@ describe('map document and transactional editing', () => {
   });
   it.each(['version', 'duplicate', 'reference', 'finite', 'dimension', 'extra', 'pinned', 'ordering', 'workload'])('rejects malformed imports: %s', kind => {
     const d = copyDefaultMap();
-    if (kind === 'version') (d as { schemaVersion: number }).schemaVersion = 2;
+    if (kind === 'version') (d as { schemaVersion: number }).schemaVersion = 99;
     if (kind === 'duplicate') d.villas[0].id = d.points[0].id;
     if (kind === 'reference') d.roads[0].from = 'missing-node';
     if (kind === 'finite') d.points[0].position.x = NaN;

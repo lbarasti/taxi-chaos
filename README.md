@@ -295,9 +295,12 @@ For shared browser sessions, run automated resets in a separate isolated browser
 
 **F2 → Map studio** opens an independent whole-map overview. Select Southern
 Estates and translate it, or move villas, golf, hotels, beach sets, shoreline
-points and road anchors with numeric controls or dragging. Layers, snapping,
-measurements, collision/access validation, undo/redo and local JSON import/export
-use the same versioned map document as agents and the headless CLI.
+points and road anchors with numeric controls or dragging. **Author content** adds,
+duplicates, deletes and re-properties bounded **country props**, **parking bays**
+and **traffic spawns** as first-class, stable-ID descriptors with their own
+validation. Layers, snapping, measurements, collision/access validation, undo/redo
+and local JSON import/export use the same versioned map document as agents and the
+headless CLI; schema-version-1 drafts migrate on import.
 
 **Preview gameplay** rebuilds a fresh map-aware game with normal physics, AI and
 fares. Preview progress does not read or write normal saves. Returning restores
@@ -364,7 +367,7 @@ before reloading. To make a reviewed draft the default for all players:
 - `src/game.ts` / `src/vehicle-exit.ts`: fixed-step orchestration, moving exits/door choreography/landing damage, motorcycle jump reaction, on-foot vehicle switching, parked cars, explosions, jobs and save data.
 - `src/renderer.ts`: city/cab/structure drawing, camera, corpses, rubble, routes, minimap and debug overlays.
 - `src/lab.ts` / `src/lab.css`: scenario fixtures, inspector, cheats and serializable test API.
-- `src/map/`: versioned authored map, immutable per-world compiler, atomic operations/history, geometry validation and Map studio UI/preview.
+- `src/map/`: versioned authored map (including bounded country props, parking and traffic-spawn descriptors), immutable per-world compiler, atomic operations/history, geometry validation, version-1 migration and Map studio UI/preview.
 - `src/main.ts`: accessible HTML HUD, dialogs, input, fixed-step clock and opt-in automation harness.
 - `vite.config.ts`: small single-file build plugin; fails the build if external assets remain.
 

@@ -4,3 +4,4 @@
 #map-editor .editor-description details{margin-top:8px}
 #map-editor .editor-description summary{cursor:pointer;color:#d5e4d5}
 #map-editor .editor-description pre{white-space:pre-wrap;font:inherit;overflow-wrap:anywhere}
+#map-editor textarea{width:100%;resize:vertical;font:12px monospace;color:#dfe9df;background:#203b43;border:1px solid #42616a;border-radius:6px;padding:8px;min-width:0}#map-editor [hidden]{display:none!important}#map-editor input[type=color]{padding:3px;width:100%}

@@ -1,7 +1,7 @@
-import { add, dist, scale, sub, vec, type Vec } from '../physics';
+import { add, dist, rotate, scale, sub, vec, type Vec } from '../physics';
 import { World } from '../world';
 import { HARBOUR } from '../harbour';
-import { describe, entities, entityPosition } from './operations';
+import { describe, descriptorBody, entities, entityPosition } from './operations';
 import type { CompiledMap } from './compile';
 import type { Validation } from './validation';
 
@@ -21,7 +21,10 @@ export class EditorRenderer {
       if (nearest) return nearest.id;
     }
     // Authored placements stay selectable when collision overlays are hidden.
-    const prop = [...world.props].reverse().find(p => p.sourceId && Math.abs(p.body.toWorld(vec()).x - point.x) <= p.body.w / 2 + 4 / this.zoom && Math.abs(p.body.position.y - point.y) <= p.body.h / 2 + 4 / this.zoom);
+    const inside = (body: ReturnType<typeof descriptorBody>) => { const p = rotate(sub(point, body.position), -body.angle); return Math.abs(p.x) <= body.w / 2 + 4 / this.zoom && Math.abs(p.y) <= body.h / 2 + 4 / this.zoom; };
+    const placement = [...d.parking, ...d.trafficSpawns].reverse().find(e => inside(descriptorBody(e)));
+    if (placement) return placement.id;
+    const prop = [...world.props].reverse().find(p => p.sourceId && inside(p.body));
     if (prop) return prop.sourceId;
     const nearby = entities(d).filter(e => !('weight' in e) && !('points' in e)).map(e => ({ id: e.id, position: entityPosition(d, e.id)! })).filter(e => dist(e.position, point) * this.zoom < 10).sort((a, b) => dist(a.position, point) - dist(b.position, point))[0];
     if (nearby) return nearby.id;
@@ -66,6 +69,16 @@ export class EditorRenderer {
       if (this.layers.colliders) { c.strokeStyle = '#ee958a'; c.lineWidth = 0.8 / this.zoom; c.strokeRect(-prop.body.w / 2, -prop.body.h / 2, prop.body.w, prop.body.h); } c.restore();
     }
     for (const pool of world.pools) { c.fillStyle = '#76c9d0'; c.fillRect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); }
+    if (this.layers.objects) for (const e of [...map.document.parking, ...map.document.trafficSpawns]) {
+      const body = descriptorBody(e), parking = 'occupied' in e;
+      c.save(); c.translate(e.position.x, e.position.y); c.rotate(e.angle);
+      c.strokeStyle = parking ? '#bed8bd' : '#89d9e7'; c.lineWidth = 1 / this.zoom;
+      if (parking) { c.strokeRect(-2.7, -1.3, 5.4, 2.6); if (this.zoom > 3) text('P', vec(), '#bed8bd', 10); }
+      if (!parking || e.occupied) { c.fillStyle = e.color; c.fillRect(-body.w / 2, -body.h / 2, body.w, body.h); }
+      if (!parking) { c.beginPath(); c.moveTo(body.w / 2 + 3 / this.zoom, 0); c.lineTo(body.w / 2 - 2 / this.zoom, -3 / this.zoom); c.lineTo(body.w / 2 - 2 / this.zoom, 3 / this.zoom); c.closePath(); c.fillStyle = '#89d9e7'; c.fill(); }
+      c.restore();
+      if ('path' in e && (this.layers.navigation || selection === e.id)) line([e.position, ...e.path], '#89d9e7', 1.5);
+    }
     if (this.layers.navigation) {
       line([...country.GOLF_CART_ROUTE, country.GOLF_CART_ROUTE[0]], '#f4ce69', 2);
       for (const stop of country.HIGHLAND_STOPS) { const path = world.navigation.roadPath(country.ROAD_NODES[0], stop.position); line(path, '#80d8e799', 1); }

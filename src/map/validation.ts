@@ -3,6 +3,7 @@ import { World, blocksWalking, isRigidObstacle } from '../world';
 import { vehicleDefinition, createVehicleBody } from '../vehicles';
 import { compileMap, type CompiledMap } from './compile';
 import type { MapDocument } from './schema';
+import { descriptorBody } from './operations';
 
 export type Finding = { code: string; severity: 'error' | 'warning' | 'info'; entityIds: string[]; position?: Vec; message: string; measured?: Record<string, number> };
 export type Validation = { revision: string; findings: Finding[]; errors: number; warnings: number; waterGap: number | null; resolution: { roads: number; waterGap: number; footprintEdge: number; tolerance: number } };
@@ -51,6 +52,45 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     }
   }
   const checkLand = (id: string, body: Body, land: (p: Vec) => boolean) => { const outside = footprint(body).find(p => !land(p)); if (outside) push('object-outside-land', [id], 'Composite footprint extends outside its intended land', outside, { length: body.w, width: body.h }); };
+  for (const p of document.countryProps) {
+    const body = descriptorBody(p); checkLand(p.id, body, q => !coast.inOcean(q));
+    if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
+  }
+  const vehiclePlacements = [...document.parking, ...document.trafficSpawns].map(e => ({ e, body: descriptorBody(e) }));
+  const checkVehicleClearance = (id: string, body: Body, code: string) => {
+    const wet = footprint(body).find(coast.inOcean);
+    if (wet) push(code, [id], 'Vehicle footprint crosses water', wet);
+    const prop = [...world.hash.query(body)].find(p => (contact(body, p.body)?.depth ?? 0) > 0.04);
+    if (prop) push(code, [id, prop.sourceId ?? `runtime-prop-${prop.id}`], `Vehicle footprint intersects ${prop.label || prop.kind}`, body.position);
+    const pool = world.pools.find(p => contact(body, p));
+    if (pool) push(code, [id], 'Vehicle footprint intersects a pool', pool.position);
+  };
+  for (const { e, body } of vehiclePlacements) {
+    checkVehicleClearance(e.id, body, 'spawn-blocked');
+    const player = createVehicleBody(vehicleDefinition('car'), vec(4, 32), -Math.PI / 2);
+    if (contact(body, player)) push('spawn-overlap', [e.id], 'Vehicle placement overlaps the starting taxi', e.position);
+  }
+  for (let i = 0; i < vehiclePlacements.length; i++) for (let j = i + 1; j < vehiclePlacements.length; j++) {
+    const a = vehiclePlacements[i], b = vehiclePlacements[j];
+    if ((contact(a.body, b.body)?.depth ?? 0) > 0.04) push('spawn-overlap', [a.e.id, b.e.id], 'Vehicle placements overlap (empty bays reserve space too)', a.e.position);
+  }
+  for (const spawn of document.trafficSpawns) {
+    const access = country.countryAccess(spawn.position);
+    if (world.navigation.roadDistance(spawn.position) > 6 || country.isCountry(spawn.position) && !beach.inBeach(spawn.position) && !seen.has(access.road.from)) push('unreachable-spawn', [spawn.id], 'Traffic spawn lacks a reachable road lane', spawn.position);
+    // Paths are waypoints, not a promise that AI can cross arbitrary water or
+    // props. Sweep the actual model along every authored initial route leg.
+    let from = spawn.position, reported = false;
+    for (const to of spawn.path) {
+      const distance = dist(from, to), angle = Math.atan2(to.y - from.y, to.x - from.x), steps = Math.ceil(distance);
+      for (let i = 0; i <= steps && !reported; i++) {
+        const q = add(from, scale(sub(to, from), i / (steps || 1))), body = createVehicleBody(vehicleDefinition(spawn.model), q, angle);
+        if (footprint(body).some(coast.inOcean) || [...world.hash.query(body)].some(p => (contact(body, p.body)?.depth ?? 0) > 0.04) || world.pools.some(p => contact(body, p))) {
+          push('traffic-route-blocked', [spawn.id], 'Initial traffic route crosses water or a collision footprint', q); reported = true;
+        }
+      }
+      from = to;
+    }
+  }
   for (const [i, villa] of country.VILLAS.entries()) {
     const p = villa.position;
     checkLand(villa.id, new Body(p.x, p.y, 1, 42, 34), country.inHighlands);
@@ -67,8 +107,9 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   for (const h of beach.BEACH_HOTELS) checkLand(h.id, new Body(h.position.x, h.position.y, 1, h.width, h.height), beach.inBeach);
   for (const prop of world.props.filter(p => p.sourceId && ['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle'].includes(p.kind))) checkLand(prop.sourceId!, prop.body, beach.inBeach);
   const overlaps = new Set<string>();
-  for (const prop of world.props.filter(p => p.sourceId && isRigidObstacle(p.kind))) for (const other of world.hash.query(prop.body)) {
-    if (prop === other || prop.sourceId === other.sourceId || !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
+  const countryPropIds = new Set(document.countryProps.map(p => p.id));
+  for (const prop of world.props.filter(p => p.sourceId && (isRigidObstacle(p.kind) || countryPropIds.has(p.sourceId)))) for (const other of world.hash.query(prop.body)) {
+    if (prop === other || prop.sourceId === other.sourceId || !countryPropIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
     const depth = contact(prop.body, other.body)?.depth ?? 0, ids = [prop.sourceId!, other.sourceId ?? `runtime-prop-${other.id}`].sort(), key = ids.join(':');
     if (depth > 0.04 && !overlaps.has(key)) { overlaps.add(key); push('object-overlap', ids, 'Authored solid overlaps another collision footprint (same-composite attachments are allowed)', prop.body.position, { penetration: depth }); }
   }
@@ -94,6 +135,11 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     if (blocked) push('walking-entrance-blocked', [prom.id, ...beach.BEACH_HOTELS.filter(h => Math.abs(h.position.x - x) < h.width).map(h => h.id)], 'Required 0.7 m walking route is blocked', blocked, { entryX: x, bodyWidth: 0.7 });
   }
   const env = document.envelope, outside = (p: Vec) => p.x < env.min.x - 0.001 || p.x > env.max.x + 0.001 || p.y < env.min.y - 0.001 || p.y > env.max.y + 0.001;
+  for (const { e, body } of vehiclePlacements) {
+    const p = footprint(body).find(outside); if (p) push('outside-envelope', [e.id], 'Vehicle footprint is outside the map envelope', p);
+    if ('lot' in e) { const bay = new Body(e.position.x, e.position.y, 1, 5.4, 2.6); bay.angle = e.angle; const edge = footprint(bay).find(outside); if (edge) push('outside-envelope', [e.id], 'Parking marking is outside the map envelope', edge); checkLand(e.id, bay, q => !coast.inOcean(q)); }
+    if ('path' in e) { const q = e.path.find(outside); if (q) push('outside-envelope', [e.id], 'Traffic waypoint is outside the envelope', q); }
+  }
   for (const p of document.points) if (outside(p.position)) push('outside-envelope', [p.id], 'Authored point is outside the map envelope', p.position);
   for (const prop of world.props) { const p = prop.body.corners().find(outside); if (p) push('outside-envelope', [prop.sourceId ?? `runtime-prop-${prop.id}`], 'Generated collision footprint is outside the map envelope', p); }
   for (const ridge of document.ridges) { const p = ridge.points.find(outside); if (p) push('outside-envelope', [ridge.id], 'Decorative ridge lies outside the envelope', p); }

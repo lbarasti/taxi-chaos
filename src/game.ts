@@ -9,14 +9,14 @@ import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
 import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
-import { createVehicleBody, createVehicleDynamics, trafficModel, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
+import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
 import { isCountry, pathLength } from './countryside';
 import { RAIL_BREAK_SPEED } from './coast';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, inHarbour } from './harbour';
 
-export type Vehicle = { id: number; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
+export type Vehicle = { id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number };
@@ -64,24 +64,17 @@ export class Game {
     this.populateVehicles(); this.newJob(true); this.applyUpgrades();
   }
   populateVehicles() {
-    const { roadNode } = this.world.navigation, { GOLF_CART_ROUTE } = this.map.country;
+    const { GOLF_CART_ROUTE } = this.map.country;
     this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, '#f7ce55');
-    for (let i = 0; i < 23; i++) {
-      const horizontal = i % 2 === 0, street = (i % 7) * 40, along = 45 + this.world.random() * 160;
-      const model = trafficModel(i), angle = horizontal ? 0 : -Math.PI / 2;
-      const position = horizontal ? vec(along, street + 3) : vec(street + 3, along);
-      // Check the chosen model's complete footprint, including initial traffic.
-      const probe = createVehicleBody(vehicleDefinition(model), position, angle);
-      for (let attempt = 0; attempt < 32 && !this.canSpawnTraffic(probe); attempt++) {
-        if (horizontal) probe.position.x = 12 + ((along + attempt * 13) % 216);
-        else probe.position.y = 12 + ((along + attempt * 13) % 216);
-      }
-      if (!this.canSpawnTraffic(probe)) continue;
-      const v = this.spawnVehicle({ model, position: probe.position, angle, color: model === 'car' ? ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5] : undefined });
-      const node = roadNode(v.body.position); v.path = [horizontal ? vec(Math.min(240, node.x + 40), node.y + 3) : vec(node.x + 3, Math.max(0, node.y - 40))];
+    // Preserve the historical city's post-population RNG stream; placements are
+    // now explicit and are never silently relocated away from an invalid draft.
+    for (let i = 0; i < 23; i++) this.world.random();
+    this.trafficTarget = this.map.document.trafficSpawns.length;
+    for (const spawn of this.map.document.trafficSpawns) {
+      const v = this.spawnVehicle(spawn); v.sourceId = spawn.id; v.path = structuredClone(spawn.path);
     }
-    for (const [i, spot] of this.world.parking.entries()) if (spot.occupied) {
-      const v = this.vehicle('traffic', spot.position.x, spot.position.y, spot.angle, spot.model ? vehicleDefinition(spot.model).graphics.color : spot.motorcycle ? '#ed9b63' : ['#d77f72', '#91b5b0', '#ad9dc6', '#dfd5bb', '#7695ac'][i % 5], spot.model ?? (spot.motorcycle || i % 7 === 0 ? 'motorcycle' : 'car')); v.parked = true; v.driverExited = true;
+    for (const spot of this.world.parking) if (spot.occupied) {
+      const v = this.spawnVehicle({ ...spot, parked: true, driverExited: true }); v.sourceId = spot.id;
     }
     this.populateFreight();
     for (const i of [0, 1, 2]) {
@@ -126,25 +119,30 @@ export class Game {
     const { inOcean } = this.map.coast;
     return !inOcean(body.position) && !this.vehicles.some(v => v.alive && bodiesNear(body, v.body, margin)) && ![...this.world.hash.query(body)].some(prop => contact(body, prop.body)) && !this.world.pools.some(pool => contact(body, pool)) && !this.world.parking.some(spot => {
       if (!spot.occupied) return false;
-      const parked = createVehicleBody(vehicleDefinition(spot.model ?? (spot.motorcycle ? 'motorcycle' : 'car')), spot.position, spot.angle);
+      const parked = createVehicleBody(vehicleDefinition(spot.model), spot.position, spot.angle);
       return bodiesNear(body, parked, margin);
     });
   }
   setTrafficCount(count: number) {
-    const { roadNode } = this.world.navigation;
     this.trafficTarget = clamp(Math.floor(Number.isFinite(count) ? count : 0), 0, 60);
     const cars = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && !v.freight && v.alive);
     for (const v of cars.slice(this.trafficTarget)) v.alive = false;
     this.vehicles = this.vehicles.filter(v => v.alive);
     for (let attempt = 0; this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && !v.freight && v.alive).length < this.trafficTarget && attempt < 300; attempt++) {
-      const horizontal = attempt % 2 === 0, street = Math.floor(this.world.random() * 7) * 40, along = 12 + this.world.random() * 216;
-      const p = horizontal ? vec(along, street + 3) : vec(street + 3, along);
-      const model = trafficModel(this.vehicles.filter(v => v.kind === 'traffic' && !v.parked && !v.freight && !v.cart).length), angle = horizontal ? 0 : -Math.PI / 2;
-      const probe = createVehicleBody(vehicleDefinition(model), p, angle);
-      if (dist(p, this.actor.position) < 9 || !this.canSpawnTraffic(probe)) continue;
-      const v = this.spawnVehicle({ position: p, angle, model });
-      const node = roadNode(p); v.path = [horizontal ? vec(Math.min(240, node.x + 40), node.y + 3) : vec(node.x + 3, Math.max(0, node.y - 40))];
+      this.replenishTraffic(attempt, 9);
     }
+  }
+  private replenishTraffic(index: number, minimumDistance: number) {
+    const spawns = this.map.document.trafficSpawns, spawn = spawns[index % spawns.length];
+    if (!spawn) return false;
+    // Density changes may use clear points along the descriptor's first leg;
+    // deleting every spawn disables replenishment rather than inventing city spawns.
+    const t = (Math.floor(index / spawns.length) % 5) / 5;
+    const position = add(spawn.position, scale(sub(spawn.path[0], spawn.position), t));
+    const angle = t ? Math.atan2(spawn.path[0].y - position.y, spawn.path[0].x - position.x) : spawn.angle;
+    const probe = createVehicleBody(vehicleDefinition(spawn.model), position, angle);
+    if (dist(position, this.actor.position) < minimumDistance || !this.canSpawnTraffic(probe)) return false;
+    const v = this.spawnVehicle({ ...spawn, position, angle }); v.sourceId = spawn.id; v.path = structuredClone(spawn.path); return true;
   }
   get target() {
     if (this.onFoot) return this.nearestCar?.body.position ?? GARAGE;
@@ -839,10 +837,7 @@ export class Game {
     const count = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && !v.freight && v.damage.status !== 'wreck').length;
     if (count < this.trafficTarget) {
       for (let i = 0; i < 12; i++) {
-        const p = vec(Math.floor(this.world.random() * 7) * 40 + 3, 15 + this.world.random() * 210);
-        const model = trafficModel(this.serial), probe = createVehicleBody(vehicleDefinition(model), p, -Math.PI / 2);
-        if (dist(p, this.actor.position) < 85 || !this.canSpawnTraffic(probe)) continue;
-        this.spawnVehicle({ position: p, angle: -Math.PI / 2, model }); break;
+        if (this.replenishTraffic(Math.floor(this.world.random() * this.map.document.trafficSpawns.length * 5), 85)) break;
       }
     }
   }
