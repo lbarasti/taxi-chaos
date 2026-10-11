@@ -24,7 +24,7 @@ describe('NPC incident recovery', () => {
   it('finds an alley exit rather than reversing forever between four buildings', () => {
     const g = make(), car = g.vehicle('traffic', 20.5, 20, Math.PI / 2, '#abc'); car.path = [vec(20.5, 24)];
     run(g, 18); expect(car.alive).toBe(true); expect(dist(car.body.position, vec(20.5, 20))).toBeGreaterThan(12); expect(car.ai.attempts).toBeLessThan(5);
-  });
+  }, 10000); // Keep the full 18 simulated seconds; slower CI runners can exceed the default 5 s.
   it('bounds impossible recoveries and clears trapped cars only off-screen', () => {
     const g = make();
     for (const [x, y, w, h] of [[17.8, 20.5, 1, 7], [23.2, 20.5, 1, 7], [20.5, 17.3, 8, 1], [20.5, 23.7, 8, 1]]) g.world.add('building', x, y, w, h, '#333');
