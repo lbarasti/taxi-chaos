@@ -88,7 +88,7 @@ describe('eastern bridges and highland roads', () => {
     }
   });
   it('dispatches rural jobs with road-distance pay and enough time for the bridge detour', () => {
-    const g = new Game();
+    const g = new Game(undefined, false, false);
     expect(g.job.pickup).toEqual(vec(4, 14)); expect(g.job.dropoff).toEqual(vec(44, 14));
     g.offer = 2; g.newJob(); // Third dispatched trip includes Eagle Lookout as its destination.
     expect(g.job.pickup.x > 246 || g.job.dropoff.x > 246).toBe(true);
@@ -97,7 +97,7 @@ describe('eastern bridges and highland roads', () => {
     expect(g.job.time).toBeCloseTo(28 + distance / 3);
   });
   it('loads and pays rural parcel deliveries using the road-distance fare', () => {
-    const g = new Game(); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
+    const g = new Game(undefined, false, false); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
     g.player = g.spawnVehicle({ kind: 'taxi', model: 'motorcycle', position: { ...g.player.body.position } }); g.vehicles = [g.player]; g.offer = 2; g.newJob();
     const fare = g.job.fare, cash = g.save.cash;
     expect(g.job.type).toBe('parcel'); expect(g.job.destination).toBe('Eagle Lookout');

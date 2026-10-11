@@ -3,7 +3,8 @@ import { Game } from './game';
 import { defaultCompiledMap } from './map/compile';
 import { vec } from './physics';
 import { STORY_LETTERS_PER_SECOND } from './story';
-import { messageCharacter, resolvePortrait } from './characters';
+import { messageCharacter } from './characters';
+import { resolvePortrait } from './portraits';
 
 const make = () => {
   const g = new Game(defaultCompiledMap, false);
@@ -25,6 +26,7 @@ describe('authored pickup conversations', () => {
     run(g, 0.3); expect(g.dialogue.active).toBeNull();
     collect(g);
     expect(g.job.stage).toBe('dropoff');
+    expect(g.job.missionId).toBe('mia-meridian-lead');
     expect(g.dialogue.active?.message).toMatchObject({ speaker: 'mia', channel: 'passenger', category: 'plot' });
     expect(g.dialogue.active?.message.text).toContain('Meridian vans');
     // The view resolves the display name and raster portrait from the character catalogue.
@@ -60,25 +62,31 @@ describe('authored pickup conversations', () => {
     expect(g.dialogue.active?.elapsed).toBe(0);
   });
 
-  it('clears on completion, abandonment and reset; recurring Mia fares are not story missions', () => {
+  it('clears on completion, abandonment and explicit story reset; recurring Mia fares are not story missions', () => {
     const g = make(); collect(g);
     g.player.body.position = { ...g.job.dropoff }; run(g, 0.9);
     expect(g.jobsDone).toBe(1); expect(g.dialogue.active).toBeNull();
-    g.offer = 7; g.newJob(); expect(g.job.name).toBe('Mia'); collect(g);
+    g.offer = 7; g.newJob(); expect(g.job.name).toBe('Mia'); expect(g.job.missionId).toBeUndefined(); collect(g);
     expect(g.dialogue.active).toBeNull();
+    // A new shift preserves persistent story; the opening mission does not replay.
     g.resetRun(); expect(g.dialogue.active).toBeNull(); collect(g);
+    expect(g.dialogue.active).toBeNull();
+    // Only the explicit new-story reset restores it.
+    g.resetStory(); collect(g);
     expect(g.dialogue.active).not.toBeNull();
     expect(g.interact()).toBe(true); expect(g.dialogue.active).toBeNull();
     expect(g.jobsDone).toBe(0);
   });
 
   it('keeps driving, RNG and fare economics identical with or without a story beat', () => {
-    const a = make(), b = make(); delete b.job.storyBeat;
+    const a = make(), b = make();
+    // Same fare, but no active story mission so no dialogue is queued.
+    b.missions.activeId = null; b.job.missionId = undefined;
     collect(a); collect(b); a.dialogue.readAll(); a.dialogue.replay(); a.dialogue.collapse();
     run(a, 2, ['KeyW']); run(b, 2, ['KeyW']);
-    const { dialogue: _a, job: jobA, ...stateA } = a.snapshot();
-    const { dialogue: _b, job: jobB, ...stateB } = b.snapshot();
-    const { storyBeat: _beat, ...ordinaryJobA } = jobA;
+    const { dialogue: _a, story: _sa, job: jobA, ...stateA } = a.snapshot();
+    const { dialogue: _b, story: _sb, job: jobB, ...stateB } = b.snapshot();
+    const { missionId: _m, ...ordinaryJobA } = jobA;
     expect(stateA).toEqual(stateB); expect(ordinaryJobA).toEqual(jobB);
     expect(a.world.random()).toBe(b.world.random());
   });

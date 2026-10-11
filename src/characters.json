@@ -1,0 +1,14 @@
+{
+  "mia": {
+    "id": "mia",
+    "name": "Mia",
+    "portrait": { "sources": ["mia.png", "mia.svg"], "objectPosition": "50% 14%" },
+    "attribution": "Portrait art created for Taxi Chaos (mia.svg vector, mia.png raster)."
+  },
+  "frankie": {
+    "id": "frankie",
+    "name": "Frankie",
+    "portrait": { "sources": ["frankie.jpg"], "objectPosition": "50% 50%", "crop": { "x": 0.06, "y": 0, "width": 0.88, "height": 1 } },
+    "attribution": "Portrait art created for Taxi Chaos (frankie.jpg raster)."
+  }
+}

@@ -1,3 +1,9 @@
+import type { Character } from './characters';
+import { portraitSourceIds, type PortraitFormat, type PortraitSourceId } from './portrait-manifest';
+
+export { portraitSourceIds };
+export type { PortraitFormat, PortraitSourceId };
+
 /**
  * Build-time portrait registry.
  *
@@ -6,15 +12,11 @@
  * offline and independent of the generic asset inline threshold: adding a raster
  * portrait cannot silently emit an external file that breaks the single-file build.
  *
- * The file name is the stable portrait identity referenced by the character
- * catalogue in `src/characters.ts`.
+ * This module is the only place that reaches for browser assets. Character and
+ * mission validation deliberately depend on the DOM-free `portrait-manifest`
+ * instead, so they can run without an image loader.
  */
-export type PortraitFormat = 'svg' | 'png' | 'jpg' | 'jpeg';
 export type Portrait = Readonly<{ src: string; format: PortraitFormat }>;
-
-/** Portrait files shipped with the game; keep in sync with `src/assets/characters/`. */
-export const portraitSourceIds = Object.freeze(['mia.png', 'mia.svg', 'frankie.jpg'] as const);
-export type PortraitSourceId = (typeof portraitSourceIds)[number];
 
 const portraitModules = import.meta.glob('./assets/characters/*.{svg,png,jpg,jpeg}', {
   eager: true, query: '?inline', import: 'default',
@@ -42,4 +44,33 @@ export function validatePortraitRegistry(): void {
     const { src } = portraits[id];
     if (typeof src !== 'string' || !src.startsWith(`data:image/`)) throw new Error(`Portrait ${id} was not inlined as a data URL`);
   }
+}
+
+export type ResolvedPortrait = Readonly<{ source: PortraitSourceId; src: string; format: PortraitFormat }>;
+
+/** Picks the first authored source that exists, so portraits can be swapped by format. */
+export function resolvePortrait(character: Character): ResolvedPortrait {
+  for (const source of character.portrait.sources) {
+    const portrait = portraits[source];
+    if (portrait) return Object.freeze({ source, src: portrait.src, format: portrait.format });
+  }
+  throw new Error(`No bundled portrait for character ${character.id}`);
+}
+
+export type PortraitLayout = Readonly<{
+  src: string; objectFit: 'cover'; objectPosition: string;
+  width: string; height: string; left: string; top: string;
+}>;
+
+/** DOM-free layout maths shared by the view and its tests. */
+export function portraitLayout(character: Character): PortraitLayout {
+  const { src } = resolvePortrait(character);
+  const { objectPosition = '50% 50%', crop } = character.portrait;
+  const percent = (value: number) => `${Math.round(value * 1e6) / 1e4}%`;
+  if (!crop) return Object.freeze({ src, objectFit: 'cover' as const, objectPosition, width: '100%', height: '100%', left: '0%', top: '0%' });
+  return Object.freeze({
+    src, objectFit: 'cover' as const, objectPosition,
+    width: percent(1 / crop.width), height: percent(1 / crop.height),
+    left: percent(-crop.x / crop.width), top: percent(-crop.y / crop.height),
+  });
 }

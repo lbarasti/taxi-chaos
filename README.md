@@ -46,6 +46,18 @@ Automated browser tests should use an isolated browser context, especially when 
 
 To publish a reviewed map change, export the validated draft to `src/map/default-map.json`, run the map check, tests, and build, then open a pull request with any affected fixtures and documentation updated. Merging to `main` triggers the Pages deployment workflow.
 
+## Mission development
+
+Story content is authored as versioned JSON and compiled into an immutable,
+DOM-free engine. The opening Mia mission lives in
+[`src/missions/catalogue.json`](src/missions/catalogue.json); stops and cast
+metadata are in [`src/missions/stops.json`](src/missions/stops.json) and
+[`src/characters.json`](src/characters.json). New chapters, side quests,
+dialogue and characters need only config plus portrait assets — no game or view
+code. See the [mission authoring guide](docs/missions.md) for the schema,
+conditions, effects, choices, repeat/retry policies, stop validation and
+progress migration.
+
 ## Deployment
 
 ```sh
@@ -67,7 +79,8 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/world.ts`: seeded city generation, structures, and road routing.
 - `src/ai.ts`: civilian traffic and police behavior.
 - `src/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
-- `src/characters.ts`, `src/portraits.ts`: immutable character catalogue and the build-time inlined portrait registry (SVG, PNG and JPEG).
+- `src/characters.json`, `src/characters.ts`, `src/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/portrait-manifest.ts` is the DOM-free declared file list.
+- `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
 - `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.
 - `src/lab.ts`: scenario fixtures, inspector, and test API.
 - `src/map/`: versioned authored map, compiler, validation, editor, and preview.

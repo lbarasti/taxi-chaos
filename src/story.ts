@@ -1,28 +1,25 @@
 import type { CharacterId } from './characters';
 
-/** Authored pickup beats. IDs belong to missions, never to a recurring dispatch name. */
+/**
+ * Authored dialogue identities. A beat id is a stable string resolved from the
+ * mission catalogue (`dialogue` section), never a recurring dispatch name.
+ */
+export type BeatId = string;
 export type StoryCategory = 'plot' | 'side-quest' | 'lore';
 export type StoryMessage = Readonly<{
   /** Stable character identity; the display name and portrait resolve from the catalogue. */
   speaker: CharacterId; category: StoryCategory;
   channel: 'passenger' | 'sender'; text: string;
 }>;
-const meridianClue = 'I saw two Meridian vans outside the café again… and the usual police car never showed up.';
-export const storyBeats = Object.freeze({
-  'mia-meridian-vans': Object.freeze({
-    fare: Object.freeze({ speaker: 'mia', category: 'plot', channel: 'passenger', text: meridianClue } satisfies StoryMessage),
-    parcel: Object.freeze({ speaker: 'mia', category: 'plot', channel: 'sender', text: `Thanks for taking my parcel. ${meridianClue}` } satisfies StoryMessage),
-  }),
-});
-export type StoryBeatId = keyof typeof storyBeats;
 export const STORY_LETTERS_PER_SECOND = 32;
-export type DialogueState = { beatId: StoryBeatId; message: StoryMessage; elapsed: number; expanded: boolean };
+export type DialogueState = { beatId: BeatId; message: StoryMessage; elapsed: number; expanded: boolean };
 
 /** Run-only presentation state; does not consume RNG, write saves or affect fares. */
 export class Dialogue {
   active: DialogueState | null = null;
-  start(beatId: StoryBeatId | undefined, type: 'fare' | 'parcel') {
-    this.active = beatId ? { beatId, message: storyBeats[beatId][type], elapsed: 0, expanded: true } : null;
+  /** Starts a resolved beat. Passing no beat/message clears the panel. */
+  start(beatId: BeatId | undefined, message: StoryMessage | null) {
+    this.active = beatId && message ? { beatId, message, elapsed: 0, expanded: true } : null;
   }
   clear() { this.active = null; }
   update(dt: number) {
