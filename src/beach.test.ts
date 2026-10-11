@@ -32,7 +32,7 @@ describe('southern beach geography and access', () => {
   it('opens the former south rails and gives the parked pickup and hotels clear footprints', () => {
     const g = new Game();
     expect(g.world.props.some(p => p.kind === 'guardrail' && p.body.position.y > 252 && p.body.position.y < 254 && p.body.position.x < 254)).toBe(false);
-    const pickup = g.vehicles.find(v => v.model === 'pickup')!;
+    const pickup = g.vehicles.find(v => v.sourceId === 'parking-73')!;
     expect(pickup.parked).toBe(true); expect(pickup.definition.access.playerDrivable).toBe(true);
     expect(pickup.body.position).toEqual(BEACH_PICKUP);
     expect([...g.world.hash.query(pickup.body)].some(p => contact(pickup.body, p.body))).toBe(false);
