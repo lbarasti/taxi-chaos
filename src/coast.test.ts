@@ -19,7 +19,7 @@ const northRail = (g: Game) => g.world.props.find(p => p.kind === 'guardrail' &&
 describe('coastal geography', () => {
   it('matches dry city, woodland and bridge decks, with ocean on every outside edge and in the inlet', () => {
     for (const p of [vec(120, 120), vec(-14, 80), vec(254, 240), vec(350, 30), vec(170, 370), vec(276, 80), vec(276, 200)]) expect(inOcean(p)).toBe(false);
-    for (const p of [vec(50, -15), vec(-15, 100), vec(100, 255), vec(255, 120), vec(276, 120), vec(276, 88), vec(276, 192), vec(536, 90), vec(336, 432)]) expect(inOcean(p)).toBe(true);
+    for (const p of [vec(50, -15), vec(-15, 100), vec(100, 271), vec(255, 120), vec(276, 120), vec(276, 88), vec(276, 192), vec(536, 90), vec(336, 432)]) expect(inOcean(p)).toBe(true);
   });
   it('replaces perimeter walls and cliffs with short breakable panels and wide gaps on city and country shores', () => {
     const world = new World();
@@ -112,7 +112,7 @@ describe('ocean entry and recovery', () => {
     expect(g.onFoot).toBe(true);
     expect(g.world.props.filter(p => p.kind === 'guardrail' && !p.alive).length).toBeGreaterThan(0);
   });
-  it.each([vec(50, -30), vec(-30, 100), vec(100, 260), vec(276, 120), vec(540, 90), vec(336, 435)])('drowns outside the entire irregular map at $x,$y without invisible bounds', p => {
+  it.each([vec(50, -30), vec(-30, 100), vec(100, 271), vec(276, 120), vec(540, 90), vec(336, 435)])('drowns outside the entire irregular map at $x,$y without invisible bounds', p => {
     const g = quiet(); g.player.body.position = p; run(g, 2.4);
     expect(g.mode).toBe('wasted'); expect(g.wastedReason).toBe('drowning');
   });

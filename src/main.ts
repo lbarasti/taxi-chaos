@@ -5,6 +5,7 @@ import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { Renderer } from './renderer';
 import { dist } from './physics';
+import { inSand } from './beach';
 import { PORT_FEE } from './harbour';
 import { district } from './world';
 import { difficulties, type Difficulty } from './rules';
@@ -106,7 +107,7 @@ function modal() {
 function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = false; helpOpen = true; game.setMode('paused'); }
 game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); };
 function hud() {
-  const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : 'CAB';
+  const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
   $('clock-time').textContent = dayNight.time; $('clock-period').textContent = dayNight.period.toUpperCase();
   $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, day ${dayNight.day}`);
@@ -142,7 +143,7 @@ function hud() {
     $('mobile-hint').textContent = admitted ? g.harbour.exchanged ? 'New car ready · use the exit' : g.harbourPrompt ?? 'Stop fully inside container C-76' : g.policeVisible ? 'Lose the tail before paying' : g.portGateNear ? `Stop and pay $${PORT_FEE} at security` : 'Follow cyan to port security';
     $('job-progress').style.width = `${g.harbour.progress / 2.5 * 100}%`; $('job-progress').style.background = '#8edbe8';
   } else document.querySelector('.mission-data small')!.textContent = 'BASE FARE';
-  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? g.tumble ? 'TUMBLING' : 'ON FOOT' : g.pendingExit ? bike ? 'JUMPING OFF' : 'DOOR OPENING' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : bike && !motorcycleEngineWorks(g.player.damage) ? 'ENGINE STALLED' : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
+  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? g.tumble ? 'TUMBLING' : 'ON FOOT' : g.pendingExit ? bike ? 'JUMPING OFF' : 'DOOR OPENING' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : bike && !motorcycleEngineWorks(g.player.damage) ? 'ENGINE STALLED' : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : inSand(g.actor.position) ? g.player.model === 'pickup' ? 'OFF-ROAD' : 'SOFT SAND' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
   document.querySelector('.dashboard')!.setAttribute('aria-label', g.onFoot ? 'Driver health' : bike ? 'Motorbike condition' : 'Cab condition');

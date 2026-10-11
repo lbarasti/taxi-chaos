@@ -12,6 +12,8 @@ import { radarMarker, radarView } from './radar';
 import { CITY_SHORE } from './coast';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
+import { BEACH_HOTELS, BEACH_OUTLINE, PROMENADE } from './beach';
+import { drawBeachGround, drawBeachProp } from './beach-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
@@ -67,7 +69,20 @@ export class Renderer {
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
     this.ground();
     g.fx.drawGround(c, g.settings.gore);
-    for (const s of g.skids) { if (s.blood && !g.settings.gore) continue; c.globalAlpha = Math.min(0.6, s.life / 18); c.strokeStyle = s.blood ? '#7c1726' : '#11191b'; c.lineWidth = s.blood ? 0.32 : 0.23; c.beginPath(); c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); c.stroke(); } c.globalAlpha = 1;
+    const marks = new Map<string, typeof g.skids>();
+    for (const s of g.skids) {
+      if (s.blood && !g.settings.gore || !this.visible(scale(add(s.a, s.b), 0.5), dist(s.a, s.b) / 2 + 1)) continue;
+      const key = `${s.blood ? 'blood' : s.sand ? 'sand' : 'road'}:${Math.min(4, Math.ceil(s.life / 18 / 0.15))}`;
+      const batch = marks.get(key) ?? []; batch.push(s); marks.set(key, batch);
+    }
+    // At most 12 visible paths, rather than one canvas stroke per physics mark.
+    for (const [key, batch] of marks) {
+      const [type, alpha] = key.split(':'); c.globalAlpha = Number(alpha) * 0.15;
+      c.strokeStyle = type === 'blood' ? '#7c1726' : type === 'sand' ? '#a88d5f' : '#11191b';
+      c.lineWidth = type === 'sand' ? 0.3 : type === 'blood' ? 0.32 : 0.23;
+      c.beginPath(); for (const s of batch) { c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); } c.stroke();
+    }
+    c.globalAlpha = 1;
     for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
       if (person.aboard) continue;
@@ -144,6 +159,7 @@ export class Renderer {
     for (const v of g.vehicles) if (v.model === 'motorcycle' && v.parked && dist(v.body.position, g.actor.position) < 18)
       this.label(!motorcycleEngineWorks(v.damage) ? 'BIKE DISABLED' : (v.dynamics as MotorcycleDynamics).fallen ? 'FALLEN BIKE · E TO LIFT' : 'MOTORBIKE',
         v.body.position.x, v.body.position.y - 2, 0.65, motorcycleEngineWorks(v.damage) ? '#8edbe8' : '#ee8675', '700');
+    for (const v of g.vehicles) if (v.model === 'pickup' && v.parked && !v.sinking && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('PICKUP / OFF-ROAD', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
     if (g.onFoot) {
       const p = g.driver.position;
       this.label(g.tumble ? g.tumble.grounded ? 'ROLLING!' : 'JUMP!' : 'YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
@@ -239,6 +255,7 @@ export class Renderer {
     this.label('H A R B O U R   A V E', 64, -2.2, 1.1, '#81908f');
     c.save(); c.translate(-2.3, 72); c.rotate(-Math.PI / 2); this.label('W E S T   S T R E E T', 0, 0, 1.1, '#81908f'); c.restore();
     this.label('M A R K E T   S T R E E T', 62, 117.7, 1.1, '#81908f');
+    drawBeachGround(this);
     // Workshop's apron, immediately beside the starting cab.
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
   }
@@ -339,7 +356,7 @@ export class Renderer {
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
   prop(prop: Prop) {
-    if (drawPortProp(this, prop)) return;
+    if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (!prop.alive) {
@@ -511,21 +528,19 @@ export class Renderer {
     if (v.damage.health < 75) { c.strokeStyle = '#283338'; c.lineWidth = 0.12; c.beginPath(); c.moveTo(1.7, -0.5); c.lineTo(0.9, 0.1); c.lineTo(1.8, 0.5); c.stroke(); }
     if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(1.8, -0.9, 0.2, 1.8, '#8e2230');
     c.restore();
-    // A real hinged panel is visible before the driver launches from a moving car.
-    if (v.door) {
-      const open = doorOpenness(this.game.time - v.door.at);
-      if (open > 0) {
-        const side = v.door.side;
-        c.save(); c.scale(b.w / 4.2, b.h / 2.1);
-        c.translate(0.78, side * 1.02); c.rotate(-side * open * 1.36);
-        this.rect(-1.25, -0.12, 1.25, 0.24, wreck ? '#414a4d' : v.color, '#25363c');
-        this.rect(-1.17, -0.07, 0.75, 0.14, v.definition.graphics.glass);
-        this.rect(-0.95, side * 0.15, 0.24, 0.08, '#eee6cf');
-        c.restore();
-      }
-    }
+    this.vehicleDoor(v, 0.78 * b.w / 4.2, 1.02 * b.h / 2.1, 1.25 * b.w / 4.2);
     c.restore();
     this.vehicleEffects(v);
+  }
+  /** Draw in the current vehicle-local frame; pickup cabins share the exit animation. */
+  private vehicleDoor(v: Vehicle, x: number, y: number, width: number) {
+    if (!v.door) return;
+    const open = doorOpenness(this.game.time - v.door.at); if (open <= 0) return;
+    const c = this.ctx, side = v.door.side;
+    c.save(); c.translate(x, side * y); c.rotate(-side * open * 1.36);
+    this.rect(-width, -0.12, width, 0.24, v.damage.status === 'wreck' ? '#414a4d' : v.color, '#25363c');
+    this.rect(-width * 0.94, -0.07, width * 0.6, 0.14, v.definition.graphics.glass);
+    this.rect(-width * 0.76, side * 0.15, 0.24, 0.08, '#eee6cf'); c.restore();
   }
   private commercialVehicle(v: Vehicle) {
     const c = this.ctx, b = v.body, art = v.definition.graphics, cargo = v.definition.cargo;
@@ -573,6 +588,7 @@ export class Renderer {
     }
     if (v.damage.health < 75) { c.strokeStyle = '#24353b'; c.lineWidth = 0.12; trace(c, [vec(front - 0.3, -0.7), vec(front - 1.3, 0.1), vec(front - 0.8, 0.6)]); c.stroke(); }
     if (v.damage.bloodTime > 0 && this.game.settings.gore) this.rect(front - 0.2, -half + 0.1, 0.2, b.h - 0.2, '#8e2230');
+    this.vehicleDoor(v, front - 0.9, half, Math.min(1.5, cab - 0.5));
     c.restore();
   }
   private golfCart(v: Vehicle) {
@@ -716,8 +732,11 @@ export class Renderer {
     c.fillStyle = '#90a66b'; c.fillRect(GOLF_COURSE.center.x - GOLF_COURSE.width / 2, GOLF_COURSE.center.y - GOLF_COURSE.height / 2, GOLF_COURSE.width, GOLF_COURSE.height);
     for (const villa of VILLAS) { c.fillStyle = '#dcc4a1'; c.fillRect(villa.position.x - 5, villa.position.y - 3, 10, 6); }
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
+    trace(c, BEACH_OUTLINE, true); c.fillStyle = '#d9bd88'; c.fill();
+    c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
-    c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
+    for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
+    c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke();
     const markerScale = 0.66 / s;
     if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage))) { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
     c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);

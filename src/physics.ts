@@ -42,6 +42,7 @@ export const defaultCarTuning: CarTuning = {
 };
 export class CarDynamics {
   rearGripLoss = 0; skidding = false;
+  surface = { drive: 1, grip: 1, rollingDrag: 0, lateralAcceleration: Infinity };
   tyres = [-1.35, 1.35].flatMap(x => [-0.7, 0.7].map(y => ({ position: vec(x, y), steered: x > 0, angle: 0, skidding: false })));
   engineForce = 10500; grip = 1250;
   tuning: CarTuning;
@@ -56,7 +57,7 @@ export class CarDynamics {
     const speed = dot(body.velocity, forward);
     // Braking is stronger than reverse; aerodynamic drag gives a finite top speed.
     const force = controls.throttle < 0 ? (speed > 0.5 ? body.mass * this.tuning.brakeDeceleration : this.engineForce * this.tuning.reverseRatio) : this.engineForce;
-    body.addForce(scale(forward, controls.throttle * force * (controls.boost ? 3.1 : 1)));
+    body.addForce(scale(forward, controls.throttle * force * this.surface.drive * (controls.boost ? 3.1 : 1)));
     body.addForce(scale(body.velocity, -this.tuning.drag * length(body.velocity)));
     // Low-speed coast settles naturally into a pickup rather than creeping forever.
     if (!controls.throttle && length(body.velocity) < 4) body.addForce(scale(body.velocity, -body.mass * this.tuning.coastDrag));
@@ -67,9 +68,9 @@ export class CarDynamics {
       const side = dot(v, lateral), rear = !tyre.steered;
       tyre.skidding = rear && Math.abs(side) > (tyre.skidding ? 1.1 : 2);
       this.skidding ||= tyre.skidding;
-      const rollDrag = this.tuning.rollingDrag * (rear && controls.handbrake ? 6 : 1);
-      const sideDrag = this.grip * (rear ? 1 - this.rearGripLoss * 0.8 : 1);
-      const limit = body.mass * this.tuning.maxLateralAcceleration / this.tyres.length;
+      const rollDrag = (this.tuning.rollingDrag + this.surface.rollingDrag) * (rear && controls.handbrake ? 6 : 1);
+      const sideDrag = this.grip * this.surface.grip * (rear ? 1 - this.rearGripLoss * 0.8 : 1);
+      const limit = body.mass * Math.min(this.tuning.maxLateralAcceleration, this.surface.lateralAcceleration) / this.tyres.length;
       const sideForce = clamp(-sideDrag * side, -limit, limit);
       tyre.skidding ||= Math.abs(sideDrag * side) > limit;
       this.skidding ||= tyre.skidding;

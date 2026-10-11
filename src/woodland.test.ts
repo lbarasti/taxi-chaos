@@ -74,7 +74,7 @@ describe('southern woodland estates and golf club', () => {
   });
 
   it('dispatches and pays a southern delivery with road-distance fare and time', () => {
-    const g = new Game(); loadScenario(g, 'woodland-estates'); g.offer = 16; g.newJob();
+    const g = new Game(); loadScenario(g, 'woodland-estates'); g.offer = 18; g.newJob();
     expect(g.job.dropoff).toEqual(vec(132, 338));
     expect(g.job.destination).toBe('Fairway Club');
     const distance = pathLength(roadPath(g.job.pickup, g.job.dropoff));

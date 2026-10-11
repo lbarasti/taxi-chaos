@@ -10,6 +10,7 @@ export type VehicleDefinition = {
   readonly damage: { readonly impactScale: number; readonly blastScale: number; readonly blastRadius: number; readonly blastPower: number };
   readonly ai: { readonly controller: 'road' | 'golf'; readonly cruiseSpeed: number; readonly cornerSlowdown: number; readonly followingGap: number };
   readonly access: { readonly playerDrivable: boolean; readonly job: 'fare' | 'parcel' };
+  readonly terrain: { readonly sand: number }; // 0 = road tyres, 1 = off-road tyres / drivetrain
 };
 
 const axles = (xs: readonly number[], track: number): TyreLayout[] => xs.flatMap(x => [-track, track].map(y => ({ x, y, steered: x === Math.max(...xs) })));
@@ -21,6 +22,7 @@ const car: VehicleDefinition = {
   cargo: noCargo, damage: { impactScale: 1, blastScale: 1, blastRadius: 13, blastPower: 110 },
   ai: { controller: 'road', cruiseSpeed: 9, cornerSlowdown: 1.6, followingGap: 2 },
   access: { playerDrivable: true, job: 'fare' },
+  terrain: { sand: 0 },
 };
 const truck: VehicleDefinition = {
   ...car, name: 'Empty flatbed truck', chassis: { mass: 4200, length: 7.8, width: 2.5 },
@@ -29,6 +31,7 @@ const truck: VehicleDefinition = {
   damage: { ...car.damage, impactScale: 0.85, blastScale: 0.8 },
   ai: { controller: 'road', cruiseSpeed: 7.5, cornerSlowdown: 2.2, followingGap: 4 },
   access: { playerDrivable: false, job: 'fare' },
+  terrain: { sand: 0.2 },
 };
 
 /** Add a model here; all consumers share these definitions. Roles (taxi/police/traffic)
@@ -36,6 +39,12 @@ const truck: VehicleDefinition = {
  * Definitions are source configuration; per-vehicle mutable state belongs on Vehicle. */
 export const vehicleDefinitions = {
   car,
+  pickup: {
+    ...car, name: 'Beach patrol pickup', chassis: { mass: 1750, length: 5.2, width: 2.15 },
+    physics: { dynamics: 'car', engineForce: 14500, grip: 1850, brakeDeceleration: 12, drag: 16, rollingDrag: 42, steeringLock: 0.6, maxLateralAcceleration: 8, tyres: axles([-1.7, 1.65], 0.8) },
+    graphics: { ...car.graphics, sprite: 'truck', color: '#dbb762', trim: '#495c62', cabLength: 2.2, enginePitch: 0.8 },
+    terrain: { sand: 0.95 },
+  },
   motorcycle: {
     ...car, name: 'Courier motorcycle', chassis: { mass: 260, length: 2.6, width: 0.8 },
     physics: { dynamics: 'motorcycle', engineForce: BIKE_ENGINE, grip: BIKE_GRIP, tyres: [-0.88, 0.88].map(x => ({ x, y: 0, steered: x > 0 })) },
@@ -55,6 +64,7 @@ export const vehicleDefinitions = {
     graphics: { ...car.graphics, sprite: 'van', color: '#c9d8ce', trim: '#617e74', cabLength: 1.85, enginePitch: 0.85 },
     ai: { ...car.ai, cruiseSpeed: 8.5, cornerSlowdown: 1.9, followingGap: 3 },
     access: { playerDrivable: false, job: 'fare' },
+    terrain: { sand: 0.35 },
   },
   'truck-empty': truck,
   'truck-loaded': {
