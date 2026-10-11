@@ -1,5 +1,5 @@
 import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
-import { sandHandling, inBeach } from './beach';
+import { sandHandling, inBeach, beachVehicleTarget } from './beach';
 import { createVehicleDynamics } from './vehicles';
 import { GRID, SIZE, World, isRigidObstacle, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
 import { GOLF_CART_ROUTE, countryAccess, countryNeighbours, isCountry } from './countryside';
@@ -180,7 +180,7 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
   v.routeTimer -= dt;
   if (state.phase === 'drive') {
     if (v.kind === 'police' && (v.routeTimer <= 0 || !v.path.length)) {
-      const goal = policeGoal(v, c);
+      const goal = beachVehicleTarget(policeGoal(v, c));
       v.path = dist(body.position, goal) < 22 && c.lineOfSight(body.position, goal) ? [goal] : roadPath(body.position, goal).slice(1);
       v.routeTimer = 0.9;
     }

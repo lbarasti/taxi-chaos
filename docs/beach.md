@@ -3,7 +3,11 @@
 A 296 m sandy shoreline extends the south side of the city. The western beach is
 open and informal, with a volleyball court, pastel lifeguard huts, colourful beach
 setups and sand castles. Heading east, the shore narrows into a tiled, palm-lined
-promenade with three hotels, surf rentals, cafés, benches and strolling pedestrians.
+promenade behind three oversized hotel blocks. Their podiums occupy the actual
+sand between the promenade and surf; rising 9/14/18-storey balcony walls, private
+pools, penthouses and guests-only signs make the beach appropriation visible.
+Public access survives in two gaps between hotels. Surf rentals, cafés, palms,
+benches and strolling pedestrians occupy the public promenade.
 The existing south street provides access and fare pickup/drop-off points.
 
 ## Aesthetic research before implementation
@@ -41,11 +45,18 @@ attempting a geographically exact Los Angeles map.
   pickups and road bikes outside the walking path. The 0.75 m clear openings admit
   the 0.7 m walking body. Vehicle collision envelopes cover each bollard group;
   walkers and civilians resolve individual posts so they can pass through.
+- **Sand marks / HUD:** tyres emit ruts after moving 0.65 m and merge straight
+  tracks up to 4 m. Leaving sand, teleporting or changing vehicles breaks the
+  track. Visible tracks are batched by material/fade into at most 12 canvas
+  strokes. Sand handling stays in the secondary gear status; mobile fare cues
+  retain priority.
 - **Water:** the drawn coast and drowning checks use the same footprint. Driving
   into the surf still splashes/sinks the vehicle and leads to Wasted/hospital recovery.
 - **Fares/navigation:** Sunset Beach, Ocean Walk and Pacific Palm Hotel stops sit on
   the south city street. Beach access paths stay on dry land; eastern sand traffic
-  routes around the protected promenade. Walking navigation uses its real entrances.
+  stops at the city street rather than a fictional vehicle bypass through the
+  narrow hotel frontage. Walking navigation uses real pedestrian entrances and
+  gaps between the hotel podiums; collider sweeps verify both approaches.
 
 ## Implementation and extension
 
@@ -53,8 +64,9 @@ attempting a geographically exact Los Angeles map.
   descriptors, pedestrian entries and per-tyre `sandHandling()` force modifiers.
 - `src/world.ts` creates the actual props, hotels, barriers, parked pickup and seeded
   beachgoers. `blocksWalking()` distinguishes grouped vehicle entrance envelopes
-  from individual pedestrian collision posts. Hotel footprints replace the previous
-  southern half of the three eastern city blocks; road lanes remain accessible.
+  from individual pedestrian collision posts. Hotel footprints live on the beach
+  side of Ocean Walk, with widths/heights/floor counts in the shared descriptors.
+  The original city blocks are restored, and street lanes remain accessible.
 - `src/beach-renderer.ts` draws sand texture, wet shoreline, foam, court/towels,
   tiled walk, pastel hotels, towers, parasols, chairs, castles, palms and wreckage.
   The local radar also includes sand, promenade and hotels.
@@ -68,12 +80,12 @@ attempting a geographically exact Los Angeles map.
 
 ## Validation
 
-`npm test -- --maxWorkers=2 --testTimeout=20000` passes **391 tests / 28 files**,
-and `npm run build` passes after rebasing onto the latest moving-exit feature. Beach integration checks cover
+`npm test -- --maxWorkers=2 --testTimeout=20000` passes **409 tests / 29 files**,
+and `npm run build` passes after incorporating the latest moving-exit and motorcycle-crash features. Beach integration checks cover
 shore/sea boundaries, clear parked/hotel geometry, dry city/woods routing, all
 requested destruction classes, gentle tower impacts, sand acceleration/lateral
 traction, mixed tyre coverage, road/upgrades restoration, motorcycle sand forces,
-sand ruts, drowning/recovery, boosted vehicle exclusion, pedestrian entry from both
+merged sand ruts, drowning/recovery, boosted vehicle exclusion, pedestrian entry from both
 sides, pickup entry, harbour eligibility, beach fares and all new LAB fixtures.
 
 `tools/beach-check.cjs` runs production-browser QA with Playwright. It checks the
@@ -81,7 +93,12 @@ self-contained build after an offline reload, measures sand acceleration, physic
 walks around the abandoned cab and takes the pickup, checks its moving door/jump/landing, rams all four prop classes,
 walks the promenade, confirms vehicle exclusion/surf death, and captures day/night
 plus 390 × 844, 320 × 568 and 844 × 390 mobile scenes. No page errors or horizontal
-overflow were observed.
+overflow were observed. A 60-second mobile sand run plus 120 sampled renders
+used at most four sand-track canvas strokes per frame (about 12 ms per sampled
+frame in this environment; this is not a device-independent FPS guarantee).
+Mobile pickup and delivery instructions remain visible on sand for both cab and
+pickup. Unit checks bound the sustained rut queue below 650 segments and sweep
+full vehicle/walking bodies against permanent colliders near the eastern edge.
 
 ![Open beach](screenshots/beach/beach.png)
 ![Pickup and sand ruts](screenshots/beach/pickup-ruts.png)

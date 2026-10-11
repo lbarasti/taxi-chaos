@@ -1,7 +1,7 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
 import { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, MAP_HEIGHT, MAP_WIDTH, ROAD_NODES, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, countryNeighbours, countryNode, countryPath, inCountryClearing, inHighlands, isCountry, pathLength } from './countryside';
 import { COAST_RAILS } from './coast';
-import { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, beachAccess, beachAccessPath, inBeach, onPromenade } from './beach';
+import { BEACH_HOTELS, BEACH_PICKUP, BEACH_SETS, LIFEGUARD_TOWERS, PROMENADE_BOLLARDS, PROMENADE_EDGES, PROMENADE_GATES, SAND_CASTLES, beachAccess, beachAccessPath, beachVehicleTarget, inBeach, onPromenade } from './beach';
 import type { VehicleModel } from './vehicles';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
@@ -10,7 +10,7 @@ export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'bar
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
 export type Prop = { id: number; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
-export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number };
+export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
 export type ParkingSpot = { position: Vec; angle: number; occupied: boolean; lot: boolean; motorcycle?: boolean; model?: VehicleModel };
 export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
@@ -52,7 +52,7 @@ export class World {
       } else {
         // Four buildings, separated by two genuine drivable/destructible alleys.
         for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) {
-          if (special && iy === 0 || by === 5 && bx >= 3 && iy === 1) continue;
+          if (special && iy === 0) continue;
           this.add('building', x + 14 + ix * 13, y + 14 + iy * 13, 10, 10, colors[(bx * 2 + by + ix + iy) % colors.length], bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length]);
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
@@ -60,12 +60,12 @@ export class World {
         this.add('crate', x + 20.5, y + 13, 1.4, 1.4, '#bc9465');
         this.add('crate', x + 20.5, y + 14.6, 1.4, 1.4, '#bc9465');
         this.add('barrier', x + 20.5, y + 8.8, 3.1, 0.6, '#e9aa5c');
-        if (!(by === 5 && bx >= 3)) this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
+        this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
       }
       for (let i = 0; i < 2; i++) {
         if (!park && special !== 'fuel' && special !== 'parking') this.parking.push({ position: vec(x + 14 + i * 12, y + 34.6), angle: 0, occupied: i === (bx + by) % 2, lot: false });
-        if (!(by === 5 && bx >= 3 && i === 1)) this.add('hydrant', x + 7.5, y + 11 + i * 18, 0.65, 0.65, '#eb735f');
-        if (!(by === 5 && bx >= 3 && i === 1)) this.add('lamp', x + 32.4, y + 9 + i * 20, 0.6, 0.6, '#a7bfbb');
+        this.add('hydrant', x + 7.5, y + 11 + i * 18, 0.65, 0.65, '#eb735f');
+        this.add('lamp', x + 32.4, y + 9 + i * 20, 0.6, 0.6, '#a7bfbb');
         this.add('bin', x + 12 + i * 16, y + 32.5, 0.85, 0.85, '#76a79b');
         this.add('bench', x + 12 + i * 16, y + 7.8, 2.4, 0.75, '#bf9870');
         const home = vec(x + 8, y + 12 + i * 14);
@@ -133,7 +133,7 @@ export class World {
     const portRandom = this.random; this.random = seeded(9076);
     for (const p of [vec(210, -19.5), vec(96, -63), vec(150, -96), vec(180, -64)]) this.addPerson(p, 'civilian', '#e3bd67');
     this.random = portRandom;
-    for (const hotel of BEACH_HOTELS) this.add('building', hotel.position.x, hotel.position.y, 27, 12, hotel.color, hotel.name);
+    for (const hotel of BEACH_HOTELS) this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name);
     for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`);
     for (const [i, p] of BEACH_SETS.entries()) {
       this.add('parasol', p.x, p.y, 3.4, 3.4, ['#df8976', '#78b9c0', '#efc468', '#a3a5cb', '#80b5a2'][i]);
@@ -144,11 +144,11 @@ export class World {
     for (const gate of PROMENADE_GATES) this.add('pedestrian-gate', gate.position.x, gate.position.y, gate.width, 0.6, '#d8c4a1', '', gate.angle);
     for (const p of PROMENADE_BOLLARDS) this.add('bollard', p.x, p.y, 0.6, 0.6, '#758e8b');
     for (const x of [-6, 16, 44, 100]) this.add('palm', x, 247.8, 0.8, 0.8, '#547f66');
-    for (const x of [152, 172, 192, 212, 242]) this.add('palm', x, 258.3, 0.8, 0.8, '#547f66');
+    for (const x of [154, 174, 194, 214, 244]) this.add('palm', x, 254.2, 0.8, 0.8, '#547f66');
     for (const x of [150, 174, 194, 214, 248]) this.add('lamp', x, 249, 0.6, 0.6, '#a7bfbb');
     for (const x of [168, 208, 228]) this.add('bench', x, 254.2, 2.4, 0.75, '#c29b76');
-    this.add('kiosk', 158, 261.5, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
-    this.add('kiosk', 202, 259.8, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
+    this.add('kiosk', 158, 253.7, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
+    this.add('kiosk', 202, 253.7, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
     this.parking.push({ position: { ...BEACH_PICKUP }, angle: 0, occupied: true, lot: false, model: 'pickup' });
     const beachRandom = this.random; this.random = seeded(1965);
     for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(x, 251.5), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
@@ -203,18 +203,24 @@ function gridPath(from: Vec, to: Vec): Vec[] {
   return routes.reduce((best, route) => score(route) < score(best) ? route : best, routes[0]);
 }
 
-export function roadPath(from: Vec, to: Vec): Vec[] {
+export function roadPath(from: Vec, to: Vec, travel: 'drive' | 'walk' = 'drive'): Vec[] {
+  if (travel === 'drive') {
+    to = beachVehicleTarget(to);
+    // No vehicle-sized route exists inside the protected hotel/promenade strip.
+    // Hold position rather than inventing a leg through its permanent walls.
+    if (beachVehicleTarget(from) !== from) return [from];
+  }
   // Sand is accessible from the south street, never via a woodland shortcut over water.
   if (inBeach(from) || inBeach(to)) {
     const start = inBeach(from) ? beachAccessPath(from) : [from], end = inBeach(to) ? beachAccessPath(to) : [to];
-    return simplifyPath([...start, ...roadPath(start.at(-1)!, end.at(-1)!), ...end.reverse()]);
+    return simplifyPath([...start, ...roadPath(start.at(-1)!, end.at(-1)!, travel), ...end.reverse()]);
   }
   const portA = onPortRoad(from), portB = onPortRoad(to);
   if (portA && portB) return simplifyPath(portPath(from, to));
   if (portA || portB) {
     const routes = PORT_CONNECTIONS.map(gate => portA
-      ? [...portPath(from, gate), ...roadPath(gate, to)]
-      : [...roadPath(from, gate), ...portPath(gate, to)]);
+      ? [...portPath(from, gate), ...roadPath(gate, to, travel)]
+      : [...roadPath(from, gate, travel), ...portPath(gate, to)]);
     return simplifyPath(routes.reduce((a, b) => pathLength(a) < pathLength(b) ? a : b));
   }
   const a = isCountry(from), b = isCountry(to);

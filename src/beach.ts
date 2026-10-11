@@ -3,7 +3,7 @@ import { Body, clamp, vec, type TyreLayout, type Vec } from './physics';
 // Screen south is +y. This shore widens to the west and tapers into Ocean Walk
 // to the east, leaving the woodland inlet and its existing villas intact.
 export const BEACH = { left: -42, right: 254, top: 246 };
-export const BEACH_SHORE = [vec(-42, 264), vec(-22, 271), vec(32, 274), vec(108, 270), vec(162, 266), vec(214, 262), vec(254, 260)];
+export const BEACH_SHORE = [vec(-42, 264), vec(-22, 271), vec(32, 274), vec(108, 270), vec(162, 272), vec(214, 272), vec(254, 270.5)];
 export const BEACH_OUTLINE = [vec(BEACH.left, BEACH.top), vec(BEACH.right, BEACH.top), ...[...BEACH_SHORE].reverse()];
 export function beachShoreY(x: number): number {
   for (let i = 1; i < BEACH_SHORE.length; i++) {
@@ -17,14 +17,22 @@ export const PROMENADE = { left: 146, right: 252, top: 247, bottom: 256 };
 export const onPromenade = (p: Vec) => p.x >= PROMENADE.left && p.x <= PROMENADE.right && p.y >= PROMENADE.top && p.y <= PROMENADE.bottom;
 export const inSand = (p: Vec) => inBeach(p) && !onPromenade(p);
 export const beachAccess = (p: Vec) => vec(clamp(p.x, 0, 240), 240);
+// The narrow sand behind the hotel wall is pedestrian access, not a vehicle
+// bypass. Vehicle destinations here are approached from the south street.
+export const beachVehicleTarget = (p: Vec) => inBeach(p) && p.x >= 143 && p.y >= PROMENADE.top ? beachAccess(p) : p;
 export function beachAccessPath(p: Vec): Vec[] {
   if (onPromenade(p)) {
     const entry = PROMENADE_ENTRIES.reduce((a, b) => Math.abs(a + 0.675 - p.x) < Math.abs(b + 0.675 - p.x) ? a : b) + 0.675;
     return [p, vec(entry, p.y), vec(entry, 240)];
   }
   if (p.x >= PROMENADE.left && p.y >= PROMENADE.top) {
-    const y = Math.max(p.y, PROMENADE.bottom + 0.9);
-    return [p, vec(p.x, y), vec(144, y), vec(144, 240)];
+    if (p.x > PROMENADE.right && p.y < 257.6) return [p, vec(p.x, 244), vec(240, 244), vec(240, 240)];
+    const entry = PROMENADE_SOUTH_ENTRIES.reduce((a, b) => Math.abs(a + 0.675 - p.x) < Math.abs(b + 0.675 - p.x) ? a : b) + 0.675;
+    // Walk along the front apron or the remaining surf strip, then through a
+    // genuine gap between the hotels. Never route through a hotel podium.
+    const inGap = BEACH_HOTELS.every(h => p.x < h.position.x - h.width / 2 - 0.4 || p.x > h.position.x + h.width / 2 + 0.4);
+    const y = p.y < 257.6 || inGap ? p.y : Math.max(p.y, 270.45);
+    return [p, vec(p.x, y), vec(entry, y), vec(entry, 240)];
   }
   const x = clamp(p.x, 0, 240);
   return [p, vec(x, p.y), vec(x, 240)];
@@ -36,9 +44,9 @@ export const BEACH_STOPS = [
 ];
 export const BEACH_PICKUP = vec(28, 249.5);
 export const BEACH_HOTELS = [
-  { position: vec(141, 226), name: 'THE SANDPIPER', color: '#e4c391' },
-  { position: vec(181, 226), name: 'PACIFIC PALM HOTEL', color: '#b2d4cb' },
-  { position: vec(221, 226), name: 'OCEAN SUNSET SUITES', color: '#dfa7a0' },
+  { position: vec(162, 263), width: 33, height: 10, floors: 9, name: 'THE SANDPIPER', color: '#e4c391' },
+  { position: vec(200, 263.5), width: 33, height: 11, floors: 14, name: 'PACIFIC PALM HOTEL', color: '#b2d4cb' },
+  { position: vec(237, 264), width: 31, height: 12, floors: 18, name: 'OCEAN SUNSET SUITES', color: '#dfa7a0' },
 ];
 export const LIFEGUARD_TOWERS = [vec(-18, 263), vec(52, 263), vec(120, 261)];
 export const BEACH_SETS = [vec(8, 257), vec(32, 258), vec(76, 256), vec(98, 258), vec(136, 258)];
@@ -47,6 +55,7 @@ export const SAND_CASTLES = [vec(-2, 267), vec(40, 268), vec(86, 267), vec(130, 
 // Raised edging has regular pedestrian openings. 0.75 m clear gaps admit the
 // 0.7 m walking body, while even the 0.8 m road bike cannot squeeze through.
 export const PROMENADE_ENTRIES = [160, 180, 200, 220, 240];
+export const PROMENADE_SOUTH_ENTRIES = [180, 220];
 export const PROMENADE_EDGES: { position: Vec; width: number }[] = [];
 export const PROMENADE_BOLLARDS: Vec[] = [];
 // Vehicle collision envelopes for each entrance's bollard group. Resolving tiny
@@ -55,7 +64,7 @@ export const PROMENADE_BOLLARDS: Vec[] = [];
 export const PROMENADE_GATES: { position: Vec; width: number; angle: number }[] = [];
 for (const y of [PROMENADE.top, PROMENADE.bottom]) {
   let start = PROMENADE.left;
-  for (const x of PROMENADE_ENTRIES) {
+  for (const x of y === PROMENADE.top ? PROMENADE_ENTRIES : PROMENADE_SOUTH_ENTRIES) {
     PROMENADE_GATES.push({ position: vec(x, y), width: 4.8, angle: 0 });
     const end = x - 2.4;
     PROMENADE_EDGES.push({ position: vec((start + end) / 2, y), width: end - start });

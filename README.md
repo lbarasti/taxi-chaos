@@ -95,9 +95,14 @@ Road tyres lose acceleration and cornering traction in the sand and leave sandy
 ruts. **A parked beach patrol pickup at the western entrance is drivable with E**;
 its off-road tyres retain useful traction. Model handling lives in the vehicle
 catalogue's `terrain.sand` setting. Eastward, the beach narrows into **Ocean Walk**:
-three pastel hotels, cafés, surf rentals, pedestrians and a tiled promenade.
+three oversized hotel blocks occupy the **sand between the promenade and surf**,
+with 9/14/18-storey balcony walls, penthouses, private pools and guests-only
+frontage. They consume most of the eastern beach, leaving two narrow public
+passages. Cafés, surf rentals and palms stay on the public tiled promenade.
 Visible bollards protect the path from cars and bikes while admitting walkers.
-Beach/hotel fares stop on the south street, with dry navigation to the city/woods.
+Beach/hotel fares and vehicle navigation stop on the south street. Walking
+navigation threads through the public entrances and hotel gaps. Sand ruts are
+distance-sampled, merged and rendered in batches; mobile fare cues stay visible.
 
 **Try it:** F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or
 **Ocean Walk / hotel promenade**. See the [reference study, handling measurements,
@@ -221,7 +226,7 @@ npm run build    # strict TypeScript check + standalone build
 
 Open **http://localhost:5173/?debug=1**, press **F2**, or click **Test Lab**. The same inspector works in the standalone HTML. Its controls include:
 
-- **31 fixtures:** first fare, **Motorbike deliveries**, **Moving car / jump out**, **Moving bike / jump off**, eastern bridges, woodland estates, **Sunset Beach / soft sand**, **Beach / off-road pickup**, **Ocean Walk / hotel promenade**, **Northstar Harbour / car exchange**, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
+- **33 fixtures:** first fare, **Motorbike deliveries**, **Moving car / jump out**, **Moving bike / jump off**, **Motorbike / collision ejection**, **Motorbike / rider knocked off**, eastern bridges, woodland estates, **Sunset Beach / soft sand**, **Beach / off-road pickup**, **Ocean Walk / hotel promenade**, **Northstar Harbour / car exchange**, **Vans / freight traffic**, **Flammable cargo / impact**, four coastal fixtures, hydrant, alley, wall, moving traffic collision, NPC recovery, pileup, police chase, arrest, pedestrians, fire, **Cab fire / escape**, chain reaction, barracks, depot and gas station.
 - **Clock:** deterministic 120 Hz stepping, Live, and 0.25× / 0.5× / 1× / 2× speed. Driving keys resume a fixed clock. Pausing freezes fires too.
 - **Day / night:** hour slider, morning/afternoon/evening/night presets, cycle rate and a cycle-only freeze. These change the world clock and lighting only, never fare or fire timers.
 - **Cheats:** God mode, infinite boost, no police, cash, free repairs, ignition/detonation, four upgrade sliders and Max all.

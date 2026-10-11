@@ -19,7 +19,7 @@ const solidOverlap = (g: Game): string | null => {
 describe('LAB scenario catalogue', () => {
   it('exposes every documented fixture with a description', () => {
     expect(scenarioNames).toEqual<ScenarioName[]>([
-      'first-fare', 'motorcycle', 'moving-car-exit', 'moving-bike-exit', 'eastern-bridges', 'woodland-estates', 'beach', 'beach-pickup', 'promenade', 'harbour', 'commercial-traffic', 'flammable-cargo', 'coastal-rails', 'coastal-gap', 'coastal-bike', 'coastal-walk', 'hydrant', 'alley', 'wall', 'traffic', 'npc-recovery', 'pileup', 'police-chase', 'arrest',
+      'first-fare', 'motorcycle', 'moving-car-exit', 'moving-bike-exit', 'motorcycle-impact', 'rider-impact', 'eastern-bridges', 'woodland-estates', 'beach', 'beach-pickup', 'promenade', 'harbour', 'commercial-traffic', 'flammable-cargo', 'coastal-rails', 'coastal-gap', 'coastal-bike', 'coastal-walk', 'hydrant', 'alley', 'wall', 'traffic', 'npc-recovery', 'pileup', 'police-chase', 'arrest',
       'pedestrians', 'fire', 'cab-fire', 'chain-reaction', 'barracks', 'depot', 'gas-station',
     ]);
     for (const scenario of scenarioInfo) {
@@ -59,6 +59,23 @@ describe('LAB fixtures', () => {
     expect(bike.settings.noPolice).toBe(true);
     expect(bike.interact()).toBe(true);
     expect(bike.pendingExit).not.toBeNull();
+  });
+
+  it('stages incoming motorcycle impacts for NPC and player rider ejection', () => {
+    const npc = make(); loadScenario(npc, 'motorcycle-impact');
+    expect(npc.player.model).toBe('car');
+    const target = npc.vehicles.find(v => v.model === 'motorcycle')!;
+    expect(target.body.position).toEqual(vec(109, 80));
+    expect(target.body.velocity.x).toBeCloseTo(-5);
+    expect(npc.player.body.velocity.x).toBeCloseTo(18);
+
+    const rider = make(); loadScenario(rider, 'rider-impact');
+    expect(rider.player.model).toBe('motorcycle');
+    expect(rider.player.body.velocity.x).toBeCloseTo(12);
+    const car = rider.vehicles.find(v => v !== rider.player && v.model === 'car')!;
+    expect(car.body.position).toEqual(vec(111, 80));
+    expect(car.body.velocity.x).toBeCloseTo(-12);
+    expect(rider.job.type).toBe('parcel');
   });
 
   it('hydrant, alley and wall aim the cab south at the documented speeds', () => {

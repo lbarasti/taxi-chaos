@@ -7,7 +7,7 @@ import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
-import { MotorcycleDynamics } from './motorcycle';
+import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, trafficModel, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
@@ -55,6 +55,8 @@ export class Game {
   toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   touchMove: Vec | null = null;
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
+  private sandRuts: { anchor: Vec; segment?: Skid }[] = [];
+  private rutVehicleId = -1;
   constructor() {
     this.populateVehicles(); this.newJob(true); this.applyUpgrades();
   }
@@ -94,6 +96,7 @@ export class Game {
   }
   resetRun() {
     this.sounds.reset(); this.touchMove = null;
+    this.sandRuts = []; this.rutVehicleId = -1;
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
     this.onFoot = false; this.wreckedAt = -1; this.driver = new Body(4, 32, 75, 0.7, 0.7);
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.pendingExit = null; this.tumble = null; this.wastedReason = 'explosion';
@@ -146,7 +149,10 @@ export class Game {
   }
   get speed() { return length(this.actor.velocity); }
   get lean() { return this.player.dynamics instanceof MotorcycleDynamics ? this.player.dynamics.lean : 0; }
-  get nearestCar() { return this.vehicles.filter(v => v.alive && !v.sinking && v.definition.access.playerDrivable && v.kind !== 'police' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) < 2 && (v.parked || v === this.player)).sort((a, b) => dist(a.body.position, this.actor.position) - dist(b.body.position, this.actor.position))[0]; }
+  get nearestCar() { return this.vehicles.filter(v => v.alive && !v.sinking && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage)) && v.definition.access.playerDrivable && v.kind !== 'police' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) < 2 && (v.parked || v === this.player)).sort((a, b) => dist(a.body.position, this.actor.position) - dist(b.body.position, this.actor.position))[0]; }
+  get bikeDisabled() { return this.player.model === 'motorcycle' && !motorcycleEngineWorks(this.player.damage); }
+  get bikeTowable() { return this.onFoot && !this.tumble && !this.player.sinking && this.bikeDisabled
+    && length(this.player.body.velocity) < 2 && dist(this.driver.position, this.player.body.position) < 6; }
   get enterableCar() { if (this.tumble) return undefined; const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
     const steps = Math.ceil(dist(a, b) / 0.35);
@@ -176,7 +182,21 @@ export class Game {
     if (!this.onFoot && this.portGateNear && this.player.damage.status !== 'burning' && this.player.damage.status !== 'wreck') return this.enterHarbour();
     if (this.onFoot) {
       const next = this.enterableCar;
-      if (!next) { this.notify(this.tumble ? 'Get back on your feet before taking another ride.' : 'Walk up to a parked car or motorbike, then press E to take it.'); return false; }
+      if (!next) {
+        const disabled = this.vehicles.some(v => v.alive && v.model === 'motorcycle' &&
+          !motorcycleEngineWorks(v.damage) && dist(v.body.position, this.driver.position) < 4);
+        this.notify(this.tumble ? 'Get back on your feet before taking another ride.'
+          : disabled ? 'That motorbike is too damaged to start. Find another ride or tow your bike to repair it.'
+          : 'Walk up to a parked car or motorbike, then press E to take it.');
+        return false;
+      }
+      if (next.model === 'motorcycle' && (next.dynamics as MotorcycleDynamics).fallen) {
+        const dynamics = next.dynamics as MotorcycleDynamics;
+        dynamics.resetLean(); next.body.velocity = vec(); next.body.angularVelocity = 0;
+        next.exitSteer = undefined; next.coastUntil = undefined;
+        this.notify('Motorbike back on its wheels. Press E again to ride.');
+        return true;
+      }
       if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
@@ -417,9 +437,8 @@ export class Game {
       this.save.cash -= bill.total; this.persist();
       // Leave the destroyed vehicle behind. Acknowledgment brings the driver back on foot.
       this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true;
-      // The hospital path also handles an abandoned motorcycle; keep its riderless
-      // visual state neutral rather than carrying a fractional pre-blast roll.
-      if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
+      // Hospital recovery does not lift or repair the abandoned motorcycle.
+      if (this.player.dynamics instanceof MotorcycleDynamics && !this.player.dynamics.fallen) this.player.dynamics.resetLean();
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
       if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
       this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...HOSPITAL }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
@@ -430,7 +449,8 @@ export class Game {
       this.newJob(); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
       return;
     }
-    if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking && this.player.damage.status === 'wreck' && dist(this.driver.position, this.player.body.position) < 6)) return;
+    if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking &&
+      (this.player.damage.status === 'wreck' && dist(this.driver.position, this.player.body.position) < 6 || this.bikeTowable))) return;
     if (this.mode !== 'arrested' && this.player.wreckAt >= 0 && this.time - this.player.wreckAt < 1.2) return;
     this.sounds.reset();
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
@@ -467,14 +487,59 @@ export class Game {
     const cue = isStructural(prop.kind) ? 'collapse' : ['crate', 'barrier', 'bench', 'tree', 'palm', 'lifeguard-tower', 'beach-chair', 'sandcastle'].includes(prop.kind) ? 'wood' : prop.kind === 'kiosk' ? 'glass' : 'metal';
     this.sounds.emit(cue, this.time, { position: prop.body.position, strength: clamp(impact / 14, 0.5, 1.4), key: `prop:${prop.id}`, cooldown: 1 });
   }
+  /** A motorcycle and its rider are no longer a single rigid body after an impact.
+   * The contact solver has already imparted real velocity/yaw; this adds a bounded
+   * roll-to-pavement and an independent, sliding rider trajectory. */
+  private crashMotorcycle(v: Vehicle, closingSpeed: number, away: Vec, incomingVelocity: Vec, contactPoint: Vec) {
+    if (v.model !== 'motorcycle' || v.sinking || closingSpeed < MOTORCYCLE_KNOCKOFF_SPEED) return;
+    const dynamics = v.dynamics as MotorcycleDynamics;
+    if (dynamics.fallen) return;
+    const localAway = rotate(away, -v.body.angle), localContact = rotate(sub(contactPoint, v.body.position), -v.body.angle);
+    const wanted: ExitSide = Math.abs(localAway.y) > 0.2 ? localAway.y > 0 ? 1 : -1 : localContact.y >= 0 ? 1 : -1;
+    const safe = this.exitLocation(v, wanted);
+    const side = safe?.side ?? wanted;
+    const point = safe?.point ?? v.body.toWorld(vec(0, side * (v.body.h / 2 + 1.5)));
+    const outward = rotate(vec(0, side), v.body.angle);
+    const shove = clamp(closingSpeed * 0.6, 3, 11);
+    const occupied = !v.driverExited;
+    if (occupied) {
+      const preImpactMass = v.body.mass;
+      v.body.mass = Math.max(50, preImpactMass - this.driver.mass);
+      v.body.velocity = sub(v.body.velocity, scale(outward, shove * this.driver.mass / v.body.mass * 0.45));
+      if (v === this.player && !this.onFoot) {
+        this.driver.position = { ...point };
+        this.driver.velocity = add(incomingVelocity, scale(outward, shove));
+        this.driver.angle = v.body.angle; this.driver.angularVelocity = side * clamp(closingSpeed * 0.8, 4, 13);
+        this.driverKnockback = 0;
+        const fallSpeed = Math.max(length(incomingVelocity), closingSpeed);
+        this.tumble = { elapsed: 0, duration: tumbleDuration(fallSpeed) * 1.15, speed: fallSpeed, side, bike: true, grounded: false };
+        this.onFoot = true; this.pendingExit = null; this.navToGarage = false;
+        if (this.job.stage === 'dropoff') this.newJob();
+        this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
+        this.notify('THROWN OFF THE MOTORBIKE! Brace for the landing.', 'danger');
+      } else {
+        const rider = this.world.addPerson(point, v.kind === 'police' ? 'officer' : 'civilian', v.kind === 'police' ? '#6d91ab' : '#e4b96e');
+        rider.velocity = add(incomingVelocity, scale(outward, shove));
+        rider.angle = v.body.angle; rider.panic = 2;
+        rider.fall = { elapsed: 0, duration: tumbleDuration(Math.max(length(incomingVelocity), closingSpeed)), angularVelocity: side * clamp(closingSpeed * 0.8, 4, 13) };
+        rider.home = add(point, scale(outward, 12));
+      }
+    }
+    v.driverExited = true; v.parked = true; v.path = [];
+    v.coastUntil = undefined; v.exitSteer = undefined;
+    dynamics.crash(side, closingSpeed);
+    v.body.angularVelocity += side * clamp(closingSpeed * 0.09, 0.35, 1.5);
+  }
   collision(v: Vehicle, other: Vehicle | Prop, dt: number) {
     if (!other.alive || 'hp' in other && other.kind === 'port-gate' && (v.freight || v.id === this.harbour.vehicleId)) return;
     const c = contact(v.body, other.body); if (!c) return;
-    const before = length(v.body.velocity);
+    const before = length(v.body.velocity), incomingVelocity = { ...v.body.velocity };
+    const otherVelocity = { ...other.body.velocity };
     if ('hp' in other && other.kind === 'guardrail') {
       const impact = Math.max(0, -dot(v.body.velocityAt(c.point), c.normal));
       if (impact >= RAIL_BREAK_SPEED && dt > 0) {
         other.hp = 0; this.damageImpact(v, impact, c.point, v.kind === 'taxi');
+        this.crashMotorcycle(v, impact, c.normal, incomingVelocity, c.point);
         this.destroy(other, v, impact); this.fx.breakRail(c.point, v.body.velocity, other.body.angle);
         // Fracture consumes momentum even when the rider punches straight through.
         v.body.velocity = scale(v.body.velocity, 0.68); v.body.angularVelocity *= 0.7;
@@ -490,6 +555,7 @@ export class Game {
       } else if (impact > 2.5) other.hp -= impact * dt * 120;
       if (other.hp <= 0) {
         if (structural) this.damageImpact(v, impact, c.point, v.kind === 'taxi');
+        this.crashMotorcycle(v, impact, c.normal, incomingVelocity, c.point);
         this.destroy(other, v, impact); v.body.velocity = scale(v.body.velocity, tower ? 0.72 : structural ? 0.6 : other.kind === 'kiosk' ? 0.78 : 0.96); return;
       }
     }
@@ -504,6 +570,8 @@ export class Game {
     // Equal cars preserve the existing damage scale; a heavy truck takes less of the hit.
     this.damageImpact(v, impact * (dynamic ? 2 * other.body.mass / totalMass : 1), c.point, v.kind === 'taxi' || other.kind === 'taxi', impact);
     if (dynamic) this.damageImpact(other, impact * 2 * v.body.mass / totalMass, c.point, v.kind === 'taxi' || other.kind === 'taxi', impact);
+    this.crashMotorcycle(v, impact, c.normal, incomingVelocity, c.point);
+    if (dynamic) this.crashMotorcycle(other, impact, scale(c.normal, -1), otherVelocity, c.point);
     const involvesPlayer = v.kind === 'taxi' || ('kind' in other && other.kind === 'taxi');
     if (involvesPlayer && impact > 3 && this.crashCooldown <= 0) {
       this.crashCooldown = 0.3;
@@ -652,11 +720,13 @@ export class Game {
       if (v.cart) v.cart.roll += (v.cart.targetRoll - v.cart.roll) * Math.min(1, dt * 7);
       if (v.sinking) { this.sink(v, dt); continue; }
       const motion = length(v.body.velocity); if (motion > 70) v.body.velocity = scale(v.body.velocity, 70 / motion); v.body.angularVelocity = clamp(v.body.angularVelocity, -8, 8);
+      const previousPosition = { ...v.body.position };
       if (v.damage.status === 'wreck') {
         v.body.velocity = scale(v.body.velocity, Math.exp(-dt * 2.2)); v.body.angularVelocity *= Math.exp(-dt * 3); v.body.integrate(dt);
       } else {
         const performance = vehiclePerformance(v.damage);
-        v.dynamics.engineForce = (v.kind === 'police' ? this.rules.copEngine : v.baseEngine) * performance.engine;
+        v.dynamics.engineForce = (v.kind === 'police' ? this.rules.copEngine : v.baseEngine) * performance.engine *
+          (v.model === 'motorcycle' && !motorcycleEngineWorks(v.damage) ? 0 : 1);
         v.dynamics.grip = v.baseGrip * performance.grip;
         v.dynamics.surface = sandHandling(v.body, v.definition.physics.tyres, v.definition.terrain.sand);
         const forwardSpeed = rotate(v.body.velocity, -v.body.angle).x;
@@ -664,6 +734,10 @@ export class Game {
         const controls = coasting ? { throttle: 0, turn: v.exitSteer ?? 0, handbrake: false }
           : v.parked || v.damage.status === 'burning' && v !== this.player ? { throttle: forwardSpeed > 1.2 ? -1 : forwardSpeed < -1.2 ? 1 : 0, turn: 0, handbrake: true } : v === this.player ? this.controls : this.ai(v, dt);
         v.dynamics.apply(v.body, controls, dt); v.body.integrate(dt);
+      }
+      if (v.model === 'motorcycle' && (v.dynamics as MotorcycleDynamics).fallen && length(v.body.velocity) > 1) {
+        const offset = rotate(vec(0, (v.dynamics as MotorcycleDynamics).fallSide * 0.45), v.body.angle);
+        this.skids.push({ a: add(previousPosition, offset), b: add(v.body.position, offset), life: 9 });
       }
       const pool = this.world.pools.find(pool => Math.abs(v.body.position.x - pool.position.x) < pool.w / 2 && Math.abs(v.body.position.y - pool.position.y) < pool.h / 2);
       if (pool) {
@@ -687,10 +761,7 @@ export class Game {
       this.driftMeter = 0;
     } else this.driftMeter = 0;
     if (!this.onFoot && this.settings.gore && this.player.damage.bloodTime > 0 && this.speed > 1) this.player.dynamics.tyres.forEach((t, i) => { if (!t.steered) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 30, blood: true }); });
-    if (!this.onFoot && !this.player.sinking && this.speed > 0.8) this.player.dynamics.tyres.forEach((t, i) => {
-      const p = this.player.body.toWorld(t.position);
-      if (inSand(p) && inSand(this.previousTyres[i])) this.skids.push({ a: this.previousTyres[i], b: p, life: 24, sand: true });
-    });
+    this.recordSandRuts();
     this.pedestrianClock += dt;
     // Fast/boosted side impacts need the full contact cadence; ordinary walking
     // stays at 60 Hz, while vehicle and collision physics always use 120 Hz.
@@ -701,6 +772,28 @@ export class Game {
     if (this.mode !== 'playing') { this.effects(dt); return; }
     if (!this.onFoot && this.player.sinking) { this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.job.wait = 0; this.effects(dt); return; }
     this.updateHarbour(dt); this.jobs(dt); this.law(dt); this.effects(dt); this.maintenance(dt);
+  }
+  private recordSandRuts() {
+    if (this.onFoot || this.player.sinking || this.speed <= 0.8 || this.rutVehicleId !== this.player.id) {
+      this.sandRuts = []; this.rutVehicleId = this.player.id;
+      if (this.onFoot || this.player.sinking || this.speed <= 0.8) return;
+    }
+    this.player.dynamics.tyres.forEach((t, i) => {
+      const p = this.player.body.toWorld(t.position), previous = this.previousTyres[i];
+      if (!inSand(p) || !inSand(previous) || dist(p, previous) > 1.5) { delete this.sandRuts[i]; return; }
+      const rut = this.sandRuts[i] ??= { anchor: previous };
+      // Teleports and vehicle changes must not paint a line across the world.
+      if (dist(rut.anchor, p) > 5) { this.sandRuts[i] = { anchor: p }; return; }
+      if (dist(rut.anchor, p) < 0.65) return;
+      const segment = rut.segment, delta = sub(p, rut.anchor);
+      const straight = segment && Math.abs(angleDiff(Math.atan2(delta.y, delta.x), Math.atan2(segment.b.y - segment.a.y, segment.b.x - segment.a.x))) < 0.12;
+      if (segment && segment.life > 21 && straight && dist(segment.a, p) <= 4) {
+        segment.b = p; segment.life = 24;
+      } else {
+        rut.segment = { a: rut.anchor, b: p, life: 24, sand: true }; this.skids.push(rut.segment);
+      }
+      rut.anchor = p;
+    });
   }
   people(dt: number) {
     const events = updatePedestrians(this.world, this.vehicles.filter(v => v.alive && !v.sinking), this.settings, dt, this.time);
@@ -803,6 +896,6 @@ export class Game {
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
-      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
+      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }
 }

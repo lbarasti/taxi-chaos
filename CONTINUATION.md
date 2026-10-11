@@ -1,5 +1,26 @@
 # Taxi Chaos — continuation handoff
 
+## PR #13 revision — hotel appropriation and review fixes, 2026-10-11
+
+- Moved hotels onto the actual sand south of Ocean Walk: 33×10, 33×11 and
+  31×12 m podiums, with 9/14/18-storey balcony walls, penthouses, private pools
+  and guests-only frontage. Their footprint consumes most eastern beach space.
+  Restored the street-side city blocks; moved cafés/palms onto the public path.
+- Hotel gaps align with two southern pedestrian entries. Walking navigation
+  threads through these gaps; driving/police destinations use the south street.
+  The previous 256.9 m vehicle bypass is removed. Full-body collider sweeps cover
+  the review's near-edge case and hotel access, plus an actual police planning check.
+- Sand ruts emit by distance (0.65 m), merge straight sections (up to 4 m), and
+  break at teleports/surface/vehicle changes. Renderer culls and batches tracks
+  into at most 12 material/fade paths. A 60 s mobile sand test uses 4 sand strokes.
+- Removed the permanent sand-tip override of mobile pickup/delivery directions.
+  Sand handling remains visible in the secondary status; both fare stages checked.
+- Incorporated merged motorcycle crash PR #12, preserving ejections, fallen-bike
+  physics, engine cutoff, recovery and all new fixtures. 409 tests / 29 files,
+  production build and offline browser QA pass. There are 33 LAB fixtures.
+- Refreshed all beach screenshots and docs; production QA covers the above fixes.
+
+
 ## Latest checkpoint — Sunset Beach and Ocean Walk, 2026-10-11
 
 - Added a 296 m southern beach with a west-to-east tapered shoreline, sand/wet-sand

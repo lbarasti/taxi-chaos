@@ -5,7 +5,7 @@ import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
-import { MotorcycleDynamics, leanProjection } from './motorcycle';
+import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from './motorcycle';
 import { doorOpenness, LANDING_TIME } from './vehicle-exit';
 import { BRIDGE_Y, COUNTRY_ROADS, GOLF_COURSE, GOLF_HOLES, HIGHLAND_OUTLINE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, isCountry } from './countryside';
 import { radarMarker, radarView } from './radar';
@@ -69,12 +69,39 @@ export class Renderer {
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
     this.ground();
     g.fx.drawGround(c, g.settings.gore);
-    for (const s of g.skids) { if (s.blood && !g.settings.gore) continue; c.globalAlpha = Math.min(0.6, s.life / 18); c.strokeStyle = s.blood ? '#7c1726' : s.sand ? '#a88d5f' : '#11191b'; c.lineWidth = s.sand ? 0.3 : s.blood ? 0.32 : 0.23; c.beginPath(); c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); c.stroke(); } c.globalAlpha = 1;
+    const marks = new Map<string, typeof g.skids>();
+    for (const s of g.skids) {
+      if (s.blood && !g.settings.gore || !this.visible(scale(add(s.a, s.b), 0.5), dist(s.a, s.b) / 2 + 1)) continue;
+      const key = `${s.blood ? 'blood' : s.sand ? 'sand' : 'road'}:${Math.min(4, Math.ceil(s.life / 18 / 0.15))}`;
+      const batch = marks.get(key) ?? []; batch.push(s); marks.set(key, batch);
+    }
+    // At most 12 visible paths, rather than one canvas stroke per physics mark.
+    for (const [key, batch] of marks) {
+      const [type, alpha] = key.split(':'); c.globalAlpha = Number(alpha) * 0.15;
+      c.strokeStyle = type === 'blood' ? '#7c1726' : type === 'sand' ? '#a88d5f' : '#11191b';
+      c.lineWidth = type === 'sand' ? 0.3 : type === 'blood' ? 0.32 : 0.23;
+      c.beginPath(); for (const s of batch) { c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); } c.stroke();
+    }
+    c.globalAlpha = 1;
     for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
       if (person.aboard) continue;
       if (!person.alive) { if (g.settings.gore && person.deathTime >= 0) drawCorpse(c, person); continue; }
       const pp = person.position, so = this.shadowOffset();
+      if (person.fall) {
+        const airborne = person.fall.elapsed < LANDING_TIME;
+        const hop = airborne ? 0.3 * Math.sin(person.fall.elapsed / LANDING_TIME * Math.PI) : 0;
+        this.circle(add(pp, vec(0.18, 0.26)), 0.46, '#13242a77');
+        c.save(); c.translate(pp.x, pp.y - hop); c.rotate(person.angle + Math.PI / 2);
+        this.rect(-0.27, -0.46, 0.54, 0.92, person.color, '#9e7847');
+        this.circle(vec(0, -0.6), 0.28, '#e0c6a2');
+        for (const side of [-1, 1]) {
+          this.rect(side * 0.29 - 0.22, -0.18, 0.2, 0.65, '#263942');
+          this.rect(side * 0.19 - 0.1, 0.4, 0.2, 0.48, '#243740');
+        }
+        c.restore();
+        continue;
+      }
       c.globalAlpha = this.shadowAlpha; this.circle(add(pp, add(vec(0.18, 0.22), so)), 0.4, '#0d1a2280'); c.globalAlpha = 1;
       c.save(); c.translate(pp.x, pp.y); c.rotate(Math.sin(g.time * 3 + person.phase) * 0.2);
       this.rect(-0.22, -0.1, 0.44, 0.6, person.color); this.circle(vec(0, -0.22), 0.23, '#dfc4ab');
@@ -129,7 +156,9 @@ export class Renderer {
       } else { const waving = add(waiting, vec(0.6, -0.3 - Math.sin(g.time * 6) * 0.2)); this.circle(waving, 0.18, GOLD); }
       this.label(g.job.type === 'parcel' ? 'PARCEL PICKUP' : g.job.name.toUpperCase(), waiting.x, waiting.y - 1.8, 0.8, GOLD, '700');
     }
-    for (const v of g.vehicles) if (v.definition.graphics.sprite === 'motorcycle' && v.parked && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('MOTORBIKE', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
+    for (const v of g.vehicles) if (v.model === 'motorcycle' && v.parked && dist(v.body.position, g.actor.position) < 18)
+      this.label(!motorcycleEngineWorks(v.damage) ? 'BIKE DISABLED' : (v.dynamics as MotorcycleDynamics).fallen ? 'FALLEN BIKE · E TO LIFT' : 'MOTORBIKE',
+        v.body.position.x, v.body.position.y - 2, 0.65, motorcycleEngineWorks(v.damage) ? '#8edbe8' : '#ee8675', '700');
     for (const v of g.vehicles) if (v.model === 'pickup' && v.parked && !v.sinking && v.damage.status !== 'wreck' && v.damage.status !== 'burning' && dist(v.body.position, g.actor.position) < 18) this.label('PICKUP / OFF-ROAD', v.body.position.x, v.body.position.y - 2, 0.65, '#8edbe8', '700');
     if (g.onFoot) {
       const p = g.driver.position;
@@ -590,9 +619,16 @@ export class Renderer {
   }
   private motorcycle(v: Vehicle) {
     const c = this.ctx, b = v.body, g = this.game, wreck = v.damage.status === 'wreck';
+    const dynamics = v.dynamics as MotorcycleDynamics, fallen = dynamics.fallen;
     const occupied = !v.driverExited && !wreck;
-    const roll = wreck ? 1.25 : v.parked && length(b.velocity) < 0.5 ? -0.18 : (v.dynamics as MotorcycleDynamics).lean;
-    const frame = leanProjection(roll, 0.65), rider = leanProjection(roll, 1.05), helmet = leanProjection(roll, 1.4);
+    const roll = fallen ? dynamics.lean : wreck ? 1.25 : v.parked && length(b.velocity) < 0.5 ? -0.18 : dynamics.lean;
+    const projection = (height: number) => {
+      const result = leanProjection(roll, height);
+      // A fallen motorcycle is lying on its side, not disappearing into an
+      // edge-on mathematical slice of the road. Keep the laid-down frame visible.
+      return { ...result, width: fallen ? Math.max(0.53, result.width) : result.width };
+    };
+    const frame = projection(0.65), rider = projection(1.05), helmet = projection(1.4);
     const so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     // Contact patches stay at y=0. The cast shadow shortens as the bike's upper parts get lower.
@@ -624,7 +660,7 @@ export class Renderer {
     this.rect(-1.03, -0.14, 0.12, 0.28, v === g.player && g.controls.throttle < 0 ? '#ff675f' : '#ba6b61');
     c.restore();
     // Courier rack/box rolls with the frame; the box only appears when carrying an actual parcel.
-    c.save(); c.translate(-0.85, leanProjection(roll, 0.8).offset); c.scale(1, frame.width);
+    c.save(); c.translate(-0.85, projection(0.8).offset); c.scale(1, frame.width);
     this.rect(-0.4, -0.37, 0.65, 0.74, '#46575c', '#a9b4ac');
     if (v === g.player && !g.onFoot && g.job.type === 'parcel' && g.job.stage === 'dropoff' && !wreck) {
       this.rect(-0.45, -0.4, 0.75, 0.8, '#dca668', '#ffe3af');
@@ -699,10 +735,10 @@ export class Renderer {
     trace(c, BEACH_OUTLINE, true); c.fillStyle = '#d9bd88'; c.fill();
     c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
-    for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - 13.5, hotel.position.y - 6, 27, 12); }
-    c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target)) c.lineTo(p.x, p.y); c.stroke();
+    for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
+    c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke();
     const markerScale = 0.66 / s;
-    if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck') { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
+    if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage))) { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
     c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
     for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }
     c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.scale(markerScale, markerScale); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();

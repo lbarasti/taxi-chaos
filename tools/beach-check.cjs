@@ -48,7 +48,30 @@ for(const [name,width,height] of [['mobile',390,844],['small-mobile',320,568],['
 await page.setViewportSize({width,height});await setup('promenade');await step(0.5,['KeyD']);
 assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await snap(name);
 }
+// Sustained mobile sand driving: queue size and canvas stroke count stay bounded.
+await page.setViewportSize({width:390,height:844});await setup('beach-pickup');
+await page.evaluate(()=>__taxi.configure({invincible:true}));
+for(let lap=0;lap<12;lap++){
+await page.evaluate(()=>__taxi.teleport(36,253,0,8));await step(5,['KeyW']);
+}
+const perf=await page.evaluate(()=>{
+const proto=CanvasRenderingContext2D.prototype,original=proto.stroke;let sandStrokes=0;
+proto.stroke=function(...args){if(this.strokeStyle==='#a88d5f')sandStrokes++;return original.apply(this,args);};
+const started=performance.now();for(let i=0;i<120;i++)__taxi.step(0);
+proto.stroke=original;return {averageFrameMs:(performance.now()-started)/120,sandStrokesPerFrame:sandStrokes/120};
+});
+assert(perf.sandStrokesPerFrame>0&&perf.sandStrokesPerFrame<=4);console.log('60s mobile sand run / 120 render samples',perf);
+// Preserve both primary fare cues while on sand, for cab and pickup.
+for(const name of ['beach','beach-pickup']){
+await setup(name);await page.evaluate(()=>__taxi.teleport(64,253,0,0));await step(0);
+assert.match(await page.locator('#mobile-hint').textContent(),/Stop in yellow to pick up/);
+const pickup=await page.evaluate(()=>__taxi.state().job.pickup);
+await page.evaluate(p=>__taxi.teleport(p.x,p.y,0,0),pickup);await step(1);
+assert.equal(await page.evaluate(()=>__taxi.state().job.stage),'dropoff');
+await page.evaluate(()=>__taxi.teleport(64,253,0,0));await step(0);
+assert.match(await page.locator('#mobile-hint').textContent(),/Stop in green to deliver/);
+}
 assert.deepEqual(errors,[]);assert(requests.every(u=>u.startsWith('file:')||u.startsWith('data:')),'production must be self-contained');
-console.log('PASS: sand/pickup acceleration, real pickup entry, pickup door/jump/landing, four destructible classes, promenade walking/vehicle exclusion, surf death, night and three mobile viewports; offline with no page errors');
+console.log('PASS: sand/pickup acceleration, real pickup entry, pickup door/jump/landing, four destructible classes, promenade walking/vehicle exclusion, surf death, night, three mobile viewports, 60s mobile sand rendering and preserved fare cues; offline with no page errors');
 await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

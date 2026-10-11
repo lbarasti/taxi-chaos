@@ -9,6 +9,12 @@ function path(r: Renderer, points: readonly Vec[], color: string, width = 0.12, 
   else { c.strokeStyle = color; c.lineWidth = width; c.stroke(); }
 }
 
+// Rasterize world labels at a normal font size before scaling down. Subpixel
+// font sizes otherwise lose strokes/glyphs under the camera transform.
+function label(r: Renderer, text: string, x: number, y: number, size: number, color: string, weight = '500') {
+  r.ctx.save(); r.ctx.scale(0.05, 0.05); r.label(text, x * 20, y * 20, size * 20, color, weight); r.ctx.restore();
+}
+
 export function drawBeachGround(r: Renderer) {
   const c = r.ctx;
   c.save(); path(r, BEACH_OUTLINE, '#e2c68e', 0, true); c.clip();
@@ -31,9 +37,9 @@ export function drawBeachGround(r: Renderer) {
   c.strokeStyle = '#fff0c8'; c.lineWidth = 0.13; c.strokeRect(-36, 250, 15, 9);
   path(r, [vec(-28.5, 250), vec(-28.5, 259)], '#b28c61', 0.12);
   for (let y = 250; y <= 259; y += 0.5) r.rect(-28.7, y, 0.4, 0.06, '#fff0d0');
-  r.label('BEACH VOLLEY', -28.5, 248.8, 0.6, '#866b47', '700');
-  r.label('S U N S E T   B E A C H', 68, 248.2, 1.05, '#947c52', '700');
-  r.label('SOFT SAND / PICKUP RECOMMENDED', 76, 251, 0.56, '#a08b63');
+  label(r, 'BEACH VOLLEY', -28.5, 248.8, 0.6, '#866b47', '700');
+  label(r, 'S U N S E T   B E A C H', 68, 248.2, 1.05, '#947c52', '700');
+  label(r, 'SOFT SAND / PICKUP RECOMMENDED', 76, 251, 0.56, '#a08b63');
   c.restore();
   // Foam follows the real coast, rather than implying a hidden drivable sea shelf.
   for (const offset of [0.25, 1.25]) {
@@ -54,37 +60,54 @@ export function drawBeachGround(r: Renderer) {
     for (const y of [249, 251, 253, 255]) r.rect(x, y, 2, 0.035, '#9caaa757');
   }
   r.rect(PROMENADE.left, 250.8, 106, 1.2, '#eee7d14a');
-  r.label('O C E A N   W A L K', 184, 251.5, 1, '#647d7a', '700');
-  r.label('PEDESTRIANS ONLY', 232, 251.5, 0.67, '#647d7a', '700');
+  label(r, 'O C E A N   W A L K', 184, 251.5, 1, '#647d7a', '700');
+  label(r, 'PEDESTRIANS ONLY', 232, 251.5, 0.67, '#647d7a', '700');
   for (const x of PROMENADE_ENTRIES) {
     path(r, [vec(x, 244.7), vec(x, 246.3)], '#f4ebcf', 0.2);
     r.circle(vec(x, 245.1), 0.15, '#718984');
   }
   for (const hotel of BEACH_HOTELS) {
-    r.rect(hotel.position.x - 14, 232.2, 28, 1.4, '#d6c5a7');
-    r.label('HOTEL / BEACH ACCESS ↓', hotel.position.x, 235.3, 0.58, '#d0d3bc', '600');
+    r.rect(hotel.position.x - hotel.width / 2, 256.7, hotel.width, 1.3, '#b4b4a4');
+    label(r, 'PRIVATE FRONTAGE', hotel.position.x, 257.3, 0.48, '#6d7772', '700');
   }
-  if (r.visible(vec(28, 249.5), 12)) r.label('BEACH PATROL / OFF-ROAD PARKING', 28, 246.8, 0.6, '#84744e', '700');
+  if (r.visible(vec(28, 249.5), 12)) label(r, 'BEACH PATROL / OFF-ROAD PARKING', 28, 246.8, 0.6, '#84744e', '700');
 }
 
 function drawHotel(r: Renderer, prop: Prop) {
-  const c = r.ctx, b = prop.body;
+  const c = r.ctx, b = prop.body, hotel = BEACH_HOTELS.find(h => h.name === prop.label)!;
+  const w = b.w, h = b.h, left = -w / 2, top = -h / 2;
   c.save(); c.translate(b.position.x, b.position.y);
-  r.rect(-12.7, -5.1, 27.5, 12.6, '#183a3c59');
-  r.rect(-13.5, -6, 27, 12, '#917f6b');
-  r.rect(-13.75, -6.6, 27, 11, prop.color, '#efe6ce');
-  // Front balconies/windows, rooftop sun deck and a small inaccessible roof pool.
-  for (let x = -12; x < 13; x += 3.1) {
-    r.rect(x, 4.5, 2.1, 1.15, '#5f888d'); r.rect(x - 0.2, 5.5, 2.5, 0.18, '#f3e2c1');
-    r.rect(x + 0.9, 4.5, 0.12, 1.1, '#c6dfd5');
+  // Oversized concrete podiums consume almost the entire eastern sand frontage.
+  // Stacked balcony bands and rising penthouse tiers give the blocks urban mass.
+  r.rect(left + 1.1, top + 1.2, w + 1.2, h + 0.3, '#17333566');
+  r.rect(left, top, w, h, '#929688', '#e5dcc6');
+  r.rect(left + 0.3, top + 0.3, w - 0.6, h - 0.6, '#c4c3af');
+  const tiers = hotel.floors === 9 ? 2 : hotel.floors === 14 ? 3 : 4;
+  const facade = 2.2 + tiers * 0.45, roofBottom = h / 2 - facade;
+  r.rect(left + 0.6, top + 0.3, w - 1.2, roofBottom - top, prop.color, '#f0e6ce');
+  for (let i = 0; i < hotel.floors; i++) {
+    const y = roofBottom + i * facade / hotel.floors;
+    r.rect(left + 0.7, y, w - 1.4, facade / hotel.floors * 0.7, i % 3 ? '#597b7f' : '#769295');
+    for (let x = left + 1.7; x < w / 2 - 0.8; x += 2.2) r.rect(x, y, 0.1, facade / hotel.floors, '#cdd8cd');
+    r.rect(left + 0.6, y + facade / hotel.floors * 0.74, w - 1.2, 0.07, '#ecdec0');
   }
-  r.rect(-11.9, -4.8, 23.2, 7.6, '#e9dfc44d', '#f0dfbd');
-  r.rect(4.1, -3.5, 6.1, 3.5, '#d9ddc5'); r.rect(4.6, -3, 5.1, 2.5, '#79b6bd');
-  r.rect(4.9, -2.8, 0.2, 2.1, '#cde9df');
-  for (const x of [-10, -7, -4]) { r.rect(x, -3.6, 1.2, 2.3, '#f4e7ca'); r.rect(x, -3.1, 1.2, 0.2, '#c4a58b'); }
-  r.rect(-3, 4.4, 6, 1.2, '#527b78');
-  r.label(prop.label, -0.2, 1.5, 0.9, '#576c6c', '700');
-  r.label('HOTEL', 0, -4.4, 0.6, '#637675', '700');
+  // Setback penthouse, mechanical plant, private pool and leased sun deck.
+  for (let i = 0; i < tiers; i++) {
+    r.rect(left + 1.4 + i * 0.55, top + 0.65 + i * 0.32, w * 0.47 - i * 1.1, 2.7 - i * 0.35, i % 2 ? '#bacac0' : '#ded9c4', '#f6e9cc');
+    r.rect(left + 1.8 + i * 0.55, top + 2.9 - i * 0.08, w * 0.43 - i * 1.1, 0.18, '#496e76');
+  }
+  for (const x of [-3.6, -1.8, 0]) { r.rect(x, top + 0.6, 1.2, 1.1, '#87958c', '#e4dac4'); r.circle(vec(x + 0.6, top + 1.15), 0.31, '#5f7875'); }
+  r.rect(w / 2 - 9, top + 0.7, 7.7, 3.2, '#e6dfc6');
+  r.rect(w / 2 - 8.6, top + 1.1, 6.9, 2.4, '#75b4bd');
+  r.rect(w / 2 - 8.2, top + 1.4, 0.18, 1.8, '#d1ece3');
+  for (let x = w / 2 - 8.8; x < w / 2 - 1.6; x += 2.2) {
+    r.rect(x, top + 4.3, 0.8, 1.5, '#f4e8cd'); r.rect(x, top + 4.55, 0.8, 0.18, '#c3a182');
+  }
+  r.rect(-9, roofBottom - 1.25, 18, 1.05, '#eee4c9');
+  label(r, prop.label, 0, roofBottom - 0.7, 0.85, '#38565b', '700');
+  label(r, `${hotel.floors} STOREYS / OCEANFRONT LUXURY`, 0, roofBottom - 1.5, 0.55, '#38565b', '700');
+  r.rect(-4.2, h / 2 - 0.85, 8.4, 0.85, '#526e70');
+  label(r, 'GUESTS ONLY', 0, h / 2 - 0.4, 0.65, '#f3e5c7', '700');
   c.restore();
 }
 
@@ -124,7 +147,7 @@ export function drawBeachProp(r: Renderer, prop: Prop): boolean {
     r.rect(-0.55, 0.3, 1.1, 1.8, '#c1b18f');
     for (let y = 0.5; y < 2.1; y += 0.35) r.rect(-0.55, y, 1.1, 0.08, '#ede0bd');
     r.rect(-2, 0.8, 1.2, 0.12, '#f4e7c6'); r.rect(0.8, 0.8, 1.2, 0.12, '#f4e7c6');
-    r.label(prop.label.slice(-2), 0, -1.1, 0.8, '#476775', '700');
+    label(r, prop.label.slice(-2), 0, -1.1, 0.8, '#476775', '700');
     r.rect(1.35, 0.45, 0.65, 0.2, '#db7767'); // rescue float
     r.rect(-2.1, -2, 0.1, 1.1, '#7d9189');
     path(r, [vec(-2, -2), vec(-1.2, -1.7), vec(-2, -1.4)], '#e79079', 0, true);

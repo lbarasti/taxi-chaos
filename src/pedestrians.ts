@@ -288,6 +288,34 @@ export function updatePedestrians(
 
     if (!person.alive) continue; // killed this frame; corpse integration starts next frame
 
+    if (person.fall) {
+      // Ejected motorcyclists are independent sliding bodies until their tumble
+      // ends. Substep against static geometry so they cannot tunnel through walls.
+      const fall = person.fall;
+      fall.elapsed += dt;
+      const speed = length(person.velocity);
+      const steps = Math.max(1, Math.ceil(speed * dt / MAX_STEP));
+      for (let i = 0; i < steps; i++) {
+        const intended = add(person.position, scale(person.velocity, dt / steps));
+        moveTo(world, person, intended, PERSON_RADIUS);
+        if (dist(person.position, intended) > 0.1) person.velocity = scale(person.velocity, 0.65);
+        for (const v of vehicles) {
+          const hit = circleBody(v.body, person.position, PERSON_RADIUS);
+          if (hit) person.position = separate(world, add(person.position, scale(hit.normal, hit.depth + 0.04)), PERSON_RADIUS);
+        }
+      }
+      person.velocity = scale(person.velocity, Math.exp(-dt * (fall.elapsed < 0.17 ? 0.7 : 4.3)));
+      person.angle += fall.angularVelocity * dt;
+      fall.angularVelocity *= Math.exp(-dt * 2);
+      if (fall.elapsed >= fall.duration) {
+        person.fall = undefined;
+        person.velocity = vec();
+        person.home = { ...person.position };
+        person.panic = 1.5;
+      }
+      continue;
+    }
+
     // Any knock impulse is applied every frame and decays, panic or not.
     const impulse = scale(person.velocity, dt);
     person.velocity = length(person.velocity) < 0.05 ? vec() : scale(person.velocity, Math.exp(-6 * dt));

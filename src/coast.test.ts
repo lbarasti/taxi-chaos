@@ -6,6 +6,7 @@ import { HOSPITAL, World } from './world';
 import { HIGHLAND_OUTLINE } from './countryside';
 import { loadScenario } from './lab';
 import { igniteVehicle } from './damage';
+import { MotorcycleDynamics } from './motorcycle';
 
 const run = (g: Game, seconds: number) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };
 function quiet() {
@@ -55,12 +56,26 @@ describe('guardrail impacts', () => {
     b.position = vec(rail.body.position.x, rail.body.position.y + b.w / 2 + 0.2); b.angle = -Math.PI / 2; b.velocity = vec(0, -26);
     g.collision(g.player, rail, 1 / 120);
     expect(rail.alive).toBe(false); expect(rail.hp).toBe(0); expect(g.fx.railDebris).toHaveLength(6);
-    expect(length(b.velocity)).toBeGreaterThan(12); expect(length(b.velocity)).toBeLessThan(26); expect(g.health).toBeLessThan(100);
+    expect(length(b.velocity)).toBeGreaterThan(12); expect(length(b.velocity)).toBeLessThan(26); expect(g.player.damage.health).toBeLessThan(100);
+    if (model === 'motorcycle') {
+      expect(g.onFoot).toBe(true);
+      expect((g.player.dynamics as MotorcycleDynamics).fallen).toBe(true);
+      expect(g.player.driverExited).toBe(true);
+    }
     const speed = length(b.velocity); g.collision(g.player, rail, 1 / 120);
     expect(length(b.velocity)).toBe(speed); expect(g.fx.railDebris).toHaveLength(6);
     expect(g.world.props.filter(p => p.kind === 'guardrail' && !p.alive)).toHaveLength(1);
-    run(g, 0.5); expect(g.player.sinking).toBeDefined(); expect(g.player.sinking!.pool).toBeUndefined();
-    run(g, 2.3); expect(g.mode).toBe('wasted'); expect(g.wastedReason).toBe('drowning'); expect(g.explosions).toBe(0);
+    run(g, 0.5);
+    if (model === 'car') {
+      expect(g.player.sinking).toBeDefined(); expect(g.player.sinking!.pool).toBeUndefined();
+      run(g, 2.3); expect(g.mode).toBe('wasted'); expect(g.wastedReason).toBe('drowning');
+    } else {
+      // A physical hit at 26 m/s now throws the rider off instead of keeping
+      // them strapped to the motorcycle until it drowns.
+      expect((g.player.dynamics as MotorcycleDynamics).fallen).toBe(true);
+      expect(g.onFoot).toBe(true);
+    }
+    expect(g.explosions).toBe(0);
   });
   it('keeps a slow driven car on land behind the rail', () => {
     const g = quiet(); g.player.body.position = vec(0, -5); g.player.body.angle = -Math.PI / 2; g.keys.add('KeyW');
@@ -76,7 +91,7 @@ describe('guardrail impacts', () => {
 });
 
 describe('ocean entry and recovery', () => {
-  it.each(['coastal-rails', 'coastal-gap', 'coastal-bike'] as const)('%s carries momentum offshore, splashes once, sinks, and respawns at hospital', scenario => {
+  it.each(['coastal-rails', 'coastal-gap'] as const)('%s carries momentum offshore, splashes once, sinks, and respawns at hospital', scenario => {
     const g = new Game(); loadScenario(g, scenario); g.world.people = [];
     const cash = g.save.cash, old = g.player;
     g.keys.add('KeyW'); g.keys.add('ShiftLeft'); run(g, 0.7);
@@ -87,6 +102,15 @@ describe('ocean entry and recovery', () => {
     expect(g.hospitalBill).toEqual({ medical: 50, repairs: 30, total: 80 });
     g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL); expect(g.health).toBe(100); expect(g.save.cash).toBe(cash - 80);
     expect(g.nearestCar).not.toBe(old); expect(old.alive).toBe(false);
+  });
+  it('coastal-bike ejects its rider on the broken guardrail rather than treating them as submerged cargo', () => {
+    const g = new Game(); loadScenario(g, 'coastal-bike');
+    const bike = g.player;
+    g.keys.add('KeyW'); g.keys.add('ShiftLeft'); run(g, 0.7);
+    expect((bike.dynamics as MotorcycleDynamics).fallen).toBe(true);
+    expect(bike.driverExited).toBe(true);
+    expect(g.onFoot).toBe(true);
+    expect(g.world.props.filter(p => p.kind === 'guardrail' && !p.alive).length).toBeGreaterThan(0);
   });
   it.each([vec(50, -30), vec(-30, 100), vec(100, 271), vec(276, 120), vec(540, 90), vec(336, 435)])('drowns outside the entire irregular map at $x,$y without invisible bounds', p => {
     const g = quiet(); g.player.body.position = p; run(g, 2.4);

@@ -4,9 +4,9 @@ import { PORT_ENTRY, PORT_FEE } from './harbour';
 import { inOcean } from './coast';
 import { Game } from './game';
 import { loadScenario } from './lab';
-import { contact, length, vec } from './physics';
+import { Body, contact, dist, length, vec } from './physics';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleModel } from './vehicles';
-import { district, roadPath } from './world';
+import { blocksWalking, district, isRigidObstacle, roadPath } from './world';
 
 function quiet() {
   const g = new Game(); g.start(); g.settings.noPolice = true;
@@ -38,13 +38,15 @@ describe('southern beach geography and access', () => {
     expect([...g.world.hash.query(pickup.body)].some(p => contact(pickup.body, p.body))).toBe(false);
     for (const hotel of BEACH_HOTELS) {
       const prop = g.world.props.find(p => p.label === hotel.name)!;
+      expect(prop.body.position.y - prop.body.h / 2).toBeGreaterThan(256);
+      expect(prop.body.corners().every(p => inBeach(p) && !onPromenade(p) && !inOcean(p))).toBe(true);
       expect(g.world.props.some(p => p !== prop && p.alive && contact(p.body, prop.body))).toBe(false);
     }
   });
   it('routes western sand, eastern sand and promenade walkers to the city and woods on dry land', () => {
-    for (const from of [vec(-40, 248), vec(80, 258), vec(220, 258), vec(253, 250), vec(184, 251.5)]) {
+    for (const from of [vec(-40, 248), vec(80, 258), vec(220.675, 260), vec(253, 250), vec(184, 251.5), vec(200, 270.5)]) {
       for (const to of [vec(4, 32), vec(132, 338)]) {
-        const path = roadPath(from, to);
+        const path = roadPath(from, to, 'walk');
         expect(path.at(-1)).toEqual(to);
         for (let i = 1; i < path.length; i++) for (let t = 0; t <= 1; t += 0.1) {
           const a = path[i - 1], b = path[i];
@@ -52,6 +54,41 @@ describe('southern beach geography and access', () => {
         }
       }
     }
+  });
+  it('approaches eastern sand from the street with vehicle clearance, rather than clipping promenade edges', () => {
+    const g = new Game(), from = vec(140, 240), target = vec(170, 256.7);
+    const path = roadPath(from, target);
+    expect(path.at(-1)).toEqual(vec(170, 240));
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1], b = path[i], steps = Math.ceil(dist(a, b) / 0.2);
+      for (let j = 0; j <= steps; j++) {
+        const probe = new Body(a.x + (b.x - a.x) * j / steps, a.y + (b.y - a.y) * j / steps, 1, 5.2, 2.15);
+        probe.angle = Math.atan2(b.y - a.y, b.x - a.x);
+        expect([...g.world.hash.query(probe)].some(p => isRigidObstacle(p.kind) && contact(probe, p.body))).toBe(false);
+        expect(probe.corners().some(inOcean)).toBe(false);
+      }
+    }
+  });
+  it('routes walkers around hotel podiums through real entrances with full body clearance', () => {
+    const g = new Game();
+    for (const from of [vec(170, 256.7), vec(200, 270.5), vec(237, 270.45), vec(180.675, 265)]) {
+      const path = roadPath(from, vec(200, 240), 'walk');
+      for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1], b = path[i], steps = Math.ceil(dist(a, b) / 0.15);
+        for (let j = 0; j <= steps; j++) {
+          const probe = new Body(a.x + (b.x - a.x) * j / steps, a.y + (b.y - a.y) * j / steps, 1, 0.7, 0.7);
+          expect([...g.world.hash.query(probe)].some(p => blocksWalking(p.kind) && contact(probe, p.body))).toBe(false);
+          expect(probe.corners().some(inOcean)).toBe(false);
+        }
+      }
+    }
+  });
+  it('keeps pursuing police outside the protected hotel and pedestrian strip', () => {
+    const g = quiet(); g.onFoot = true; g.driver.position = vec(170, 256.7);
+    const cop = g.spawnVehicle({ kind: 'police', position: vec(170, 240) });
+    g.heat = 30; run(g, 0.1);
+    expect(cop.path.length).toBeGreaterThan(0);
+    expect(cop.path.every(p => p.y < 246)).toBe(true);
   });
 });
 
@@ -116,6 +153,22 @@ describe('physical sand handling', () => {
       expect(g.mode).toBe('wasted'); expect(g.wastedReason).toBe('drowning'); expect(g.explosions).toBe(0);
       g.recover(); expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true);
     }
+  });
+  it('merges sustained straight sand ruts and breaks tracks on teleports and surface changes', () => {
+    const g = quiet(); g.player.alive = false; g.player = g.spawnVehicle({ kind: 'taxi', model: 'pickup', position: vec(36, 253) });
+    g.settings.invincible = true;
+    for (let lap = 0; lap < 12; lap++) {
+      g.player.body.position = vec(36, 253); g.player.body.angle = 0; g.player.body.velocity = vec(8, 0);
+      run(g, 5, ['KeyW']);
+    }
+    const ruts = g.skids.filter(s => s.sand);
+    expect(ruts.length).toBeGreaterThan(20); expect(ruts.length).toBeLessThan(650);
+    expect(ruts.every(s => dist(s.a, s.b) <= 4.01)).toBe(true);
+    g.player.body.position = vec(64, 240); run(g, 0.1);
+    const count = g.skids.filter(s => s.sand).length;
+    g.player.body.position = vec(100, 253); g.player.body.angle = 0; g.player.body.velocity = vec(8, 0); run(g, 0.1);
+    expect(g.skids.filter(s => s.sand).length).toBeGreaterThanOrEqual(count);
+    expect(g.skids.filter(s => s.sand).every(s => inSand(s.a) && inSand(s.b) && dist(s.a, s.b) <= 4.01)).toBe(true);
   });
 });
 
