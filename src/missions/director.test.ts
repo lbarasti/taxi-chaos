@@ -3,7 +3,7 @@ import { defaultCompiledMap } from '../map/compile';
 import type { MissionCatalogue } from './schema';
 import { compileMissions } from './compile';
 import { MissionDirector, type DirectorContext } from './director';
-import { defaultMissionProgress } from './progress';
+import { defaultMissionProgress, migrateMissionProgress } from './progress';
 
 const STOPS = {
   schemaVersion: 1,
@@ -91,7 +91,11 @@ describe('mission director', () => {
 
   it('commits mutually exclusive choices idempotently and rejects switching', () => {
     const d = new MissionDirector(compiled(), defaultMissionProgress());
+    d.begin('branch', ctx());
     expect(d.commitChoice('route', 'safe', ctx())).toBe(true);
+    expect(d.progress.flags).not.toContain('careful');
+    expect(d.progress.choices.route).toBeUndefined();
+    d.pickup(ctx());
     expect(d.progress.flags).toContain('careful');
     expect(d.commitChoice('route', 'safe', ctx())).toBe(false);
     expect(() => d.commitChoice('route', 'fast', ctx())).toThrow(/already committed/);
@@ -226,8 +230,8 @@ describe('mission director', () => {
   it('leaves no partial progress when a lifecycle transaction fails', () => {
     const d = new MissionDirector(runtimeCompiled(), defaultMissionProgress());
     expect(d.begin('conflict', ctx())).toBe(true);
-    expect(d.pickup(ctx()).missionId).toBe('conflict');
     expect(d.commitChoice('mode', 'safe', ctx())).toBe(true);
+    expect(d.pickup(ctx()).missionId).toBe('conflict');
     expect(() => d.complete(ctx())).toThrow(/Conflicting setChoice/);
     expect(d.progress.flags).not.toContain('settled');
     expect(d.progress.completed).not.toContain('conflict');
@@ -239,7 +243,9 @@ describe('mission director', () => {
 
   it('never lets an option effect overwrite its own group choice', () => {
     const d = new MissionDirector(runtimeCompiled(), defaultMissionProgress());
-    expect(() => d.commitChoice('tone', 'kind', ctx())).toThrow(/Conflicting setChoice/);
+    d.begin('self-overwrite', ctx());
+    expect(d.commitChoice('tone', 'kind', ctx())).toBe(true);
+    expect(() => d.pickup(ctx())).toThrow(/Conflicting setChoice/);
     expect(d.progress.choices.tone).toBeUndefined();
     expect(d.log.some(e => e.type === 'choice' && e.group === 'tone')).toBe(false);
   });
@@ -261,5 +267,50 @@ describe('mission director', () => {
     expect(d.progress.flags).toEqual([]);
     expect(d.activeId).toBeNull();
     expect(d.log).toEqual([]);
+  });
+
+  it('rejects future choices and premature completion selections without effects', () => {
+    const d = new MissionDirector(compiled(), defaultMissionProgress());
+    const before = d.snapshot();
+    expect(d.commitChoice('route', 'safe', ctx())).toBe(false);
+    expect(d.snapshot()).toEqual(before);
+    d.begin('intro', ctx());
+    expect(d.commitChoice('route', 'safe', ctx())).toBe(false);
+    d.abandon('replaced', 0); d.begin('branch', ctx());
+    expect(d.commitChoice('farewell', 'tip', ctx())).toBe(false);
+    d.pickup(ctx());
+    expect(d.commitChoice('farewell', 'tip', ctx())).toBe(true);
+    expect(d.relationship('mia')).toBe(0);
+    d.complete(ctx());
+    expect(d.relationship('mia')).toBe(2);
+  });
+
+  it('discards uncommitted selections on abandonment', () => {
+    const d = new MissionDirector(compiled(), defaultMissionProgress());
+    d.begin('branch', ctx()); d.commitChoice('route', 'safe', ctx());
+    d.abandon('left-vehicle', 1); d.begin('branch', ctx()); d.pickup(ctx());
+    expect(d.progress.choices.route).toBe('fast');
+    expect(d.progress.flags).not.toContain('careful');
+  });
+
+  it('keeps cooldown deadlines across save/load until exact campaign expiry', () => {
+    const d = new MissionDirector(compiled(), defaultMissionProgress());
+    d.progress.campaignSeconds = 100;
+    d.begin('cooldown', ctx({ time: 100 })); d.abandon('shift', 100);
+    const loaded = new MissionDirector(compiled(), migrateMissionProgress(JSON.parse(JSON.stringify(d.progress))));
+    expect(loaded.progress.retryAt.cooldown).toBe(110);
+    expect(loaded.available(ctx({ time: 109.99 }))).not.toContain('cooldown');
+    expect(loaded.available(ctx({ time: 110 }))).toContain('cooldown');
+    loaded.reset();
+    expect(loaded.progress.retryAt).toEqual({});
+  });
+
+  it('ranks reversed catalogue order and reports ungated higher chapters without changing eligibility', () => {
+    const catalogue = { ...structuredClone(CATALOGUE), missions: { later: mission({ chapter: 3 }), earlier: mission() } as MissionCatalogue['missions'] };
+    const c = compileMissions(defaultCompiledMap, catalogue, STOPS);
+    const d = new MissionDirector(c, defaultMissionProgress());
+    expect(d.available(ctx())).toEqual(['earlier', 'later']);
+    expect(d.nextOffer(ctx())).toBe('earlier');
+    expect(c.warnings).toEqual([{ missionId: 'later', message: expect.stringContaining('only ranks offers') }]);
   });
 });

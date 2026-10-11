@@ -15,6 +15,7 @@ export type Condition =
   | { choiceEquals: { group: ChoiceGroupId; choice: ChoiceId } }
   | { choiceUnset: ChoiceGroupId }
   | { minDeliveries: number }
+  | { minCareerDeliveries: number }
   | { chapter: number };
 
 /** Authored outcome effects. Each list is bounded and applied atomically. */
@@ -123,6 +124,7 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
         case 'flag': id(obj.flag, `${at}.flag`); return;
         case 'choiceUnset': id(obj.choiceUnset, `${at}.choiceUnset`); return;
         case 'minDeliveries': int(obj.minDeliveries, `${at}.minDeliveries`, 0, 1e9); return;
+        case 'minCareerDeliveries': int(obj.minCareerDeliveries, `${at}.minCareerDeliveries`, 0, 1e9); return;
         case 'chapter': int(obj.chapter, `${at}.chapter`, 0, 1e6); return;
         case 'choiceEquals': { const p = object(obj.choiceEquals, `${at}.choiceEquals`, ['group', 'choice']); id(p.group, `${at}.choiceEquals.group`); id(p.choice, `${at}.choiceEquals.choice`); return; }
         default: return fail(at, `unknown condition operator ${key}`);

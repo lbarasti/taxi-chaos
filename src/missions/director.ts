@@ -12,6 +12,7 @@ export type AbandonReason =
 
 export type DirectorContext = Readonly<{
   deliveries: number;
+  careerDeliveries?: number;
   jobType: 'fare' | 'parcel';
   model: VehicleModel;
   kind: VehicleRole;
@@ -48,7 +49,7 @@ const NOTHING: PickupOutcome = Object.freeze({ missionId: null, beatId: null, me
 export class MissionDirector {
   activeId: MissionId | null = null;
   private pickedUp = false;
-  private retryAt: Record<string, number> = {};
+  private selections: Record<string, string> = {};
   private events: MissionEvent[] = [];
 
   constructor(readonly catalogue: CompiledMissions, public progress: MissionProgress) {}
@@ -80,17 +81,18 @@ export class MissionDirector {
     this.progress.flags = draft.flags;
     this.progress.choices = draft.choices;
     this.progress.relationships = draft.relationships;
+    this.progress.retryAt = draft.retryAt;
     for (const event of events) this.push(event);
   }
 
   /** Offers outstanding story missions in authored chapter then catalogue order. */
   available(ctx: DirectorContext): MissionId[] {
-    return this.catalogue.order.filter(id => this.canOffer(this.mission(id), ctx));
+    return this.catalogue.order.filter(id => this.canOffer(this.mission(id), ctx))
+      .sort((a, b) => this.mission(a).chapter - this.mission(b).chapter || this.catalogue.order.indexOf(a) - this.catalogue.order.indexOf(b));
   }
 
   nextOffer(ctx: DirectorContext): MissionId | null {
-    const ranked = [...this.available(ctx)].sort((a, b) => this.mission(a).chapter - this.mission(b).chapter || this.catalogue.order.indexOf(a) - this.catalogue.order.indexOf(b));
-    return ranked[0] ?? null;
+    return this.available(ctx)[0] ?? null;
   }
 
   status(id: MissionId, ctx: DirectorContext): MissionStatus {
@@ -108,6 +110,7 @@ export class MissionDirector {
     const mission = this.mission(id);
     if (!this.canOffer(mission, ctx)) return false;
     this.activeId = id;
+    this.selections = {};
     this.pickedUp = false;
     this.push({ type: 'accepted', missionId: id, at: ctx.time });
     return true;
@@ -144,7 +147,7 @@ export class MissionDirector {
       if (!draft.completed.includes(mission.id)) draft.completed.push(mission.id);
       events.push({ type: 'completed', missionId: mission.id, at: ctx.time });
     });
-    this.activeId = null; this.pickedUp = false;
+    this.activeId = null; this.pickedUp = false; this.selections = {};
     return mission.id;
   }
 
@@ -156,28 +159,32 @@ export class MissionDirector {
     if (retry === 'never') {
       if (!this.progress.failed.includes(mission.id)) this.progress.failed.push(mission.id);
     } else if (retry === 'cooldown') {
-      this.retryAt[mission.id] = time + (cooldownSeconds ?? 0);
+      this.progress.retryAt[mission.id] = time + (cooldownSeconds ?? 0);
     }
     this.push({ type: 'abandoned', missionId: mission.id, reason, at: time });
-    this.activeId = null; this.pickedUp = false;
+    this.activeId = null; this.pickedUp = false; this.selections = {};
     return mission.id;
   }
 
   /**
-   * Commits a mutually exclusive choice. Re-committing the same option is an
-   * idempotent no-op; committing a different option is rejected. The context is
-   * required so `minDeliveries` requirements never silently default to zero.
+   * Selects an option for the active mission. No progress or effects change until
+   * pickup()/complete() reaches the group's authored boundary. Selections are
+   * transient and discarded on abandonment; future missions cannot be selected.
    */
   commitChoice(groupId: ChoiceGroupId, choiceId: ChoiceId, ctx: DirectorContext): boolean {
     const group = this.findGroup(groupId);
     if (!group) throw new Error(`Unknown choice group ${groupId}`);
     const option = group.options.find(o => o.id === choiceId);
     if (!option) throw new Error(`Choice ${choiceId} is not an option of ${groupId}`);
+    if (!this.active?.choices.some(g => g.id === groupId)) return false;
+    const existing = this.progress.choices[groupId];
+    if (existing === choiceId) return false;
+    if (existing !== undefined) throw new Error(`Choice group ${groupId} is already committed to ${existing}`);
+    if (group.commit === 'pickup' ? this.pickedUp : !this.pickedUp) return false;
     if (option.requires && !this.evaluate(option.requires, ctx)) return false;
-    let changed = false;
-    const events: MissionEvent[] = [];
-    this.transact(events, draft => { changed = this.commitOptionTo(draft, group, option, ctx.time, events); });
-    return changed;
+    if (this.selections[groupId] === choiceId) return false;
+    this.selections[groupId] = choiceId;
+    return true;
   }
 
   private commitOptionTo(draft: MissionProgress, group: CompiledChoiceGroup, option: CompiledChoiceOption, time: number, events: MissionEvent[]): boolean {
@@ -194,7 +201,9 @@ export class MissionDirector {
 
   private commitDefaultTo(draft: MissionProgress, group: CompiledChoiceGroup, ctx: DirectorContext, events: MissionEvent[]): void {
     if (draft.choices[group.id] !== undefined) return;
-    const option = group.options.find(o => o.default);
+    const selected = this.selections[group.id];
+    const option = selected ? group.options.find(o => o.id === selected) : group.options.find(o => o.default);
+    if (selected && option?.requires && !this.evaluateWith(draft, option.requires, ctx)) throw new Error(`Selected choice ${selected} is no longer eligible`);
     if (option && (!option.requires || this.evaluateWith(draft, option.requires, ctx))) this.commitOptionTo(draft, group, option, ctx.time, events);
   }
 
@@ -210,7 +219,7 @@ export class MissionDirector {
     if (this.activeId === mission.id) return false;
     if (this.progress.failed.includes(mission.id)) return false;
     if (mission.repeat === 'once' && this.progress.completed.includes(mission.id)) return false;
-    const until = this.retryAt[mission.id];
+    const until = this.progress.retryAt[mission.id];
     if (until !== undefined && ctx.time < until) return false;
     if (!this.allowedFor(mission, ctx)) return false;
     return this.evaluate(mission.requires, ctx);
@@ -236,6 +245,7 @@ export class MissionDirector {
     if ('choiceEquals' in condition) return draft.choices[condition.choiceEquals.group] === condition.choiceEquals.choice;
     if ('choiceUnset' in condition) return draft.choices[condition.choiceUnset] === undefined;
     if ('minDeliveries' in condition) return (ctx?.deliveries ?? 0) >= condition.minDeliveries;
+    if ('minCareerDeliveries' in condition) return (ctx?.careerDeliveries ?? 0) >= condition.minCareerDeliveries;
     return draft.chapter >= condition.chapter;
   }
 
@@ -266,14 +276,9 @@ export class MissionDirector {
   }
 
   /** Clears story progress in place (explicit new-story reset). */
-  restartClock(previousTime: number): void {
-    for (const id of Object.keys(this.retryAt)) this.retryAt[id] = Math.max(0, this.retryAt[id] - previousTime);
-  }
-
-  /** Clears story progress in place (explicit new-story reset). */
   reset(): void {
     clearMissionProgress(this.progress);
-    this.activeId = null; this.pickedUp = false; this.retryAt = {}; this.events = [];
+    this.activeId = null; this.pickedUp = false; this.selections = {}; this.events = [];
   }
 
   snapshot(): DirectorSnapshot {

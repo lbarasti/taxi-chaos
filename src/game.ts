@@ -105,7 +105,6 @@ export class Game {
     }
   }
   resetRun() {
-    this.missions.restartClock(this.time);
     this.sounds.reset(); this.touchMove = null;
     this.sandRuts = []; this.rutVehicleId = -1;
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
@@ -122,7 +121,7 @@ export class Game {
   /** Explicit new-story reset. Ordinary new shifts preserve persistent story. */
   resetStory() { this.missions.reset(); this.newJob(true, 'reset'); this.persist(); }
   /** Abandons any active mission and detaches it from the current job. */
-  releaseMission(reason: AbandonReason = 'shift') { if (this.missions.activeId) { const failed = this.save.story.failed.length; this.missions.abandon(reason, this.time); if (this.save.story.failed.length !== failed) this.persist(); } if (this.job) delete this.job.missionId; }
+  releaseMission(reason: AbandonReason = 'shift') { if (this.missions.activeId) { const persistent = this.missions.active?.abandon.retry !== 'always'; this.missions.abandon(reason, this.save.story.campaignSeconds); if (persistent) this.persist(); } if (this.job) delete this.job.missionId; }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
     return this.spawnVehicle({ kind, position: vec(x, y), angle, color, model });
   }
@@ -412,11 +411,11 @@ export class Game {
     if (this.persistence) try { localStorage.setItem(storageKeys.settings, JSON.stringify(this.preferences)); } catch {}
     this.onChange();
   }
-  setMode(mode: Mode) { if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
+  setMode(mode: Mode) { if (this.mode === 'playing' && mode !== 'playing') this.persist(); if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
   start() { this.setMode('playing'); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   private missionContext(): DirectorContext {
-    return { deliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.time };
+    return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds };
   }
   private newMissionJob(missionId: MissionId) {
     const mission = this.missions.mission(missionId), { roadPath } = this.world.navigation;
@@ -761,6 +760,9 @@ export class Game {
     const { sandHandling, inSand } = this.map.beach, { inOcean } = this.map.coast;
     if (this.mode === 'wasted') { this.effects(dt); return; }
     if (this.mode !== 'playing') return;
+    const campaignBucket = Math.floor(this.save.story.campaignSeconds / 5);
+    this.save.story.campaignSeconds += dt;
+    if (Math.floor(this.save.story.campaignSeconds / 5) !== campaignBucket) this.persist();
     this.time += dt; this.dayNight.update(dt); this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
@@ -916,7 +918,7 @@ export class Game {
         else {
           const timeBonus = Math.max(0, Math.round((j.time - j.elapsed) * 0.8)), comfortBonus = Math.round(j.comfort * 0.3), payout = j.fare + timeBonus + comfortBonus;
           if (j.missionId) this.missions.complete(this.missionContext());
-          this.save.cash += payout; this.save.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
+          this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
           this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next pickup marked.`, 'success');
           this.sounds.emit('payment', this.time);
           this.newJob();

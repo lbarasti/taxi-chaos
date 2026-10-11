@@ -184,4 +184,50 @@ describe('game mission integration', () => {
     expect(a.world.random()).toBe(b.world.random());
     expect(a.player.body.position).toEqual(b.player.body.position);
   });
+
+  it('counts campaign deliveries separately and resets only the campaign counter', () => {
+    const g = make();
+    g.save.deliveries = 100;
+    expect(g.save.story.deliveries).toBe(0);
+    collect(g); drop(g);
+    expect(g.save.story.deliveries).toBe(1);
+    expect(g.save.deliveries).toBe(101);
+    g.resetRun();
+    expect(g.save.story.deliveries).toBe(1);
+    g.resetStory();
+    expect(g.save.story.deliveries).toBe(0);
+    expect(g.save.deliveries).toBe(101);
+  });
+
+  it('preserves campaign time across shifts and reload, and pauses it with gameplay', () => {
+    const g = make(); run(g, 2);
+    const clock = g.save.story.campaignSeconds;
+    g.setMode('paused'); run(g, 3);
+    expect(g.save.story.campaignSeconds).toBe(clock);
+    g.resetRun();
+    expect(g.time).toBe(0);
+    expect(g.save.story.campaignSeconds).toBe(clock);
+    const save = JSON.stringify(g.save);
+    vi.stubGlobal('localStorage', { getItem: (key: string) => key === storageKeys.save ? save : null, setItem: vi.fn() });
+    const loaded = new Game(defaultCompiledMap, true);
+    expect(loaded.save.story.campaignSeconds).toBe(clock);
+    loaded.resetStory();
+    expect(loaded.save.story.campaignSeconds).toBe(0);
+  });
+
+  it('uses campaign counts for prerequisites and shared ranking in actual dispatch', () => {
+    const g = make(); g.releaseMission();
+    g.save.deliveries = 100;
+    const base = g.missions.catalogue;
+    const mission = base.missions['mia-meridian-lead'];
+    g.missions = new MissionDirector({ ...base, order: ['later', 'campaign', 'earlier'], missions: {
+      later: { ...mission, id: 'later', chapter: 3, requires: { all: [] } },
+      campaign: { ...mission, id: 'campaign', requires: { minDeliveries: 3 } },
+      earlier: { ...mission, id: 'earlier', requires: { all: [] } },
+    } }, g.save.story);
+    g.newJob();
+    expect(g.job.missionId).toBe('earlier');
+    expect(g.missions.available(ctx({ deliveries: g.save.story.deliveries }))).not.toContain('campaign');
+    expect(g.missions.evaluate({ minCareerDeliveries: 3 }, ctx({ careerDeliveries: 100 }))).toBe(true);
+  });
 });

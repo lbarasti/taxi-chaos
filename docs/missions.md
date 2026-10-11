@@ -77,7 +77,8 @@ Conditions nest and are bounded (maximum depth 8, 64 nodes).
 | `{ "flag": "id" }` | the named flag is set |
 | `{ "choiceEquals": { "group": "id", "choice": "id" } }` | a choice group is committed to an option |
 | `{ "choiceUnset": "id" }` | a choice group has not been committed |
-| `{ "minDeliveries": 3 }` | the save's lifetime delivery count |
+| `{ "minDeliveries": 3 }` | completed deliveries in this campaign (story reset clears this count) |
+| `{ "minCareerDeliveries": 3 }` | lifetime career deliveries (story reset preserves this count) |
 | `{ "chapter": 2 }` | story chapter reached |
 
 ### Effects
@@ -117,16 +118,42 @@ within their group. The third PR adds simultaneous offers and the pickup choice
 UI; the director already emits a bounded lifecycle event log
 (`accepted`, `pickup`, `completed`, `abandoned`, `choice`) for it.
 
+`commitChoice(group, option, context)` selects an option only for the active
+mission, before its authored boundary: before pickup for pickup groups, and
+after pickup for completion groups. Selection is transient and has no effects.
+Only `pickup()` or `complete()` commits the outcome atomically, rechecking option
+prerequisites at that boundary. Abandonment discards selections. Inactive/future
+mission selections and selections at the wrong stage return false.
+
+## Chapter semantics
+
+`mission.chapter` ranks offers; it does **not** gate availability. Use an explicit
+`{ "chapter": 2 }` prerequisite to require chapter 2. This allows optional quests
+to appear independently of plot progression. Dispatch and `nextOffer()` share
+the same chapter-then-catalogue ranking, with pickup-radius filtering preserving
+that order. Compilation exposes immutable `warnings` with affected mission IDs
+for higher-chapter missions whose empty `all` prerequisites would expose them
+immediately; intentional early opportunities may retain that warning.
+
 ## Repeat and abandonment
 
 - `repeat`: `"once"` (default narrative missions) or `"repeatable"`.
 - `abandon.retry`:
   - `"always"` — remains available after any abandonment (progress is preserved).
-  - `"cooldown"` — unavailable for `cooldownSeconds` after abandonment.
+  - `"cooldown"` — unavailable for `cooldownSeconds` of campaign gameplay after abandonment.
   - `"never"` — marked failed and locked out.
 
 Abandonment never silently wipes story progress. A new shift, hospital stay or
 arrest keeps `Save.story`; only the explicit `game.resetStory()` clears it.
+
+Cooldown deadlines are absolute saved `campaignSeconds` timestamps, unaffected
+by shifts or reloads. This monotonic elapsed-gameplay clock advances only while
+playing; it pauses in menus and does not advance while the game is closed. It is
+separate from resettable `Game.time` and the day/night presentation clock. The
+game saves it every five seconds, on leaving gameplay and on page exit, as well
+as immediately when a mission is abandoned. Calendar scheduling can build on
+this primitive; campaign events, world conditions, encountered information,
+newsroom verification and publication remain separate state domains.
 
 ## Vehicle policy
 
@@ -170,7 +197,7 @@ a data URL at build time, so no runtime asset request is ever made.
 `Save.story` is a versioned `MissionProgress` saved beside the economy:
 
 ```json
-{ "version": 1, "chapter": 1, "completed": [], "failed": [], "flags": [], "choices": {}, "relationships": {} }
+{ "version": 1, "chapter": 1, "completed": [], "failed": [], "flags": [], "choices": {}, "relationships": {}, "campaignSeconds": 0, "deliveries": 0, "retryAt": {} }
 ```
 
 Legacy saves without a `story` field default to a fresh chapter 1; unknown
@@ -178,6 +205,12 @@ future versions also fall back rather than corrupting progress. The transient
 active mission, current offer and dialogue are **not** saved. Games constructed
 with persistence disabled (map previews, the test lab) use fresh progress and
 never read the save.
+
+Older version-1 progress retains its outcomes and defaults the new clock,
+campaign-delivery count and deadlines to zero/empty; lifetime deliveries are
+never copied into campaign progress. Each paid delivery increments both counters
+exactly once, whether it is authored or procedural. Authored outcome references
+continue to use stable mission IDs via `missionCompleted`, rather than totals.
 
 ## Verification
 

@@ -246,6 +246,7 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => game.keys.delete(e.code));
 window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (!mapEditor?.editing && game.mode === 'playing') game.setMode('paused'); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (!mapEditor?.editing && game.mode === 'playing') game.setMode('paused'); } });
+window.addEventListener('pagehide', () => game.persist());
 const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HTMLButtonElement>('[data-key]'), {
   active: () => !mapEditor?.editing && game.mode === 'playing',
   move: value => { game.touchMove = value; },

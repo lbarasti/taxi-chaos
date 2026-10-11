@@ -3,7 +3,7 @@ import { clearMissionProgress, cloneMissionProgress, defaultMissionProgress, mig
 
 describe('mission progress migration', () => {
   it('defaults a fresh story', () => {
-    expect(defaultMissionProgress()).toEqual({ version: 1, chapter: 1, completed: [], failed: [], flags: [], choices: {}, relationships: {} });
+    expect(defaultMissionProgress()).toEqual({ version: 1, chapter: 1, completed: [], failed: [], flags: [], choices: {}, relationships: {}, campaignSeconds: 0, deliveries: 0, retryAt: {} });
   });
 
   it('defaults legacy saves that have no story field', () => {
@@ -46,5 +46,20 @@ describe('mission progress migration', () => {
     expect(progress.completed).toEqual(['a']);
     expect(progress.choices.g).toBe('o');
     expect(progress.relationships.mia).toBe(1);
+  });
+
+  it('migrates old progress without borrowing career counts and sanitises campaign state', () => {
+    const old = migrateMissionProgress({ version: 1, completed: ['intro'] });
+    expect(old.completed).toEqual(['intro']);
+    expect(old.deliveries).toBe(0);
+    expect(old.campaignSeconds).toBe(0);
+    const loaded = migrateMissionProgress({ version: 1, campaignSeconds: 42, deliveries: 3.9, retryAt: { intro: 60, bad: -1, nan: NaN, 'Bad ID': 20 } });
+    expect(loaded.deliveries).toBe(3);
+    expect(loaded.retryAt).toEqual({ intro: 60 });
+    const clone = cloneMissionProgress(loaded);
+    clone.retryAt.intro = 999;
+    expect(loaded.retryAt.intro).toBe(60);
+    clearMissionProgress(loaded);
+    expect(loaded).toEqual(defaultMissionProgress());
   });
 });

@@ -12,6 +12,9 @@ export type MissionProgress = {
   flags: string[];
   choices: Record<string, string>;
   relationships: Record<string, number>;
+  campaignSeconds: number;
+  deliveries: number;
+  retryAt: Record<string, number>;
 };
 
 const ID = /^[a-z][a-z0-9-]*$/;
@@ -19,7 +22,7 @@ const MAX_ENTRIES = 400;
 const MAX_RELATIONSHIP = 1000;
 
 export const defaultMissionProgress = (): MissionProgress =>
-  ({ version: MISSION_PROGRESS_VERSION, chapter: 1, completed: [], failed: [], flags: [], choices: {}, relationships: {} });
+  ({ version: MISSION_PROGRESS_VERSION, chapter: 1, completed: [], failed: [], flags: [], choices: {}, relationships: {}, campaignSeconds: 0, deliveries: 0, retryAt: {} });
 
 export function cloneMissionProgress(progress: MissionProgress): MissionProgress {
   return {
@@ -30,6 +33,9 @@ export function cloneMissionProgress(progress: MissionProgress): MissionProgress
     flags: [...progress.flags],
     choices: { ...progress.choices },
     relationships: { ...progress.relationships },
+    campaignSeconds: progress.campaignSeconds,
+    deliveries: progress.deliveries,
+    retryAt: { ...progress.retryAt },
   };
 }
 
@@ -37,6 +43,9 @@ export function cloneMissionProgress(progress: MissionProgress): MissionProgress
 export function clearMissionProgress(progress: MissionProgress): MissionProgress {
   progress.version = MISSION_PROGRESS_VERSION;
   progress.chapter = 1;
+  progress.campaignSeconds = 0;
+  progress.deliveries = 0;
+  progress.retryAt = {};
   progress.completed.length = 0;
   progress.failed.length = 0;
   progress.flags.length = 0;
@@ -70,6 +79,17 @@ const relationshipMap = (value: unknown): Record<string, number> => {
   return result;
 };
 
+const nonnegative = (value: unknown): number => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, value)) : 0;
+
+const deadlines = (value: unknown): Record<string, number> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const result: Record<string, number> = {};
+  for (const [key, time] of Object.entries(value).slice(0, MAX_ENTRIES)) {
+    if (ID.test(key) && typeof time === 'number' && Number.isFinite(time) && time >= 0) result[key] = nonnegative(time);
+  }
+  return result;
+};
+
 /**
  * Loads a saved story progress object, defaulting missing or unknown fields.
  * Legacy saves (no story) and future versions fall back to a fresh chapter 1 so
@@ -89,5 +109,8 @@ export function migrateMissionProgress(raw: unknown): MissionProgress {
     flags: stringIds(source.flags),
     choices: choiceMap(source.choices),
     relationships: relationshipMap(source.relationships),
+    campaignSeconds: nonnegative(source.campaignSeconds),
+    deliveries: Math.floor(nonnegative(source.deliveries)),
+    retryAt: deadlines(source.retryAt),
   };
 }

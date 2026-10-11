@@ -39,6 +39,7 @@ export type CompiledMissions = Readonly<{
   dialogue: Readonly<Record<BeatId, StoryMessage>>;
   missions: Readonly<Record<MissionId, CompiledMission>>;
   order: readonly MissionId[];
+  warnings: readonly Readonly<{ missionId: MissionId; message: string }>[];
 }>;
 
 const deepFreeze = <T>(value: T): Readonly<T> => {
@@ -96,8 +97,12 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
 
   const order = Object.keys(catalogue.missions);
   const missions: Record<MissionId, CompiledMission> = {};
+  const warnings: { missionId: MissionId; message: string }[] = [];
   for (const [missionId, mission] of Object.entries(catalogue.missions)) {
     const where = `mission ${missionId}`;
+    if (mission.chapter > 1 && 'all' in mission.requires && mission.requires.all.length === 0) {
+      warnings.push({ missionId, message: `Chapter ${mission.chapter} only ranks offers; empty prerequisites make this mission eligible in chapter 1. Add an explicit chapter prerequisite if intended.` });
+    }
     const rawPassenger = mission.passenger;
     if (rawPassenger && !isCharacterId(rawPassenger)) throw new Error(`${where}: unknown passenger ${rawPassenger}`);
     const passenger: CharacterId | undefined = rawPassenger && isCharacterId(rawPassenger) ? rawPassenger : undefined;
@@ -197,6 +202,7 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
     dialogue: Object.freeze(dialogue),
     missions: Object.freeze(missions),
     order: Object.freeze(order),
+    warnings: Object.freeze(warnings),
   });
 }
 
@@ -228,6 +234,7 @@ export function neutralMissions(map: CompiledMap): CompiledMissions {
     dialogue: Object.freeze({}) as Readonly<Record<BeatId, StoryMessage>>,
     missions: Object.freeze({}) as Readonly<Record<MissionId, CompiledMission>>,
     order: Object.freeze([]) as readonly MissionId[],
+    warnings: Object.freeze([]),
   });
   neutralCache.set(map, compiled);
   return compiled;
