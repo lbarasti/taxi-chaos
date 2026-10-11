@@ -69,11 +69,31 @@ describe('authored content transactions and compatibility', () => {
 });
 
 describe('content runtime integration and geometric findings', () => {
+  it('instantiates the Eagle Ridge activity pack with stable sources and clear rural vehicles', () => {
+    const d = copyDefaultMap(), game = new Game(compileMap(d), false);
+    const props = d.countryProps.filter(p => p.owner === 'highlands' && !p.id.startsWith('bridge-lamp-'));
+    const parking = d.parking.filter(p => p.owner === 'highlands');
+    const traffic = d.trafficSpawns.filter(p => p.owner === 'highlands');
+    expect(props).toHaveLength(47); expect(parking).toHaveLength(8);
+    expect(traffic.map(p => p.id)).toEqual(['traffic-eagle-tour', 'traffic-pine-service', 'traffic-lodge-pickup', 'traffic-ridge-motorcycle']);
+    for (const prop of props) expect(game.world.props.find(p => p.sourceId === prop.id)).toMatchObject({ kind: prop.kind, label: prop.label });
+    expect(game.world.parking.filter(p => p.owner === 'highlands').map(p => p.sourceId)).toEqual(parking.map(p => p.id));
+    for (const spawn of traffic) {
+      const vehicle = game.vehicles.find(v => v.sourceId === spawn.id)!;
+      expect(vehicle).toMatchObject({ model: spawn.model, body: { position: spawn.position, angle: spawn.angle }, path: spawn.path });
+      expect([...game.world.hash.query(vehicle.body)].some(p => contact(vehicle.body, p.body))).toBe(false);
+    }
+    for (let i = 0; i < traffic.length; i++) for (let j = i + 1; j < traffic.length; j++) {
+      const a = game.vehicles.find(v => v.sourceId === traffic[i].id)!;
+      const b = game.vehicles.find(v => v.sourceId === traffic[j].id)!;
+      expect(contact(a.body, b.body)).toBeNull();
+    }
+  });
   it('retrofits every bay and initial road vehicle, with stable source links and independent worlds', () => {
     const d = copyDefaultMap(), game = new Game(compileMap(d), false);
-    expect(game.world.parking).toHaveLength(74);
+    expect(game.world.parking).toHaveLength(d.parking.length);
     expect(game.vehicles.filter(v => v.parked)).toHaveLength(d.parking.filter(p => p.occupied).length);
-    expect(game.vehicles.filter(v => v.sourceId?.startsWith('traffic-'))).toHaveLength(23);
+    expect(game.vehicles.filter(v => v.sourceId?.startsWith('traffic-'))).toHaveLength(d.trafficSpawns.length);
     for (const spawn of d.trafficSpawns) expect(game.vehicles.find(v => v.sourceId === spawn.id)).toMatchObject({ model: spawn.model, color: spawn.color, body: { position: spawn.position, angle: spawn.angle }, path: spawn.path });
     const h = new MapHistory(d); apply(h, [{ type: 'move', targetId: 'parking-73', position: vec(28, 250) }, { type: 'delete', targetId: 'parking-00' }, { type: 'add', collection: 'countryProps', descriptor: prop() }]);
     const other = new Game(compileMap(h.snapshot().document), false), shed = other.world.props.find(p => p.sourceId === 'test-shed')!;

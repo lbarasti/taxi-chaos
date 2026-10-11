@@ -18,7 +18,7 @@ describe('nitro, parking and roadside recovery', () => {
   it('parks cars in clear, marked curb bays and both lots without starting AI', () => {
     const g = new Game(); g.setTrafficCount(0); g.settings.noPolice = true; g.setMode('playing');
     const parked = g.vehicles.filter(v => v.parked), positions = parked.map(v => ({ ...v.body.position }));
-    expect(parked).toHaveLength(40); expect(g.world.blocks.filter(b => b.special === 'parking')).toHaveLength(2);
+    expect(parked).toHaveLength(g.world.parking.filter(s => s.occupied).length); expect(g.world.blocks.filter(b => b.special === 'parking')).toHaveLength(2);
     for (const v of parked) { expect(g.world.parking.some(s => s.occupied && dist(s.position, v.body.position) < 0.01)).toBe(true); expect([...g.world.hash.query(v.body)].some(p => contact(v.body, p.body))).toBe(false); }
     run(g, 3);
     parked.forEach((v, i) => { expect(dist(v.body.position, positions[i])).toBeLessThan(0.01); expect(v.ai.attempts).toBe(0); });

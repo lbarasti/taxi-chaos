@@ -64,7 +64,7 @@ describe('single-track handling and top-down roll', () => {
 
 describe('courier motorcycle integration', () => {
   it('spawns accessible parked bikes in the city, including beside Pit Stop', () => {
-    const g = new Game(), bikes = g.vehicles.filter(v => v.model === 'motorcycle');
+    const g = new Game(), bikes = g.vehicles.filter(v => v.model === 'motorcycle' && v.parked);
     expect(bikes.length).toBeGreaterThan(3); expect(bikes.some(v => dist(v.body.position, vec(6.5, 34.6)) < 0.1)).toBe(true);
     for (const bike of bikes) { expect(bike.parked).toBe(true); expect(bike.body.h).toBeLessThan(1); expect([...g.world.hash.query(bike.body)].some(p => contact(bike.body, p.body))).toBe(false); }
   });

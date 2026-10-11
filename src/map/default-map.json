@@ -1,297 +1,4190 @@
 {
-  "schemaVersion": 2,
-  "countryProps": [
-    {"id":"bridge-lamp-north-west","owner":"highlands","position":{"x":307,"y":71},"kind":"lamp","width":0.6,"height":0.6,"angle":0,"color":"#a7bfbb","label":""},
-    {"id":"bridge-lamp-north-east","owner":"highlands","position":{"x":307,"y":89},"kind":"lamp","width":0.6,"height":0.6,"angle":0,"color":"#a7bfbb","label":""},
-    {"id":"bridge-lamp-south-west","owner":"highlands","position":{"x":307,"y":191},"kind":"lamp","width":0.6,"height":0.6,"angle":0,"color":"#a7bfbb","label":""},
-    {"id":"bridge-lamp-south-east","owner":"highlands","position":{"x":307,"y":209},"kind":"lamp","width":0.6,"height":0.6,"angle":0,"color":"#a7bfbb","label":""}
-  ],
-  "parking": [
-    {"id":"parking-00","owner":"city","position":{"x":14,"y":34.6},"angle":0,"occupied":true,"lot":false,"model":"motorcycle","color":"#d77f72"},
-    {"id":"parking-01","owner":"city","position":{"x":26,"y":34.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-02","owner":"city","position":{"x":14,"y":74.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-03","owner":"city","position":{"x":26,"y":74.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#dfd5bb"},
-    {"id":"parking-04","owner":"city","position":{"x":14,"y":114.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-05","owner":"city","position":{"x":26,"y":114.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-06","owner":"city","position":{"x":14,"y":194.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-07","owner":"city","position":{"x":26,"y":194.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-08","owner":"city","position":{"x":14,"y":234.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-09","owner":"city","position":{"x":26,"y":234.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-10","owner":"city","position":{"x":54,"y":34.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-11","owner":"city","position":{"x":66,"y":34.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-12","owner":"city","position":{"x":54,"y":74.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-13","owner":"city","position":{"x":66,"y":74.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-14","owner":"city","position":{"x":54,"y":114.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-15","owner":"city","position":{"x":66,"y":114.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#d77f72"},
-    {"id":"parking-16","owner":"city","position":{"x":53,"y":132},"angle":1.5707963267948966,"occupied":false,"lot":true,"model":"car","color":"#91b5b0"},
-    {"id":"parking-17","owner":"city","position":{"x":60,"y":132},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-18","owner":"city","position":{"x":67,"y":132},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"car","color":"#dfd5bb"},
-    {"id":"parking-19","owner":"city","position":{"x":53,"y":148},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"car","color":"#7695ac"},
-    {"id":"parking-20","owner":"city","position":{"x":60,"y":148},"angle":1.5707963267948966,"occupied":false,"lot":true,"model":"car","color":"#91b5b0"},
-    {"id":"parking-21","owner":"city","position":{"x":67,"y":148},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"motorcycle","color":"#91b5b0"},
-    {"id":"parking-22","owner":"city","position":{"x":54,"y":194.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-23","owner":"city","position":{"x":66,"y":194.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#dfd5bb"},
-    {"id":"parking-24","owner":"city","position":{"x":54,"y":234.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-25","owner":"city","position":{"x":66,"y":234.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-26","owner":"city","position":{"x":94,"y":34.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-27","owner":"city","position":{"x":106,"y":34.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-28","owner":"city","position":{"x":94,"y":74.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-29","owner":"city","position":{"x":106,"y":74.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-30","owner":"city","position":{"x":94,"y":154.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-31","owner":"city","position":{"x":106,"y":154.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-32","owner":"city","position":{"x":94,"y":194.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-33","owner":"city","position":{"x":106,"y":194.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-34","owner":"city","position":{"x":94,"y":234.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-35","owner":"city","position":{"x":106,"y":234.6},"angle":0,"occupied":true,"lot":false,"model":"motorcycle","color":"#d77f72"},
-    {"id":"parking-36","owner":"city","position":{"x":134,"y":34.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-37","owner":"city","position":{"x":146,"y":34.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-38","owner":"city","position":{"x":134,"y":74.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#dfd5bb"},
-    {"id":"parking-39","owner":"city","position":{"x":146,"y":74.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-40","owner":"city","position":{"x":133,"y":92},"angle":1.5707963267948966,"occupied":false,"lot":true,"model":"car","color":"#91b5b0"},
-    {"id":"parking-41","owner":"city","position":{"x":140,"y":92},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"car","color":"#91b5b0"},
-    {"id":"parking-42","owner":"city","position":{"x":147,"y":92},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"motorcycle","color":"#ad9dc6"},
-    {"id":"parking-43","owner":"city","position":{"x":133,"y":108},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"car","color":"#dfd5bb"},
-    {"id":"parking-44","owner":"city","position":{"x":140,"y":108},"angle":1.5707963267948966,"occupied":false,"lot":true,"model":"car","color":"#91b5b0"},
-    {"id":"parking-45","owner":"city","position":{"x":147,"y":108},"angle":1.5707963267948966,"occupied":true,"lot":true,"model":"car","color":"#d77f72"},
-    {"id":"parking-46","owner":"city","position":{"x":134,"y":154.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-47","owner":"city","position":{"x":146,"y":154.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-48","owner":"city","position":{"x":134,"y":194.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-49","owner":"city","position":{"x":146,"y":194.6},"angle":0,"occupied":true,"lot":false,"model":"motorcycle","color":"#7695ac"},
-    {"id":"parking-50","owner":"city","position":{"x":134,"y":234.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#d77f72"},
-    {"id":"parking-51","owner":"city","position":{"x":146,"y":234.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-52","owner":"city","position":{"x":174,"y":34.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-53","owner":"city","position":{"x":186,"y":34.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-54","owner":"city","position":{"x":174,"y":114.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-55","owner":"city","position":{"x":186,"y":114.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-56","owner":"city","position":{"x":174,"y":154.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-57","owner":"city","position":{"x":186,"y":154.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-58","owner":"city","position":{"x":174,"y":234.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-59","owner":"city","position":{"x":186,"y":234.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-60","owner":"city","position":{"x":214,"y":34.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-61","owner":"city","position":{"x":226,"y":34.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-62","owner":"city","position":{"x":214,"y":74.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#ad9dc6"},
-    {"id":"parking-63","owner":"city","position":{"x":226,"y":74.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-64","owner":"city","position":{"x":214,"y":114.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-65","owner":"city","position":{"x":226,"y":114.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#d77f72"},
-    {"id":"parking-66","owner":"city","position":{"x":214,"y":154.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-67","owner":"city","position":{"x":226,"y":154.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-68","owner":"city","position":{"x":214,"y":194.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-69","owner":"city","position":{"x":226,"y":194.6},"angle":0,"occupied":true,"lot":false,"model":"car","color":"#7695ac"},
-    {"id":"parking-70","owner":"city","position":{"x":214,"y":234.6},"angle":0,"occupied":true,"lot":false,"model":"motorcycle","color":"#d77f72"},
-    {"id":"parking-71","owner":"city","position":{"x":226,"y":234.6},"angle":0,"occupied":false,"lot":false,"model":"car","color":"#91b5b0"},
-    {"id":"parking-72","owner":"city","position":{"x":6.5,"y":34.6},"angle":-1.5707963267948966,"occupied":true,"lot":false,"model":"motorcycle","color":"#ed9b63"},
-    {"id":"parking-73","owner":"beach","position":{"x":28,"y":249.5},"angle":0,"occupied":true,"lot":false,"model":"pickup","color":"#dbb762"}
-  ],
-  "trafficSpawns": [
-    {"id":"traffic-00","owner":"city","position":{"x":198.91913816332817,"y":3},"angle":0,"model":"car","color":"#d77f72","path":[{"x":240,"y":3}]},
-    {"id":"traffic-01","owner":"city","position":{"x":43,"y":189.1415772214532},"angle":-1.5707963267948966,"model":"van","color":"#c9d8ce","path":[{"x":43,"y":160}]},
-    {"id":"traffic-02","owner":"city","position":{"x":160.23656327277422,"y":83},"angle":0,"model":"car","color":"#ad9dc6","path":[{"x":200,"y":83}]},
-    {"id":"traffic-03","owner":"city","position":{"x":123,"y":70.17063118517399},"angle":-1.5707963267948966,"model":"truck-empty","color":"#cd9b66","path":[{"x":123,"y":40}]},
-    {"id":"traffic-04","owner":"city","position":{"x":146.3639174774289,"y":163},"angle":0,"model":"car","color":"#7695ac","path":[{"x":200,"y":163}]},
-    {"id":"traffic-05","owner":"city","position":{"x":203,"y":200.53282249718904},"angle":-1.5707963267948966,"model":"truck-loaded","color":"#85a3b1","path":[{"x":203,"y":160}]},
-    {"id":"traffic-06","owner":"city","position":{"x":92.41466406732798,"y":243},"angle":0,"model":"car","color":"#91b5b0","path":[{"x":120,"y":243}]},
-    {"id":"traffic-07","owner":"city","position":{"x":3,"y":98.27530775219202},"angle":-1.5707963267948966,"model":"truck-flammable","color":"#d58062","path":[{"x":3,"y":40}]},
-    {"id":"traffic-08","owner":"city","position":{"x":78.4021333232522,"y":43},"angle":0,"model":"car","color":"#dfd5bb","path":[{"x":120,"y":43}]},
-    {"id":"traffic-09","owner":"city","position":{"x":83,"y":175.02425961196423},"angle":-1.5707963267948966,"model":"car","color":"#7695ac","path":[{"x":83,"y":120}]},
-    {"id":"traffic-10","owner":"city","position":{"x":75.93513779342175,"y":123},"angle":0,"model":"car","color":"#d77f72","path":[{"x":120,"y":123}]},
-    {"id":"traffic-11","owner":"city","position":{"x":163,"y":122.4473374336958},"angle":-1.5707963267948966,"model":"van","color":"#c9d8ce","path":[{"x":163,"y":80}]},
-    {"id":"traffic-12","owner":"city","position":{"x":127.62315135449171,"y":203},"angle":0,"model":"car","color":"#ad9dc6","path":[{"x":160,"y":203}]},
-    {"id":"traffic-13","owner":"city","position":{"x":243,"y":58.93284145742655},"angle":-1.5707963267948966,"model":"truck-empty","color":"#cd9b66","path":[{"x":243,"y":0}]},
-    {"id":"traffic-14","owner":"city","position":{"x":80.84309671074152,"y":3},"angle":0,"model":"car","color":"#7695ac","path":[{"x":120,"y":3}]},
-    {"id":"traffic-15","owner":"city","position":{"x":43,"y":207.15117029845715},"angle":-1.5707963267948966,"model":"truck-loaded","color":"#85a3b1","path":[{"x":43,"y":160}]},
-    {"id":"traffic-16","owner":"city","position":{"x":66.8320183083415,"y":83},"angle":0,"model":"car","color":"#91b5b0","path":[{"x":120,"y":83}]},
-    {"id":"traffic-17","owner":"city","position":{"x":123,"y":48.512950874865055},"angle":-1.5707963267948966,"model":"truck-flammable","color":"#d58062","path":[{"x":123,"y":0}]},
-    {"id":"traffic-18","owner":"city","position":{"x":50.74361573904753,"y":163},"angle":0,"model":"car","color":"#dfd5bb","path":[{"x":80,"y":163}]},
-    {"id":"traffic-19","owner":"city","position":{"x":203,"y":212.26759944856167},"angle":-1.5707963267948966,"model":"car","color":"#7695ac","path":[{"x":203,"y":160}]},
-    {"id":"traffic-20","owner":"city","position":{"x":130.1850027218461,"y":243},"angle":0,"model":"car","color":"#d77f72","path":[{"x":160,"y":243}]},
-    {"id":"traffic-21","owner":"city","position":{"x":3,"y":46.71853311359882},"angle":-1.5707963267948966,"model":"van","color":"#c9d8ce","path":[{"x":3,"y":0}]},
-    {"id":"traffic-22","owner":"city","position":{"x":161.16363245993853,"y":43},"angle":0,"model":"car","color":"#ad9dc6","path":[{"x":200,"y":43}]}
+  "beach": {
+    "castles": [
+      {
+        "id": "sandcastle-1",
+        "owner": "beach",
+        "position": {
+          "x": -2,
+          "y": 267
+        }
+      },
+      {
+        "id": "sandcastle-2",
+        "owner": "beach",
+        "position": {
+          "x": 40,
+          "y": 268
+        }
+      },
+      {
+        "id": "sandcastle-3",
+        "owner": "beach",
+        "position": {
+          "x": 86,
+          "y": 267
+        }
+      },
+      {
+        "id": "sandcastle-4",
+        "owner": "beach",
+        "position": {
+          "x": 130,
+          "y": 266
+        }
+      }
+    ],
+    "hotels": [
+      {
+        "color": "#e4c391",
+        "floors": 9,
+        "height": 10,
+        "id": "hotel-sandpiper",
+        "name": "THE SANDPIPER",
+        "owner": "beach",
+        "position": {
+          "x": 162,
+          "y": 263
+        },
+        "width": 33
+      },
+      {
+        "color": "#b2d4cb",
+        "floors": 14,
+        "height": 11,
+        "id": "hotel-pacific-palm",
+        "name": "PACIFIC PALM HOTEL",
+        "owner": "beach",
+        "position": {
+          "x": 200,
+          "y": 263.5
+        },
+        "width": 33
+      },
+      {
+        "color": "#dfa7a0",
+        "floors": 18,
+        "height": 12,
+        "id": "hotel-ocean-sunset",
+        "name": "OCEAN SUNSET SUITES",
+        "owner": "beach",
+        "position": {
+          "x": 237,
+          "y": 264
+        },
+        "width": 31
+      }
+    ],
+    "left": -42,
+    "promenade": {
+      "bottom": 256,
+      "entries": [
+        160,
+        180,
+        200,
+        220,
+        240
+      ],
+      "id": "ocean-walk",
+      "left": 146,
+      "owner": "beach",
+      "right": 252,
+      "southEntries": [
+        180,
+        220
+      ],
+      "top": 247
+    },
+    "right": 254,
+    "sets": [
+      {
+        "id": "beach-set-1",
+        "owner": "beach",
+        "position": {
+          "x": 8,
+          "y": 257
+        }
+      },
+      {
+        "id": "beach-set-2",
+        "owner": "beach",
+        "position": {
+          "x": 32,
+          "y": 258
+        }
+      },
+      {
+        "id": "beach-set-3",
+        "owner": "beach",
+        "position": {
+          "x": 76,
+          "y": 256
+        }
+      },
+      {
+        "id": "beach-set-4",
+        "owner": "beach",
+        "position": {
+          "x": 98,
+          "y": 258
+        }
+      },
+      {
+        "id": "beach-set-5",
+        "owner": "beach",
+        "position": {
+          "x": 136,
+          "y": 258
+        }
+      }
+    ],
+    "shore": [
+      "beach-shore-0",
+      "beach-shore-1",
+      "beach-shore-2",
+      "beach-shore-3",
+      "beach-shore-4",
+      "beach-shore-5",
+      "beach-shore-6"
+    ],
+    "top": 246,
+    "towers": [
+      {
+        "id": "tower-1",
+        "owner": "beach",
+        "position": {
+          "x": -18,
+          "y": 263
+        }
+      },
+      {
+        "id": "tower-2",
+        "owner": "beach",
+        "position": {
+          "x": 52,
+          "y": 263
+        }
+      },
+      {
+        "id": "tower-3",
+        "owner": "beach",
+        "position": {
+          "x": 120,
+          "y": 261
+        }
+      }
+    ]
+  },
+  "constraints": [
+    {
+      "id": "open-beachfront",
+      "minimum": 110,
+      "resolution": 1,
+      "type": "beach-water-gap"
+    }
   ],
   "coordinates": "metres-screen-south-positive-radians",
-  "envelope": { "min": { "x": -50, "y": -180 }, "max": { "x": 540, "y": 560 } },
+  "countryProps": [
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "bridge-lamp-north-west",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 307,
+        "y": 71
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "bridge-lamp-north-east",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 307,
+        "y": 89
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "bridge-lamp-south-west",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 307,
+        "y": 191
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "bridge-lamp-south-east",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 307,
+        "y": 209
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0.35,
+      "color": "#c5794f",
+      "height": 3,
+      "id": "eagle-lookout-kiosk",
+      "kind": "kiosk",
+      "label": "RIDGE COFFEE",
+      "owner": "highlands",
+      "position": {
+        "x": 462,
+        "y": 88
+      },
+      "width": 3.8
+    },
+    {
+      "angle": 0.35,
+      "color": "#bf9870",
+      "height": 0.75,
+      "id": "eagle-lookout-bench-1",
+      "kind": "bench",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 452,
+        "y": 100
+      },
+      "width": 2.4
+    },
+    {
+      "angle": 0.35,
+      "color": "#bf9870",
+      "height": 0.75,
+      "id": "eagle-lookout-bench-2",
+      "kind": "bench",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 465,
+        "y": 103
+      },
+      "width": 2.4
+    },
+    {
+      "angle": 0,
+      "color": "#76a79b",
+      "height": 0.85,
+      "id": "eagle-lookout-bin-1",
+      "kind": "bin",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 458,
+        "y": 86
+      },
+      "width": 0.85
+    },
+    {
+      "angle": 0,
+      "color": "#76a79b",
+      "height": 0.85,
+      "id": "eagle-lookout-bin-2",
+      "kind": "bin",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 443,
+        "y": 97
+      },
+      "width": 0.85
+    },
+    {
+      "angle": 0.2,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "eagle-lookout-crate-1",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 468,
+        "y": 94
+      },
+      "width": 1.4
+    },
+    {
+      "angle": -0.15,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "eagle-lookout-crate-2",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 471,
+        "y": 97
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0.1,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "eagle-lookout-crate-3",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 466,
+        "y": 99
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "eagle-lookout-lamp-1",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 451,
+        "y": 83
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "eagle-lookout-lamp-2",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 456,
+        "y": 106
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "eagle-lookout-lamp-3",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 473,
+        "y": 106
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0.35,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "eagle-lookout-barrier",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 466,
+        "y": 82
+      },
+      "width": 3.1
+    },
+    {
+      "angle": 0.35,
+      "color": "#a7b9b1",
+      "height": 0.8,
+      "id": "eagle-lookout-rail",
+      "kind": "guardrail",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 449,
+        "y": 105
+      },
+      "width": 4.2
+    },
+    {
+      "angle": 0.15,
+      "color": "#776255",
+      "height": 5,
+      "id": "pine-yard-shed",
+      "kind": "shed",
+      "label": "PINE WORKS",
+      "owner": "highlands",
+      "position": {
+        "x": 326,
+        "y": 101
+      },
+      "width": 8
+    },
+    {
+      "angle": 0.2,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "pine-yard-crate-1",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 328,
+        "y": 114
+      },
+      "width": 1.4
+    },
+    {
+      "angle": -0.1,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "pine-yard-crate-2",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 330,
+        "y": 118
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0.15,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "pine-yard-crate-3",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 316,
+        "y": 119
+      },
+      "width": 1.4
+    },
+    {
+      "angle": -0.2,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "pine-yard-crate-4",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 342,
+        "y": 118
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0.15,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "pine-yard-barrier-1",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 331,
+        "y": 107
+      },
+      "width": 3.1
+    },
+    {
+      "angle": 1.3,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "pine-yard-barrier-2",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 344,
+        "y": 119
+      },
+      "width": 3.1
+    },
+    {
+      "angle": 0,
+      "color": "#76a79b",
+      "height": 0.85,
+      "id": "pine-yard-bin",
+      "kind": "bin",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 331,
+        "y": 110
+      },
+      "width": 0.85
+    },
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "pine-yard-lamp-1",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 328,
+        "y": 108
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "pine-yard-lamp-2",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 344,
+        "y": 115
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#eb735f",
+      "height": 0.65,
+      "id": "pine-yard-hydrant",
+      "kind": "hydrant",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 326,
+        "y": 118
+      },
+      "width": 0.65
+    },
+    {
+      "angle": 0.2,
+      "color": "#776255",
+      "height": 3.5,
+      "id": "pinecrest-shed",
+      "kind": "shed",
+      "label": "GARDEN STORE",
+      "owner": "highlands",
+      "position": {
+        "x": 307,
+        "y": 41
+      },
+      "width": 6
+    },
+    {
+      "angle": 0,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "pinecrest-crate-1",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 309,
+        "y": 47
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0.3,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "pinecrest-crate-2",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 313,
+        "y": 48
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0,
+      "color": "#a7bfbb",
+      "height": 0.6,
+      "id": "pinecrest-lamp",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 305,
+        "y": 52
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "eagle-house-lamp-1",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 377,
+        "y": 50
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "eagle-house-lamp-2",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 403,
+        "y": 43
+      },
+      "width": 0.6
+    },
+    {
+      "angle": -0.3,
+      "color": "#a7b9b1",
+      "height": 0.8,
+      "id": "eagle-house-rail",
+      "kind": "guardrail",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 371,
+        "y": 60
+      },
+      "width": 3.8
+    },
+    {
+      "angle": 0,
+      "color": "#d39060",
+      "height": 2.4,
+      "id": "fern-villa-pump",
+      "kind": "pump",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 303,
+        "y": 157
+      },
+      "width": 1.2
+    },
+    {
+      "angle": 0,
+      "color": "#76a79b",
+      "height": 0.85,
+      "id": "fern-villa-bin",
+      "kind": "bin",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 306,
+        "y": 160
+      },
+      "width": 0.85
+    },
+    {
+      "angle": 0.1,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "fern-villa-barrier-1",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 310,
+        "y": 158
+      },
+      "width": 3.1
+    },
+    {
+      "angle": 0.1,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "fern-villa-barrier-2",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 308,
+        "y": 164
+      },
+      "width": 3.1
+    },
+    {
+      "angle": -0.4,
+      "color": "#776255",
+      "height": 4.5,
+      "id": "ridge-estate-shed",
+      "kind": "shed",
+      "label": "RIDGE WORKS",
+      "owner": "highlands",
+      "position": {
+        "x": 483,
+        "y": 208
+      },
+      "width": 7
+    },
+    {
+      "angle": 0.2,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "ridge-estate-crate-1",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 477,
+        "y": 214
+      },
+      "width": 1.4
+    },
+    {
+      "angle": -0.2,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "ridge-estate-crate-2",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 483,
+        "y": 216
+      },
+      "width": 1.4
+    },
+    {
+      "angle": 0.15,
+      "color": "#a97d4d",
+      "height": 1.4,
+      "id": "ridge-estate-crate-3",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 489,
+        "y": 215
+      },
+      "width": 1.4
+    },
+    {
+      "angle": -0.4,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "ridge-estate-barrier-1",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 455,
+        "y": 198
+      },
+      "width": 3.1
+    },
+    {
+      "angle": -0.4,
+      "color": "#e9aa5c",
+      "height": 0.6,
+      "id": "ridge-estate-barrier-2",
+      "kind": "barrier",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 472,
+        "y": 218
+      },
+      "width": 3.1
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "skyline-lamp-1",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 505,
+        "y": 226
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 0,
+      "color": "#f0ce80",
+      "height": 0.6,
+      "id": "skyline-lamp-2",
+      "kind": "lamp",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 506,
+        "y": 244
+      },
+      "width": 0.6
+    },
+    {
+      "angle": 1.4,
+      "color": "#a7b9b1",
+      "height": 0.8,
+      "id": "skyline-rail",
+      "kind": "guardrail",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 509,
+        "y": 235
+      },
+      "width": 4.2
+    },
+    {
+      "angle": 1.4,
+      "color": "#bf9870",
+      "height": 0.75,
+      "id": "skyline-bench",
+      "kind": "bench",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 513,
+        "y": 260
+      },
+      "width": 2.4
+    },
+    {
+      "angle": 0.2,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "skyline-crate-1",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 509,
+        "y": 252
+      },
+      "width": 1.4
+    },
+    {
+      "angle": -0.2,
+      "color": "#bc9465",
+      "height": 1.4,
+      "id": "skyline-crate-2",
+      "kind": "crate",
+      "label": "",
+      "owner": "highlands",
+      "position": {
+        "x": 516,
+        "y": 253
+      },
+      "width": 1.4
+    }
+  ],
   "districts": [
-    { "id": "city", "name": "City (read-only)", "editable": false },
-    { "id": "harbour", "name": "Northstar Harbour (read-only)", "editable": false },
-    { "id": "highlands", "name": "Eastern Highlands", "editable": true },
-    { "id": "southern-estates", "name": "Southern Estates", "editable": true },
-    { "id": "beach", "name": "Sunset Beach / Ocean Walk", "editable": true }
+    {
+      "editable": false,
+      "id": "city",
+      "name": "City (read-only)"
+    },
+    {
+      "editable": false,
+      "id": "harbour",
+      "name": "Northstar Harbour (read-only)"
+    },
+    {
+      "editable": true,
+      "id": "highlands",
+      "name": "Eastern Highlands"
+    },
+    {
+      "editable": true,
+      "id": "southern-estates",
+      "name": "Southern Estates"
+    },
+    {
+      "editable": true,
+      "id": "beach",
+      "name": "Sunset Beach / Ocean Walk"
+    }
   ],
-  "points": [
-    { "id": "shore-00", "owner": "highlands", "position": { "x": 298, "y": -14 }, "weight": 0, "editable": true },
-    { "id": "shore-01", "owner": "highlands", "position": { "x": 390, "y": -12 }, "weight": 0, "editable": true },
-    { "id": "shore-02", "owner": "highlands", "position": { "x": 472, "y": 2 }, "weight": 0, "editable": true },
-    { "id": "shore-03", "owner": "highlands", "position": { "x": 516, "y": 30 }, "weight": 0, "editable": true },
-    { "id": "shore-04", "owner": "highlands", "position": { "x": 532, "y": 90 }, "weight": 0, "editable": true },
-    { "id": "shore-05", "owner": "highlands", "position": { "x": 520, "y": 150 }, "weight": 0, "editable": true },
-    { "id": "shore-06", "owner": "highlands", "position": { "x": 526, "y": 211 }, "weight": 0, "editable": true },
-    { "id": "shore-07", "owner": "southern-estates", "position": { "x": 528, "y": 435 }, "weight": 1, "editable": true },
-    { "id": "shore-08", "owner": "southern-estates", "position": { "x": 504, "y": 506 }, "weight": 1, "editable": true },
-    { "id": "shore-09", "owner": "southern-estates", "position": { "x": 458, "y": 540 }, "weight": 1, "editable": true },
-    { "id": "shore-10", "owner": "southern-estates", "position": { "x": 336, "y": 550 }, "weight": 1, "editable": true },
-    { "id": "shore-11", "owner": "southern-estates", "position": { "x": 220, "y": 544 }, "weight": 1, "editable": true },
-    { "id": "shore-12", "owner": "southern-estates", "position": { "x": 94, "y": 534 }, "weight": 1, "editable": true },
-    { "id": "shore-13", "owner": "southern-estates", "position": { "x": 18, "y": 514 }, "weight": 1, "editable": true },
-    { "id": "shore-14", "owner": "southern-estates", "position": { "x": -10, "y": 485 }, "weight": 1, "editable": true },
-    { "id": "shore-15", "owner": "southern-estates", "position": { "x": -12, "y": 420 }, "weight": 1, "editable": true },
-    { "id": "shore-16", "owner": "southern-estates", "position": { "x": 24, "y": 400 }, "weight": 1, "editable": true },
-    { "id": "shore-17", "owner": "southern-estates", "position": { "x": 142, "y": 392 }, "weight": 1, "editable": true },
-    { "id": "shore-18", "owner": "southern-estates", "position": { "x": 232, "y": 397 }, "weight": 1, "editable": true },
-    { "id": "shore-19", "owner": "southern-estates", "position": { "x": 280, "y": 392 }, "weight": 1, "editable": true },
-    { "id": "shore-20", "owner": "highlands", "position": { "x": 296, "y": 220 }, "weight": 0, "editable": true },
-    { "id": "shore-21", "owner": "highlands", "position": { "x": 292, "y": 158 }, "weight": 0, "editable": true },
-    { "id": "shore-22", "owner": "highlands", "position": { "x": 300, "y": 118 }, "weight": 0, "editable": true },
-    { "id": "shore-23", "owner": "highlands", "position": { "x": 298, "y": 48 }, "weight": 0, "editable": true },
-    { "id": "node-00", "owner": "city", "position": { "x": 240, "y": 80 }, "weight": 0, "editable": false },
-    { "id": "node-01", "owner": "highlands", "position": { "x": 310, "y": 80 }, "weight": 0, "editable": false },
-    { "id": "node-02", "owner": "highlands", "position": { "x": 358, "y": 114 }, "weight": 0, "editable": true },
-    { "id": "node-03", "owner": "highlands", "position": { "x": 474, "y": 58 }, "weight": 0, "editable": true },
-    { "id": "node-04", "owner": "highlands", "position": { "x": 482, "y": 184 }, "weight": 0, "editable": true },
-    { "id": "node-05", "owner": "highlands", "position": { "x": 378, "y": 170 }, "weight": 0, "editable": true },
-    { "id": "node-06", "owner": "highlands", "position": { "x": 310, "y": 200 }, "weight": 0, "editable": false },
-    { "id": "node-07", "owner": "city", "position": { "x": 240, "y": 200 }, "weight": 0, "editable": false },
-    { "id": "node-08", "owner": "southern-estates", "position": { "x": 360, "y": 424 }, "weight": 1, "editable": true },
-    { "id": "node-09", "owner": "southern-estates", "position": { "x": 242, "y": 450 }, "weight": 1, "editable": true },
-    { "id": "node-10", "owner": "southern-estates", "position": { "x": 132, "y": 458 }, "weight": 1, "editable": true },
-    { "id": "node-11", "owner": "southern-estates", "position": { "x": 60, "y": 436 }, "weight": 1, "editable": true },
-    { "id": "node-12", "owner": "southern-estates", "position": { "x": 164, "y": 510 }, "weight": 1, "editable": true },
-    { "id": "node-13", "owner": "southern-estates", "position": { "x": 306, "y": 510 }, "weight": 1, "editable": true },
-    { "id": "node-14", "owner": "southern-estates", "position": { "x": 410, "y": 486 }, "weight": 1, "editable": true },
-    { "id": "pine-a", "owner": "highlands", "position": { "x": 330, "y": 82 }, "weight": 0, "editable": true },
-    { "id": "pine-b", "owner": "highlands", "position": { "x": 342, "y": 102 }, "weight": 0, "editable": true },
-    { "id": "eagle-a", "owner": "highlands", "position": { "x": 388, "y": 100 }, "weight": 0, "editable": true },
-    { "id": "eagle-b", "owner": "highlands", "position": { "x": 422, "y": 65 }, "weight": 0, "editable": true },
-    { "id": "eagle-c", "owner": "highlands", "position": { "x": 450, "y": 47 }, "weight": 0, "editable": true },
-    { "id": "summit-a", "owner": "highlands", "position": { "x": 499, "y": 84 }, "weight": 0, "editable": true },
-    { "id": "summit-b", "owner": "highlands", "position": { "x": 488, "y": 125 }, "weight": 0, "editable": true },
-    { "id": "summit-c", "owner": "highlands", "position": { "x": 504, "y": 156 }, "weight": 0, "editable": true },
-    { "id": "lodge-a", "owner": "highlands", "position": { "x": 450, "y": 210 }, "weight": 0, "editable": true },
-    { "id": "lodge-b", "owner": "highlands", "position": { "x": 410, "y": 194 }, "weight": 0, "editable": true },
-    { "id": "fern-a", "owner": "highlands", "position": { "x": 350, "y": 178 }, "weight": 0, "editable": true },
-    { "id": "fern-b", "owner": "highlands", "position": { "x": 330, "y": 196 }, "weight": 0, "editable": true },
-    { "id": "pass-a", "owner": "highlands", "position": { "x": 368, "y": 138 }, "weight": 0, "editable": true },
-    { "id": "pass-b", "owner": "highlands", "position": { "x": 362, "y": 153 }, "weight": 0, "editable": true },
-    { "id": "southwoods-fixed", "owner": "highlands", "position": { "x": 368, "y": 219 }, "weight": 0, "editable": true },
-    { "id": "southwoods-seam", "owner": "southern-estates", "position": { "x": 337, "y": 324 }, "weight": 0.5, "editable": true },
-    { "id": "descent-fixed", "owner": "highlands", "position": { "x": 496, "y": 232 }, "weight": 0, "editable": true },
-    { "id": "descent-a", "owner": "southern-estates", "position": { "x": 445, "y": 397 }, "weight": 1, "editable": true },
-    { "id": "descent-b", "owner": "southern-estates", "position": { "x": 393, "y": 399 }, "weight": 1, "editable": true },
-    { "id": "row-a", "owner": "southern-estates", "position": { "x": 324, "y": 434 }, "weight": 1, "editable": true },
-    { "id": "row-b", "owner": "southern-estates", "position": { "x": 286, "y": 426 }, "weight": 1, "editable": true },
-    { "id": "fairway-a", "owner": "southern-estates", "position": { "x": 208, "y": 445 }, "weight": 1, "editable": true },
-    { "id": "fairway-b", "owner": "southern-estates", "position": { "x": 169, "y": 460 }, "weight": 1, "editable": true },
-    { "id": "cedar-a", "owner": "southern-estates", "position": { "x": 96, "y": 453 }, "weight": 1, "editable": true },
-    { "id": "cedar-b", "owner": "southern-estates", "position": { "x": 76, "y": 434 }, "weight": 1, "editable": true },
-    { "id": "loop-a", "owner": "southern-estates", "position": { "x": 36, "y": 462 }, "weight": 1, "editable": true },
-    { "id": "loop-b", "owner": "southern-estates", "position": { "x": 99, "y": 514 }, "weight": 1, "editable": true },
-    { "id": "club-a", "owner": "southern-estates", "position": { "x": 211, "y": 519 }, "weight": 1, "editable": true },
-    { "id": "club-b", "owner": "southern-estates", "position": { "x": 257, "y": 513 }, "weight": 1, "editable": true },
-    { "id": "lake-a", "owner": "southern-estates", "position": { "x": 358, "y": 506 }, "weight": 1, "editable": true },
-    { "id": "lake-b", "owner": "southern-estates", "position": { "x": 386, "y": 485 }, "weight": 1, "editable": true },
-    { "id": "rise-a", "owner": "southern-estates", "position": { "x": 411, "y": 451 }, "weight": 1, "editable": true },
-    { "id": "rise-b", "owner": "southern-estates", "position": { "x": 386, "y": 440 }, "weight": 1, "editable": true },
-    { "id": "beach-shore-0", "owner": "beach", "position": { "x": -42, "y": 264 }, "weight": 0, "editable": true },
-    { "id": "beach-shore-1", "owner": "beach", "position": { "x": -22, "y": 271 }, "weight": 0, "editable": true },
-    { "id": "beach-shore-2", "owner": "beach", "position": { "x": 32, "y": 274 }, "weight": 0, "editable": true },
-    { "id": "beach-shore-3", "owner": "beach", "position": { "x": 108, "y": 270 }, "weight": 0, "editable": true },
-    { "id": "beach-shore-4", "owner": "beach", "position": { "x": 162, "y": 272 }, "weight": 0, "editable": true },
-    { "id": "beach-shore-5", "owner": "beach", "position": { "x": 214, "y": 272 }, "weight": 0, "editable": true },
-    { "id": "beach-shore-6", "owner": "beach", "position": { "x": 254, "y": 270.5 }, "weight": 0, "editable": true }
-  ],
-  "highlandOutline": ["shore-00", "shore-01", "shore-02", "shore-03", "shore-04", "shore-05", "shore-06", "shore-07", "shore-08", "shore-09", "shore-10", "shore-11", "shore-12", "shore-13", "shore-14", "shore-15", "shore-16", "shore-17", "shore-18", "shore-19", "shore-20", "shore-21", "shore-22", "shore-23"],
-  "nodes": ["node-00", "node-01", "node-02", "node-03", "node-04", "node-05", "node-06", "node-07", "node-08", "node-09", "node-10", "node-11", "node-12", "node-13", "node-14"],
-  "roads": [
-    { "id": "pine-bridge", "owner": "highlands", "from": "node-00", "to": "node-01", "via": [], "name": "Pine Bridge", "bridge": true },
-    { "id": "fern-bridge", "owner": "highlands", "from": "node-07", "to": "node-06", "via": [], "name": "Fern Bridge", "bridge": true },
-    { "id": "pine-road", "owner": "highlands", "from": "node-01", "to": "node-02", "via": ["pine-a", "pine-b"], "name": "Pine Road", "bridge": false },
-    { "id": "eagle-ridge", "owner": "highlands", "from": "node-02", "to": "node-03", "via": ["eagle-a", "eagle-b", "eagle-c"], "name": "Eagle Ridge", "bridge": false },
-    { "id": "summit-loop", "owner": "highlands", "from": "node-03", "to": "node-04", "via": ["summit-a", "summit-b", "summit-c"], "name": "Summit Loop", "bridge": false },
-    { "id": "lodge-road", "owner": "highlands", "from": "node-04", "to": "node-05", "via": ["lodge-a", "lodge-b"], "name": "Lodge Road", "bridge": false },
-    { "id": "fern-road", "owner": "highlands", "from": "node-05", "to": "node-06", "via": ["fern-a", "fern-b"], "name": "Fern Road", "bridge": false },
-    { "id": "woodland-pass", "owner": "highlands", "from": "node-02", "to": "node-05", "via": ["pass-a", "pass-b"], "name": "Woodland Pass", "bridge": false },
-    { "id": "southwoods-drive", "owner": "southern-estates", "from": "node-05", "to": "node-08", "via": ["southwoods-fixed", "southwoods-seam"], "name": "Southwoods Drive", "bridge": false },
-    { "id": "highland-descent", "owner": "southern-estates", "from": "node-04", "to": "node-08", "via": ["descent-fixed", "descent-a", "descent-b"], "name": "Highland Descent", "bridge": false },
-    { "id": "millionaires-row", "owner": "southern-estates", "from": "node-08", "to": "node-09", "via": ["row-a", "row-b"], "name": "Millionaires Row", "bridge": false },
-    { "id": "fairway-drive", "owner": "southern-estates", "from": "node-09", "to": "node-10", "via": ["fairway-a", "fairway-b"], "name": "Fairway Drive", "bridge": false },
-    { "id": "cedar-crescent-road", "owner": "southern-estates", "from": "node-10", "to": "node-11", "via": ["cedar-a", "cedar-b"], "name": "Cedar Crescent", "bridge": false },
-    { "id": "cedar-loop", "owner": "southern-estates", "from": "node-11", "to": "node-12", "via": ["loop-a", "loop-b"], "name": "Cedar Loop", "bridge": false },
-    { "id": "country-club-way", "owner": "southern-estates", "from": "node-12", "to": "node-13", "via": ["club-a", "club-b"], "name": "Country Club Way", "bridge": false },
-    { "id": "lake-drive", "owner": "southern-estates", "from": "node-13", "to": "node-14", "via": ["lake-a", "lake-b"], "name": "Lake Drive", "bridge": false },
-    { "id": "woodland-rise", "owner": "southern-estates", "from": "node-14", "to": "node-08", "via": ["rise-a", "rise-b"], "name": "Woodland Rise", "bridge": false }
-  ],
-  "villas": [
-    { "id": "villa-pinecrest", "owner": "highlands", "position": { "x": 334, "y": 35 }, "name": "PINECREST", "color": "#c07858" },
-    { "id": "villa-eagle-house", "owner": "highlands", "position": { "x": 392, "y": 56 }, "name": "EAGLE HOUSE", "color": "#9b7962" },
-    { "id": "villa-fern", "owner": "highlands", "position": { "x": 324, "y": 137 }, "name": "FERN VILLA", "color": "#b88360" },
-    { "id": "villa-ridge", "owner": "highlands", "position": { "x": 429, "y": 181 }, "name": "RIDGE ESTATE", "color": "#ab7159" },
-    { "id": "villa-skyline", "owner": "highlands", "position": { "x": 477, "y": 236 }, "name": "SKYLINE", "color": "#c29b70" },
-    { "id": "villa-cedar-house", "owner": "southern-estates", "position": { "x": 54, "y": 421 }, "name": "CEDAR HOUSE", "color": "#be8661" },
-    { "id": "villa-the-laurels", "owner": "southern-estates", "position": { "x": 105, "y": 414 }, "name": "THE LAURELS", "color": "#957768" },
-    { "id": "villa-oak-manor", "owner": "southern-estates", "position": { "x": 209, "y": 415 }, "name": "OAK MANOR", "color": "#bf916a" },
-    { "id": "villa-belvedere", "owner": "southern-estates", "position": { "x": 267, "y": 485 }, "name": "BELVEDERE", "color": "#a87259" },
-    { "id": "villa-woodland", "owner": "southern-estates", "position": { "x": 349, "y": 471 }, "name": "WOODLAND VILLA", "color": "#c49c74" },
-    { "id": "villa-lake-house", "owner": "southern-estates", "position": { "x": 453, "y": 444 }, "name": "LAKE HOUSE", "color": "#b27b62" },
-    { "id": "villa-cedar-lodge", "owner": "southern-estates", "position": { "x": 97, "y": 487 }, "name": "CEDAR LODGE", "color": "#9d7360" }
-  ],
-  "stops": [
-    { "id": "pine-junction", "owner": "highlands", "point": "node-02", "name": "Pine Junction" },
-    { "id": "eagle-lookout", "owner": "highlands", "point": "node-03", "name": "Eagle Lookout" },
-    { "id": "highland-lodge", "owner": "highlands", "point": "node-04", "name": "Highland Lodge" },
-    { "id": "fern-hollow", "owner": "highlands", "point": "node-05", "name": "Fern Hollow" },
-    { "id": "woodland-estates", "owner": "southern-estates", "point": "node-09", "name": "Woodland Estates" },
-    { "id": "fairway-club", "owner": "southern-estates", "point": "node-10", "name": "Fairway Club" },
-    { "id": "cedar-crescent", "owner": "southern-estates", "point": "node-11", "name": "Cedar Crescent" }
-  ],
-  "golf": {
-    "id": "golf-course", "owner": "southern-estates", "center": { "x": 174, "y": 487 }, "width": 96, "height": 36,
-    "clubhouse": { "x": -47, "y": -6 },
-    "route": [{ "x": -30, "y": -17 }, { "x": 30, "y": -17 }, { "x": 30, "y": 17 }, { "x": -30, "y": 17 }],
-    "path": [{ "x": -42, "y": -29 }, { "x": -55, "y": -22 }, { "x": -58, "y": 0 }, { "x": -34, "y": 18 }, { "x": 44, "y": 19 }],
-    "holes": [
-      { "tee": { "x": -28, "y": -7 }, "green": { "x": 19, "y": -8 }, "bunker": { "x": 21, "y": -13 } },
-      { "tee": { "x": 36, "y": -1 }, "green": { "x": -7, "y": 2 }, "bunker": { "x": -9, "y": -4 } },
-      { "tee": { "x": -26, "y": 11 }, "green": { "x": 28, "y": 11 }, "bunker": { "x": 33, "y": 14 } }
-    ]
+  "envelope": {
+    "max": {
+      "x": 540,
+      "y": 560
+    },
+    "min": {
+      "x": -50,
+      "y": -180
+    }
   },
-  "ridges": [
-    { "id": "ridge-north", "owner": "highlands", "points": [{ "x": 368, "y": 19 }, { "x": 400, "y": -4 }, { "x": 444, "y": 6 }, { "x": 478, "y": 26 }, { "x": 450, "y": 34 }, { "x": 432, "y": 48 }, { "x": 404, "y": 44 }, { "x": 393, "y": 29 }] },
-    { "id": "ridge-east", "owner": "highlands", "points": [{ "x": 410, "y": 126 }, { "x": 432, "y": 91 }, { "x": 454, "y": 97 }, { "x": 469, "y": 124 }, { "x": 454, "y": 155 }, { "x": 427, "y": 166 }, { "x": 405, "y": 149 }] },
-    { "id": "ridge-central", "owner": "highlands", "points": [{ "x": 355, "y": 220 }, { "x": 376, "y": 202 }, { "x": 394, "y": 224 }, { "x": 429, "y": 235 }, { "x": 460, "y": 224 }, { "x": 494, "y": 234 }, { "x": 486, "y": 250 }, { "x": 404, "y": 255 }] },
-    { "id": "ridge-cedar", "owner": "southern-estates", "points": [{ "x": 16, "y": 411 }, { "x": 88, "y": 400 }, { "x": 152, "y": 402 }, { "x": 218, "y": 410 }, { "x": 250, "y": 429 }, { "x": 185, "y": 431 }, { "x": 118, "y": 423 }, { "x": 52, "y": 425 }] },
-    { "id": "ridge-south", "owner": "southern-estates", "points": [{ "x": 281, "y": 526 }, { "x": 314, "y": 534 }, { "x": 383, "y": 537 }, { "x": 451, "y": 520 }, { "x": 481, "y": 500 }, { "x": 456, "y": 513 }, { "x": 380, "y": 525 }] }
+  "generation": {
+    "candidates": 1050,
+    "ruralSeed": 8642
+  },
+  "golf": {
+    "center": {
+      "x": 174,
+      "y": 487
+    },
+    "clubhouse": {
+      "x": -47,
+      "y": -6
+    },
+    "height": 36,
+    "holes": [
+      {
+        "bunker": {
+          "x": 21,
+          "y": -13
+        },
+        "green": {
+          "x": 19,
+          "y": -8
+        },
+        "tee": {
+          "x": -28,
+          "y": -7
+        }
+      },
+      {
+        "bunker": {
+          "x": -9,
+          "y": -4
+        },
+        "green": {
+          "x": -7,
+          "y": 2
+        },
+        "tee": {
+          "x": 36,
+          "y": -1
+        }
+      },
+      {
+        "bunker": {
+          "x": 33,
+          "y": 14
+        },
+        "green": {
+          "x": 28,
+          "y": 11
+        },
+        "tee": {
+          "x": -26,
+          "y": 11
+        }
+      }
+    ],
+    "id": "golf-course",
+    "owner": "southern-estates",
+    "path": [
+      {
+        "x": -42,
+        "y": -29
+      },
+      {
+        "x": -55,
+        "y": -22
+      },
+      {
+        "x": -58,
+        "y": 0
+      },
+      {
+        "x": -34,
+        "y": 18
+      },
+      {
+        "x": 44,
+        "y": 19
+      }
+    ],
+    "route": [
+      {
+        "x": -30,
+        "y": -17
+      },
+      {
+        "x": 30,
+        "y": -17
+      },
+      {
+        "x": 30,
+        "y": 17
+      },
+      {
+        "x": -30,
+        "y": 17
+      }
+    ],
+    "width": 96
+  },
+  "highlandOutline": [
+    "shore-00",
+    "shore-01",
+    "shore-02",
+    "shore-03",
+    "shore-04",
+    "shore-05",
+    "shore-06",
+    "shore-07",
+    "shore-08",
+    "shore-09",
+    "shore-10",
+    "shore-11",
+    "shore-12",
+    "shore-13",
+    "shore-14",
+    "shore-15",
+    "shore-16",
+    "shore-17",
+    "shore-18",
+    "shore-19",
+    "shore-20",
+    "shore-21",
+    "shore-22",
+    "shore-23"
   ],
   "labels": [
-    { "id": "label-pine", "owner": "highlands", "position": { "x": 335, "y": 140 }, "text": "P I N E   W O O D S", "size": 1.5, "color": "#a7bd9180" },
-    { "id": "label-eagle", "owner": "highlands", "position": { "x": 441, "y": 78 }, "text": "E A G L E   R I D G E", "size": 1.5, "color": "#d6d1ad80" },
-    { "id": "label-cedar", "owner": "southern-estates", "position": { "x": 78, "y": 474 }, "text": "C E D A R   W O O D S", "size": 1.3, "color": "#c7d5ad80" },
-    { "id": "label-row", "owner": "southern-estates", "position": { "x": 288, "y": 410 }, "text": "M I L L I O N A I R E S   R O W", "size": 1.1, "color": "#e8d5ac" }
+    {
+      "color": "#a7bd9180",
+      "id": "label-pine",
+      "owner": "highlands",
+      "position": {
+        "x": 335,
+        "y": 140
+      },
+      "size": 1.5,
+      "text": "P I N E   W O O D S"
+    },
+    {
+      "color": "#d6d1ad80",
+      "id": "label-eagle",
+      "owner": "highlands",
+      "position": {
+        "x": 441,
+        "y": 78
+      },
+      "size": 1.5,
+      "text": "E A G L E   R I D G E"
+    },
+    {
+      "color": "#c7d5ad80",
+      "id": "label-cedar",
+      "owner": "southern-estates",
+      "position": {
+        "x": 78,
+        "y": 474
+      },
+      "size": 1.3,
+      "text": "C E D A R   W O O D S"
+    },
+    {
+      "color": "#e8d5ac",
+      "id": "label-row",
+      "owner": "southern-estates",
+      "position": {
+        "x": 288,
+        "y": 410
+      },
+      "size": 1.1,
+      "text": "M I L L I O N A I R E S   R O W"
+    }
   ],
-  "beach": {
-    "shore": ["beach-shore-0", "beach-shore-1", "beach-shore-2", "beach-shore-3", "beach-shore-4", "beach-shore-5", "beach-shore-6"], "left": -42, "right": 254, "top": 246,
-    "promenade": { "id": "ocean-walk", "owner": "beach", "left": 146, "right": 252, "top": 247, "bottom": 256, "entries": [160, 180, 200, 220, 240], "southEntries": [180, 220] },
-    "hotels": [
-      { "id": "hotel-sandpiper", "owner": "beach", "position": { "x": 162, "y": 263 }, "width": 33, "height": 10, "floors": 9, "name": "THE SANDPIPER", "color": "#e4c391" },
-      { "id": "hotel-pacific-palm", "owner": "beach", "position": { "x": 200, "y": 263.5 }, "width": 33, "height": 11, "floors": 14, "name": "PACIFIC PALM HOTEL", "color": "#b2d4cb" },
-      { "id": "hotel-ocean-sunset", "owner": "beach", "position": { "x": 237, "y": 264 }, "width": 31, "height": 12, "floors": 18, "name": "OCEAN SUNSET SUITES", "color": "#dfa7a0" }
-    ],
-    "towers": [
-      { "id": "tower-1", "owner": "beach", "position": { "x": -18, "y": 263 } },
-      { "id": "tower-2", "owner": "beach", "position": { "x": 52, "y": 263 } },
-      { "id": "tower-3", "owner": "beach", "position": { "x": 120, "y": 261 } }
-    ],
-    "sets": [
-      { "id": "beach-set-1", "owner": "beach", "position": { "x": 8, "y": 257 } },
-      { "id": "beach-set-2", "owner": "beach", "position": { "x": 32, "y": 258 } },
-      { "id": "beach-set-3", "owner": "beach", "position": { "x": 76, "y": 256 } },
-      { "id": "beach-set-4", "owner": "beach", "position": { "x": 98, "y": 258 } },
-      { "id": "beach-set-5", "owner": "beach", "position": { "x": 136, "y": 258 } }
-    ],
-    "castles": [
-      { "id": "sandcastle-1", "owner": "beach", "position": { "x": -2, "y": 267 } },
-      { "id": "sandcastle-2", "owner": "beach", "position": { "x": 40, "y": 268 } },
-      { "id": "sandcastle-3", "owner": "beach", "position": { "x": 86, "y": 267 } },
-      { "id": "sandcastle-4", "owner": "beach", "position": { "x": 130, "y": 266 } }
-    ]
-  },
-  "generation": { "ruralSeed": 8642, "candidates": 1050 },
-  "constraints": [{ "id": "open-beachfront", "type": "beach-water-gap", "minimum": 110, "resolution": 1 }]
+  "nodes": [
+    "node-00",
+    "node-01",
+    "node-02",
+    "node-03",
+    "node-04",
+    "node-05",
+    "node-06",
+    "node-07",
+    "node-08",
+    "node-09",
+    "node-10",
+    "node-11",
+    "node-12",
+    "node-13",
+    "node-14"
+  ],
+  "parking": [
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "parking-00",
+      "lot": false,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 14,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-01",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 26,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-02",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 14,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#dfd5bb",
+      "id": "parking-03",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 26,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-04",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 14,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-05",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 26,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-06",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 14,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-07",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 26,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-08",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 14,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-09",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 26,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-10",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 54,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-11",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 66,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "parking-12",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 54,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-13",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 66,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-14",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 54,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "parking-15",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 66,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#91b5b0",
+      "id": "parking-16",
+      "lot": true,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 53,
+        "y": 132
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#ad9dc6",
+      "id": "parking-17",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 60,
+        "y": 132
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#dfd5bb",
+      "id": "parking-18",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 67,
+        "y": 132
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#7695ac",
+      "id": "parking-19",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 53,
+        "y": 148
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#91b5b0",
+      "id": "parking-20",
+      "lot": true,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 60,
+        "y": 148
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#91b5b0",
+      "id": "parking-21",
+      "lot": true,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 67,
+        "y": 148
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-22",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 54,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#dfd5bb",
+      "id": "parking-23",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 66,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-24",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 54,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-25",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 66,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-26",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 94,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-27",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 106,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-28",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 94,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-29",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 106,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-30",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 94,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-31",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 106,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "parking-32",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 94,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-33",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 106,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-34",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 94,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "parking-35",
+      "lot": false,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 106,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-36",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 134,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "parking-37",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 146,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#dfd5bb",
+      "id": "parking-38",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 134,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-39",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 146,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#91b5b0",
+      "id": "parking-40",
+      "lot": true,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 133,
+        "y": 92
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#91b5b0",
+      "id": "parking-41",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 140,
+        "y": 92
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#ad9dc6",
+      "id": "parking-42",
+      "lot": true,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 147,
+        "y": 92
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#dfd5bb",
+      "id": "parking-43",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 133,
+        "y": 108
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#91b5b0",
+      "id": "parking-44",
+      "lot": true,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 140,
+        "y": 108
+      }
+    },
+    {
+      "angle": 1.5707963267948966,
+      "color": "#d77f72",
+      "id": "parking-45",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 147,
+        "y": 108
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-46",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 134,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-47",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 146,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-48",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 134,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-49",
+      "lot": false,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 146,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "parking-50",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 134,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-51",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 146,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "parking-52",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 174,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-53",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 186,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-54",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 174,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-55",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 186,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-56",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 174,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "parking-57",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 186,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-58",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 174,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-59",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 186,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-60",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 214,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-61",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 226,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "parking-62",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 214,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-63",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 226,
+        "y": 74.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-64",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 214,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "parking-65",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 226,
+        "y": 114.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-66",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 214,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-67",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 226,
+        "y": 154.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-68",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 214,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "parking-69",
+      "lot": false,
+      "model": "car",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 226,
+        "y": 194.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "parking-70",
+      "lot": false,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 214,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "parking-71",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "city",
+      "position": {
+        "x": 226,
+        "y": 234.6
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#ed9b63",
+      "id": "parking-72",
+      "lot": false,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "city",
+      "position": {
+        "x": 6.5,
+        "y": 34.6
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#dbb762",
+      "id": "parking-73",
+      "lot": false,
+      "model": "pickup",
+      "occupied": true,
+      "owner": "beach",
+      "position": {
+        "x": 28,
+        "y": 249.5
+      }
+    },
+    {
+      "angle": 0.35,
+      "color": "#dfd5bb",
+      "id": "parking-eagle-lookout-1",
+      "lot": true,
+      "model": "car",
+      "occupied": true,
+      "owner": "highlands",
+      "position": {
+        "x": 445,
+        "y": 84
+      }
+    },
+    {
+      "angle": 0.35,
+      "color": "#d77f72",
+      "id": "parking-eagle-lookout-2",
+      "lot": true,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "highlands",
+      "position": {
+        "x": 440,
+        "y": 92
+      }
+    },
+    {
+      "angle": 0.35,
+      "color": "#91b5b0",
+      "id": "parking-eagle-lookout-3",
+      "lot": true,
+      "model": "car",
+      "occupied": false,
+      "owner": "highlands",
+      "position": {
+        "x": 435,
+        "y": 100
+      }
+    },
+    {
+      "angle": 0.25,
+      "color": "#dbb762",
+      "id": "parking-pine-yard-pickup",
+      "lot": false,
+      "model": "pickup",
+      "occupied": true,
+      "owner": "highlands",
+      "position": {
+        "x": 325,
+        "y": 105
+      }
+    },
+    {
+      "angle": 0.25,
+      "color": "#91b5b0",
+      "id": "parking-pine-yard-visitor",
+      "lot": false,
+      "model": "car",
+      "occupied": false,
+      "owner": "highlands",
+      "position": {
+        "x": 317,
+        "y": 112
+      }
+    },
+    {
+      "angle": -0.3,
+      "color": "#ed9b63",
+      "id": "parking-eagle-house-motorcycle",
+      "lot": false,
+      "model": "motorcycle",
+      "occupied": true,
+      "owner": "highlands",
+      "position": {
+        "x": 369,
+        "y": 51
+      }
+    },
+    {
+      "angle": 2.45,
+      "color": "#c9d8ce",
+      "id": "parking-highland-lodge-1",
+      "lot": true,
+      "model": "van",
+      "occupied": true,
+      "owner": "highlands",
+      "position": {
+        "x": 501,
+        "y": 192
+      }
+    },
+    {
+      "angle": 2.45,
+      "color": "#91b5b0",
+      "id": "parking-highland-lodge-2",
+      "lot": true,
+      "model": "car",
+      "occupied": false,
+      "owner": "highlands",
+      "position": {
+        "x": 506,
+        "y": 199
+      }
+    }
+  ],
+  "points": [
+    {
+      "editable": true,
+      "id": "shore-00",
+      "owner": "highlands",
+      "position": {
+        "x": 298,
+        "y": -14
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-01",
+      "owner": "highlands",
+      "position": {
+        "x": 390,
+        "y": -12
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-02",
+      "owner": "highlands",
+      "position": {
+        "x": 472,
+        "y": 2
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-03",
+      "owner": "highlands",
+      "position": {
+        "x": 516,
+        "y": 30
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-04",
+      "owner": "highlands",
+      "position": {
+        "x": 532,
+        "y": 90
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-05",
+      "owner": "highlands",
+      "position": {
+        "x": 520,
+        "y": 150
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-06",
+      "owner": "highlands",
+      "position": {
+        "x": 526,
+        "y": 211
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-07",
+      "owner": "southern-estates",
+      "position": {
+        "x": 528,
+        "y": 435
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-08",
+      "owner": "southern-estates",
+      "position": {
+        "x": 504,
+        "y": 506
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-09",
+      "owner": "southern-estates",
+      "position": {
+        "x": 458,
+        "y": 540
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-10",
+      "owner": "southern-estates",
+      "position": {
+        "x": 336,
+        "y": 550
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-11",
+      "owner": "southern-estates",
+      "position": {
+        "x": 220,
+        "y": 544
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-12",
+      "owner": "southern-estates",
+      "position": {
+        "x": 94,
+        "y": 534
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-13",
+      "owner": "southern-estates",
+      "position": {
+        "x": 18,
+        "y": 514
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-14",
+      "owner": "southern-estates",
+      "position": {
+        "x": -10,
+        "y": 485
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-15",
+      "owner": "southern-estates",
+      "position": {
+        "x": -12,
+        "y": 420
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-16",
+      "owner": "southern-estates",
+      "position": {
+        "x": 24,
+        "y": 400
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-17",
+      "owner": "southern-estates",
+      "position": {
+        "x": 142,
+        "y": 392
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-18",
+      "owner": "southern-estates",
+      "position": {
+        "x": 232,
+        "y": 397
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-19",
+      "owner": "southern-estates",
+      "position": {
+        "x": 280,
+        "y": 392
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "shore-20",
+      "owner": "highlands",
+      "position": {
+        "x": 296,
+        "y": 220
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-21",
+      "owner": "highlands",
+      "position": {
+        "x": 292,
+        "y": 158
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-22",
+      "owner": "highlands",
+      "position": {
+        "x": 300,
+        "y": 118
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "shore-23",
+      "owner": "highlands",
+      "position": {
+        "x": 298,
+        "y": 48
+      },
+      "weight": 0
+    },
+    {
+      "editable": false,
+      "id": "node-00",
+      "owner": "city",
+      "position": {
+        "x": 240,
+        "y": 80
+      },
+      "weight": 0
+    },
+    {
+      "editable": false,
+      "id": "node-01",
+      "owner": "highlands",
+      "position": {
+        "x": 310,
+        "y": 80
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "node-02",
+      "owner": "highlands",
+      "position": {
+        "x": 358,
+        "y": 114
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "node-03",
+      "owner": "highlands",
+      "position": {
+        "x": 474,
+        "y": 58
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "node-04",
+      "owner": "highlands",
+      "position": {
+        "x": 482,
+        "y": 184
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "node-05",
+      "owner": "highlands",
+      "position": {
+        "x": 378,
+        "y": 170
+      },
+      "weight": 0
+    },
+    {
+      "editable": false,
+      "id": "node-06",
+      "owner": "highlands",
+      "position": {
+        "x": 310,
+        "y": 200
+      },
+      "weight": 0
+    },
+    {
+      "editable": false,
+      "id": "node-07",
+      "owner": "city",
+      "position": {
+        "x": 240,
+        "y": 200
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "node-08",
+      "owner": "southern-estates",
+      "position": {
+        "x": 360,
+        "y": 424
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "node-09",
+      "owner": "southern-estates",
+      "position": {
+        "x": 242,
+        "y": 450
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "node-10",
+      "owner": "southern-estates",
+      "position": {
+        "x": 132,
+        "y": 458
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "node-11",
+      "owner": "southern-estates",
+      "position": {
+        "x": 60,
+        "y": 436
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "node-12",
+      "owner": "southern-estates",
+      "position": {
+        "x": 164,
+        "y": 510
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "node-13",
+      "owner": "southern-estates",
+      "position": {
+        "x": 306,
+        "y": 510
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "node-14",
+      "owner": "southern-estates",
+      "position": {
+        "x": 410,
+        "y": 486
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "pine-a",
+      "owner": "highlands",
+      "position": {
+        "x": 330,
+        "y": 82
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "pine-b",
+      "owner": "highlands",
+      "position": {
+        "x": 342,
+        "y": 102
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "eagle-a",
+      "owner": "highlands",
+      "position": {
+        "x": 388,
+        "y": 100
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "eagle-b",
+      "owner": "highlands",
+      "position": {
+        "x": 422,
+        "y": 65
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "eagle-c",
+      "owner": "highlands",
+      "position": {
+        "x": 450,
+        "y": 47
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "summit-a",
+      "owner": "highlands",
+      "position": {
+        "x": 499,
+        "y": 84
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "summit-b",
+      "owner": "highlands",
+      "position": {
+        "x": 488,
+        "y": 125
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "summit-c",
+      "owner": "highlands",
+      "position": {
+        "x": 504,
+        "y": 156
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "lodge-a",
+      "owner": "highlands",
+      "position": {
+        "x": 450,
+        "y": 210
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "lodge-b",
+      "owner": "highlands",
+      "position": {
+        "x": 410,
+        "y": 194
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "fern-a",
+      "owner": "highlands",
+      "position": {
+        "x": 350,
+        "y": 178
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "fern-b",
+      "owner": "highlands",
+      "position": {
+        "x": 330,
+        "y": 196
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "pass-a",
+      "owner": "highlands",
+      "position": {
+        "x": 368,
+        "y": 138
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "pass-b",
+      "owner": "highlands",
+      "position": {
+        "x": 362,
+        "y": 153
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "southwoods-fixed",
+      "owner": "highlands",
+      "position": {
+        "x": 368,
+        "y": 219
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "southwoods-seam",
+      "owner": "southern-estates",
+      "position": {
+        "x": 337,
+        "y": 324
+      },
+      "weight": 0.5
+    },
+    {
+      "editable": true,
+      "id": "descent-fixed",
+      "owner": "highlands",
+      "position": {
+        "x": 496,
+        "y": 232
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "descent-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 445,
+        "y": 397
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "descent-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 393,
+        "y": 399
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "row-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 324,
+        "y": 434
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "row-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 286,
+        "y": 426
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "fairway-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 208,
+        "y": 445
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "fairway-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 169,
+        "y": 460
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "cedar-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 96,
+        "y": 453
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "cedar-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 76,
+        "y": 434
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "loop-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 36,
+        "y": 462
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "loop-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 99,
+        "y": 514
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "club-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 211,
+        "y": 519
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "club-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 257,
+        "y": 513
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "lake-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 358,
+        "y": 506
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "lake-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 386,
+        "y": 485
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "rise-a",
+      "owner": "southern-estates",
+      "position": {
+        "x": 411,
+        "y": 451
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "rise-b",
+      "owner": "southern-estates",
+      "position": {
+        "x": 386,
+        "y": 440
+      },
+      "weight": 1
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-0",
+      "owner": "beach",
+      "position": {
+        "x": -42,
+        "y": 264
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-1",
+      "owner": "beach",
+      "position": {
+        "x": -22,
+        "y": 271
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-2",
+      "owner": "beach",
+      "position": {
+        "x": 32,
+        "y": 274
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-3",
+      "owner": "beach",
+      "position": {
+        "x": 108,
+        "y": 270
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-4",
+      "owner": "beach",
+      "position": {
+        "x": 162,
+        "y": 272
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-5",
+      "owner": "beach",
+      "position": {
+        "x": 214,
+        "y": 272
+      },
+      "weight": 0
+    },
+    {
+      "editable": true,
+      "id": "beach-shore-6",
+      "owner": "beach",
+      "position": {
+        "x": 254,
+        "y": 270.5
+      },
+      "weight": 0
+    }
+  ],
+  "ridges": [
+    {
+      "id": "ridge-north",
+      "owner": "highlands",
+      "points": [
+        {
+          "x": 368,
+          "y": 19
+        },
+        {
+          "x": 400,
+          "y": -4
+        },
+        {
+          "x": 444,
+          "y": 6
+        },
+        {
+          "x": 478,
+          "y": 26
+        },
+        {
+          "x": 450,
+          "y": 34
+        },
+        {
+          "x": 432,
+          "y": 48
+        },
+        {
+          "x": 404,
+          "y": 44
+        },
+        {
+          "x": 393,
+          "y": 29
+        }
+      ]
+    },
+    {
+      "id": "ridge-east",
+      "owner": "highlands",
+      "points": [
+        {
+          "x": 410,
+          "y": 126
+        },
+        {
+          "x": 432,
+          "y": 91
+        },
+        {
+          "x": 454,
+          "y": 97
+        },
+        {
+          "x": 469,
+          "y": 124
+        },
+        {
+          "x": 454,
+          "y": 155
+        },
+        {
+          "x": 427,
+          "y": 166
+        },
+        {
+          "x": 405,
+          "y": 149
+        }
+      ]
+    },
+    {
+      "id": "ridge-central",
+      "owner": "highlands",
+      "points": [
+        {
+          "x": 355,
+          "y": 220
+        },
+        {
+          "x": 376,
+          "y": 202
+        },
+        {
+          "x": 394,
+          "y": 224
+        },
+        {
+          "x": 429,
+          "y": 235
+        },
+        {
+          "x": 460,
+          "y": 224
+        },
+        {
+          "x": 494,
+          "y": 234
+        },
+        {
+          "x": 486,
+          "y": 250
+        },
+        {
+          "x": 404,
+          "y": 255
+        }
+      ]
+    },
+    {
+      "id": "ridge-cedar",
+      "owner": "southern-estates",
+      "points": [
+        {
+          "x": 16,
+          "y": 411
+        },
+        {
+          "x": 88,
+          "y": 400
+        },
+        {
+          "x": 152,
+          "y": 402
+        },
+        {
+          "x": 218,
+          "y": 410
+        },
+        {
+          "x": 250,
+          "y": 429
+        },
+        {
+          "x": 185,
+          "y": 431
+        },
+        {
+          "x": 118,
+          "y": 423
+        },
+        {
+          "x": 52,
+          "y": 425
+        }
+      ]
+    },
+    {
+      "id": "ridge-south",
+      "owner": "southern-estates",
+      "points": [
+        {
+          "x": 281,
+          "y": 526
+        },
+        {
+          "x": 314,
+          "y": 534
+        },
+        {
+          "x": 383,
+          "y": 537
+        },
+        {
+          "x": 451,
+          "y": 520
+        },
+        {
+          "x": 481,
+          "y": 500
+        },
+        {
+          "x": 456,
+          "y": 513
+        },
+        {
+          "x": 380,
+          "y": 525
+        }
+      ]
+    }
+  ],
+  "roads": [
+    {
+      "bridge": true,
+      "from": "node-00",
+      "id": "pine-bridge",
+      "name": "Pine Bridge",
+      "owner": "highlands",
+      "to": "node-01",
+      "via": []
+    },
+    {
+      "bridge": true,
+      "from": "node-07",
+      "id": "fern-bridge",
+      "name": "Fern Bridge",
+      "owner": "highlands",
+      "to": "node-06",
+      "via": []
+    },
+    {
+      "bridge": false,
+      "from": "node-01",
+      "id": "pine-road",
+      "name": "Pine Road",
+      "owner": "highlands",
+      "to": "node-02",
+      "via": [
+        "pine-a",
+        "pine-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-02",
+      "id": "eagle-ridge",
+      "name": "Eagle Ridge",
+      "owner": "highlands",
+      "to": "node-03",
+      "via": [
+        "eagle-a",
+        "eagle-b",
+        "eagle-c"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-03",
+      "id": "summit-loop",
+      "name": "Summit Loop",
+      "owner": "highlands",
+      "to": "node-04",
+      "via": [
+        "summit-a",
+        "summit-b",
+        "summit-c"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-04",
+      "id": "lodge-road",
+      "name": "Lodge Road",
+      "owner": "highlands",
+      "to": "node-05",
+      "via": [
+        "lodge-a",
+        "lodge-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-05",
+      "id": "fern-road",
+      "name": "Fern Road",
+      "owner": "highlands",
+      "to": "node-06",
+      "via": [
+        "fern-a",
+        "fern-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-02",
+      "id": "woodland-pass",
+      "name": "Woodland Pass",
+      "owner": "highlands",
+      "to": "node-05",
+      "via": [
+        "pass-a",
+        "pass-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-05",
+      "id": "southwoods-drive",
+      "name": "Southwoods Drive",
+      "owner": "southern-estates",
+      "to": "node-08",
+      "via": [
+        "southwoods-fixed",
+        "southwoods-seam"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-04",
+      "id": "highland-descent",
+      "name": "Highland Descent",
+      "owner": "southern-estates",
+      "to": "node-08",
+      "via": [
+        "descent-fixed",
+        "descent-a",
+        "descent-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-08",
+      "id": "millionaires-row",
+      "name": "Millionaires Row",
+      "owner": "southern-estates",
+      "to": "node-09",
+      "via": [
+        "row-a",
+        "row-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-09",
+      "id": "fairway-drive",
+      "name": "Fairway Drive",
+      "owner": "southern-estates",
+      "to": "node-10",
+      "via": [
+        "fairway-a",
+        "fairway-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-10",
+      "id": "cedar-crescent-road",
+      "name": "Cedar Crescent",
+      "owner": "southern-estates",
+      "to": "node-11",
+      "via": [
+        "cedar-a",
+        "cedar-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-11",
+      "id": "cedar-loop",
+      "name": "Cedar Loop",
+      "owner": "southern-estates",
+      "to": "node-12",
+      "via": [
+        "loop-a",
+        "loop-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-12",
+      "id": "country-club-way",
+      "name": "Country Club Way",
+      "owner": "southern-estates",
+      "to": "node-13",
+      "via": [
+        "club-a",
+        "club-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-13",
+      "id": "lake-drive",
+      "name": "Lake Drive",
+      "owner": "southern-estates",
+      "to": "node-14",
+      "via": [
+        "lake-a",
+        "lake-b"
+      ]
+    },
+    {
+      "bridge": false,
+      "from": "node-14",
+      "id": "woodland-rise",
+      "name": "Woodland Rise",
+      "owner": "southern-estates",
+      "to": "node-08",
+      "via": [
+        "rise-a",
+        "rise-b"
+      ]
+    }
+  ],
+  "schemaVersion": 2,
+  "stops": [
+    {
+      "id": "pine-junction",
+      "name": "Pine Junction",
+      "owner": "highlands",
+      "point": "node-02"
+    },
+    {
+      "id": "eagle-lookout",
+      "name": "Eagle Lookout",
+      "owner": "highlands",
+      "point": "node-03"
+    },
+    {
+      "id": "highland-lodge",
+      "name": "Highland Lodge",
+      "owner": "highlands",
+      "point": "node-04"
+    },
+    {
+      "id": "fern-hollow",
+      "name": "Fern Hollow",
+      "owner": "highlands",
+      "point": "node-05"
+    },
+    {
+      "id": "woodland-estates",
+      "name": "Woodland Estates",
+      "owner": "southern-estates",
+      "point": "node-09"
+    },
+    {
+      "id": "fairway-club",
+      "name": "Fairway Club",
+      "owner": "southern-estates",
+      "point": "node-10"
+    },
+    {
+      "id": "cedar-crescent",
+      "name": "Cedar Crescent",
+      "owner": "southern-estates",
+      "point": "node-11"
+    }
+  ],
+  "trafficSpawns": [
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "traffic-00",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 240,
+          "y": 3
+        }
+      ],
+      "position": {
+        "x": 198.91913816332817,
+        "y": 3
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#c9d8ce",
+      "id": "traffic-01",
+      "model": "van",
+      "owner": "city",
+      "path": [
+        {
+          "x": 43,
+          "y": 160
+        }
+      ],
+      "position": {
+        "x": 43,
+        "y": 189.1415772214532
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "traffic-02",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 200,
+          "y": 83
+        }
+      ],
+      "position": {
+        "x": 160.23656327277422,
+        "y": 83
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#cd9b66",
+      "id": "traffic-03",
+      "model": "truck-empty",
+      "owner": "city",
+      "path": [
+        {
+          "x": 123,
+          "y": 40
+        }
+      ],
+      "position": {
+        "x": 123,
+        "y": 70.17063118517399
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "traffic-04",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 200,
+          "y": 163
+        }
+      ],
+      "position": {
+        "x": 146.3639174774289,
+        "y": 163
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#85a3b1",
+      "id": "traffic-05",
+      "model": "truck-loaded",
+      "owner": "city",
+      "path": [
+        {
+          "x": 203,
+          "y": 160
+        }
+      ],
+      "position": {
+        "x": 203,
+        "y": 200.53282249718904
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "traffic-06",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 120,
+          "y": 243
+        }
+      ],
+      "position": {
+        "x": 92.41466406732798,
+        "y": 243
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#d58062",
+      "id": "traffic-07",
+      "model": "truck-flammable",
+      "owner": "city",
+      "path": [
+        {
+          "x": 3,
+          "y": 40
+        }
+      ],
+      "position": {
+        "x": 3,
+        "y": 98.27530775219202
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#dfd5bb",
+      "id": "traffic-08",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 120,
+          "y": 43
+        }
+      ],
+      "position": {
+        "x": 78.4021333232522,
+        "y": 43
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#7695ac",
+      "id": "traffic-09",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 83,
+          "y": 120
+        }
+      ],
+      "position": {
+        "x": 83,
+        "y": 175.02425961196423
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "traffic-10",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 120,
+          "y": 123
+        }
+      ],
+      "position": {
+        "x": 75.93513779342175,
+        "y": 123
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#c9d8ce",
+      "id": "traffic-11",
+      "model": "van",
+      "owner": "city",
+      "path": [
+        {
+          "x": 163,
+          "y": 80
+        }
+      ],
+      "position": {
+        "x": 163,
+        "y": 122.4473374336958
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "traffic-12",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 160,
+          "y": 203
+        }
+      ],
+      "position": {
+        "x": 127.62315135449171,
+        "y": 203
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#cd9b66",
+      "id": "traffic-13",
+      "model": "truck-empty",
+      "owner": "city",
+      "path": [
+        {
+          "x": 243,
+          "y": 0
+        }
+      ],
+      "position": {
+        "x": 243,
+        "y": 58.93284145742655
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#7695ac",
+      "id": "traffic-14",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 120,
+          "y": 3
+        }
+      ],
+      "position": {
+        "x": 80.84309671074152,
+        "y": 3
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#85a3b1",
+      "id": "traffic-15",
+      "model": "truck-loaded",
+      "owner": "city",
+      "path": [
+        {
+          "x": 43,
+          "y": 160
+        }
+      ],
+      "position": {
+        "x": 43,
+        "y": 207.15117029845715
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#91b5b0",
+      "id": "traffic-16",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 120,
+          "y": 83
+        }
+      ],
+      "position": {
+        "x": 66.8320183083415,
+        "y": 83
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#d58062",
+      "id": "traffic-17",
+      "model": "truck-flammable",
+      "owner": "city",
+      "path": [
+        {
+          "x": 123,
+          "y": 0
+        }
+      ],
+      "position": {
+        "x": 123,
+        "y": 48.512950874865055
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#dfd5bb",
+      "id": "traffic-18",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 80,
+          "y": 163
+        }
+      ],
+      "position": {
+        "x": 50.74361573904753,
+        "y": 163
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#7695ac",
+      "id": "traffic-19",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 203,
+          "y": 160
+        }
+      ],
+      "position": {
+        "x": 203,
+        "y": 212.26759944856167
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#d77f72",
+      "id": "traffic-20",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 160,
+          "y": 243
+        }
+      ],
+      "position": {
+        "x": 130.1850027218461,
+        "y": 243
+      }
+    },
+    {
+      "angle": -1.5707963267948966,
+      "color": "#c9d8ce",
+      "id": "traffic-21",
+      "model": "van",
+      "owner": "city",
+      "path": [
+        {
+          "x": 3,
+          "y": 0
+        }
+      ],
+      "position": {
+        "x": 3,
+        "y": 46.71853311359882
+      }
+    },
+    {
+      "angle": 0,
+      "color": "#ad9dc6",
+      "id": "traffic-22",
+      "model": "car",
+      "owner": "city",
+      "path": [
+        {
+          "x": 200,
+          "y": 43
+        }
+      ],
+      "position": {
+        "x": 161.16363245993853,
+        "y": 43
+      }
+    },
+    {
+      "angle": 0.8,
+      "color": "#dfd5bb",
+      "id": "traffic-eagle-tour",
+      "model": "car",
+      "owner": "highlands",
+      "path": [
+        {
+          "x": 486,
+          "y": 69
+        },
+        {
+          "x": 491,
+          "y": 74
+        },
+        {
+          "x": 496,
+          "y": 80
+        },
+        {
+          "x": 499,
+          "y": 87
+        },
+        {
+          "x": 498,
+          "y": 95
+        },
+        {
+          "x": 496,
+          "y": 104
+        },
+        {
+          "x": 492,
+          "y": 113
+        },
+        {
+          "x": 489,
+          "y": 122
+        },
+        {
+          "x": 490,
+          "y": 132
+        },
+        {
+          "x": 494,
+          "y": 141
+        },
+        {
+          "x": 499,
+          "y": 150
+        },
+        {
+          "x": 503,
+          "y": 158
+        },
+        {
+          "x": 504,
+          "y": 165
+        },
+        {
+          "x": 501,
+          "y": 173
+        },
+        {
+          "x": 494,
+          "y": 180
+        },
+        {
+          "x": 482,
+          "y": 184
+        }
+      ],
+      "position": {
+        "x": 481,
+        "y": 65
+      }
+    },
+    {
+      "angle": 1.15,
+      "color": "#c9d8ce",
+      "id": "traffic-pine-service",
+      "model": "van",
+      "owner": "highlands",
+      "path": [
+        {
+          "x": 363,
+          "y": 126
+        },
+        {
+          "x": 366,
+          "y": 132
+        },
+        {
+          "x": 368,
+          "y": 138
+        },
+        {
+          "x": 367,
+          "y": 144
+        },
+        {
+          "x": 364,
+          "y": 150
+        },
+        {
+          "x": 362,
+          "y": 153
+        },
+        {
+          "x": 365,
+          "y": 158
+        },
+        {
+          "x": 370,
+          "y": 164
+        },
+        {
+          "x": 378,
+          "y": 170
+        }
+      ],
+      "position": {
+        "x": 360,
+        "y": 120
+      }
+    },
+    {
+      "angle": 2.5,
+      "color": "#dbb762",
+      "id": "traffic-lodge-pickup",
+      "model": "pickup",
+      "owner": "highlands",
+      "path": [
+        {
+          "x": 474,
+          "y": 192
+        },
+        {
+          "x": 470,
+          "y": 196
+        },
+        {
+          "x": 466,
+          "y": 200
+        },
+        {
+          "x": 462,
+          "y": 203
+        },
+        {
+          "x": 458,
+          "y": 206
+        },
+        {
+          "x": 454,
+          "y": 208
+        },
+        {
+          "x": 450,
+          "y": 210
+        },
+        {
+          "x": 442,
+          "y": 208
+        },
+        {
+          "x": 434,
+          "y": 204
+        },
+        {
+          "x": 426,
+          "y": 200
+        },
+        {
+          "x": 418,
+          "y": 197
+        },
+        {
+          "x": 410,
+          "y": 194
+        },
+        {
+          "x": 402,
+          "y": 190
+        },
+        {
+          "x": 394,
+          "y": 185
+        },
+        {
+          "x": 386,
+          "y": 178
+        },
+        {
+          "x": 378,
+          "y": 170
+        }
+      ],
+      "position": {
+        "x": 477,
+        "y": 188
+      }
+    },
+    {
+      "angle": 2.35,
+      "color": "#ed9b63",
+      "id": "traffic-ridge-motorcycle",
+      "model": "motorcycle",
+      "owner": "highlands",
+      "path": [
+        {
+          "x": 410,
+          "y": 78
+        },
+        {
+          "x": 404,
+          "y": 84
+        },
+        {
+          "x": 398,
+          "y": 90
+        },
+        {
+          "x": 392,
+          "y": 96
+        },
+        {
+          "x": 388,
+          "y": 100
+        },
+        {
+          "x": 382,
+          "y": 103
+        },
+        {
+          "x": 375,
+          "y": 107
+        },
+        {
+          "x": 368,
+          "y": 111
+        },
+        {
+          "x": 358,
+          "y": 114
+        }
+      ],
+      "position": {
+        "x": 416,
+        "y": 72
+      }
+    }
+  ],
+  "villas": [
+    {
+      "color": "#c07858",
+      "id": "villa-pinecrest",
+      "name": "PINECREST",
+      "owner": "highlands",
+      "position": {
+        "x": 334,
+        "y": 35
+      }
+    },
+    {
+      "color": "#9b7962",
+      "id": "villa-eagle-house",
+      "name": "EAGLE HOUSE",
+      "owner": "highlands",
+      "position": {
+        "x": 392,
+        "y": 56
+      }
+    },
+    {
+      "color": "#b88360",
+      "id": "villa-fern",
+      "name": "FERN VILLA",
+      "owner": "highlands",
+      "position": {
+        "x": 324,
+        "y": 137
+      }
+    },
+    {
+      "color": "#ab7159",
+      "id": "villa-ridge",
+      "name": "RIDGE ESTATE",
+      "owner": "highlands",
+      "position": {
+        "x": 429,
+        "y": 181
+      }
+    },
+    {
+      "color": "#c29b70",
+      "id": "villa-skyline",
+      "name": "SKYLINE",
+      "owner": "highlands",
+      "position": {
+        "x": 477,
+        "y": 236
+      }
+    },
+    {
+      "color": "#be8661",
+      "id": "villa-cedar-house",
+      "name": "CEDAR HOUSE",
+      "owner": "southern-estates",
+      "position": {
+        "x": 54,
+        "y": 421
+      }
+    },
+    {
+      "color": "#957768",
+      "id": "villa-the-laurels",
+      "name": "THE LAURELS",
+      "owner": "southern-estates",
+      "position": {
+        "x": 105,
+        "y": 414
+      }
+    },
+    {
+      "color": "#bf916a",
+      "id": "villa-oak-manor",
+      "name": "OAK MANOR",
+      "owner": "southern-estates",
+      "position": {
+        "x": 209,
+        "y": 415
+      }
+    },
+    {
+      "color": "#a87259",
+      "id": "villa-belvedere",
+      "name": "BELVEDERE",
+      "owner": "southern-estates",
+      "position": {
+        "x": 267,
+        "y": 485
+      }
+    },
+    {
+      "color": "#c49c74",
+      "id": "villa-woodland",
+      "name": "WOODLAND VILLA",
+      "owner": "southern-estates",
+      "position": {
+        "x": 349,
+        "y": 471
+      }
+    },
+    {
+      "color": "#b27b62",
+      "id": "villa-lake-house",
+      "name": "LAKE HOUSE",
+      "owner": "southern-estates",
+      "position": {
+        "x": 453,
+        "y": 444
+      }
+    },
+    {
+      "color": "#9d7360",
+      "id": "villa-cedar-lodge",
+      "name": "CEDAR LODGE",
+      "owner": "southern-estates",
+      "position": {
+        "x": 97,
+        "y": 487
+      }
+    }
+  ]
 }

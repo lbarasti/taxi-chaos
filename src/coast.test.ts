@@ -23,7 +23,7 @@ describe('coastal geography', () => {
   });
   it('replaces perimeter walls and cliffs with short breakable panels and wide gaps on city and country shores', () => {
     const world = new World();
-    const rails = world.props.filter(p => p.kind === 'guardrail');
+    const rails = world.props.filter(p => p.kind === 'guardrail' && !p.sourceId);
     expect(rails.length).toBe(COAST_RAILS.length);
     expect(rails.every(p => p.hp === 24 && p.body.w <= 8)).toBe(true);
     expect(world.props.filter(p => p.kind === 'building').every(p => !!p.label)).toBe(true);
