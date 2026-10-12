@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Game, defaultSave } from '../game';
 import { defaultCompiledMap } from '../map/compile';
-import { openShoreMissions } from '../missions/compile';
+import { campaignMissions } from '../missions/compile';
 import { assertMissionCatalogue } from '../missions/schema';
 import { contact, vec } from '../physics';
 import { GARAGE } from '../world';
@@ -23,7 +23,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('Open Shore world-driven campaign', () => {
   it('compiles bounded routes, cast, exact windows, all ride conversations and independent sources', () => {
-    const compiled = openShoreMissions(defaultCompiledMap);
+    const compiled = campaignMissions(defaultCompiledMap);
     expect(campaignCast).toHaveLength(12); expect(compiled.warnings).toEqual([]); expect(Object.isFrozen(compiled)).toBe(true);
     expect(() => assertMissionCatalogue(openShoreCatalogue)).not.toThrow();
     expect(new Set(Object.values(compiled.missions).map(m => m.passenger))).toEqual(new Set(campaignCast));
@@ -65,7 +65,7 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.save.playerRecords.notebook.some(e => e.id === 'barrier-receipt')).toBe(true);
     advance(g, 3); deliver(g, 'nico-safe-ride');
     g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
-    expect(g.photographCafe()).toBe(true); expect(g.photographCafe()).toBe(true);
+    expect(g.observeScene()).toBe(true); expect(g.observeScene()).toBe(true);
     g.newJob(false, 'replaced', true); finish(g);
     expect(g.save.playerRecords.notebook).toHaveLength(MAX_NOTEBOOK_ENTRIES);
     const records = parsePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords)));
@@ -131,9 +131,9 @@ describe('Open Shore world-driven campaign', () => {
     const g = make(); g.advanceNarrativeTo(dayMinute(2, 22));
     const van = g.vehicles.find(v => v.sourceId === 'campaign-ms14'); expect(van).toBeDefined();
     expect(g.world.props.filter(p => p.alive).some(p => contact(van!.body, p.body))).toBe(false);
-    expect(g.save.playerRecords.notebook).toEqual([]); expect(g.photographCafe()).toBe(false);
+    expect(g.save.playerRecords.notebook).toEqual([]); expect(g.observeScene()).toBe(false);
     advance(g, 3); g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
-    expect(g.photographCafe()).toBe(true); expect(g.photographCafe()).toBe(true);
+    expect(g.observeScene()).toBe(true); expect(g.observeScene()).toBe(true);
     expect(g.save.playerRecords.notebook.filter(e => e.id === 'cafe-photo')).toHaveLength(1);
     g.advanceNarrativeTo(dayMinute(3, 12)); expect(van!.parked).toBe(false); expect(van!.alive).toBe(true); expect(van!.path.length).toBeGreaterThan(1);
   });
@@ -176,7 +176,7 @@ describe('Open Shore world-driven campaign', () => {
 
   it('uses a physical newsroom visit and distinguishes receipt, checks, editorial request, edition and response', () => {
     const g = make(); deliver(g, 'celia-barriers'); advance(g, 3); deliver(g, 'nico-safe-ride');
-    arrive(g, g.missions.catalogue.stops.byId['garden-cafe'].position); expect(g.photographCafe()).toBe(true);
+    arrive(g, g.missions.catalogue.stops.byId['garden-cafe'].position); expect(g.observeScene()).toBe(true);
     expect(g.submitMaterial('barrier-receipt')).toBe(false); arrive(g, g.newsroom); g.setMode('paused');
     expect(g.submitMaterial('leila-warning')).toBe(false);
     for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
@@ -213,7 +213,7 @@ describe('Open Shore world-driven campaign', () => {
   it('verifies fractional-time receipts during active play in time to approve the last edition', () => {
     const g = make(); deliver(g, 'celia-barriers'); advance(g, 3); deliver(g, 'nico-safe-ride');
     g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
-    expect(g.photographCafe()).toBe(true);
+    expect(g.observeScene()).toBe(true);
     const due = LAST_EDITION - 0.5;
     g.advanceNarrativeTo(due - 180); g.player.body.position = { ...g.newsroom };
     for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);

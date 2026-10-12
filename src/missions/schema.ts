@@ -1,4 +1,5 @@
 import type { StoryCategory } from '../story';
+import type { WorldValue } from '../campaign/model';
 
 export type MissionId = string;
 export type FlagId = string;
@@ -20,7 +21,16 @@ export type Condition =
   | { minuteBefore: number }
   | { shiftAtLeast: number }
   | { shiftAtMost: number }
-  | { chapter: number };
+  | { chapter: number }
+  | { worldEquals: { key: string; value: WorldValue } }
+  | { worldAtLeast: { key: string; value: number } }
+  | { knows: string }
+  | { materialState: { id: string; state: 'received' | 'verified' } }
+  | { caseState: { id: string; state: 'verified' | 'approved' } }
+  | { published: string }
+  | { reacted: string }
+  | { occurred: string }
+  | { relationshipAtLeast: { character: string; value: number } };
 
 /** Authored outcome effects. Each list is bounded and applied atomically. */
 export type Effect =
@@ -28,7 +38,9 @@ export type Effect =
   | { clearFlag: FlagId }
   | { setChoice: { group: ChoiceGroupId; choice: ChoiceId } }
   | { setChapter: number }
-  | { relationship: { character: string; delta: number } };
+  | { relationship: { character: string; delta: number } }
+  | { setWorld: { key: string; value: WorldValue } }
+  | { acquireMaterial: string };
 
 export type MissionDialogueBeat = Readonly<{
   character: string;
@@ -89,78 +101,85 @@ const ID = /^[a-z][a-z0-9-]*$/;
 const categories: readonly StoryCategory[] = ['plot', 'side-quest', 'lore'];
 const missionKeys = ['title', 'chapter', 'category', 'repeat', 'abandon', 'requires', 'allowed', 'stops', 'beats'];
 
-/** Strict shape checking bounds the authored workload before any resolver runs. */
-export function assertMissionCatalogue(value: unknown): asserts value is MissionCatalogue {
-  const fail = (path: string, why: string): never => { throw new Error(`${path}: ${why}`); };
-  const object = (v: unknown, path: string, required: string[], optional: string[] = []): Record<string, unknown> => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) return fail(path, 'expected object');
-    const obj = v as Record<string, unknown>;
-    const allowed = [...required, ...optional];
-    if (Object.keys(obj).some(k => !allowed.includes(k)) || required.some(k => !Object.hasOwn(obj, k))) fail(path, `expected fields ${required.join(', ')}${optional.length ? ` (optional ${optional.join(', ')})` : ''}`);
-    return obj;
-  };
-  const text = (v: unknown, path: string, max = 160): string => typeof v === 'string' && v.length > 0 && v.length <= max ? v : fail(path, `expected nonempty string (max ${max})`);
-  const id = (v: unknown, path: string): string => { const s = text(v, path, 80); if (!ID.test(s)) fail(path, 'expected a stable lowercase id'); return s; };
-  const num = (v: unknown, path: string, min: number, max: number): number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fail(path, `expected finite number in [${min}, ${max}]`);
-  const int = (v: unknown, path: string, min: number, max: number): number => { const n = num(v, path, min, max); if (!Number.isInteger(n)) fail(path, 'expected integer'); return n; };
-  const bool = (v: unknown, path: string) => typeof v === 'boolean' ? v : fail(path, 'expected boolean');
-  const list = (v: unknown, path: string, min: number, max: number): unknown[] => Array.isArray(v) && v.length >= min && v.length <= max ? v : fail(path, `expected array (${min}–${max} items)`);
-  const entries = (v: unknown, path: string, min: number, max: number): [string, unknown][] => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) fail(path, 'expected object');
-    const items = Object.entries(v as Record<string, unknown>);
-    if (items.length < min || items.length > max) fail(path, `expected ${min}–${max} entries`);
-    return items;
-  };
-  const oneOf = <T extends string>(v: unknown, path: string, values: readonly T[]): T => { if (typeof v !== 'string' || !values.includes(v as T)) fail(path, `expected one of ${values.join(', ')}`); return v as T; };
+const fail = (path: string, why: string): never => { throw new Error(`${path}: ${why}`); };
+const object = (v: unknown, path: string, required: string[], optional: string[] = []): Record<string, unknown> => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return fail(path, 'expected object');
+  const obj = v as Record<string, unknown>;
+  const allowed = [...required, ...optional];
+  if (Object.keys(obj).some(k => !allowed.includes(k)) || required.some(k => !Object.hasOwn(obj, k))) fail(path, `expected fields ${required.join(', ')}${optional.length ? ` (optional ${optional.join(', ')})` : ''}`);
+  return obj;
+};
+const text = (v: unknown, path: string, max = 160): string => typeof v === 'string' && v.length > 0 && v.length <= max ? v : fail(path, `expected nonempty string (max ${max})`);
+const id = (v: unknown, path: string): string => { const s = text(v, path, 80); if (!ID.test(s)) fail(path, 'expected a stable lowercase id'); return s; };
+const num = (v: unknown, path: string, min: number, max: number): number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fail(path, `expected finite number in [${min}, ${max}]`);
+const int = (v: unknown, path: string, min: number, max: number): number => { const n = num(v, path, min, max); if (!Number.isInteger(n)) fail(path, 'expected integer'); return n; };
+const bool = (v: unknown, path: string) => typeof v === 'boolean' ? v : fail(path, 'expected boolean');
+const list = (v: unknown, path: string, min: number, max: number): unknown[] => Array.isArray(v) && v.length >= min && v.length <= max ? v : fail(path, `expected array (${min}–${max} items)`);
+const entries = (v: unknown, path: string, min: number, max: number): [string, unknown][] => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) fail(path, 'expected object');
+  const items = Object.entries(v as Record<string, unknown>);
+  if (items.length < min || items.length > max) fail(path, `expected ${min}–${max} entries`);
+  return items;
+};
+const oneOf = <T extends string>(v: unknown, path: string, values: readonly T[]): T => { if (typeof v !== 'string' || !values.includes(v as T)) fail(path, `expected one of ${values.join(', ')}`); return v as T; };
 
-  // The node budget is per individual condition expression, so a catalogue with
-  // many simple missions cannot exhaust a shared counter.
-  const condition = (v: unknown, path: string): void => {
-    let nodes = 0;
-    const walk = (value: unknown, at: string, depth: number): void => {
-      if (depth > missionLimits.conditionDepth) fail(at, 'condition nesting too deep');
-      if (++nodes > missionLimits.conditionNodes) fail(at, `too many condition nodes (max ${missionLimits.conditionNodes})`);
-      if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== 1) fail(at, 'condition must have exactly one operator');
-      const key = Object.keys(value as object)[0];
-      const obj = object(value, at, [key]);
-      if (key === 'all' || key === 'any') {
-        for (const [i, child] of list(obj[key], `${at}.${key}`, 0, missionLimits.conditionNodes).entries()) walk(child, `${at}.${key}[${i}]`, depth + 1);
-        return;
-      }
-      switch (key) {
-        case 'not': return walk(obj.not, `${at}.not`, depth + 1);
-        case 'missionCompleted': id(obj.missionCompleted, `${at}.missionCompleted`); return;
-        case 'flag': id(obj.flag, `${at}.flag`); return;
-        case 'choiceUnset': id(obj.choiceUnset, `${at}.choiceUnset`); return;
-        case 'minDeliveries': int(obj.minDeliveries, `${at}.minDeliveries`, 0, 1e9); return;
-        case 'minCareerDeliveries': int(obj.minCareerDeliveries, `${at}.minCareerDeliveries`, 0, 1e9); return;
-        case 'minuteAtLeast': case 'minuteBefore': int(obj[key], `${at}.${key}`, 420, 20580); return;
-        case 'shiftAtLeast': case 'shiftAtMost': int(obj[key], `${at}.${key}`, 1, 14); return;
-        case 'chapter': int(obj.chapter, `${at}.chapter`, 0, 1e6); return;
-        case 'choiceEquals': { const p = object(obj.choiceEquals, `${at}.choiceEquals`, ['group', 'choice']); id(p.group, `${at}.choiceEquals.group`); id(p.choice, `${at}.choiceEquals.choice`); return; }
-        default: return fail(at, `unknown condition operator ${key}`);
-      }
-    };
-    walk(v, path, 0);
-  };
-
-  const effect = (v: unknown, path: string): void => {
-    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.keys(v).length !== 1) fail(path, 'effect must have exactly one operator');
-    const key = Object.keys(v as object)[0];
-    const obj = object(v, path, [key]);
+// The node budget is per individual condition expression, so a catalogue with
+// many simple missions cannot exhaust a shared counter.
+export const assertCondition = (v: unknown, path: string): void => {
+  let nodes = 0;
+  const walk = (value: unknown, at: string, depth: number): void => {
+    if (depth > missionLimits.conditionDepth) fail(at, 'condition nesting too deep');
+    if (++nodes > missionLimits.conditionNodes) fail(at, `too many condition nodes (max ${missionLimits.conditionNodes})`);
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== 1) fail(at, 'condition must have exactly one operator');
+    const key = Object.keys(value as object)[0];
+    const obj = object(value, at, [key]);
+    if (key === 'all' || key === 'any') {
+      for (const [i, child] of list(obj[key], `${at}.${key}`, 0, missionLimits.conditionNodes).entries()) walk(child, `${at}.${key}[${i}]`, depth + 1);
+      return;
+    }
     switch (key) {
-      case 'setFlag': case 'clearFlag': id(obj[key], `${path}.${key}`); return;
-      case 'setChapter': int(obj.setChapter, `${path}.setChapter`, 0, 1e6); return;
-      case 'setChoice': { const p = object(obj.setChoice, `${path}.setChoice`, ['group', 'choice']); id(p.group, `${path}.setChoice.group`); id(p.choice, `${path}.setChoice.choice`); return; }
-      case 'relationship': { const p = object(obj.relationship, `${path}.relationship`, ['character', 'delta']); id(p.character, `${path}.relationship.character`); num(p.delta, `${path}.relationship.delta`, -100, 100); return; }
-      default: return fail(path, `unknown effect operator ${key}`);
+      case 'not': return walk(obj.not, `${at}.not`, depth + 1);
+      case 'missionCompleted': id(obj.missionCompleted, `${at}.missionCompleted`); return;
+      case 'knows': case 'published': case 'reacted': case 'occurred': id(obj[key], `${at}.${key}`); return;
+      case 'worldEquals': case 'worldAtLeast': { const p = object(obj[key], `${at}.${key}`, ['key', 'value']); id(p.key, `${at}.${key}.key`); if (key === 'worldAtLeast') num(p.value, `${at}.${key}.value`, -1e9, 1e9); else if (!['string', 'number', 'boolean'].includes(typeof p.value) || typeof p.value === 'number' && !Number.isFinite(p.value) || typeof p.value === 'string' && p.value.length > 160) fail(at, 'invalid world value'); return; }
+      case 'materialState': case 'caseState': { const p = object(obj[key], `${at}.${key}`, ['id', 'state']); id(p.id, `${at}.${key}.id`); oneOf(p.state, `${at}.${key}.state`, key === 'materialState' ? ['received', 'verified'] : ['verified', 'approved']); return; }
+      case 'relationshipAtLeast': { const p = object(obj[key], `${at}.${key}`, ['character', 'value']); id(p.character, `${at}.${key}.character`); num(p.value, `${at}.${key}.value`, -1000, 1000); return; }
+      case 'flag': id(obj.flag, `${at}.flag`); return;
+      case 'choiceUnset': id(obj.choiceUnset, `${at}.choiceUnset`); return;
+      case 'minDeliveries': int(obj.minDeliveries, `${at}.minDeliveries`, 0, 1e9); return;
+      case 'minCareerDeliveries': int(obj.minCareerDeliveries, `${at}.minCareerDeliveries`, 0, 1e9); return;
+      case 'minuteAtLeast': case 'minuteBefore': int(obj[key], `${at}.${key}`, 420, 20580); return;
+      case 'shiftAtLeast': case 'shiftAtMost': int(obj[key], `${at}.${key}`, 1, 14); return;
+      case 'chapter': int(obj.chapter, `${at}.chapter`, 0, 1e6); return;
+      case 'choiceEquals': { const p = object(obj.choiceEquals, `${at}.choiceEquals`, ['group', 'choice']); id(p.group, `${at}.choiceEquals.group`); id(p.choice, `${at}.choiceEquals.choice`); return; }
+      default: return fail(at, `unknown condition operator ${key}`);
     }
   };
+  walk(v, path, 0);
+};
 
-  const effects = (v: unknown, path: string): void => {
-    for (const [i, e] of list(v, path, 0, missionLimits.effects).entries()) effect(e, `${path}[${i}]`);
-  };
+const effect = (v: unknown, path: string): void => {
+  if (!v || typeof v !== 'object' || Array.isArray(v) || Object.keys(v).length !== 1) fail(path, 'effect must have exactly one operator');
+  const key = Object.keys(v as object)[0];
+  const obj = object(v, path, [key]);
+  switch (key) {
+    case 'acquireMaterial': id(obj[key], `${path}.${key}`); return;
+    case 'setWorld': { const p = object(obj.setWorld, `${path}.setWorld`, ['key', 'value']); id(p.key, `${path}.setWorld.key`); if (!['string', 'number', 'boolean'].includes(typeof p.value) || typeof p.value === 'number' && !Number.isFinite(p.value) || typeof p.value === 'string' && p.value.length > 160) fail(path, 'invalid world value'); return; }
+    case 'setFlag': case 'clearFlag': id(obj[key], `${path}.${key}`); return;
+    case 'setChapter': int(obj.setChapter, `${path}.setChapter`, 0, 1e6); return;
+    case 'setChoice': { const p = object(obj.setChoice, `${path}.setChoice`, ['group', 'choice']); id(p.group, `${path}.setChoice.group`); id(p.choice, `${path}.setChoice.choice`); return; }
+    case 'relationship': { const p = object(obj.relationship, `${path}.relationship`, ['character', 'delta']); id(p.character, `${path}.relationship.character`); num(p.delta, `${path}.relationship.delta`, -100, 100); return; }
+    default: return fail(path, `unknown effect operator ${key}`);
+  }
+};
 
+export const assertEffects = (v: unknown, path: string): void => {
+  for (const [i, e] of list(v, path, 0, missionLimits.effects).entries()) effect(e, `${path}[${i}]`);
+};
+
+
+/** Strict shape checking bounds the authored workload before any resolver runs. */
+export function assertMissionCatalogue(value: unknown): asserts value is MissionCatalogue {
   const root = object(value, 'catalogue', ['schemaVersion', 'dialogue', 'missions']);
   if (root.schemaVersion !== 1) fail('catalogue', 'unsupported schema version');
 
@@ -180,7 +199,7 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
     const mission = object(raw, path, missionKeys, ['passenger', 'choices', 'effects', 'dispatchRadius', 'offer', 'pickupChoice', 'contactLost']);
     if (mission.contactLost !== undefined) {
       const lost = object(mission.contactLost, `${path}.contactLost`, [], ['effects']);
-      if (lost.effects !== undefined) effects(lost.effects, `${path}.contactLost.effects`);
+      if (lost.effects !== undefined) assertEffects(lost.effects, `${path}.contactLost.effects`);
     }
     if (mission.offer !== undefined) {
       const offer = object(mission.offer, `${path}.offer`, ['character', 'text']);
@@ -202,7 +221,7 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
     const retry = oneOf(abandon.retry, `${path}.abandon.retry`, ['always', 'cooldown', 'never'] as const);
     if (retry === 'cooldown' && !Object.hasOwn(abandon, 'cooldownSeconds')) fail(`${path}.abandon`, 'cooldown retry needs cooldownSeconds');
 
-    condition(mission.requires, `${path}.requires`);
+    assertCondition(mission.requires, `${path}.requires`);
 
     const allowed = object(mission.allowed, `${path}.allowed`, ['jobs'], ['models', 'kinds']);
     list(allowed.jobs, `${path}.allowed.jobs`, 1, 2).forEach((j, i) => oneOf(j, `${path}.allowed.jobs[${i}]`, ['fare', 'parcel'] as const));
@@ -216,7 +235,7 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
     id(beats.pickup, `${path}.beats.pickup`);
     if (Object.hasOwn(beats, 'pickupSender')) id(beats.pickupSender, `${path}.beats.pickupSender`);
 
-    if (Object.hasOwn(mission, 'effects')) effects(mission.effects, `${path}.effects`);
+    if (Object.hasOwn(mission, 'effects')) assertEffects(mission.effects, `${path}.effects`);
     if (Object.hasOwn(mission, 'choices')) {
       for (const [i, rawGroup] of list(mission.choices, `${path}.choices`, 0, missionLimits.choices).entries()) {
         const gpath = `${path}.choices[${i}]`;
@@ -233,8 +252,8 @@ export function assertMissionCatalogue(value: unknown): asserts value is Mission
           const optionId = id(option.id, `${opath}.id`);
           if (optionIds.has(optionId)) fail(`${opath}.id`, 'duplicate option id');
           optionIds.add(optionId);
-          if (Object.hasOwn(option, 'effects')) effects(option.effects, `${opath}.effects`);
-          if (Object.hasOwn(option, 'requires')) condition(option.requires, `${opath}.requires`);
+          if (Object.hasOwn(option, 'effects')) assertEffects(option.effects, `${opath}.effects`);
+          if (Object.hasOwn(option, 'requires')) assertCondition(option.requires, `${opath}.requires`);
           if (Object.hasOwn(option, 'default') && bool(option.default, `${opath}.default`)) defaults++;
         }
         if (defaults > 1) fail(gpath, 'at most one default option');

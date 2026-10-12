@@ -88,9 +88,9 @@ try {
     server = await createServer({ root: fileURLToPath(new URL('../', import.meta.url)), configFile: false,
       logLevel: 'silent', server: { middlewareMode: !png, hmr: false, host: '127.0.0.1', port: 0 }, appType: png ? 'spa' : 'custom' });
     const { defaultCompiledMap } = await server.ssrLoadModule('/src/map/compile.ts');
-    const { openShoreMissions, missionsFor } = await server.ssrLoadModule('/src/missions/compile.ts');
+    const { campaignMissions, missionsFor } = await server.ssrLoadModule('/src/missions/compile.ts');
     const { generateDialoguePreview, dialoguePreviewMarkdown, previewInputs } = await server.ssrLoadModule('/src/missions/dialogue-preview.ts');
-    const catalogue = catalogueName === 'campaign' ? openShoreMissions(defaultCompiledMap) : missionsFor(defaultCompiledMap);
+    const catalogue = catalogueName === 'campaign' ? campaignMissions(defaultCompiledMap) : missionsFor(defaultCompiledMap);
     let output;
     if (values.list) {
       const inputs = previewInputs(catalogue);

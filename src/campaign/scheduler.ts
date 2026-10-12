@@ -1,73 +1,57 @@
-import { corroboration, materials, type Allegation } from './content';
-import { CAMPAIGN_END, LAST_EDITION, campaignDay, nextEdition } from './clock';
-import { worldOperations } from './events';
+import { campaignDefinition } from './content';
+import { CAMPAIGN_END, LAST_EDITION, campaignDay } from './clock';
+import { dispatchCampaignEvent, reduceCampaignEvent, settleCases } from './events';
+import { campaignTransaction } from './effects';
+import { campaignCondition } from '../missions/conditions';
+import { defaultMissionProgress } from '../missions/progress';
+import { claimOrder, conditionTimes } from './validate';
+import type { Allegation, CampaignContext, CampaignDefinition, CampaignInputs, CampaignEvent, WorldOperation } from './model';
 import type { Campaign } from './state';
 
-const allegations = Object.keys(corroboration) as Allegation[];
 export const VERIFICATION_MINUTES = 180;
 export const REACTION_MINUTES = 120;
+const context = (state: Campaign, inputs: CampaignInputs, definition: CampaignDefinition): CampaignContext => ({ ...inputs, state, definition });
 
-function verifyCases(state: Campaign, at: number) {
-  for (const allegation of allegations) {
-    if (state.newsroom.cases[allegation]) continue;
-    if (allegation === 'knowledge' && !['coordination', 'policing'].every(id => state.newsroom.cases[id as Allegation])) continue;
-    if (corroboration[allegation].some(route => route.every(id => state.newsroom.received[id]?.verifiedAt != null))) state.newsroom.cases[allegation] = { verifiedAt: at, approvedAt: null, editionAt: null };
-  }
+export function receiveMaterial(state: Campaign, id: string, inputs: CampaignInputs = {}, definition = campaignDefinition): boolean {
+  return dispatchCampaignEvent(context(state, inputs, definition), { type: 'material-submitted', id });
+}
+export function approvePublication(state: Campaign, allegation: Allegation, inputs: CampaignInputs = {}, definition = campaignDefinition): boolean {
+  return dispatchCampaignEvent(context(state, inputs, definition), { type: 'publication-requested', id: allegation });
+}
+export function operationOutcome(op: WorldOperation, ctx: CampaignContext) {
+  const outcome = op.outcomes?.find(o => campaignCondition(o.requires, ctx.state, ctx));
+  return { outcome: outcome?.id ?? 'occurred', effects: [...op.effects, ...(outcome?.effects ?? [])] };
 }
 
-/** Explicit receipt: possessing material and submitting material are separate commands. */
-export function receiveMaterial(state: Campaign, id: string): boolean {
-  if (state.finished || state.minute >= LAST_EDITION || !Object.hasOwn(materials, id) || Object.hasOwn(state.newsroom.received, id)) return false;
-  state.newsroom.received[id] = { at: state.minute, verifiedAt: null };
-  return true;
-}
-
-/** The driver brings a ready story to the editor; authentication alone never prints it. */
-export function approvePublication(state: Campaign, allegation: Allegation): boolean {
-  const c = state.newsroom.cases[allegation];
-  if (!c || c.approvedAt !== null || state.finished || nextEdition(state.minute) > LAST_EDITION) return false;
-  if (allegation === 'knowledge' && !['coordination', 'policing'].every(id => state.newsroom.cases[id as Allegation]?.approvedAt != null)) return false;
-  c.approvedAt = state.minute; c.editionAt = nextEdition(state.minute);
-  return true;
-}
-
-type Boundary = { at: number; phase: number; id: string; apply: () => void };
-/** Bounded chronological transactions; sleeping uses this path without stepping physics. */
-export function advanceCampaignTo(state: Campaign, requested: number, flags: readonly string[] = []): boolean {
+type Boundary = { at: number; phase: number; id: string; event: () => CampaignEvent };
+/** All skipping and live-time boundaries use the same atomic event reducer. */
+export function advanceCampaignTo(state: Campaign, requested: number, inputs: CampaignInputs | readonly string[] = {}, definition = campaignDefinition): boolean {
   if (!Number.isFinite(requested) || requested < state.minute || state.finished) return false;
-  const target = Math.min(CAMPAIGN_END, requested);
-  let changed = target !== state.minute;
-  // At most eight world operations, fifteen authentications, three editions and reactions.
-  for (let work = 0; work < 100; work++) {
-    const due: Boundary[] = [];
-    for (const op of worldOperations) if (!Object.hasOwn(state.occurrences, op.id) && op.at <= target) due.push({ at: op.at, phase: 0, id: op.id, apply: () => {
-      const outcome = op.tenantOutcome ? flags.includes('tenant-interview-reached') ? 'tenancy-review' : 'closed' : 'occurred';
-      state.occurrences[op.id] = { at: op.at, outcome };
-      Object.assign(state.world, op.changes, op.tenantOutcome ? { cafe: outcome } : {});
-    } });
-    for (const [id, r] of Object.entries(state.newsroom.received)) if (r.verifiedAt === null && r.at + VERIFICATION_MINUTES <= target) due.push({ at: r.at + VERIFICATION_MINUTES, phase: 1, id, apply: () => {
-      r.verifiedAt = r.at + VERIFICATION_MINUTES; verifyCases(state, r.verifiedAt);
-    } });
-    for (const [index, allegation] of allegations.entries()) {
-      const c = state.newsroom.cases[allegation];
-      if (c?.editionAt != null && c.editionAt <= Math.min(target, LAST_EDITION) && !state.publications.some(p => p.allegation === allegation)) due.push({ at: c.editionAt, phase: 2 + index, id: `edition-${allegation}`, apply: () => {
-        const ready = allegation !== 'knowledge' || ['coordination', 'policing'].every(id => state.publications.some(p => p.allegation === id));
-        state.occurrences[`edition-${allegation}`] = { at: c.editionAt!, outcome: ready ? 'published' : 'held' };
-        if (ready) state.publications.push({ allegation, submittedShift: campaignDay(c.verifiedAt - VERIFICATION_MINUTES), publishedShift: campaignDay(c.editionAt!), at: c.editionAt! });
-        else c.editionAt = null;
-      } });
-      const pub = state.publications.find(p => p.allegation === allegation);
-      if (pub && !state.reactions[allegation] && pub.at + REACTION_MINUTES <= target) due.push({ at: pub.at + REACTION_MINUTES, phase: 5, id: `reaction-${allegation}`, apply: () => {
-        const at = pub.at + REACTION_MINUTES;
-        state.reactions[allegation] = { at }; state.occurrences[`reaction-${allegation}`] = { at, outcome: 'occurred' };
-        if (allegation === 'coordination') state.world.security = 'suspended';
-        if (allegation === 'policing') state.world.patrol = 'inquiry';
-        if (allegation === 'knowledge') state.world.appearance = 'cancelled';
-      } });
+  const resolved: CampaignInputs = Array.isArray(inputs) ? { progress: { ...defaultMissionProgress(), flags: [...inputs] } } : inputs as CampaignInputs;
+  return campaignTransaction(context(state, resolved, definition), ctx => {
+    const s = ctx.state, target = Math.min(CAMPAIGN_END, requested), claims = claimOrder(definition);
+    let changed = target !== s.minute;
+    // Derived from validated content, rather than a story-specific event count.
+    const times = [...new Set(claims.flatMap(id => conditionTimes(definition.claims[id].verifyRequires)))];
+    const budget = definition.operations.length + Object.keys(definition.materials).length + claims.length * 3 + times.length + 2;
+    for (let work = 0; work < budget; work++) {
+      if (settleCases(ctx)) changed = true;
+      const due: Boundary[] = [];
+      for (const at of times) if (at > s.minute && at <= target) due.push({ at, phase: 0, id: `clock-${at}`, event: () => ({ type: 'clock', at }) });
+      for (const op of definition.operations) if (!Object.hasOwn(s.occurrences, op.id) && op.at <= target) due.push({ at: op.at, phase: 0, id: op.id, event: () => ({ type: 'operation', id: op.id, ...operationOutcome(op, ctx) }) });
+      for (const [id, r] of Object.entries(s.newsroom.received)) if (r.verifiedAt === null && r.at + VERIFICATION_MINUTES <= target) due.push({ at: r.at + VERIFICATION_MINUTES, phase: 1, id, event: () => ({ type: 'material-verified', id, at: r.at + VERIFICATION_MINUTES }) });
+      for (const [index, id] of claims.entries()) {
+        const c = s.newsroom.cases[id];
+        if (c?.editionAt != null && c.editionAt <= Math.min(target, LAST_EDITION) && !s.publications.some(p => p.allegation === id)) due.push({ at: c.editionAt, phase: 3 + index, id: `edition-${id}`, event: () => ({ type: 'edition', id, at: c.editionAt! }) });
+        const pub = s.publications.find(p => p.allegation === id);
+        if (pub && !s.reactions[id] && pub.at + REACTION_MINUTES <= target) due.push({ at: pub.at + REACTION_MINUTES, phase: 3 + claims.length, id: `reaction-${id}`, event: () => ({ type: 'reaction', id, at: pub.at + REACTION_MINUTES }) });
+      }
+      due.sort((a, b) => a.at - b.at || a.phase - b.phase || a.id.localeCompare(b.id));
+      if (!due.length && s.minute !== target) { s.minute = target; s.shift = campaignDay(target); continue; }
+      if (!due.length) { s.minute = target; s.shift = campaignDay(target); s.finished = target === CAMPAIGN_END; return changed; }
+      const next = due[0]; s.minute = Math.max(s.minute, next.at); s.shift = campaignDay(s.minute);
+      reduceCampaignEvent(ctx, next.event()); changed = true;
     }
-    due.sort((a, b) => a.at - b.at || a.phase - b.phase || a.id.localeCompare(b.id));
-    if (!due.length) { state.minute = target; state.shift = campaignDay(target); state.finished = target === CAMPAIGN_END; return changed; }
-    const next = due[0]; state.minute = Math.max(state.minute, next.at); next.apply(); changed = true;
-  }
-  throw new Error('Campaign scheduler exceeded its authored work budget');
+    throw new Error('Campaign scheduler exceeded its authored work budget');
+  });
 }

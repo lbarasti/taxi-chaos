@@ -66,6 +66,6 @@ describe('deterministic campaign scheduler', () => {
   it('rejects duplicate IDs and out-of-campaign authored events', () => {
     expect(() => assertWorldOperations(worldOperations)).not.toThrow();
     expect(() => assertWorldOperations([...worldOperations, worldOperations[0]])).toThrow(/Duplicate/);
-    expect(() => assertWorldOperations([{ id: 'bad-time', at: CAMPAIGN_END, changes: {} }])).toThrow(/time/);
+    expect(() => assertWorldOperations([{ id: 'bad-time', at: CAMPAIGN_END, effects: [] }])).toThrow(/time/);
   });
 });

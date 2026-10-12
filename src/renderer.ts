@@ -177,28 +177,18 @@ export class Renderer {
   private campaignFrontages() {
     const g = this.game;
     if (!g.campaignEnabled) return;
-    const c = this.ctx, { cafe, newsroom, hotel } = g.campaignSites, world = g.save.campaign.world;
-    if (cafe && this.visible(cafe.body.position, 12)) {
-      const b = cafe.body; c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
-      this.rect(-4.1, 2.6, 8.2, 1.4, '#223b3c'); this.label('GARDEN CAFÉ', 0, 3.3, 0.7, '#f0dfb7', '700');
-      if (world.cafe !== 'open') {
-        if (world.cafe === 'broken') { for (const x of [-3.5, -1.2, 1.1, 3.4]) { this.rect(x - 0.8, -4.1, 1.6, 1.7, '#151e27'); this.label('×', x, -3.2, 1, '#b5d3dd'); } }
-        else for (const x of [-3.5, -1.2, 1.1, 3.4]) { this.rect(x - 0.8, -4.1, 1.6, 1.7, '#856f55'); this.rect(x - 0.8, -3.5, 1.6, 0.16, '#c3aa80'); }
-        this.rect(-4, 4.4, 8, 0.9, '#76654c');
-        this.label(world.security === 'suspended' ? 'CONTRACT SUSPENDED' : world.cafe === 'tenancy-review' ? 'TENANCY UNDER REVIEW' : world.cafe === 'closed' ? 'ACCOUNT CLOSED / MERIDIAN' : 'MERIDIAN SITE SERVICES', 0, 5.8, 0.55, '#e9c788', '700');
+    const c = this.ctx;
+    for (const layer of g.campaignContent.scenes) {
+      if (!g.campaignMatches(layer.requires)) continue;
+      const body = layer.site ? g.campaignSites[layer.site]?.body : g.vehicles.find(v => v.sourceId === layer.vehicle && v.alive)?.body;
+      if (!body || !this.visible(body.position, 12)) continue;
+      c.save(); c.translate(body.position.x, body.position.y);
+      if (layer.rotate) c.rotate(body.angle);
+      for (const shape of layer.shapes) {
+        if ('rect' in shape) this.rect(...shape.rect);
+        else this.label(...shape.label);
       }
-      if (g.save.story.flags.includes('vale-road-reported') && g.save.campaign.shift >= 2) { this.rect(-7, -4, 1.5, 7, '#566564'); this.label('REPAIRED', -6.3, 4.2, 0.45, '#b6c7b8'); }
       c.restore();
-    }
-    const van = g.vehicles.find(v => v.sourceId === 'campaign-ms14' && v.alive);
-    if (van && this.visible(van.body.position, 12)) this.label('MERIDIAN / MS-14', van.body.position.x, van.body.position.y - 2, 0.48, '#f0dfb7', '700');
-    if (newsroom && this.visible(newsroom.body.position, 12)) {
-      const p = newsroom.body.position; this.rect(p.x - 4, p.y + 2.5, 8, 1.5, '#47384f'); this.label('CITY DESK', p.x, p.y + 3.2, 0.7, '#e4d8ee', '700');
-    }
-    if (hotel && this.visible(hotel.body.position, 12)) {
-      const p = hotel.body.position, exposed = world.appearance === 'cancelled';
-      this.rect(p.x - 4, p.y + 4.4, 8, 1.5, exposed ? '#665f59' : '#355d60');
-      this.label(exposed ? 'APPEARANCE CANCELLED' : world.operator === 'preferred' ? 'OPEN SHORE / VALE' : 'CIVIC RENEWAL', p.x, p.y + 5.1, 0.52, '#eee6c8', '700');
     }
   }
   private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.ctx.save(); this.ctx.globalAlpha *= this.shadowAlpha; this.rect(x, y, w, h, color); this.ctx.restore(); }

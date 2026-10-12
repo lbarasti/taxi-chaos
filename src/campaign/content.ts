@@ -1,4 +1,7 @@
 import { calendarLabel, dayMinute } from './clock';
+import type { CampaignDefinition, Claim, WorldOperation } from './model';
+import { rides } from './content-rides';
+import { bulletins, scenes, ordinaryResponses } from './content-presentation';
 import type { CharacterId } from '../characters';
 import type { Mission, MissionCatalogue, MissionDialogueBeat, Condition, Effect } from '../missions/schema';
 
@@ -76,7 +79,7 @@ for (const s of specs) {
     contactLost: { effects: [{ setFlag: `contact-${(s.rider ?? s.character).toLowerCase()}-lost` }] },
     allowed: { jobs: s.first ? ['fare', 'parcel'] : ['fare'] }, stops: { pickup: s.pickup, dropoff: s.dropoff }, beats: { pickup: s.id, pickupSender: `${s.id}-sender` },
     ...(s.choice ? { pickupChoice: { group: s.choice.group, choice: s.choice.option }, ...(s.choice.options ? { choices: [{ id: s.choice.group, commit: 'pickup', options: s.choice.options.map(id => ({ id })) }] } : {}) } : {}),
-    effects: s.effects ?? [],
+    effects: [...(s.effects ?? []), ...(s.records ?? []).map(acquireMaterial => ({ acquireMaterial }))],
   };
 }
 export const openShoreCatalogue: MissionCatalogue = freezeFacts({ schemaVersion: 1, dialogue, missions });
@@ -89,10 +92,56 @@ export const corroboration = freezeFacts({
 } as const);
 export type Allegation = keyof typeof corroboration;
 
-export const everydayJobs = freezeFacts([
+const everydaySpecs = [
   { name: 'Sam', family: 'Staff transport', lines: ['Late shift, early alarm. Home, please.', 'Same shift, same bus I just missed.', 'First proper evening off. A lift to meet a friend?'] },
   { name: 'June', family: 'Small deliveries', lines: ['Birthday cake. Yes, it really is just a birthday cake.', 'Laundry collection; the blue bag is mine.', 'Groceries for my dad. He’ll try to tip you in tomatoes.'] },
   { name: 'Ravi', family: 'Personal journeys', lines: ['Interview today. I’ve checked the address four times.', 'I got the job! Could you take me in?', 'First payday. We’re celebrating at the arcade.'] },
   { name: 'Cleo', family: 'Vehicle assistance', lines: ['My car won’t start. Mechanic’s meeting me there.', 'New battery, same car. Much cheaper than my last idea.', 'Dropping off the borrowed jump leads.'] },
   { name: 'Oscar', family: 'Event logistics', lines: ['Community hall setup. Please mind the flowers.', 'The reunion went well. Nobody recognised my haircut.', 'Taking the leftover tablecloths back.'] },
+];
+
+export const everydayJobs = freezeFacts(everydaySpecs.map((job, i) => ({ ...job, during: [
+  'Could you leave me by the side entrance? The front door locks before my shift finishes.',
+  'Please take the corners gently. That box has survived the bus; I’d like it to survive the last street.',
+  'I nearly took the wrong bus again. It’s easier to ask you than pretend I know where I’m going.',
+  'My mechanic says it’ll be ready tomorrow. He said that yesterday too.',
+  'We borrowed the flowers from a neighbour. Now I’ve got to get them home in one piece.',
+][i] })));
+
+const change = (changes: Record<string, string | boolean>): Effect[] => Object.entries(changes).map(([key, value]) => ({ setWorld: { key, value } }));
+export const worldOperations: readonly WorldOperation[] = freezeFacts([
+  { id: 'waterfront-cover-withdrawn', at: dayMinute(2, 21), effects: change({ patrol: 'withdrawn' }) },
+  { id: 'ms14-arrives', at: dayMinute(2, 22), effects: change({ van: 'at-cafe', security: 'contracted' }) },
+  { id: 'cafe-windows-broken', at: dayMinute(2, 23), effects: change({ cafe: 'broken' }) },
+  { id: 'cafe-boarded', at: dayMinute(3, 7), effects: change({ cafe: 'boarded' }) },
+  { id: 'ms14-departs', at: dayMinute(3, 12), effects: change({ van: 'departed', patrol: 'normal' }) },
+  { id: 'tenancy-hearing', at: dayMinute(5, 10), effects: change({ hearing: 'held' }), outcomes: [
+    { id: 'tenancy-review', requires: { flag: 'tenant-interview-reached' }, effects: change({ cafe: 'tenancy-review' }) },
+    { id: 'closed', effects: change({ cafe: 'closed' }) },
+  ] },
+  { id: 'preferred-operator', at: dayMinute(9, 10), effects: change({ operator: 'preferred' }) },
+  { id: 'polls-open', at: dayMinute(14, 7), effects: change({ polls: true }) },
 ]);
+const dependencies = (state: 'verified' | 'approved'): Condition => ({ all: ['coordination', 'policing'].map(id => ({ caseState: { id, state } })) });
+export const claims: Readonly<Record<string, Claim>> = freezeFacts({
+  coordination: { title: 'The café closure and contractor records', routes: corroboration.coordination, reactionEffects: change({ security: 'suspended' }) },
+  policing: { title: 'The withdrawn waterfront patrols', routes: corroboration.policing, reactionEffects: change({ patrol: 'inquiry' }) },
+  knowledge: { title: 'Vale’s warning and the retained agreement', routes: corroboration.knowledge,
+    verifyRequires: dependencies('verified'), approveRequires: dependencies('approved'),
+    publishRequires: { all: [{ published: 'coordination' }, { published: 'policing' }] }, reactionEffects: change({ appearance: 'cancelled' }) },
+});
+export const campaignDefinition: CampaignDefinition = freezeFacts({
+  id: 'open-shore', title: 'Open Shore', finishedLabel: 'ELECTION DAY · OFF THE CLOCK', completionText: 'Election-day campaign complete.',
+  initialWorld: { cafe: 'open', van: 'absent', patrol: 'normal', security: 'none', hearing: 'pending', appearance: 'booked', operator: 'unannounced', polls: false },
+  operations: worldOperations, materials, claims, missions: openShoreCatalogue, jobWindows, jobNames, handlers: [],
+  dispatcher: 'bea',
+  newsroom: { stop: NEWSROOM_STOP, name: 'Old Town South', editor: 'Ruth', guide: 'Dispatch mixes ordinary work with recurring customers. Texts let you choose a booking; its deadline is for pickup. Stop near the boarded Garden Café and choose “Bookmark café frontage” to keep an observation. The newsroom is at Old Town South: stop nearby and choose material to leave. Source checks take three game hours. Return to ask Ruth to run a ready story in the next 06:00 edition. Public responses happen later. The last edition is Day 14 at 06:00.' },
+  sites: { cafe: 'garden-cafe', newsroom: NEWSROOM_STOP, hotel: 'moonlight-hotel' },
+  observations: [{ id: 'cafe-photo', stop: 'garden-cafe', radius: 16,
+    requires: { any: ['boarded', 'tenancy-review', 'closed'].map(value => ({ worldEquals: { key: 'cafe', value } })) },
+    label: 'Bookmark café frontage', unavailable: 'Stop near Garden Café from day 3 onward to bookmark its frontage.', success: 'Garden Café frontage bookmarked in Notebook.' }],
+  vehicles: [{ id: 'campaign-ms14', model: 'van', stop: 'garden-cafe', offsets: [{ x: 2.5, y: 12 }, { x: 2.5, y: 18 }, { x: -7, y: 12 }], angle: Math.PI / 2, color: '#d4c6ab', present: { worldEquals: { key: 'van', value: 'at-cafe' } }, departTo: 'the-docks' }],
+  scenes, bulletins, ordinaryResponses,
+  rides: Object.fromEntries(Object.entries(rides).map(([id, [during, arrival]]) => [id, { during, arrival, ...(jobNames[id] ? { channel: 'sender' as const } : {}) }])),
+  everydayJobs,
+});

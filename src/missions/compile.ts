@@ -1,6 +1,8 @@
 import catalogueData from './catalogue.json';
 import stopsData from './stops.json';
-import { openShoreCatalogue } from '../campaign/content';
+import { campaignDefinition } from '../campaign/content';
+import type { CampaignDefinition } from '../campaign/model';
+import { assertCampaignDefinition } from '../campaign/validate';
 import { isCharacterId, type CharacterId } from '../characters';
 import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles';
 import { dist, type Vec } from '../physics';
@@ -226,10 +228,12 @@ const cache = new WeakMap<object, CompiledMissions>();
 const neutralCache = new WeakMap<object, CompiledMissions>();
 const campaignCache = new WeakMap<object, CompiledMissions>();
 
-export function openShoreMissions(map: CompiledMap): CompiledMissions {
+export function campaignMissions(map: CompiledMap, definition: CampaignDefinition = campaignDefinition): CompiledMissions {
+  assertCampaignDefinition(definition);
+  if (definition !== campaignDefinition) return compileMissions(map, definition.missions);
   const cached = campaignCache.get(map);
   if (cached) return cached;
-  const compiled = compileMissions(map, openShoreCatalogue);
+  const compiled = compileMissions(map, definition.missions);
   campaignCache.set(map, compiled);
   return compiled;
 }

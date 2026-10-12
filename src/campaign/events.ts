@@ -1,35 +1,87 @@
-import { dayMinute } from './clock';
+import { campaignCondition } from '../missions/conditions';
+import type { CampaignContext, CampaignEvent, WorldOperation } from './model';
+import { applyEffectsTo, campaignTransaction, recordNote } from './effects';
+import { campaignDay, LAST_EDITION, nextEdition } from './clock';
+import { campaignDefinition } from './content';
+import { assertCampaignDefinition, claimOrder } from './validate';
 
-export type WorldState = {
-  cafe: 'open' | 'broken' | 'boarded' | 'tenancy-review' | 'closed';
-  van: 'absent' | 'at-cafe' | 'departed';
-  patrol: 'normal' | 'withdrawn' | 'inquiry';
-  security: 'none' | 'contracted' | 'suspended';
-  hearing: 'pending' | 'held';
-  appearance: 'booked' | 'cancelled';
-  operator: 'unannounced' | 'preferred';
-  polls: boolean;
-};
-export const defaultWorld = (): WorldState => ({ cafe: 'open', van: 'absent', patrol: 'normal', security: 'none', hearing: 'pending', appearance: 'booked', operator: 'unannounced', polls: false });
 export type Occurrence = { at: number; outcome: string };
-export type WorldOperation = Readonly<{ id: string; at: number; changes: Readonly<Partial<WorldState>>; tenantOutcome?: true }>;
-/** Stable operations, ordered by time then ID. Their resolution never grants player knowledge. */
-export const worldOperations: readonly WorldOperation[] = Object.freeze([
-  { id: 'waterfront-cover-withdrawn', at: dayMinute(2, 21), changes: { patrol: 'withdrawn' } },
-  { id: 'ms14-arrives', at: dayMinute(2, 22), changes: { van: 'at-cafe', security: 'contracted' } },
-  { id: 'cafe-windows-broken', at: dayMinute(2, 23), changes: { cafe: 'broken' } },
-  { id: 'cafe-boarded', at: dayMinute(3, 7), changes: { cafe: 'boarded' } },
-  { id: 'ms14-departs', at: dayMinute(3, 12), changes: { van: 'departed', patrol: 'normal' } },
-  { id: 'tenancy-hearing', at: dayMinute(5, 10), changes: { hearing: 'held' }, tenantOutcome: true },
-  { id: 'preferred-operator', at: dayMinute(9, 10), changes: { operator: 'preferred' } },
-  { id: 'polls-open', at: dayMinute(14, 7), changes: { polls: true } },
-].map(op => Object.freeze({ ...op, changes: Object.freeze(op.changes) })) as WorldOperation[]);
+export type { WorldState, WorldOperation } from './model';
+export const worldOperations = campaignDefinition.operations;
+export const defaultWorld = () => ({ ...campaignDefinition.initialWorld });
+export const assertWorldOperations = (operations: readonly WorldOperation[]) => assertCampaignDefinition({ ...campaignDefinition, operations });
 
-export function assertWorldOperations(operations: readonly WorldOperation[]): void {
-  const ids = new Set<string>();
-  for (const op of operations) {
-    if (ids.has(op.id) || !/^[a-z][a-z0-9-]+$/.test(op.id)) throw new Error(`Duplicate or invalid operation: ${op.id}`);
-    if (!Number.isInteger(op.at) || op.at < dayMinute(1) || op.at >= dayMinute(15)) throw new Error(`Invalid operation time: ${op.id}`);
-    ids.add(op.id);
+export function canApprove(ctx: CampaignContext, id: string): boolean {
+  const c = ctx.state.newsroom.cases[id], claim = ctx.definition.claims[id];
+  return !!claim && !!c && c.approvedAt === null && !ctx.state.finished && nextEdition(ctx.state.minute) <= LAST_EDITION && campaignCondition(claim.approveRequires, ctx.state, ctx);
+}
+
+/** Typed reducer. Authored handlers see the event's result, in author order. */
+export function reduceCampaignEvent(ctx: CampaignContext, event: CampaignEvent): boolean {
+  const s = ctx.state;
+  const id = 'id' in event ? event.id : 'missionId' in event ? event.missionId : event.type === 'choice' ? event.group : undefined;
+  switch (event.type) {
+    case 'material-submitted':
+      if (s.finished || s.minute >= LAST_EDITION || !Object.hasOwn(ctx.definition.materials, event.id) || Object.hasOwn(s.newsroom.received, event.id)) return false;
+      s.newsroom.received[event.id] = { at: s.minute, verifiedAt: null }; break;
+    case 'publication-requested': {
+      if (!canApprove(ctx, event.id)) return false;
+      const c = s.newsroom.cases[event.id]!; c.approvedAt = s.minute; c.editionAt = nextEdition(s.minute); break;
+    }
+    case 'operation':
+      if (s.occurrences[event.id]) return false;
+      s.occurrences[event.id] = { at: s.minute, outcome: event.outcome };
+      applyEffectsTo(ctx.progress, event.effects, ctx); break;
+    case 'material-verified': {
+      const r = s.newsroom.received[event.id]; if (!r || r.verifiedAt !== null) return false;
+      r.verifiedAt = event.at; break;
+    }
+    case 'case-verified':
+      if (s.newsroom.cases[event.id]) return false;
+      s.newsroom.cases[event.id] = { verifiedAt: event.at, approvedAt: null, editionAt: null }; break;
+    case 'edition': {
+      const c = s.newsroom.cases[event.id], claim = ctx.definition.claims[event.id];
+      if (!c || !claim || s.publications.some(p => p.allegation === event.id)) return false;
+      const ready = campaignCondition(claim.publishRequires, s, ctx);
+      s.occurrences[`edition-${event.id}`] = { at: event.at, outcome: ready ? 'published' : 'held' };
+      if (ready) s.publications.push({ allegation: event.id, submittedShift: campaignDay(c.verifiedAt - 180), publishedShift: campaignDay(event.at), at: event.at });
+      else c.editionAt = null;
+      break;
+    }
+    case 'reaction':
+      if (s.reactions[event.id]) return false;
+      s.reactions[event.id] = { at: event.at }; s.occurrences[`reaction-${event.id}`] = { at: event.at, outcome: 'occurred' };
+      applyEffectsTo(ctx.progress, ctx.definition.claims[event.id].reactionEffects, ctx); break;
+    case 'observation': {
+      const observation = ctx.definition.observations.find(o => o.id === event.id);
+      if (!observation || !campaignCondition(observation.requires, s, ctx)) return false;
+      applyEffectsTo(ctx.progress, [{ acquireMaterial: event.id }], ctx); break;
+    }
+    case 'ride-completed':
+      s.ordinarySinceStory = event.missionId ? 0 : Math.min(2, s.ordinarySinceStory + 1);
+      if (!event.missionId) s.regularRides[event.name] = (s.regularRides[event.name] ?? 0) + 1;
+      recordNote(ctx, event.receipt); break;
   }
+  for (const handler of ctx.definition.handlers) if (handler.on === event.type && (handler.id === undefined || handler.id === id) && campaignCondition(handler.requires, s, ctx)) applyEffectsTo(ctx.progress, handler.effects, ctx);
+  if (event.type !== 'case-verified') settleCases(ctx);
+  return true;
+}
+
+/** Reevaluate storylets after every domain transition, at that exact campaign time. */
+export function settleCases(ctx: CampaignContext): number {
+  const ids = claimOrder(ctx.definition); let admitted = 0;
+  for (let pass = 0; pass < ids.length; pass++) {
+    const before = admitted;
+    for (const id of ids) {
+      const claim = ctx.definition.claims[id];
+      if (ctx.state.newsroom.cases[id] || !claim.routes.some(route => route.every(material => ctx.state.newsroom.received[material]?.verifiedAt != null)) || !campaignCondition(claim.verifyRequires, ctx.state, ctx)) continue;
+      reduceCampaignEvent(ctx, { type: 'case-verified', id, at: ctx.state.minute }); admitted++;
+    }
+    if (admitted === before) break;
+  }
+  return admitted;
+}
+
+export function dispatchCampaignEvent(ctx: CampaignContext, event: CampaignEvent): boolean {
+  return campaignTransaction(ctx, draft => reduceCampaignEvent(draft, event));
 }
