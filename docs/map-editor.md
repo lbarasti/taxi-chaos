@@ -17,7 +17,7 @@ The critical review and amended contracts are recorded in
 - Keep invalid geometric drafts editable, but reject structural errors atomically
   and block gameplay preview until geometric errors are resolved.
 - Retain the original Game object. Preview constructs a fresh persistence-disabled
-  game, including disabled save/settings reads and migration, and discards it on return.
+  game without reading saves or settings, and discards it on return.
 - Use actual collision bodies and sampled edge footprints in validation, with
   reported resolution/tolerance. Intended same-composite attachments are allowed.
 - Give the envelope 10 m of southern margin beyond the old nominal 550 m extent;
@@ -82,11 +82,10 @@ position/angle, a colour and its own strict schema and workload budget.
 
 The bridge attachments and the read-only city/harbour `Props` remain generated.
 Unlike those, every authored descriptor is editable and can be created or removed.
-Imports from schema version 1 are migrated losslessly: the four bridge lamps become
-`countryProps`, the fixed parking/traffic layout becomes explicit descriptors, and
-the legacy `beach.pickup` point becomes the beach pickup bay's position. Version 2
-output sorts and fingerprints the full document, so old `v1-*` revisions are stale
-by design and a fresh revision must be taken.
+Only version-2 map documents are accepted for import. Every authored parking,
+traffic and country prop must be explicit in that document; no prior schema is
+upgraded. Exports sort and fingerprint the current document, and stale
+revisions are rejected.
 
 ## Agent API
 
@@ -185,7 +184,7 @@ For machine-readable stdout without npm's command banner, use
 | `src/countryside.ts`, `beach.ts`, `coast.ts` | Per-map derived roads, drives, pools, surfaces, access and rails; default adapters remain for compatibility |
 | `src/world.ts` | Per-world map, bound navigation, collision hash, authored country props and descriptor parking |
 | `src/map/operations.ts` | Shared atomic transactions (including add/replace/duplicate/delete), descriptions and 100-entry undo/redo history |
-| `src/map/serialization.ts` | Stable sorted object keys, semantic array order, lossless numeric JSON, version-1 migration and import/export |
+| `src/map/serialization.ts` | Stable sorted object keys, semantic array order, lossless numeric JSON and current-schema import/export |
 | `src/map/validation.ts` | Geometry, road bodies, drives, pool/solid overlap, stop reachability, walking entrances, envelope, water clearance and vehicle placement/route clearance |
 | `src/map/editor*.ts`, `editor.css` | Independent overview camera, layers, selection, gestures, inspector and draft lifecycle |
 | `src/map/preview.ts` | Real-game preview construction, safe road spawn and test fare |
@@ -232,7 +231,7 @@ authored composites are checked against their intended land.
 - `src/map/content.test.ts` covers add/duplicate/replace/move/delete transactions,
   detached results and exact history restoration, atomic rejection of id/collision/
   pinned/collection errors, route movement with spawn duplication and district
-  translation, strict import bounds, version-1 migration and lossless v2 round
+  translation, strict import bounds, rejection of v1 exports and lossless v2 round
   trips, runtime `sourceId`/model/colour/path/parking links, descriptor
   replenishment, and every new geometric finding (pool overlap, water, static,
   vehicle-vehicle, route and envelope).
