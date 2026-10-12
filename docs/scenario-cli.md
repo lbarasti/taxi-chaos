@@ -1,7 +1,7 @@
 # Stateful scenario CLI
 
 Run a sequence against **one real `Game`**, with the same map, mission director,
-120 Hz simulation, campaign scheduler, records and save migrators as the app.
+120 Hz simulation, campaign scheduler, records and current-schema parsers as the app.
 PNG checkpoints use the actual renderer, HUD, portraits, inbox and notebook in
 one isolated Chromium context. No normal progress or preferences are written.
 
@@ -87,7 +87,7 @@ No invincibility is applied.
 | `photo` | No fields | Bookmark the café through the real proximity, speed and frontage-state gates. |
 | `submit` | `"material":"cafe-photo"` | Leave a possessed original's copy through the real newsroom proximity gate. |
 | `publish` | `"allegation":"coordination"` | Ask the editor to run a verified case through the real editorial gate. Publication and response still wait for their boundaries. |
-| `reload` | No fields | Serialize the current save, run story/record/campaign migrators and reconstruct a persistence-disabled `Game`. Accepted authored rides resume; transient physics resets just as after loading. No browser refresh or localStorage write. |
+| `reload` | No fields | Serialize the current save, validate story/record/campaign snapshots and reconstruct a persistence-disabled `Game`. Accepted authored rides resume; transient physics resets just as after loading. No browser refresh or localStorage write. |
 | `expect` | `"path":"campaign.world.security","equals":"suspended"` | Assert against a detached snapshot. Supports exactly one of `equals`, `includes`, `length`, `exists`, `gte`, `lte`. |
 | `capture` | `"name":"ready-case","view":"notebook","panelOnly":true` | Capture a checkpoint. Views: `world` (default), `story`, `texts`, `notebook`, `pause`. Optional `focus` (`actor`, `cafe`, `newsroom`, `hotel`) and `zoom` (5–24) frame a world detail without moving the actor. PNG mode uses the actual UI. Headless mode retains the same marker/state without making an image. |
 
