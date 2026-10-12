@@ -49,6 +49,15 @@ describe('Taxi Chaos current-format storage', () => {
     mockStorage([[storageKeys.save, JSON.stringify({ cash: 975, deliveries: 12, best: 600, upgrades: { engine: 2 } })]]);
     expect(new Game().save).toEqual(defaultSave());
   });
+  it('rejects versioned but incomplete old player and campaign records', () => {
+    const oldRecords = { ...defaultSave(), playerRecords: { version: 1, texts: [] } };
+    const oldCampaign = { ...defaultSave(), campaign: { version: 2, minute: 420 } };
+    const oldStory = { ...defaultSave(), story: { version: 1, chapter: 1, completed: [] } };
+    for (const save of [oldRecords, oldCampaign, oldStory]) {
+      mockStorage([[storageKeys.save, JSON.stringify(save)]]);
+      expect(new Game().save).toEqual(defaultSave());
+    }
+  });
   it('keeps default progress and preferences when browser storage is unavailable', () => {
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('storage denied'); } });
     expect(new Game().save).toEqual(defaultSave());

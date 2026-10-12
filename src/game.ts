@@ -52,9 +52,14 @@ function loadSave(): Save {
     const story = s.story as Record<string, unknown> | undefined;
     const records = s.playerRecords as Record<string, unknown> | undefined;
     const campaign = s.campaign as Record<string, unknown> | undefined;
-    // Current saves require all active schemas; do not salvage old partial records.
-    if (story?.version !== 1 || records?.version !== 1 || campaign?.version !== 2 ||
-        !s.upgrades || typeof s.upgrades !== 'object' || Array.isArray(s.upgrades)) return defaultSave();
+    // Require every field of the active save schemas, not partial legacy layouts.
+    const complete = (value: unknown, keys: string[]) =>
+      !!value && typeof value === 'object' && !Array.isArray(value) && keys.every(key => Object.hasOwn(value, key));
+    if (!complete(s, ['cash', 'deliveries', 'best', 'upgrades', 'story', 'playerRecords', 'campaign']) ||
+        !complete(s.upgrades, ['engine', 'grip', 'armor', 'boost']) ||
+        story?.version !== 1 || !complete(story, ['chapter', 'completed', 'failed', 'flags', 'choices', 'relationships', 'campaignSeconds', 'deliveries', 'retryAt']) ||
+        records?.version !== 1 || !complete(records, ['texts', 'notebook']) ||
+        campaign?.version !== 2 || !complete(campaign, ['minute', 'shift', 'finished', 'occurrences', 'world', 'newsroom', 'publications', 'reactions', 'regularRides', 'ordinarySinceStory', 'activeRide'])) return defaultSave();
     const d = defaultSave();
     d.cash = clamp(Number(s.cash) || 0, 0, 1e7);
     d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5);
