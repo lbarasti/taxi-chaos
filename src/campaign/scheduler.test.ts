@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultCampaign, migrateCampaign } from './state';
+import { defaultCampaign, parseCampaign } from './state';
 import { approvePublication, advanceCampaignTo, receiveMaterial } from './scheduler';
 import { CAMPAIGN_END, LAST_EDITION, dayMinute } from './clock';
 import { assertWorldOperations, worldOperations } from './events';
@@ -40,7 +40,7 @@ describe('deterministic campaign scheduler', () => {
     advanceCampaignTo(state, dayMinute(12, 6)); expect(state.publications.map(p => p.allegation)).toEqual(['coordination', 'policing', 'knowledge']);
     expect(state.world.appearance).toBe('booked'); expect(state.reactions).toEqual({});
     advanceCampaignTo(state, dayMinute(12, 8)); expect(state.world.appearance).toBe('cancelled'); expect(state.world.security).toBe('suspended'); expect(state.world.patrol).toBe('inquiry');
-    const roundTrip = migrateCampaign(JSON.parse(JSON.stringify(state))); expect(roundTrip).toEqual(state);
+    const roundTrip = parseCampaign(JSON.parse(JSON.stringify(state))); expect(roundTrip).toEqual(state);
     const before = structuredClone(roundTrip); advanceCampaignTo(roundTrip, dayMinute(12, 8)); expect(roundTrip).toEqual(before);
   });
 
@@ -57,22 +57,10 @@ describe('deterministic campaign scheduler', () => {
     const copy = structuredClone(state); expect(advanceCampaignTo(state, CAMPAIGN_END + 2)).toBe(false); expect(state).toEqual(copy);
   });
 
-  it('migrates a manual shift without adding player knowledge, and validates corrupt or future saves', () => {
-    const legacy = migrateCampaign({ version: 1, shift: 6, submitted: ['barrier-receipt', 'bad'], publications: [], regularRides: { Ravi: 2 } });
-    expect(legacy.minute).toBe(dayMinute(6)); expect(legacy.world.cafe).toBe('closed'); expect(legacy.newsroom.received['barrier-receipt'].verifiedAt).toBeNull();
-    expect(legacy.publications).toEqual([]); expect(legacy.regularRides.Ravi).toBe(2);
-    expect(migrateCampaign({ version: 99, minute: Infinity })).toEqual(defaultCampaign());
-    expect(migrateCampaign({ version: 2, minute: NaN, newsroom: { received: { 'eli-docket': { at: -10, verifiedAt: 0 } } }, publications: [null] })).toEqual(defaultCampaign());
-  });
-
-  it('retains valid legacy publications through the v2 migration and its next reload', () => {
-    const legacy = migrateCampaign({ version: 1, shift: 13, submitted: sources, publications: [
-      { allegation: 'coordination', submittedShift: 6, publishedShift: 7 },
-      { allegation: 'policing', submittedShift: 9, publishedShift: 10 },
-      { allegation: 'knowledge', submittedShift: 11, publishedShift: 12 },
-    ] });
-    expect(legacy.publications.map(p => p.allegation)).toEqual(['coordination', 'policing', 'knowledge']);
-    expect(migrateCampaign(JSON.parse(JSON.stringify(legacy)))).toEqual(legacy);
+  it('rejects old or unknown campaign versions without importing their events', () => {
+    expect(parseCampaign({ version: 1, shift: 6, submitted: ['barrier-receipt'], regularRides: { Ravi: 2 } })).toEqual(defaultCampaign());
+    expect(parseCampaign({ version: 99, minute: Infinity })).toEqual(defaultCampaign());
+    expect(parseCampaign({ version: 2, minute: NaN, newsroom: { received: { 'eli-docket': { at: -10, verifiedAt: 0 } } }, publications: [null] })).toEqual(defaultCampaign());
   });
 
   it('rejects duplicate IDs and out-of-campaign authored events', () => {

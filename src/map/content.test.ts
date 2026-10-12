@@ -13,7 +13,7 @@ import { createPreview } from './preview';
 const prop = (): CountryProp => ({ id: 'test-shed', owner: 'southern-estates', position: vec(280, 469), kind: 'shed', width: 6, height: 3, angle: Math.PI / 2, color: '#987c59', label: 'COUNTRY SHED' });
 const apply = (h: MapHistory, operations: Parameters<MapHistory['apply']>[0]['operations']) => h.apply({ baseRevision: h.snapshot().revision, operations });
 
-describe('authored content transactions and compatibility', () => {
+describe('authored content transactions', () => {
   it('adds, duplicates, replaces, moves and deletes with detached data and exact history', () => {
     const h = new MapHistory(), before = h.export(), descriptor = prop();
     apply(h, [{ type: 'add', collection: 'countryProps', descriptor }, { type: 'duplicate', targetId: descriptor.id, newId: 'test-copy', delta: vec(10, 0) }]);
@@ -55,16 +55,12 @@ describe('authored content transactions and compatibility', () => {
     if (kind === 'extra') Object.assign(d.parking[0], { surprise: true });
     expect(() => assertMap(d)).toThrow();
   });
-  it('migrates old v1 exports, retains the old pickup position, and exports canonical v2', () => {
-    const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...legacy } = d;
-    const old = { ...legacy, schemaVersion: 1, beach: { ...legacy.beach, pickup: vec(30, 249.5) } };
-    const migrated = importMap(JSON.stringify(old));
-    expect(migrated.schemaVersion).toBe(2); expect(migrated.countryProps).toEqual(countryProps);
-    expect(migrated.trafficSpawns).toEqual(trafficSpawns); expect(migrated.parking).toHaveLength(parking.length);
-    expect(migrated.parking.find(p => p.id === 'parking-73')!.position).toEqual(vec(30, 249.5));
-    expect(exportMap(importMap(exportMap(migrated)))).toBe(exportMap(migrated));
+  it('rejects version 1 exports without upgrading them and retains canonical version 2 imports', () => {
+    const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...previous } = d;
+    const old = { ...previous, schemaVersion: 1, beach: { ...previous.beach, pickup: vec(30, 249.5) } };
+    expect(() => importMap(JSON.stringify(old))).toThrow();
     expect(() => importMap(JSON.stringify({ ...old, parking: [] }))).toThrow();
-    expect(() => importMap(JSON.stringify({ ...old, surprise: true }))).toThrow();
+    expect(exportMap(importMap(exportMap(d)))).toBe(exportMap(d));
   });
 });
 

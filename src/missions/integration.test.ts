@@ -160,11 +160,12 @@ describe('game mission integration', () => {
     expect(loaded.save.story.completed).toContain('mia-meridian-lead');
   });
 
-  it('loads legacy saves without story data and snapshots stay detached', () => {
-    const legacy = defaultSave() as Record<string, unknown>;
-    delete legacy.story;
-    vi.stubGlobal('localStorage', { getItem: (key: string) => key === storageKeys.save ? JSON.stringify(legacy) : null, setItem: vi.fn(), removeItem: vi.fn() });
+  it('rejects incomplete saved layouts and keeps snapshots detached', () => {
+    const incomplete = { ...defaultSave(), cash: 750 } as Record<string, unknown>;
+    delete incomplete.story;
+    vi.stubGlobal('localStorage', { getItem: (key: string) => key === storageKeys.save ? JSON.stringify(incomplete) : null, setItem: vi.fn(), removeItem: vi.fn() });
     const g = new Game(defaultCompiledMap, true, 'legacy');
+    expect(g.save.cash).toBe(defaultSave().cash);
     expect(g.save.story.completed).toEqual([]);
     const snapshot = g.snapshot();
     snapshot.story!.progress.completed.push('tampered');

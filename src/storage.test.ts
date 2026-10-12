@@ -16,36 +16,47 @@ function mockStorage(entries: [string, string][] = []) {
 }
 afterEach(() => vi.unstubAllGlobals());
 
-describe('Taxi Chaos storage migration', () => {
-  it('retains existing progress and preferences and persists subsequent changes under the new name', () => {
+describe('Taxi Chaos current-format storage', () => {
+  it('loads and updates current progress, settings and preferences', () => {
     const save = { ...defaultSave(), cash: 975, deliveries: 12, best: 600, upgrades: { engine: 2, grip: 1, armor: 3, boost: 1 } };
     const settings = { gore: true, difficulty: 'chaos' }, preferences = { muted: true, volume: 0.4, sirens: 0.1 };
     const { values } = mockStorage([
-      ['fare-city-v1', JSON.stringify(save)], ['fare-city-settings', JSON.stringify(settings)], ['fare-city-audio', JSON.stringify(preferences)],
+      [storageKeys.save, JSON.stringify(save)], [storageKeys.settings, JSON.stringify(settings)], [storageKeys.audio, JSON.stringify(preferences)],
     ]);
     const game = new Game(), audio = new AudioFX();
     expect(game.save).toEqual(save); expect(game.settings).toMatchObject(settings); expect(audio.preferences).toEqual(preferences);
-    expect([...values.keys()].sort()).toEqual(Object.values(storageKeys).sort());
     game.save.cash += 100; game.persist(); game.configure({ difficulty: 'cruise' }); audio.configure({ muted: false });
     expect(JSON.parse(values.get(storageKeys.save)!)).toEqual({ ...save, cash: 1075 });
     expect(JSON.parse(values.get(storageKeys.settings)!)).toEqual({ gore: true, difficulty: 'cruise' });
     expect(JSON.parse(values.get(storageKeys.audio)!)).toEqual({ ...preferences, muted: false });
   });
-  it('prefers current data when both versions exist', () => {
+  it('ignores prior project names and reads only the current keys', () => {
+    const { values, storage } = mockStorage([['fare-city-v1', JSON.stringify({ ...defaultSave(), cash: 420 })]]);
+    expect(readStorage(storageKeys.save)).toBeNull();
+    expect(new Game().save).toEqual(defaultSave());
+    expect(values.has('fare-city-v1')).toBe(true);
+    expect(storage.setItem).not.toHaveBeenCalled();
     mockStorage([['fare-city-v1', 'old'], [storageKeys.save, 'current']]);
     expect(readStorage(storageKeys.save)).toBe('current');
   });
-  it('still loads legacy progress when migration writes are denied', () => {
-    const save = { ...defaultSave(), cash: 420 }, { values, storage } = mockStorage([['fare-city-v1', JSON.stringify(save)]]);
-    storage.setItem.mockImplementation(() => { throw new Error('storage full'); });
-    expect(new Game().save).toEqual(save);
-    expect(values.has('fare-city-v1')).toBe(true); expect(storage.removeItem).not.toHaveBeenCalled();
-  });
-  it('erases both save versions so legacy progress cannot return after a reset', () => {
+  it('resets only the current save key', () => {
     const { values } = mockStorage([['fare-city-v1', 'old'], [storageKeys.save, 'current'], [storageKeys.settings, '{}']]);
     removeStorage(storageKeys.save);
     expect(readStorage(storageKeys.save)).toBeNull(); expect(new Game().save).toEqual(defaultSave());
-    expect(values.has(storageKeys.settings)).toBe(true);
+    expect(values.has('fare-city-v1')).toBe(true); expect(values.has(storageKeys.settings)).toBe(true);
+  });
+  it('rejects incomplete old save records instead of keeping career values', () => {
+    mockStorage([[storageKeys.save, JSON.stringify({ cash: 975, deliveries: 12, best: 600, upgrades: { engine: 2 } })]]);
+    expect(new Game().save).toEqual(defaultSave());
+  });
+  it('rejects versioned but incomplete old player and campaign records', () => {
+    const oldRecords = { ...defaultSave(), playerRecords: { version: 1, texts: [] } };
+    const oldCampaign = { ...defaultSave(), campaign: { version: 2, minute: 420 } };
+    const oldStory = { ...defaultSave(), story: { version: 1, chapter: 1, completed: [] } };
+    for (const save of [oldRecords, oldCampaign, oldStory]) {
+      mockStorage([[storageKeys.save, JSON.stringify(save)]]);
+      expect(new Game().save).toEqual(defaultSave());
+    }
   });
   it('keeps default progress and preferences when browser storage is unavailable', () => {
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('storage denied'); } });

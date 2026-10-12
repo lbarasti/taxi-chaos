@@ -1,9 +1,9 @@
 import { Game, type Mode } from '../game';
 import { defaultCompiledMap } from '../map/compile';
 import { previewInputs } from '../missions/dialogue-preview';
-import { migrateMissionProgress } from '../missions/progress';
-import { migratePlayerRecords } from '../player-records';
-import { migrateCampaign } from '../campaign/state';
+import { parseMissionProgress } from '../missions/progress';
+import { parsePlayerRecords } from '../player-records';
+import { parseCampaign } from '../campaign/state';
 import { CAMPAIGN_END, CAMPAIGN_START, dayMinute } from '../campaign/clock';
 import { corroboration, materials, type Allegation } from '../campaign/content';
 import { worldOperations } from '../campaign/events';
@@ -260,7 +260,7 @@ export class ScenarioRunner {
       case 'publish': return this.boolean(g.requestPublication(c.allegation), c.expected);
       case 'reload': {
         g.persist(); const save = JSON.parse(JSON.stringify(g.save));
-        save.story = migrateMissionProgress(save.story); save.playerRecords = migratePlayerRecords(save.playerRecords); save.campaign = migrateCampaign(save.campaign);
+        save.story = parseMissionProgress(save.story); save.playerRecords = parsePlayerRecords(save.playerRecords); save.campaign = parseCampaign(save.campaign);
         this.game = new Game(g.map, false, true, save); this.configure(); this.game.start(); this.game.toastTime = 0;
         return { saveRoundTrip: true, transientWorldReset: true };
       }

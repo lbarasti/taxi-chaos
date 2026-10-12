@@ -9,9 +9,10 @@ export const defaultPlayerRecords = (): PlayerRecords => ({ version: 1, texts: [
 export const MAX_TEXT_RECEIPTS = 400;
 export const MAX_NOTEBOOK_ENTRIES = 400;
 
-export function migratePlayerRecords(raw: unknown): PlayerRecords {
+/** Validate and detach a current-format player record snapshot. */
+export function parsePlayerRecords(raw: unknown): PlayerRecords {
   const records = defaultPlayerRecords();
-  if (!raw || typeof raw !== 'object' || !('version' in raw) || raw.version !== 1 || !('texts' in raw) || !Array.isArray(raw.texts)) return records;
+  if (!raw || typeof raw !== 'object' || !('version' in raw) || raw.version !== 1 || !('texts' in raw) || !Array.isArray(raw.texts) || !('notebook' in raw) || !Array.isArray(raw.notebook)) return records;
   const seen = new Set<string>();
   for (const value of raw.texts.slice(0, MAX_TEXT_RECEIPTS)) {
     if (!value || typeof value !== 'object') continue;
@@ -24,7 +25,7 @@ export function migratePlayerRecords(raw: unknown): PlayerRecords {
       title: t.title, text: t.text, pickup: t.pickup, receivedAt: t.receivedAt, readAt });
     seen.add(t.messageId);
   }
-  if ('notebook' in raw && Array.isArray(raw.notebook)) for (const value of raw.notebook.slice(0, MAX_NOTEBOOK_ENTRIES)) {
+  for (const value of raw.notebook.slice(0, MAX_NOTEBOOK_ENTRIES)) {
     if (!value || typeof value !== 'object') continue;
     const e = value as NotebookEntry;
     if (typeof e.id !== 'string' || !/^[a-z][a-z0-9-]{0,99}$/.test(e.id) || records.notebook.some(old => old.id === e.id)) continue;

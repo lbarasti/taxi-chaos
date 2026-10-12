@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../game';
 import { defaultCompiledMap } from '../map/compile';
 import { vec } from '../physics';
-import { migrateMissionProgress } from './progress';
+import { parseMissionProgress } from './progress';
 import { MissionDirector } from './director';
 import { compileMissions } from './compile';
 import catalogue from './catalogue.json';
 import type { MissionCatalogue } from './schema';
-import { migratePlayerRecords } from '../player-records';
+import { parsePlayerRecords } from '../player-records';
 
 const step = (g: Game, seconds = 0.9) => { for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); };
 const arrive = (g: Game, point: { x: number; y: number }) => {
@@ -29,7 +29,7 @@ describe('parallel text offers and physical branches', () => {
     expect(g.save.playerRecords.texts.find(t => t.messageId === receipt.messageId)).toEqual(receipt);
     expect(receipt.readAt).toBe(readAt);
     expect(g.routeMissionOffer(receipt.missionId)).toBe(false);
-    expect(migratePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords))).texts).toContainEqual(receipt);
+    expect(parsePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords))).texts).toContainEqual(receipt);
     g.resetRun(); expect(g.save.playerRecords.texts).toHaveLength(3);
     expect(g.save.playerRecords.texts.find(t => t.messageId === receipt.messageId)?.readAt).toBe(readAt);
     g.resetStory(); expect(g.save.playerRecords.texts).toEqual([]);
@@ -49,7 +49,7 @@ describe('parallel text offers and physical branches', () => {
     expect(g.save.playerRecords.texts.some(t => t.missionId === 'frankie-ledger-trail')).toBe(true);
     expect(g.job.missionId).toBe('mia-cafe-trail');
     expect(g.missions.loseContact('frankie-ledger-trail', g.time)).toBe(false);
-    const progress = migrateMissionProgress(JSON.parse(JSON.stringify(g.save.story)));
+    const progress = parseMissionProgress(JSON.parse(JSON.stringify(g.save.story)));
     expect(new MissionDirector(g.missions.catalogue, progress).available({deliveries:1,jobType:'fare',model:'car',kind:'taxi',time:progress.campaignSeconds})).not.toContain('frankie-ledger-trail');
     g.resetRun(); expect(g.missionOffers.has('frankie-ledger-trail')).toBe(false);
   });
@@ -114,12 +114,12 @@ describe('parallel text offers and physical branches', () => {
     expect(g.save.story.completed).toContain('frankie-arcade-lift');
   });
 
-  it('abandonment, save migration and a fresh shift preserve the chosen branch', () => {
+  it('abandonment, save reload and a fresh shift preserve the chosen branch', () => {
     const g = ready(); arrive(g, g.missionOffers.get('mia-cafe-trail')!.pickup);
     g.setMode('wasted'); g.recover();
     expect(g.save.story.choices['meridian-trail']).toBe('cafe');
     expect(g.save.story.completed).not.toContain('mia-cafe-trail');
-    const saved = migrateMissionProgress(JSON.parse(JSON.stringify(g.save.story)));
+    const saved = parseMissionProgress(JSON.parse(JSON.stringify(g.save.story)));
     const d = new MissionDirector(g.missions.catalogue, saved);
     const context = { deliveries: saved.deliveries, jobType: 'fare' as const, model: 'car' as const, kind: 'taxi' as const, time: saved.campaignSeconds };
     expect(d.available(context)).toContain('mia-cafe-trail'); expect(d.available(context)).not.toContain('frankie-ledger-trail');

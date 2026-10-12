@@ -6,9 +6,9 @@ import { assertMissionCatalogue } from '../missions/schema';
 import { contact, vec } from '../physics';
 import { GARAGE } from '../world';
 import { storageKeys } from '../storage';
-import { MAX_NOTEBOOK_ENTRIES, migratePlayerRecords } from '../player-records';
+import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../player-records';
 import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
-import { defaultCampaign, migrateCampaign } from './state';
+import { defaultCampaign, parseCampaign } from './state';
 import { CAMPAIGN_END, LAST_EDITION, dayMinute } from './clock';
 import { notebookMarkup } from './view';
 import { rideDialogueIds } from './ride-dialogue';
@@ -68,7 +68,7 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.photographCafe()).toBe(true); expect(g.photographCafe()).toBe(true);
     g.newJob(false, 'replaced', true); finish(g);
     expect(g.save.playerRecords.notebook).toHaveLength(MAX_NOTEBOOK_ENTRIES);
-    const records = migratePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords)));
+    const records = parsePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords)));
     expect(records.notebook).toEqual(g.save.playerRecords.notebook);
     expect(records.notebook.filter(e => e.id === 'cafe-photo')).toHaveLength(1);
     g.player.body.position = { ...g.newsroom };
@@ -261,7 +261,7 @@ describe('Open Shore world-driven campaign', () => {
   it('rejects malformed calendar conditions and malformed record metadata', () => {
     const catalogue = structuredClone(openShoreCatalogue); (catalogue.missions['bea-first-shift'] as { requires: unknown }).requires = { minuteBefore: 20581 };
     expect(() => assertMissionCatalogue(catalogue)).toThrow();
-    expect(migrateCampaign(undefined)).toEqual(defaultCampaign());
-    expect(migratePlayerRecords({ version: 1, texts: [], notebook: [{ id: 'bad', title: 'X', text: 'Y', shift: 99, at: 0, kind: 'observation' }] }).notebook).toEqual([]);
+    expect(parseCampaign(undefined)).toEqual(defaultCampaign());
+    expect(parsePlayerRecords({ version: 1, texts: [], notebook: [{ id: 'bad', title: 'X', text: 'Y', shift: 99, at: 0, kind: 'observation' }] }).notebook).toEqual([]);
   });
 });

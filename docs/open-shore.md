@@ -103,7 +103,7 @@ shown. Author facts do not become player knowledge merely by occurring.
 | `src/campaign/clock.ts` | Absolute calendar, dawn boundaries, precise last edition and finale |
 | `src/campaign/events.ts` | Typed persistent world state and immutable authored operations |
 | `src/campaign/scheduler.ts` | Bounded chronological world, authentication, edition and response resolution |
-| `src/campaign/state.ts` | Validated v2 snapshot, legacy-shift migration and accepted story-ride resume |
+| `src/campaign/state.ts` | Validated current v2 snapshots and accepted story-ride resume |
 | `src/campaign/content.ts` | Bookings, exact pickup windows, material and independent corroboration |
 | `src/campaign/ride-dialogue.ts` | Authored travel/arrival exchanges and ordinary riders' local reactions |
 | `src/campaign/bulletin.ts` | Public coverage and later response selectors |
@@ -113,9 +113,9 @@ shown. Author facts do not become player knowledge merely by occurring.
 All mutually dependent narrative, record, mission and economy changes share one
 localStorage save envelope. Authored rides aboard at save time resume without
 replaying choice effects; their transient vehicle restarts parked at the pickup.
-Career cash, deliveries, old notebook entries, text history and prior publications
-survive migration. A manual-shift save maps its shift to 07:00 of that working
-day; no historical evidence is invented.
+Current-format snapshots preserve cash, deliveries, notebook entries, text
+history and publications. Prior manual-shift saves are not imported; no
+historical evidence is invented.
 
 Lighting follows the campaign normally. Lab sky presets override lighting only.
 Opening Test Lab creates a persistence-disabled copy; campaign advance controls

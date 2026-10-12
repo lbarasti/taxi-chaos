@@ -3,7 +3,7 @@ import { defaultCompiledMap } from '../map/compile';
 import type { MissionCatalogue } from './schema';
 import { compileMissions } from './compile';
 import { MissionDirector, type DirectorContext } from './director';
-import { defaultMissionProgress, migrateMissionProgress } from './progress';
+import { defaultMissionProgress, parseMissionProgress } from './progress';
 
 const STOPS = {
   schemaVersion: 1,
@@ -297,7 +297,7 @@ describe('mission director', () => {
     const d = new MissionDirector(compiled(), defaultMissionProgress());
     d.progress.campaignSeconds = 100;
     d.begin('cooldown', ctx({ time: 100 })); d.abandon('shift', 100);
-    const loaded = new MissionDirector(compiled(), migrateMissionProgress(JSON.parse(JSON.stringify(d.progress))));
+    const loaded = new MissionDirector(compiled(), parseMissionProgress(JSON.parse(JSON.stringify(d.progress))));
     expect(loaded.progress.retryAt.cooldown).toBe(110);
     expect(loaded.available(ctx({ time: 109.99 }))).not.toContain('cooldown');
     expect(loaded.available(ctx({ time: 110 }))).toContain('cooldown');

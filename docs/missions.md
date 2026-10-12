@@ -24,7 +24,7 @@ domains, not mission flags or a relationship score.
 | `src/missions/compile.ts` | Resolves references against the map/characters, detects cycles, freezes. |
 | `src/missions/stops.ts` | Stop registry compiled from the authoritative map. |
 | `src/missions/director.ts` | DOM-free runtime: prerequisites, choices, repeat/retry, events. |
-| `src/missions/progress.ts` | Versioned saved progress and legacy migration. |
+| `src/missions/progress.ts` | Versioned saved progress and current-schema validation. |
 
 The engine never imports the browser portrait registry (`src/portraits.ts`), so
 schema, character, stop and mission validation run in Node without an image
@@ -151,8 +151,8 @@ and opportunity eligibility. Each delivered offer records a stable
 of its sender, title, text and named pickup. Receipt happens once when the game
 introduces an eligible offer. Read time is recorded only when its complete text
 body is actually shown inside the open inbox's scroll viewport. Off-screen texts
-remain unread. Both operations persist immediately; legacy saves default to empty
-records, never fabricated historical knowledge.
+remain unread. Both operations persist immediately; invalid records default to
+empty rather than fabricating historical knowledge.
 
 The inbox renders received records, including closed branches, delivered missions
 and missed opportunities. Only action buttons and physical markers use current
@@ -264,17 +264,16 @@ a data URL at build time, so no runtime asset request is ever made.
 { "version": 1, "chapter": 1, "completed": [], "failed": [], "flags": [], "choices": {}, "relationships": {}, "campaignSeconds": 0, "deliveries": 0, "retryAt": {} }
 ```
 
-Legacy saves without a `story` field default to a fresh chapter 1; unknown
-future versions also fall back rather than corrupting progress. The transient
+Save loading requires current story, player-record and campaign versions;
+invalid fields are sanitised. Obsolete formats start fresh. The transient
 active mission, routed offer and dialogue are **not** saved. Eligible text offers
 are reconstructed from saved prerequisites, completed missions and choices on
 reload, recovery and new shifts. Games constructed
 with persistence disabled (map previews, the test lab) use fresh progress and
 never read the save.
 
-Older version-1 progress retains its outcomes and defaults the new clock,
-campaign-delivery count and deadlines to zero/empty; lifetime deliveries are
-never copied into campaign progress. Each paid delivery increments both counters
+Lifetime deliveries stay separate from mission-specific counters.
+Each paid delivery increments both counters
 exactly once, whether it is authored or procedural. Authored outcome references
 continue to use stable mission IDs via `missionCompleted`, rather than totals.
 
@@ -282,6 +281,6 @@ continue to use stable mission IDs via `missionCompleted`, rather than totals.
 
 - `npm test` covers schema errors, missing references, prerequisite cycles,
   prerequisites, choice exclusivity, pickup vs completion commitment,
-  abandonment/retry, repeat rules, migration, reset/recovery, snapshot
+  abandonment/retry, repeat rules, current-schema validation, reset/recovery, snapshot
   isolation, RNG isolation and game integration.
 - `npm run build` runs the strict TypeScript check and the standalone build.
