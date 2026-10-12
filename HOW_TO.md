@@ -26,25 +26,31 @@ Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to 
 
 You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Wallet, upgrades, and completed-job progress persist between runs. The pause menu's **Shift stats** shows earnings, completed jobs, smashed objects, and pedestrian fatalities.
 
-### Cars, fire, and recovery
+### Open Shore, texts and your notebook
 
-Impacts can damage the engine, fuel system, and tyres, changing how a car drives. Severe damage may start a visible fire countdown, followed by an explosion that leaves a solid wreck. Pit Stop repairs extinguish fires and restore components. Smaller objects and some buildings can also break or collapse; fuel pumps and the Last Chance Fuel station can ignite and trigger chain blasts.
+The campaign lasts **fourteen full days**, beginning at 07:00 and including the
+fourteenth night. Time advances while driving. Park at Pit Stop and use
+**Pause → Sleep at Pit Stop** to skip to the next 07:00. The menu previews known
+bookings closing during sleep; passengers, pursuits and fires block sleeping.
+Recovery, reload and run reset preserve the date.
 
-If your cab catches fire, press **E** to bail out, then run clear. The fuse keeps counting down after you leave. Follow the blue route or radar markers to a parked replacement and press **E** beside it. Wallet, upgrades, and heat carry over; an aboard passenger evacuates and dispatch sends a new fare. Burning cars and wrecks cannot be entered. Exiting a moving car inherits its momentum, so a fast jump can cause a hard landing.
+Normal dispatch mixes ordinary jobs with recurring customers. **Texts** lets
+you choose a booking with an exact pickup-before deadline; competing bookings
+commit only when you stop at the deliberately selected pickup. Pause →
+**Ask dispatch for an ordinary fare** skips a suggested story booking. Dialogue
+continues during travel and at arrival. Free driving continues after the campaign.
 
-If you are caught in an occupied vehicle explosion or fatally injured on foot, **WASTED** ends the run. Respawn returns you on foot outside Midtown Hospital and deducts a medical bill; a destroyed ride also incurs repair costs. The wreck stays at the crash site. An abandoned wreck can be towed and repaired with **R** while you are nearby.
+The **Taxi menu → Dispatch notebook** keeps signed receipts, ride conversations
+and documents. Stop near the boarded Garden Café and choose **Bookmark café
+frontage** to keep an observation. The café changes on the calendar whether or
+not you visit it. Search your own records to revisit the details.
 
-### Motorbike parcel deliveries
-
-Leave the cab with **E** and mount a parked bike with **E**. Bikes are parked around town, including one beside Pit Stop. Dispatch switches to parcel deliveries while you ride a bike: stop in the yellow ring to load the parcel, then stop in the green ring to deliver it. Dismounting with cargo cancels the delivery without payment; taking a car restores passenger fares. Wallet, upgrades, boost, heat, and shift totals carry across vehicles.
-
-Motorbikes have their own handling and lean into turns. **Space** uses the rear brake, and **Shift** boosts. Jumping off at speed can send both rider and bike tumbling; below walking speed, you simply dismount.
-
-### Heat, police, and difficulty
-
-Property damage, pedestrian impacts, and sustained speeding build police heat. Police may pursue, intercept, block junctions, or search after losing sight of you. Break line of sight to escape; if you are contained and moving slowly, you can be arrested. Arrest costs are deducted from your wallet, up to its available balance.
-
-Choose **Cruise**, **Street**, or **Chaos** difficulty from the welcome or pause screen. The difficulty changes police pressure and pursuit timing. **Pulp gore** is off by default and can also be changed there. With gore disabled, pedestrian impacts are nonfatal; with it enabled, some severe impacts can be fatal.
+Route to the newsroom at **Old Town South**, stop nearby and leave selected
+copies from the notebook. Source checks take **three game hours** and need
+independent material. Return to ask Ruth to run a ready story in the next
+**06:00 edition**. Publication and later public responses are separate; originals
+remain in the notebook. The last edition is **Day 14 at 06:00**. See the
+[campaign guide](docs/open-shore.md) for the calendar and editor workflow.
 
 ## Explore the city
 

@@ -8,7 +8,7 @@ import { compileMissions } from './compile';
 import { MissionDirector, type DirectorContext } from './director';
 
 const make = () => {
-  const g = new Game(defaultCompiledMap, false);
+  const g = new Game(defaultCompiledMap, false, 'legacy');
   g.vehicles = [g.player]; g.trafficTarget = 0; g.settings.noPolice = true; g.start();
   return g;
 };
@@ -153,10 +153,10 @@ describe('game mission integration', () => {
     stored.story.completed.push('mia-meridian-lead');
     const storage = { getItem: vi.fn(() => JSON.stringify(stored)), setItem: vi.fn(), removeItem: vi.fn() };
     vi.stubGlobal('localStorage', storage);
-    const preview = new Game(defaultCompiledMap, false);
+     const preview = new Game(defaultCompiledMap, false, 'legacy');
     expect(preview.save.story.completed).toEqual([]);
     expect(storage.getItem).not.toHaveBeenCalled();
-    const loaded = new Game(defaultCompiledMap, true);
+    const loaded = new Game(defaultCompiledMap, true, 'legacy');
     expect(loaded.save.story.completed).toContain('mia-meridian-lead');
   });
 
@@ -164,7 +164,7 @@ describe('game mission integration', () => {
     const legacy = defaultSave() as Record<string, unknown>;
     delete legacy.story;
     vi.stubGlobal('localStorage', { getItem: (key: string) => key === storageKeys.save ? JSON.stringify(legacy) : null, setItem: vi.fn(), removeItem: vi.fn() });
-    const g = new Game(defaultCompiledMap, true);
+    const g = new Game(defaultCompiledMap, true, 'legacy');
     expect(g.save.story.completed).toEqual([]);
     const snapshot = g.snapshot();
     snapshot.story!.progress.completed.push('tampered');
@@ -209,7 +209,7 @@ describe('game mission integration', () => {
     expect(g.save.story.campaignSeconds).toBe(clock);
     const save = JSON.stringify(g.save);
     vi.stubGlobal('localStorage', { getItem: (key: string) => key === storageKeys.save ? save : null, setItem: vi.fn() });
-    const loaded = new Game(defaultCompiledMap, true);
+    const loaded = new Game(defaultCompiledMap, true, 'legacy');
     expect(loaded.save.story.campaignSeconds).toBe(clock);
     loaded.resetStory();
     expect(loaded.save.story.campaignSeconds).toBe(0);

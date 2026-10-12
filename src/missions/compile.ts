@@ -1,5 +1,6 @@
 import catalogueData from './catalogue.json';
 import stopsData from './stops.json';
+import { openShoreCatalogue } from '../campaign/content';
 import { isCharacterId, type CharacterId } from '../characters';
 import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles';
 import { dist, type Vec } from '../physics';
@@ -223,6 +224,15 @@ export function compileMissions(map: CompiledMap, catalogue: MissionCatalogue = 
 
 const cache = new WeakMap<object, CompiledMissions>();
 const neutralCache = new WeakMap<object, CompiledMissions>();
+const campaignCache = new WeakMap<object, CompiledMissions>();
+
+export function openShoreMissions(map: CompiledMap): CompiledMissions {
+  const cached = campaignCache.get(map);
+  if (cached) return cached;
+  const compiled = compileMissions(map, openShoreCatalogue);
+  campaignCache.set(map, compiled);
+  return compiled;
+}
 
 /** Compiled default catalogue, memoized per compiled map identity. */
 export function missionsFor(map: CompiledMap): CompiledMissions {

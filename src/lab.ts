@@ -1,3 +1,4 @@
+import { dayMinute } from './campaign/clock';
 // LAB — desktop-only dev playground for Taxi Chaos.
 //
 // Owned entirely by this module: `main.ts` only has to call `setupLab(game, renderer, hooks)`
@@ -145,6 +146,8 @@ export type PersonSummary = { id: number; role: string; position: Vec; velocity:
 export type ContactSummary = { id: number; kind: string; depth: number };
 
 export type LabHooks = {
+  enter?: () => void;
+  leave?: () => void;
   map?: MapAPI;
   setExternalClock: (frozen: boolean) => void;
   setTimeScale: (scale: number) => void;
@@ -183,6 +186,7 @@ export type LabAPI = {
   props(): PropSummary[];
   people(): PersonSummary[];
   dayNight(options?: DayNightOptions): LabSnapshot;
+  campaign(minute: number): LabSnapshot;
   refreshUI(): void;
   audio(): ReturnType<AudioFX['state']> | null;
   sound(cue: SoundCue): Promise<boolean>;
@@ -543,13 +547,15 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     </div>
     <div class="lab-body" data-lab="body">
       <div class="lab-head">
-        <strong>Taxi Chaos Lab</strong>
+        <strong>Taxi Chaos Lab · temporary game</strong>
+        ${hooks.leave ? '<button data-lab="leave">Return to saved game</button>' : ''}
         ${hooks.map ? '<button data-lab="map" class="lab-primary">Map studio</button>' : ''}
         <span class="lab-pill" data-lab="clock-2">LIVE</span>
         <span class="lab-tele" data-lab="tele"></span>
         <button data-lab="collapse" aria-label="Collapse LAB panel">Collapse ▾</button>
       </div>
 
+      <section class="lab-sec" aria-label="Campaign time"><h4>Campaign time · advances story</h4><div class="lab-row"><label>Day <input type="number" min="1" max="15" value="3" data-lab="campaign-day"></label><button data-lab="campaign-advance">Advance to 07:00</button></div><p class="lab-desc">Lighting presets below only preview the sky. Campaign advance resolves world events and deadlines in this temporary game.</p></section>
       <section class="lab-sec" aria-label="Scenario">
         <h4>Scenario</h4>
         <div class="lab-row">
@@ -761,6 +767,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     map: hooks.map,
     toggle: (force?: boolean) => {
       expanded = force ?? !expanded;
+      if (expanded) hooks.enter?.();
       panel.hidden = false;
       panel.classList.toggle('lab-open', expanded);
       panel.classList.toggle('lab-closed', !expanded);
@@ -899,6 +906,10 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       hooks.refresh(); refreshUI();
       return snapshot();
     },
+    campaign: minute => {
+      if (game.persistenceEnabled) throw new Error('Campaign Lab controls require a persistence-disabled game');
+      game.advanceNarrativeTo(minute); game.syncMissionOffers(); game.onChange(); hooks.refresh(); refreshUI(); return snapshot();
+    },
     props: () => game.world.props.filter(p => Number.isFinite(p.maxHp)).map(p => ({
       id: p.id, sourceId: p.sourceId, kind: p.kind, position: { ...p.body.position }, hp: p.hp, maxHp: p.maxHp,
       alive: p.alive, fire: p.fire, fuelSpent: p.fuelSpent, blamed: p.blamed,
@@ -916,6 +927,8 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
 
   // ---- UI events -----------------------------------------------------------------------------
 
+  q<HTMLButtonElement>('leave')?.addEventListener('click', () => { api.realtime(); hooks.leave?.(); });
+  q<HTMLButtonElement>('campaign-advance')?.addEventListener('click', () => api.campaign(dayMinute(clamp(Number(q<HTMLInputElement>('campaign-day')!.value) || 1, 1, 15))));
   expandButton.addEventListener('click', () => api.toggle());
   q<HTMLButtonElement>('map')?.addEventListener('click', () => hooks.map?.open());
   if (hooks.audio) {

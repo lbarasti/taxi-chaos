@@ -118,6 +118,15 @@ export class DayNight {
   private elapsedDays = 0;
   private configuredRate = 1;
   private isFrozen = false;
+  private visualOverride = false;
+
+  /** Normal lighting follows the campaign; Lab presets are visual overrides only. */
+  synchronize(minute: number): void {
+    if (this.visualOverride || !Number.isFinite(minute)) return;
+    this.clock = minute % DAY_MINUTES; this.elapsedDays = Math.floor(minute / DAY_MINUTES);
+  }
+  followCampaign(minute: number): void { this.visualOverride = false; this.configuredRate = 1; this.isFrozen = false; this.synchronize(minute); }
+  get previewing() { return this.visualOverride; }
 
   /** Advance the world clock by `dt` simulated seconds. Non-finite/non-positive steps and a frozen clock are no-ops. */
   update(dt: number): void {
@@ -133,6 +142,7 @@ export class DayNight {
 
   /** Validate and apply user/lab options. Invalid values are ignored; numeric values are bounded. */
   configure(options: DayNightOptions): void {
+    if (options.hour !== undefined || options.rate !== undefined || options.frozen !== undefined) this.visualOverride = true;
     if (typeof options.hour === 'number' && Number.isFinite(options.hour)) this.clock = wrapHour(options.hour) * 60;
     if (typeof options.rate === 'number' && !Number.isNaN(options.rate)) this.configuredRate = clamp(options.rate, MIN_RATE, MAX_RATE);
     if (typeof options.frozen === 'boolean') this.isFrozen = options.frozen;

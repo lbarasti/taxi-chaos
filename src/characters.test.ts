@@ -14,9 +14,9 @@ describe('portrait registry', () => {
     for (const id of portraitSourceIds) expect(portraits[id].src.startsWith(`data:${mime[portraits[id].format]}`)).toBe(true);
   });
 
-  it('supports SVG, PNG and JPEG files alongside each other', () => {
+  it('bundles supplied raster portraits alongside provisional SVG identities', () => {
     const formats = new Set(Object.values(portraits).map(({ format }) => format));
-    expect(formats).toEqual(new Set<PortraitFormat>(['svg', 'png', 'jpg']));
+    expect(formats).toEqual(new Set<PortraitFormat>(['svg', 'png']));
   });
 });
 
@@ -44,8 +44,8 @@ describe('character catalogue', () => {
 
   it('resolves the authored format, preferring the raster for live dialogue', () => {
     expect(resolvePortrait(characters.mia)).toMatchObject({ source: 'mia.png', format: 'png' });
-    expect(resolvePortrait(characters.frankie)).toMatchObject({ source: 'frankie.jpg', format: 'jpg' });
-    expect(portraits['mia.svg'].format).toBe('svg');
+    expect(resolvePortrait(characters.frankie)).toMatchObject({ source: 'frankie.png', format: 'png' });
+    expect(portraits['mara.svg'].format).toBe('svg');
   });
 
   it('resolves the right name and portrait when the speaker changes', () => {

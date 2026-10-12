@@ -14,6 +14,11 @@ import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-co
 import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
+import { calendarLabel } from './campaign/clock';
+import { jobWindows, type Allegation } from './campaign/content';
+import { notebookMarkup } from './campaign/view';
+import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
+import type { PreviewState } from './missions/dialogue-preview';
 
 const icons = {
   fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
@@ -31,7 +36,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 document.querySelector('#app')!.innerHTML = `
   <canvas id="city" aria-label="Top-down taxi driving game. Use arrow keys or WASD to drive." tabindex="0"></canvas>
   <header class="topbar">
-    <div class="brand"><button id="taxi-menu-toggle" class="brand-icon" aria-label="Open Taxi Chaos menu" aria-expanded="false" aria-controls="taxi-menu">${icon('cab')}</button><span>TAXI<span class="brand-light">CHAOS</span><small>THE STREETS ARE YOURS.</small></span></div><nav id="taxi-menu" class="taxi-menu panel" aria-label="Taxi Chaos menu" hidden><button id="help">How to play</button><button id="lab-button">Test lab <kbd>F2</kbd></button></nav>
+    <div class="brand"><button id="taxi-menu-toggle" class="brand-icon" aria-label="Open Taxi Chaos menu" aria-expanded="false" aria-controls="taxi-menu">${icon('cab')}</button><span>TAXI<span class="brand-light">CHAOS</span><small>THE STREETS ARE YOURS.</small></span></div><nav id="taxi-menu" class="taxi-menu panel" aria-label="Taxi Chaos menu" hidden><button id="help">How to play</button><button id="notebook-menu">Dispatch notebook</button><button id="photo-menu">Bookmark café frontage</button><button id="lab-button">Test lab <kbd>F2</kbd></button></nav>
     <div class="top-center"><span class="live-dot"></span> ON THE CLOCK <span class="divider">/</span><span id="district">OLD TOWN</span></div>
     <div class="hud-clock" id="hud-clock" role="timer" aria-label="World time 07:00, morning, day 1"><span class="hud-clock-icon" id="clock-sun">${icon('sun')}</span><span class="hud-clock-icon" id="clock-moon" hidden>${icon('moon')}</span><span class="hud-clock-text"><strong id="clock-time">07:00</strong><small id="clock-period">MORNING</small></span></div>
     <div class="top-actions"><div class="cash"><small>YOUR WALLET</small><strong id="cash">$80</strong></div><button id="sound-toggle" class="icon-button" title="Mute FX · M" aria-label="Mute sound FX" aria-pressed="false">${icon('sound')}</button><button id="pause" class="icon-button" title="Pause · P" aria-label="Pause game">${icon('pause')}</button><button id="fullscreen" class="icon-button" title="Enter fullscreen" aria-label="Enter fullscreen" aria-pressed="false">${icon('fullscreen')}</button></div>
@@ -58,15 +63,19 @@ document.querySelector('#app')!.innerHTML = `
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
-let game = new Game();
+const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
+let game = new Game(undefined, !dialoguePreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
-const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus());
+const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
 const refreshInbox = bindMissionInbox($('app'), () => game, () => $('city').focus());
 let helpOpen = false;
 let statsOpen = false;
+let notebookOpen = false;
 let lab: LabAPI | undefined;
 let mapEditor: MapEditor | undefined;
+let normalGame: Game | undefined;
+let laboratoryGame: Game | undefined;
 function settingsMarkup() {
   return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio)}`;
 }
@@ -82,6 +91,7 @@ function modal() {
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
   if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
+  else if (game.mode === 'paused' && notebookOpen) { card.classList.add('notebook-modal'); card.innerHTML = notebookMarkup(game); }
   else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
   else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-stats">Shift stats</button><button class="secondary" id="show-help">How to play</button>`;
   else if (game.mode === 'garage') {
@@ -97,22 +107,40 @@ function modal() {
     const bill = game.arrestBill;
     card.innerHTML = gameOverMarkup('BUSTED', [{ label: 'Impound bill', amount: bill.impound }, { label: 'Bail', amount: bill.bail }]);
   }
-  if (game.mode === 'paused' && !helpOpen && !statsOpen) card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
+  if (game.mode === 'paused' && !helpOpen && !statsOpen && !notebookOpen) {
+    card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
+    if (game.campaignEnabled) {
+      const preview = game.sleepPreview;
+      card.innerHTML += `<div class="campaign-summary"><small>${game.save.campaign.finished ? 'ELECTION DAY · OFF THE CLOCK' : `OPEN SHORE · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p><button class="secondary" id="open-notebook">Dispatch notebook</button><button class="secondary" id="sleep" ${game.sleepReason ? 'disabled' : ''}>${game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`}</button><p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>${!game.garageNear && !game.save.campaign.finished ? '<button class="secondary" id="sleep-route">Route to Pit Stop</button>' : ''}${game.job.stage === 'dropoff' ? '<button class="secondary" id="abandon-ride">Abandon this ride</button>' : '<button class="secondary" id="ordinary-fare">Ask dispatch for an ordinary fare</button>'}</div>`;
+    }
+  }
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
+  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the Taxi menu’s notebook.');
   $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
-  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = false; game.setMode('playing'); $('city').focus(); });
+  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = notebookOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
   $('difficulty-option')?.addEventListener('change', e => game.configure({ difficulty: (e.target as HTMLSelectElement).value as Difficulty }));
   $('show-help')?.addEventListener('click', showHelp);
   $('show-stats')?.addEventListener('click', () => { statsOpen = true; modal(); });
+  $('open-notebook')?.addEventListener('click', openNotebook);
+  $('sleep')?.addEventListener('click', () => { if (game.sleep()) { realtime(); externalClock = false; $('city').focus(); } });
+  $('sleep-route')?.addEventListener('click', () => { realtime(); externalClock = false; game.setMode('playing'); game.garage(); $('city').focus(); });
+  $('ordinary-fare')?.addEventListener('click', () => { game.newJob(false, 'replaced', true); realtime(); externalClock = false; game.setMode('playing'); $('city').focus(); });
+  $('abandon-ride')?.addEventListener('click', () => { game.newJob(false, 'shift'); modal(); });
+  $('notebook-back')?.addEventListener('click', () => { notebookOpen = false; modal(); });
+  $('notebook-route')?.addEventListener('click', () => { notebookOpen = false; realtime(); externalClock = false; game.setMode('playing'); game.navigateNewsroom(); hud(); $('city').focus(); });
+  card.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => button.addEventListener('click', () => { if (game.submitMaterial(button.dataset.submit!)) { modal(); } }));
+  card.querySelectorAll<HTMLButtonElement>('[data-publish]').forEach(button => button.addEventListener('click', () => { if (game.requestPublication(button.dataset.publish as Allegation)) modal(); }));
+  $('notebook-search')?.addEventListener('input', e => { const query = (e.target as HTMLInputElement).value.toLocaleLowerCase(); card.querySelectorAll<HTMLElement>('[data-record]').forEach(article => { article.hidden = !article.textContent?.toLocaleLowerCase().includes(query); }); });
   $('stats-back')?.addEventListener('click', () => { statsOpen = false; modal(); $('show-stats').focus(); });
   $('repair')?.addEventListener('click', () => game.repair());
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => game.buy(button.dataset.upgrade as Upgrade)));
   bindAudioControls(card, audio);
   if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
-function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = false; helpOpen = true; game.setMode('paused'); }
+function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = notebookOpen = false; helpOpen = true; game.setMode('paused'); }
+function openNotebook() { if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return; notebookOpen = true; statsOpen = helpOpen = false; game.setMode('paused'); }
 function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();
 function hud() {
@@ -120,8 +148,8 @@ function hud() {
   const { inSand } = game.map.beach;
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
-  $('clock-time').textContent = dayNight.time; $('clock-period').textContent = dayNight.period.toUpperCase();
-  $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, day ${dayNight.day}`);
+  $('clock-time').textContent = g.campaignEnabled && !g.save.campaign.finished ? calendarLabel(g.save.campaign.minute).split(' · ')[1] : dayNight.time; $('clock-period').textContent = g.campaignEnabled ? g.save.campaign.finished ? 'FREE DRIVING' : `DAY ${g.save.campaign.shift} / 14` : dayNight.period.toUpperCase();
+  $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, campaign day ${g.save.campaign.shift} of 14`);
   $('clock-sun').hidden = night; $('clock-moon').hidden = !night;
   $('cash').textContent = `$${g.save.cash.toLocaleString()}`; $('district').textContent = district(g.actor.position, g.map);
   $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
@@ -138,11 +166,13 @@ function hud() {
     $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in yellow to load the parcel.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Base delivery pay guaranteed'} <span class="comfort">${Math.round(job.comfort)}% intact</span>`;
   }
   $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
+  if (pickup && job.missionId && jobWindows[job.missionId]) { $('job-label').textContent = 'DISPATCH / LOCAL BOOKING'; $('mission-description').textContent = `${job.name} · ${g.missions.mission(job.missionId).title}. Pickup before ${calendarLabel(jobWindows[job.missionId].until)}. Texts lets you choose another booking.`; }
   if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
+  if (g.navToNewsroom) { $('job-label').textContent = 'CITY DESK'; $('job-status').textContent = 'DROP-IN'; $('mission-title').textContent = 'Newsroom · Old Town South'; $('mission-description').textContent = 'Stop nearby and open the Dispatch notebook to leave selected material.'; $('distance-label').textContent = 'TO NEWSROOM'; $('mission-footer').textContent = 'Stop nearby · Taxi menu → Dispatch notebook to leave copies.'; }
   if (g.onFoot && g.tumble) { $('job-label').textContent = 'BAILOUT'; $('job-status').textContent = g.tumble.grounded ? 'ROLLING' : 'IN THE AIR'; $('mission-title').textContent = 'Brace for impact.'; $('mission-description').textContent = 'You carry the ride’s momentum into the fall. Landing hurts more at higher speeds.'; $('mission-footer').textContent = 'Recover from the roll before taking another ride.'; }
   else if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'WASD / arrows to walk. Blue radar markers show parked cars and motorbikes.'; $('distance-label').textContent = 'TO NEXT RIDE'; $('mission-footer').textContent = g.enterableCar ? `Press E to ${g.enterableCar.definition.graphics.sprite === 'motorcycle' ? 'ride' : 'get in'}. Wallet & upgrades carry over.` : 'Follow the blue radar route. E takes a parked ride.'; }
   document.querySelector('.mission')!.classList.toggle('on-foot', g.onFoot);
-  $('mobile-hint').textContent = g.onFoot ? '' : g.navToGarage ? 'Stop at Pit Stop' : pickup ? parcel ? 'Stop in yellow to collect' : 'Stop in yellow to pick up' : `Stop in green to deliver${job.elapsed < job.time ? ` · ${Math.ceil(job.time - job.elapsed)}s tip` : ''}`;
+  $('mobile-hint').textContent = g.navToNewsroom ? 'Stop nearby · Notebook to leave copies' : g.onFoot ? '' : g.navToGarage ? 'Stop at Pit Stop' : pickup ? parcel ? 'Stop in yellow to collect' : 'Stop in yellow to pick up' : `Stop in green to deliver${job.elapsed < job.time ? ` · ${Math.ceil(job.time - job.elapsed)}s tip` : ''}`;
   document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach(button => { button.disabled = g.onFoot || g.mode !== 'playing'; });
   if (!g.onFoot && (g.navToHarbour || g.harbour.vehicleId === g.player.id)) {
     const admitted = g.harbour.vehicleId === g.player.id;
@@ -207,10 +237,12 @@ $('interact').addEventListener('click', interact); $('tow').addEventListener('cl
 $('sound-toggle').addEventListener('click', toggleSound);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
-function pause() { if (game.mode === 'playing') { statsOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = false; game.setMode('playing'); } }
+function pause() { if (game.mode === 'playing') { statsOpen = notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = notebookOpen = false; game.setMode('playing'); } }
 bindFullscreen($('fullscreen'), message => game.notify(message));
 $('harbour').addEventListener('click', () => { game.navigateHarbour(); hud(); });
 $('pause').addEventListener('click', pause); $('garage').addEventListener('click', () => game.garage()); $('help').addEventListener('click', showHelp);
+$('notebook-menu').addEventListener('click', openNotebook);
+$('photo-menu').addEventListener('click', () => { setMenu(false); if (!game.photographCafe()) game.notify('Stop near Garden Café from shift 3 onward to bookmark its frontage.'); });
 $('map-toggle').addEventListener('click', () => {
   const collapsed = !$('map-content').hidden;
   $('map-content').hidden = collapsed;
@@ -243,7 +275,7 @@ window.addEventListener('keydown', e => {
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
-   if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
+   if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') game.garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; }
   if (game.mode === 'playing') game.keys.add(e.code);
@@ -259,7 +291,7 @@ const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HT
   begin: () => { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; },
 });
 window.addEventListener('resize', resetTouch);
-let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = false, timeScale = 1;
+let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode, timeScale = 1;
 const STEP = 1 / 120;
 function frame(now: number) {
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
@@ -273,6 +305,9 @@ modal(); hud(); requestAnimationFrame(frame);
 
 // The same test lab works in dev and the standalone HTML. Opt in via ?debug=1 or F2.
 function ensureLab() {
+  if (!laboratoryGame) { normalGame = game; normalGame.persist(); laboratoryGame = new Game(game.map, false, true, game.save); }
+  const activateLab = () => { if (game === normalGame) { audio.silence(game); game = laboratoryGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; modal(); hud(); } };
+  activateLab();
   if (!mapEditor) mapEditor = new MapEditor(game, renderer, {
     clock: () => externalClock,
     freeze: frozen => { externalClock = frozen; accumulator = 0; },
@@ -282,6 +317,8 @@ function ensureLab() {
   });
   if (!lab) lab = setupLab(game, renderer, {
     map: mapEditor.api,
+    enter: activateLab,
+    leave: () => { if (mapEditor?.active) mapEditor.api.close(); audio.silence(game); externalClock = false; accumulator = 0; timeScale = 1; game = normalGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; $('debug-panel').hidden = true; modal(); hud(); $('city').focus(); },
     setExternalClock: frozen => { externalClock = frozen; accumulator = 0; if (frozen) audio.silence(game); },
     setTimeScale: scale => { timeScale = scale; },
     refresh: () => { hud(); renderer.draw(1 / 60); },
@@ -291,3 +328,18 @@ function ensureLab() {
   return lab;
 }
 if (new URLSearchParams(location.search).has('debug')) { ensureLab().open(); game.start(); }
+
+// Opt-in CLI screenshot entry point. Uses the actual HUD, inbox, story panel and
+// portrait renderer; each shot replaces only this isolated page's unsaved game.
+if (dialoguePreviewMode) Object.assign(window, {
+  __dialoguePreview: (input: PreviewState, missionId: string, view: 'offer' | 'pickup', legacy = false) => {
+    externalClock = true; accumulator = 0; resetTouch();
+    const scene = dialoguePreviewScene(input, missionId, view, legacy);
+    game = scene.game; renderer.game = game; renderer.camera = { ...game.actor.position };
+    helpOpen = statsOpen = notebookOpen = false;
+    $('mission-inbox').hidden = true;
+    bindGame(); modal(); hud(); refreshStory(true); renderer.draw(0);
+    if (view === 'offer') $('texts-toggle').click();
+    return { job: scene.job, state: scene.preview.state, context: scene.preview.context };
+  },
+});

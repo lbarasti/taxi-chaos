@@ -245,12 +245,12 @@ describe('game day/night integration', () => {
     expect(g.dayNight.snapshot().hour).toBe(2);
   });
 
-  it('resets the clock to 07:00 on resetRun without altering mode', () => {
+  it('preserves campaign lighting time on resetRun', () => {
     const g = make();
     run(g, 30);
     expect(g.snapshot().dayNight.minutes).toBeCloseTo(450, 4);
     g.resetRun();
-    expect(g.snapshot().dayNight).toMatchObject({ hour: 7, minutes: 420, day: 1 });
+    expect(g.snapshot().dayNight).toMatchObject({ hour: 7.5, minutes: 450, day: 1 });
     expect(g.time).toBe(0);
     expect(g.mode).toBe('playing');
   });

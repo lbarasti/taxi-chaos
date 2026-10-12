@@ -14,7 +14,7 @@ const arrive = (g: Game, point: { x: number; y: number }) => {
   g.player.body.position = { ...point }; g.player.body.velocity = vec(); step(g);
 };
 const ready = () => {
-  const g = new Game(defaultCompiledMap, false);
+  const g = new Game(defaultCompiledMap, false, 'legacy');
   g.vehicles = [g.player]; g.trafficTarget = 0; g.settings.noPolice = true; g.start();
   arrive(g, g.job.pickup); arrive(g, g.job.dropoff);
   return g;
@@ -57,7 +57,7 @@ describe('parallel text offers and physical branches', () => {
   it('prefers the routed offer when two authored pickups share a stop', () => {
     const doc = structuredClone(catalogue);
     doc.missions['frankie-ledger-trail'].stops.pickup = 'garden-cafe';
-    const g = new Game(defaultCompiledMap, false);
+    const g = new Game(defaultCompiledMap, false, 'legacy');
     g.missions = new MissionDirector(compileMissions(g.map, doc as unknown as MissionCatalogue), g.save.story);
     g.save.story.completed.push('mia-meridian-lead'); g.newJob();
     g.vehicles = [g.player]; g.trafficTarget = 0; g.settings.noPolice = true; g.start();

@@ -7,6 +7,12 @@ required to ship a mission.
 
 ## Where things live
 
+Normal play now uses the [Open Shore campaign](open-shore.md), whose frozen typed
+content in `src/campaign/content.ts` compiles through this same engine. The JSON
+Mia/Frankie catalogue remains the legacy authoring/regression example. Campaign
+date, player-held notebook material and newsroom publication are separate saved
+domains, not mission flags or a relationship score.
+
 | File | Purpose |
 | --- | --- |
 | `src/missions/catalogue.json` | Versioned dialogue beats and missions. |
@@ -84,6 +90,7 @@ Conditions nest and are bounded (maximum depth 8, 64 nodes).
 | `{ "choiceUnset": "id" }` | a choice group has not been committed |
 | `{ "minDeliveries": 3 }` | completed deliveries in this campaign (story reset clears this count) |
 | `{ "minCareerDeliveries": 3 }` | lifetime career deliveries (story reset preserves this count) |
+| `{ "shiftAtLeast": 3 }` / `{ "shiftAtMost": 8 }` | explicit campaign shift window (1–14), supplied by the runtime context |
 | `{ "chapter": 2 }` | story chapter reached |
 
 ### Effects
