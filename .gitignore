@@ -3,6 +3,7 @@ node_modules/
 dist/
 coverage/
 dialogue-previews/
+scenario-runs/
 .vite/
 *.tsbuildinfo
 
