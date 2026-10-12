@@ -44,34 +44,7 @@ export const upgradeInfo = {
 };
 export type Upgrade = keyof typeof upgradeInfo;
 export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords(), campaign: defaultCampaign() });
-function loadSave(): Save {
-  try {
-    const raw: unknown = JSON.parse(readStorage(storageKeys.save) ?? 'null');
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return defaultSave();
-    const s = raw as Record<string, unknown>;
-    const story = s.story as Record<string, unknown> | undefined;
-    const records = s.playerRecords as Record<string, unknown> | undefined;
-    const campaign = s.campaign as Record<string, unknown> | undefined;
-    // Require every field of the active save schemas, not partial legacy layouts.
-    const complete = (value: unknown, keys: string[]) =>
-      !!value && typeof value === 'object' && !Array.isArray(value) && keys.every(key => Object.hasOwn(value, key));
-    if (!complete(s, ['cash', 'deliveries', 'best', 'upgrades', 'story', 'playerRecords', 'campaign']) ||
-        !complete(s.upgrades, ['engine', 'grip', 'armor', 'boost']) ||
-        story?.version !== 1 || !complete(story, ['chapter', 'completed', 'failed', 'flags', 'choices', 'relationships', 'campaignSeconds', 'deliveries', 'retryAt']) ||
-        records?.version !== 1 || !complete(records, ['texts', 'notebook']) ||
-        campaign?.version !== 2 || !complete(campaign, ['minute', 'shift', 'finished', 'occurrences', 'world', 'newsroom', 'publications', 'reactions', 'regularRides', 'ordinarySinceStory', 'activeRide'])) return defaultSave();
-    const d = defaultSave();
-    d.cash = clamp(Number(s.cash) || 0, 0, 1e7);
-    d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5);
-    d.best = Number(s.best) || 0;
-    d.story = parseMissionProgress(s.story);
-    d.playerRecords = parsePlayerRecords(s.playerRecords);
-    d.campaign = parseCampaign(s.campaign);
-    const upgrades = s.upgrades as Record<string, unknown>;
-    for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(upgrades[k]) || 0), 0, 3);
-    return d;
-  } catch { return defaultSave(); }
-}
+function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
 const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
