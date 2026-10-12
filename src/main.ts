@@ -19,6 +19,7 @@ import { jobWindows, type Allegation } from './campaign/content';
 import { notebookMarkup } from './campaign/view';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
+import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
 
 const icons = {
   fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
@@ -64,11 +65,12 @@ document.querySelector('#app')!.innerHTML = `
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
 const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
-let game = new Game(undefined, !dialoguePreviewMode);
+const scenarioPreviewMode = new URLSearchParams(location.search).has('scenario-preview');
+let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
-const refreshInbox = bindMissionInbox($('app'), () => game, () => $('city').focus());
+const refreshInbox = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode);
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
@@ -291,9 +293,12 @@ const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HT
   begin: () => { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; },
 });
 window.addEventListener('resize', resetTouch);
-let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode, timeScale = 1;
+let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode || scenarioPreviewMode, timeScale = 1;
 const STEP = 1 / 120;
 function frame(now: number) {
+  // Scenario mode renders only at explicit command boundaries. Wall-clock RAFs
+  // must never move the simulation, reveal dialogue or change a captured scene.
+  if (scenarioPreviewMode) return;
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
   if (!externalClock) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
   audio.update(game, !externalClock, !document.hidden && document.hasFocus());
@@ -343,3 +348,32 @@ if (dialoguePreviewMode) Object.assign(window, {
     return { job: scene.job, state: scene.preview.state, context: scene.preview.context };
   },
 });
+
+// A single isolated game survives all CLI commands, including save reconstruction.
+// Capture views temporarily project real panels; opening a notebook for a PNG
+// does not pause the underlying scenario or change its narrative state.
+if (scenarioPreviewMode) {
+  let runner: ScenarioRunner;
+  const show = (view: CaptureView = 'world', frame: CaptureFrame = {}) => {
+    externalClock = true; accumulator = 0; resetTouch();
+    game = runner.game; renderer.game = game;
+    const focus = frame.focus && frame.focus !== 'actor' ? game.campaignSites[frame.focus]?.body.position : game.actor.position;
+    if (!focus) throw new Error(`Unavailable camera focus: ${frame.focus}`);
+    renderer.camera = { ...focus };
+    renderer.zoom = frame.zoom ?? Math.max(5, Math.min(10.5, window.innerWidth / 125, window.innerHeight / 86));
+    bindGame(); helpOpen = statsOpen = notebookOpen = false;
+    $('mission-inbox').hidden = true;
+    const mode = game.mode;
+    try {
+      if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; notebookOpen = view === 'notebook'; }
+      modal(); hud(); renderer.draw(0);
+      if (view === 'texts') { if (mode !== 'playing') throw new Error('Texts capture requires playing mode'); $('texts-toggle').click(); }
+      if (view === 'story' && $('story').hidden) throw new Error('No visible ride conversation to capture');
+    } finally { game.mode = mode; }
+  };
+  Object.assign(window, { __scenario: {
+    start: (options: ScenarioOptions) => { runner = new ScenarioRunner(options); show(); return { inputs: runner.inputs(), state: runner.snapshot() }; },
+    execute: (command: unknown) => { const result = runner.execute(command); show(); return result; },
+    render: (view: CaptureView, frame: CaptureFrame) => { show(view, frame); return runner.snapshot(); },
+  } });
+}

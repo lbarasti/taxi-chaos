@@ -9,7 +9,7 @@ export const inboxMarkup = `<aside id="mission-inbox" class="mission-inbox panel
   <div id="mission-texts"></div>
 </aside>`;
 
-export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void) {
+export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void, recordVisible: () => boolean = () => true) {
   const panel = root.querySelector<HTMLElement>('#mission-inbox')!;
   const toggle = root.querySelector<HTMLButtonElement>('#texts-toggle')!;
   const messages = root.querySelector<HTMLElement>('#mission-texts')!;
@@ -69,7 +69,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
     }
     // Opening the inbox does not mark off-screen messages read. Record only
     // complete message bodies actually shown in the scroll viewport.
-    if (!panel.hidden) {
+    if (!panel.hidden && recordVisible()) {
       const bounds = panel.getBoundingClientRect();
       const shown = Array.from(messages.querySelectorAll<HTMLElement>('article')).filter(article => {
         const body = article.querySelector('p')!.getBoundingClientRect();

@@ -147,6 +147,13 @@ was stopped; full browser investigation and layout checks are not claimed.
 
 ## Manual reproduction
 
+The stateful CLI reproduces these steps with assertions and actual-app PNGs:
+`npm run scenario:run -- --scenario docs/scenarios/open-shore.json`.
+Use `--json` for the browser-free check, or JSON-lines input to drive the same
+harness interactively. See [the CLI guide](scenario-cli.md) for commands,
+injected facts, missed-event examples and the distinction between fixture
+placement and a physical driving playthrough.
+
 1. Complete Bea’s opening job, then the ordinary fare. Dispatch should suggest
    Celia’s **Temporary barriers** booking. Complete it and check the signed
    barrier receipt in the notebook. Watch for additional dialogue after moving
