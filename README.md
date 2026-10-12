@@ -60,7 +60,7 @@ metadata are in [`src/missions/stops.json`](src/missions/stops.json) and
 dialogue and characters need only config plus portrait assets — no game or view
 code. See the [mission authoring guide](docs/missions.md) for the schema,
 conditions, effects, choices, repeat/retry policies, stop validation and
-progress migration.
+current-format progress validation.
 
 ### Dialogue PNG previews
 

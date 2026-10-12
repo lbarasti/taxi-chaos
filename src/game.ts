@@ -11,14 +11,14 @@ import { Dialogue } from './story';
 import { characters } from './characters';
 import { missionsFor, neutralMissions, openShoreMissions } from './missions/compile';
 import { MissionDirector, type AbandonReason, type DirectorContext } from './missions/director';
-import { defaultMissionProgress, migrateMissionProgress, type MissionProgress } from './missions/progress';
+import { defaultMissionProgress, parseMissionProgress, type MissionProgress } from './missions/progress';
 import type { MissionId } from './missions/schema';
 import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
-import { defaultPlayerRecords, migratePlayerRecords, MAX_TEXT_RECEIPTS, MAX_NOTEBOOK_ENTRIES, type NotebookEntry, type PlayerRecords } from './player-records';
-import { defaultCampaign, migrateCampaign, type Campaign } from './campaign/state';
+import { defaultPlayerRecords, parsePlayerRecords, MAX_TEXT_RECEIPTS, MAX_NOTEBOOK_ENTRIES, type NotebookEntry, type PlayerRecords } from './player-records';
+import { defaultCampaign, parseCampaign, type Campaign } from './campaign/state';
 import { everydayJobs, jobMaterials, jobNames, jobWindows, materials, NEWSROOM_STOP, type Allegation } from './campaign/content';
 import { CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
 import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
@@ -44,7 +44,7 @@ export const upgradeInfo = {
 };
 export type Upgrade = keyof typeof upgradeInfo;
 export const defaultSave = (): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords(), campaign: defaultCampaign() });
-function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = migrateMissionProgress(s.story); d.playerRecords = migratePlayerRecords(s.playerRecords); d.campaign = migrateCampaign(s.campaign); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
+function loadSave(): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s) return defaultSave(); const d = defaultSave(); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
 const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];

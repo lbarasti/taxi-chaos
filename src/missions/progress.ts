@@ -90,16 +90,12 @@ const deadlines = (value: unknown): Record<string, number> => {
   return result;
 };
 
-/**
- * Loads a saved story progress object, defaulting missing or unknown fields.
- * Legacy saves (no story) and future versions fall back to a fresh chapter 1 so
- * a corrupt blob can never lock the player out of the opening mission.
- */
-export function migrateMissionProgress(raw: unknown): MissionProgress {
+/** Validate the current story-progress snapshot; invalid records start a fresh story. */
+export function parseMissionProgress(raw: unknown): MissionProgress {
   const fallback = defaultMissionProgress();
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback;
   const source = raw as Partial<Record<keyof MissionProgress, unknown>>;
-  if (source.version !== undefined && source.version !== MISSION_PROGRESS_VERSION) return fallback;
+  if (source.version !== MISSION_PROGRESS_VERSION) return fallback;
   const chapter = typeof source.chapter === 'number' && Number.isFinite(source.chapter) ? Math.max(0, Math.min(1e6, Math.floor(source.chapter))) : 1;
   return {
     version: MISSION_PROGRESS_VERSION,
