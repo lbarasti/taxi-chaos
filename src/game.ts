@@ -21,7 +21,7 @@ import { defaultPlayerRecords, migratePlayerRecords, MAX_TEXT_RECEIPTS, MAX_NOTE
 import { defaultCampaign, migrateCampaign, type Campaign } from './campaign/state';
 import { everydayJobs, jobMaterials, jobNames, jobWindows, materials, NEWSROOM_STOP, type Allegation } from './campaign/content';
 import { CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
-import { advanceCampaignTo, approvePublication, receiveMaterial } from './campaign/scheduler';
+import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
 import { cityBulletin } from './campaign/bulletin';
 import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
 import { isCountry, pathLength } from './countryside';
@@ -152,7 +152,12 @@ export class Game {
     this.eventLog = []; this.newJob(true, 'reset'); this.applyUpgrades(); this.setMode('playing');
   }
   /** New campaign is separate from recovery and laboratory run resets. */
-  resetStory() { this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist(); }
+  resetStory() {
+    for (const v of this.vehicles) if (v.sourceId === 'campaign-ms14') v.alive = false;
+    this.vehicles = this.vehicles.filter(v => v.sourceId !== 'campaign-ms14');
+    this.campaignVanSpawned = false;
+    this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist();
+  }
   get sleepReason(): string | null {
     if (!this.campaignEnabled || this.save.campaign.finished) return 'Campaign finished · free driving continues';
     if (!this.garageNear || this.onFoot || this.speed > 0.5) return 'Park at Pit Stop to sleep';
@@ -220,7 +225,15 @@ export class Game {
   navigateNewsroom() { if (this.mode !== 'playing' || !this.campaignEnabled) return; this.navToNewsroom = !this.navToNewsroom; this.navToGarage = this.navToHarbour = false; this.notify(this.navToNewsroom ? 'Newsroom at Old Town South. Stop nearby to leave selected material from your Notebook.' : 'Back to your driving route.'); }
   private note(entry: Omit<NotebookEntry, 'shift' | 'at'>) {
     const notebook = this.save.playerRecords.notebook;
-    if (notebook.length >= MAX_NOTEBOOK_ENTRIES || notebook.some(e => e.id === entry.id)) return;
+    if (notebook.some(e => e.id === entry.id)) return;
+    if (notebook.length >= MAX_NOTEBOOK_ENTRIES) {
+      // Roll ordinary history first; acquired authored materials must remain
+      // available for submission even after later fares fill the notebook.
+      let oldest = notebook.findIndex(e => !Object.hasOwn(materials, e.id) && (e.id.startsWith('fare-') || e.id.startsWith('ride-ordinary-')));
+      if (oldest < 0) oldest = notebook.findIndex(e => !Object.hasOwn(materials, e.id));
+      if (oldest < 0) return;
+      notebook.splice(oldest, 1);
+    }
     notebook.push({ id: entry.id, title: entry.title, text: entry.text, kind: entry.kind, shift: this.save.campaign.shift, at: this.save.story.campaignSeconds, minute: this.save.campaign.minute, source: entry.source ?? 'driver-record' });
   }
   /** A photograph is a player action at the site, not an automatic deduction. */
@@ -287,8 +300,8 @@ export class Game {
     const v = this.spawnVehicle({ ...spawn, position, angle }); v.sourceId = spawn.id; v.path = structuredClone(spawn.path); return true;
   }
   get target() {
-    if (this.navToNewsroom) return this.newsroom;
     if (this.onFoot) return this.nearestCar?.body.position ?? GARAGE;
+    if (this.navToNewsroom) return this.newsroom;
     if (this.harbour.vehicleId === this.player.id) return this.harbour.exchanged ? PORT_EXIT : SWAP_CONTAINER;
     if (this.navToHarbour) return PORT_ENTRY;
     if (this.navToGarage) return GARAGE;
@@ -982,7 +995,10 @@ export class Game {
     if (this.campaignEnabled && !this.save.campaign.finished) {
       let target = Math.min(CAMPAIGN_END, this.save.campaign.minute + dt);
       if (Math.abs(target - Math.round(target)) < 1e-6) target = Math.round(target);
-      if (Math.floor(target + 1e-6) !== Math.floor(this.save.campaign.minute + 1e-6)) this.advanceNarrativeTo(Math.round(target * 1e9) / 1e9);
+      // World/edition boundaries use whole minutes, but receipt checks keep
+      // their fractional timestamps and can become ready between those ticks.
+      const checkDue = Object.values(this.save.campaign.newsroom.received).some(r => r.verifiedAt === null && r.at + VERIFICATION_MINUTES <= target);
+      if (checkDue || Math.floor(target + 1e-6) !== Math.floor(this.save.campaign.minute + 1e-6)) this.advanceNarrativeTo(checkDue ? target : Math.round(target * 1e9) / 1e9);
       else this.save.campaign.minute = target;
       this.dayNight.synchronize(this.save.campaign.minute);
     }
@@ -1232,6 +1248,6 @@ export class Game {
       playerRecords: this.save.playerRecords,
       missionOffers: [...this.missionOffers.values()],
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
-      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.navToNewsroom ? 'newsroom' : this.onFoot ? 'replacement' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
+      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.navToNewsroom ? 'newsroom' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }
 }

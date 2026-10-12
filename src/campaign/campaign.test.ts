@@ -6,10 +6,10 @@ import { assertMissionCatalogue } from '../missions/schema';
 import { contact, vec } from '../physics';
 import { GARAGE } from '../world';
 import { storageKeys } from '../storage';
-import { migratePlayerRecords } from '../player-records';
+import { MAX_NOTEBOOK_ENTRIES, migratePlayerRecords } from '../player-records';
 import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
 import { defaultCampaign, migrateCampaign } from './state';
-import { CAMPAIGN_END, dayMinute } from './clock';
+import { CAMPAIGN_END, LAST_EDITION, dayMinute } from './clock';
 import { notebookMarkup } from './view';
 import { rideDialogueIds } from './ride-dialogue';
 
@@ -53,6 +53,28 @@ describe('Open Shore world-driven campaign', () => {
     const g = make(); g.newJob(false, 'replaced', true);
     expect(g.job.missionId).toBeUndefined(); expect(g.job.everyday).toBeDefined();
     expect(g.save.story.completed).toEqual([]); expect(g.save.story.choices).toEqual({});
+  });
+
+  it('keeps acquired materials when a full notebook receives authored rides and later ordinary entries', () => {
+    const g = make();
+    g.save.playerRecords.notebook = Array.from({ length: MAX_NOTEBOOK_ENTRIES }, (_, i) => ({
+      id: `fare-old-${i}`, title: 'Ordinary fare', text: 'Signed receipt', kind: 'receipt' as const, shift: 1, at: i,
+    }));
+    deliver(g, 'celia-barriers');
+    expect(g.save.playerRecords.notebook).toHaveLength(MAX_NOTEBOOK_ENTRIES);
+    expect(g.save.playerRecords.notebook.some(e => e.id === 'barrier-receipt')).toBe(true);
+    advance(g, 3); deliver(g, 'nico-safe-ride');
+    g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
+    expect(g.photographCafe()).toBe(true); expect(g.photographCafe()).toBe(true);
+    g.newJob(false, 'replaced', true); finish(g);
+    expect(g.save.playerRecords.notebook).toHaveLength(MAX_NOTEBOOK_ENTRIES);
+    const records = migratePlayerRecords(JSON.parse(JSON.stringify(g.save.playerRecords)));
+    expect(records.notebook).toEqual(g.save.playerRecords.notebook);
+    expect(records.notebook.filter(e => e.id === 'cafe-photo')).toHaveLength(1);
+    g.player.body.position = { ...g.newsroom };
+    for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
+    g.advanceNarrativeTo(g.save.campaign.minute + 180);
+    expect(g.requestPublication('coordination')).toBe(true);
   });
 
   it('offers a during-ride exchange only after real movement and retains arrival dialogue across next dispatch', () => {
@@ -128,6 +150,22 @@ describe('Open Shore world-driven campaign', () => {
     expect(other.missions.mission(other.job.missionId!)?.pickupChoice).toBeUndefined(); expect(other.save.story.choices).toEqual({});
   });
 
+  it.each(['at-cafe', 'departed'] as const)('removes the old MS-14 van and spawns it once in a new campaign after %s', phase => {
+    const g = make(); g.advanceNarrativeTo(dayMinute(2, 22));
+    const old = g.vehicles.find(v => v.sourceId === 'campaign-ms14')!;
+    expect(old).toBeDefined();
+    if (phase === 'departed') g.advanceNarrativeTo(dayMinute(3, 12));
+    g.resetStory();
+    expect(g.save.campaign).toEqual(defaultCampaign());
+    expect(g.vehicles.some(v => v.sourceId === 'campaign-ms14')).toBe(false);
+    expect(old.alive).toBe(false);
+    g.advanceNarrativeTo(dayMinute(2, 22));
+    const vans = g.vehicles.filter(v => v.sourceId === 'campaign-ms14');
+    expect(vans).toHaveLength(1); expect(vans[0]).not.toBe(old); expect(vans[0].parked).toBe(true);
+    g.advanceNarrativeTo(dayMinute(2, 22, 1));
+    expect(g.vehicles.filter(v => v.sourceId === 'campaign-ms14')).toEqual(vans);
+  });
+
   it('preserves source loss and an independent evidence path', () => {
     const g = make(); advance(g, 6);
     const job = g.missionOffers.get('eli-originals')!, person = g.world.people.find(p => p.id === job.customerId)!;
@@ -156,6 +194,38 @@ describe('Open Shore world-driven campaign', () => {
     const g = make(); advance(g, 4); g.job.pickup = { ...g.newsroom }; g.navigateNewsroom(); arrive(g, g.newsroom);
     expect(g.job.stage).toBe('pickup'); expect(g.snapshot().navigation).toBe('newsroom');
     g.navigateNewsroom(); step(g); expect(g.job.stage).toBe('dropoff');
+  });
+
+  it.each(['bailout', 'hospital'] as const)('prioritizes replacement navigation after %s while retaining the newsroom route', recovery => {
+    const g = make(); g.navigateNewsroom();
+    g.player.damage.status = 'burning';
+    const replacement = g.spawnVehicle({ position: vec(14, 34.6), parked: true });
+    if (recovery === 'bailout') expect(g.interact()).toBe(true);
+    else { g.player.damage.status = 'wreck'; g.setMode('wasted'); g.recover(); }
+    expect(g.onFoot).toBe(true); expect(g.navToNewsroom).toBe(true);
+    expect(g.target).toEqual(replacement.body.position);
+    expect(g.snapshot().navigation).toBe('replacement');
+    g.driver.position = replacement.body.toWorld(vec(0, 2));
+    expect(g.interact()).toBe(true); expect(g.onFoot).toBe(false);
+    expect(g.target).toEqual(g.newsroom); expect(g.snapshot().navigation).toBe('newsroom');
+  });
+
+  it('verifies fractional-time receipts during active play in time to approve the last edition', () => {
+    const g = make(); deliver(g, 'celia-barriers'); advance(g, 3); deliver(g, 'nico-safe-ride');
+    g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
+    expect(g.photographCafe()).toBe(true);
+    const due = LAST_EDITION - 0.5;
+    g.advanceNarrativeTo(due - 180); g.player.body.position = { ...g.newsroom };
+    for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
+    g.advanceNarrativeTo(due - 0.02);
+    g.update(0.01); expect(g.save.campaign.newsroom.cases.coordination).toBeUndefined();
+    expect(g.requestPublication('coordination')).toBe(false);
+    g.update(0.02);
+    expect(g.save.campaign.minute).toBeLessThan(LAST_EDITION);
+    expect(g.save.campaign.newsroom.cases.coordination?.verifiedAt).toBe(due);
+    expect(g.requestPublication('coordination')).toBe(true);
+    step(g, 0.5);
+    expect(g.save.campaign.publications).toMatchObject([{ allegation: 'coordination', at: LAST_EDITION }]);
   });
 
   it('ends at the fourteenth-night cutoff once; an uninterested driver can continue working', () => {
