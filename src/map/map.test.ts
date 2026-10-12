@@ -132,7 +132,7 @@ describe('map compilation, gameplay and validation', () => {
     const result = validateMap(h.snapshot().document);
     expect(result.findings.some(f => f.code === 'walking-entrance-blocked')).toBe(true); expect(result.findings.some(f => f.code === 'object-overlap')).toBe(true);
   });
-  it('builds persistence-disabled previews without reading or migrating normal storage', () => {
+  it('builds persistence-disabled previews without reading normal storage', () => {
     const storage = { getItem: vi.fn(() => '{"cash":999}'), setItem: vi.fn(), removeItem: vi.fn() }; vi.stubGlobal('localStorage', storage);
     try {
       const h = new MapHistory(); translate(h); const game = createPreview(h.snapshot().document);

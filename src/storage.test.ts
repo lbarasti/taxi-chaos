@@ -45,6 +45,10 @@ describe('Taxi Chaos current-format storage', () => {
     expect(readStorage(storageKeys.save)).toBeNull(); expect(new Game().save).toEqual(defaultSave());
     expect(values.has('fare-city-v1')).toBe(true); expect(values.has(storageKeys.settings)).toBe(true);
   });
+  it('rejects incomplete old save records instead of keeping career values', () => {
+    mockStorage([[storageKeys.save, JSON.stringify({ cash: 975, deliveries: 12, best: 600, upgrades: { engine: 2 } })]]);
+    expect(new Game().save).toEqual(defaultSave());
+  });
   it('keeps default progress and preferences when browser storage is unavailable', () => {
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('storage denied'); } });
     expect(new Game().save).toEqual(defaultSave());
