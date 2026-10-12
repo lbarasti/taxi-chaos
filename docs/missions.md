@@ -264,8 +264,8 @@ a data URL at build time, so no runtime asset request is ever made.
 { "version": 1, "chapter": 1, "completed": [], "failed": [], "flags": [], "choices": {}, "relationships": {}, "campaignSeconds": 0, "deliveries": 0, "retryAt": {} }
 ```
 
-Only complete saves with current story, player-record and campaign schemas
-are loaded. Obsolete and unsupported formats start fresh. The transient
+Save loading requires current story, player-record and campaign versions;
+invalid fields are sanitised. Obsolete formats start fresh. The transient
 active mission, routed offer and dialogue are **not** saved. Eligible text offers
 are reconstructed from saved prerequisites, completed missions and choices on
 reload, recovery and new shifts. Games constructed
