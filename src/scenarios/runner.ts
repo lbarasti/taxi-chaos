@@ -5,14 +5,14 @@ import { parseMissionProgress } from '../missions/progress';
 import { parsePlayerRecords } from '../player-records';
 import { parseCampaign } from '../campaign/state';
 import { CAMPAIGN_END, CAMPAIGN_START, dayMinute } from '../campaign/clock';
-import { corroboration, materials, type Allegation } from '../campaign/content';
-import { worldOperations } from '../campaign/events';
+import { campaignDefinition } from '../campaign/content';
+import type { Allegation } from '../campaign/model';
 import { GARAGE } from '../world';
 import { vec, type Vec } from '../physics';
 
 export type ScenarioOptions = { traffic?: 'quiet' | 'normal'; noPolice?: boolean };
 export type CaptureView = 'world' | 'notebook' | 'texts' | 'story' | 'pause';
-export type CaptureFrame = { focus?: 'actor' | 'cafe' | 'newsroom' | 'hotel'; zoom?: number };
+export type CaptureFrame = { focus?: string; zoom?: number };
 type Time = { day: number; hour?: number; minute?: number };
 type Facts = { flags?: Record<string, boolean>; choices?: Record<string, string>; cash?: number; heat?: number; health?: number };
 export type ScenarioCommand = (
@@ -23,7 +23,8 @@ export type ScenarioCommand = (
   | { op: 'mode'; mode: Mode }
   | { op: 'route'; mission: string; expected?: boolean }
   | { op: 'pickup' | 'deliver' | 'read' | 'ordinary' | 'abandon' | 'reload' }
-  | { op: 'photo' | 'sleep'; expected?: boolean }
+  | { op: 'photo'; observation?: string; expected?: boolean }
+  | { op: 'sleep'; expected?: boolean }
   | { op: 'submit'; material: string; expected?: boolean }
   | { op: 'publish'; allegation: Allegation; expected?: boolean }
   | { op: 'expect'; path: string; equals?: unknown; includes?: unknown; length?: number; exists?: boolean; gte?: number; lte?: number }
@@ -71,7 +72,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   const allowed: Record<string, string[]> = {
     facts: ['facts'], advance: ['minutes', 'to', 'event'], place: ['at', 'angle'], step: ['seconds', 'keys'], mode: ['mode'],
     route: ['mission', 'expected'], pickup: [], deliver: [], read: [], ordinary: [], abandon: [], reload: [],
-    photo: ['expected'], sleep: ['expected'], submit: ['material', 'expected'], publish: ['allegation', 'expected'],
+    photo: ['observation', 'expected'], sleep: ['expected'], submit: ['material', 'expected'], publish: ['allegation', 'expected'],
     expect: ['path', 'equals', 'includes', 'length', 'exists', 'gte', 'lte'], capture: ['name', 'view', 'panelOnly', 'focus', 'zoom'],
   };
   if (!Object.hasOwn(allowed, op)) throw new Error(`Unknown command: ${op}`);
@@ -99,8 +100,9 @@ export function parseCommand(value: unknown): ScenarioCommand {
   }
   if (op === 'mode' && !modes.includes(c.mode as Mode)) throw new Error(`mode must be one of: ${modes.join(', ')}`);
   if (op === 'route') string(c.mission, 'mission');
+  if (op === 'photo' && c.observation !== undefined && !campaignDefinition.observations.some(o => o.id === c.observation)) throw new Error('Unknown observation');
   if (op === 'submit') string(c.material, 'material');
-  if (op === 'publish' && !Object.hasOwn(corroboration, c.allegation as string)) throw new Error('Unknown allegation');
+  if (op === 'publish' && !Object.hasOwn(campaignDefinition.claims, c.allegation as string)) throw new Error('Unknown allegation');
   if (op === 'expect') {
     const path = string(c.path, 'path');
     if (!/^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/.test(path)) throw new Error('path must use dotted property names or array indices');
@@ -114,7 +116,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
     if (c.view !== undefined && !views.includes(c.view as CaptureView)) throw new Error(`view must be one of: ${views.join(', ')}`);
     if (c.panelOnly !== undefined && typeof c.panelOnly !== 'boolean') throw new Error('panelOnly must be boolean');
     if (c.panelOnly && (c.view === undefined || c.view === 'world')) throw new Error('panelOnly requires a panel view');
-    if (c.focus !== undefined && !['actor', 'cafe', 'newsroom', 'hotel'].includes(c.focus as string)) throw new Error('focus must be actor, cafe, newsroom or hotel');
+    if (c.focus !== undefined && !['actor', ...Object.keys(campaignDefinition.sites)].includes(c.focus as string)) throw new Error('focus must be actor or an authored campaign site');
     if (c.zoom !== undefined) number(c.zoom, 'zoom', 5, 24);
   }
   return structuredClone(c) as ScenarioCommand;
@@ -143,20 +145,20 @@ export class ScenarioRunner {
     this.configure(); this.game.start(); this.game.toastTime = 0;
   }
   private configure() {
-    // Quiet mode removes ambient vehicles, retaining the cab and authored van.
-    if (this.options.traffic === 'quiet') { this.game.vehicles = this.game.vehicles.filter(v => v === this.game.player || v.sourceId === 'campaign-ms14'); this.game.trafficTarget = 0; }
+    // Quiet mode removes ambient vehicles, retaining the cab and authored campaign vehicles.
+    if (this.options.traffic === 'quiet') { this.game.vehicles = this.game.vehicles.filter(v => v === this.game.player || this.game.isCampaignVehicle(v.sourceId)); this.game.trafficTarget = 0; }
     this.game.configure({ noPolice: this.options.noPolice });
   }
   inputs() {
-    return { ...previewInputs(this.game.missions.catalogue), materials: Object.keys(materials), allegations: Object.keys(corroboration),
-      events: worldOperations.map(op => ({ id: op.id, at: op.at })), places: ['pickup', 'dropoff', 'garage', 'newsroom', ...this.game.missions.catalogue.stops.order],
+    return { ...previewInputs(this.game.missions.catalogue), materials: Object.keys(this.game.campaignContent.materials), allegations: Object.keys(this.game.campaignContent.claims),
+      events: this.game.campaignContent.operations.map(op => ({ id: op.id, at: op.at })), places: ['pickup', 'dropoff', 'garage', 'newsroom', ...this.game.missions.catalogue.stops.order],
       keys, options: this.options, limits: { commands: 500, secondsPerStep: 30, totalPhysicsSeconds: 120 },
       commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'pickup', 'deliver', 'read', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'publish', 'expect', 'capture'] };
   }
   snapshot() {
     return { ...this.game.snapshot(), flags: [...this.game.save.story.flags], choices: { ...this.game.save.story.choices },
       completed: [...this.game.save.story.completed], failed: [...this.game.save.story.failed], notebookIds: this.game.save.playerRecords.notebook.map(e => e.id),
-      materialIds: this.game.save.playerRecords.notebook.filter(e => Object.hasOwn(materials, e.id)).map(e => e.id),
+      materialIds: this.game.save.playerRecords.notebook.filter(e => Object.hasOwn(this.game.campaignContent.materials, e.id)).map(e => e.id),
       sleepReason: this.game.sleepReason, physicsSeconds: this.physicsSeconds };
   }
   private present() { if (this.game.mode === 'playing' && !this.game.onFoot && !this.game.player.sinking) this.game.recordDialogue(); }
@@ -225,7 +227,7 @@ export class ScenarioRunner {
         g.syncMissionOffers(); g.persist(); return { injected: structuredClone(f) };
       }
       case 'advance': {
-        const event = c.event === undefined ? undefined : worldOperations.find(op => op.id === c.event);
+        const event = c.event === undefined ? undefined : g.campaignContent.operations.find(op => op.id === c.event);
         if (c.event !== undefined && !event) throw new Error(`Unknown event: ${c.event}`);
         const target = c.to ? calendar(c.to) : event ? event.at : g.save.campaign.minute + c.minutes!;
         number(target, 'campaign minute', CAMPAIGN_START, CAMPAIGN_END);
@@ -254,9 +256,9 @@ export class ScenarioRunner {
       case 'read': if (!g.dialogue.active) throw new Error('No active dialogue'); g.dialogue.readAll(); g.recordDialogue(); return g.dialogue.active.beatId;
       case 'ordinary': if (g.job.stage === 'dropoff') throw new Error('Abandon the aboard ride explicitly first'); g.newJob(false, 'replaced', true); return g.job.name;
       case 'abandon': g.newJob(false, 'shift'); return true;
-      case 'photo': return this.boolean(g.photographCafe(), c.expected);
+      case 'photo': return this.boolean(g.observeScene(c.observation), c.expected);
       case 'sleep': return this.boolean(g.sleep(), c.expected);
-      case 'submit': if (!Object.hasOwn(materials, c.material)) throw new Error(`Unknown material: ${c.material}`); return this.boolean(g.submitMaterial(c.material), c.expected);
+      case 'submit': if (!Object.hasOwn(this.game.campaignContent.materials, c.material)) throw new Error(`Unknown material: ${c.material}`); return this.boolean(g.submitMaterial(c.material), c.expected);
       case 'publish': return this.boolean(g.requestPublication(c.allegation), c.expected);
       case 'reload': {
         g.persist(); const save = JSON.parse(JSON.stringify(g.save));

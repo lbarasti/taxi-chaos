@@ -72,7 +72,8 @@ function conditionLabel(condition: Condition): string {
   if ('shiftAtMost' in condition) return `Shift <= ${condition.shiftAtMost}`;
   if ('minDeliveries' in condition) return `Campaign deliveries >= ${condition.minDeliveries}`;
   if ('minCareerDeliveries' in condition) return `Career deliveries >= ${condition.minCareerDeliveries}`;
-  return `Chapter >= ${condition.chapter}`;
+  if ('chapter' in condition) return `Chapter >= ${condition.chapter}`;
+  return JSON.stringify(condition);
 }
 
 function checkCondition(condition: Condition, director: MissionDirector, context: DirectorContext): PreviewCheck {
@@ -86,6 +87,8 @@ function describeEffect(effect: Effect): string {
   if ('clearFlag' in effect) return `Clear flag: ${effect.clearFlag}`;
   if ('setChoice' in effect) return `Commit choice: ${effect.setChoice.group} = ${effect.setChoice.choice}`;
   if ('setChapter' in effect) return `Set chapter: ${effect.setChapter}`;
+  if ('setWorld' in effect) return `World: ${effect.setWorld.key} = ${effect.setWorld.value}`;
+  if ('acquireMaterial' in effect) return `Acquire record: ${effect.acquireMaterial}`;
   return `Relationship: ${effect.relationship.character} ${effect.relationship.delta >= 0 ? '+' : ''}${effect.relationship.delta}`;
 }
 

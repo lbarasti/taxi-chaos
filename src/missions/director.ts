@@ -1,3 +1,7 @@
+import { evaluateCondition } from './conditions';
+import { applyEffectsTo, campaignTransaction } from '../campaign/effects';
+import { reduceCampaignEvent } from '../campaign/events';
+import type { CampaignContext, CampaignEvent } from '../campaign/model';
 import type { BeatId, StoryMessage } from '../story';
 import type { VehicleModel, VehicleRole } from '../vehicles';
 import type { CompiledChoiceGroup, CompiledChoiceOption, CompiledMission, CompiledMissions } from './compile';
@@ -54,8 +58,9 @@ export class MissionDirector {
   private pickedUp = false;
   private selections: Record<string, string> = {};
   private events: MissionEvent[] = [];
+  private effectContext?: CampaignContext;
 
-  constructor(readonly catalogue: CompiledMissions, public progress: MissionProgress) {}
+  constructor(readonly catalogue: CompiledMissions, public progress: MissionProgress, private readonly campaign?: () => CampaignContext) {}
 
   mission(id: MissionId): CompiledMission { return this.catalogue.missions[id]; }
   get active(): CompiledMission | null { return this.activeId ? this.mission(this.activeId) : null; }
@@ -75,16 +80,17 @@ export class MissionDirector {
   }
 
   /** Commits a detached draft only after the whole plan builds without conflict. */
-  private transact(events: MissionEvent[], build: (draft: MissionProgress) => void): void {
-    const draft = cloneMissionProgress(this.progress);
-    build(draft);
-    this.progress.chapter = draft.chapter;
-    this.progress.completed = draft.completed;
-    this.progress.failed = draft.failed;
-    this.progress.flags = draft.flags;
-    this.progress.choices = draft.choices;
-    this.progress.relationships = draft.relationships;
-    this.progress.retryAt = draft.retryAt;
+  private transact(events: MissionEvent[], build: (draft: MissionProgress) => void, domainEvents: readonly CampaignEvent[] = []): void {
+    if (this.campaign) {
+      campaignTransaction(this.campaign(), ctx => {
+        this.effectContext = ctx;
+        try { build(ctx.progress!); } finally { this.effectContext = undefined; }
+        for (const event of [...events, ...domainEvents]) reduceCampaignEvent(ctx, event);
+      });
+    } else {
+      const draft = cloneMissionProgress(this.progress);
+      build(draft); Object.assign(this.progress, draft);
+    }
     for (const event of events) this.push(event);
   }
 
@@ -113,10 +119,10 @@ export class MissionDirector {
     if (this.activeId !== null) return false;
     const mission = this.mission(id);
     if (!this.canOffer(mission, ctx)) return false;
+    this.transact([{ type: 'accepted', missionId: id, at: ctx.time }], () => {});
     this.activeId = id;
     this.selections = {};
     this.pickedUp = false;
-    this.push({ type: 'accepted', missionId: id, at: ctx.time });
     return true;
   }
 
@@ -146,7 +152,7 @@ export class MissionDirector {
   }
 
   /** Marks the delivery complete, applies mission effects once and is idempotent. */
-  complete(ctx: DirectorContext): MissionId | null {
+  complete(ctx: DirectorContext, ride?: Extract<CampaignEvent, { type: 'ride-completed' }>): MissionId | null {
     const mission = this.active;
     // Delivery only settles a fare whose pickup beat has actually resolved.
     if (!mission || !this.pickedUp) return null;
@@ -156,7 +162,7 @@ export class MissionDirector {
       this.applyEffectsTo(draft, mission.effects);
       if (!draft.completed.includes(mission.id)) draft.completed.push(mission.id);
       events.push({ type: 'completed', missionId: mission.id, at: ctx.time });
-    });
+    }, ride ? [ride] : []);
     this.activeId = null; this.pickedUp = false; this.selections = {};
     return mission.id;
   }
@@ -176,8 +182,7 @@ export class MissionDirector {
   /** Once-only deadline expiry does not apply contact-death effects. */
   expire(id: MissionId, time: number): boolean {
     if (!this.mission(id) || this.progress.completed.includes(id) || this.progress.failed.includes(id)) return false;
-    if (!this.progress.failed.includes(id)) this.progress.failed.push(id);
-    this.push({ type: 'missed', missionId: id, reason: 'deadline', at: time });
+    this.transact([{ type: 'missed', missionId: id, reason: 'deadline', at: time }], draft => { draft.failed.push(id); });
     if (this.activeId === id) { this.activeId = null; this.pickedUp = false; }
     return true;
   }
@@ -193,12 +198,10 @@ export class MissionDirector {
     const mission = this.active;
     if (!mission) return null;
     const { retry, cooldownSeconds } = mission.abandon;
-    if (retry === 'never') {
-      if (!this.progress.failed.includes(mission.id)) this.progress.failed.push(mission.id);
-    } else if (retry === 'cooldown') {
-      this.progress.retryAt[mission.id] = time + (cooldownSeconds ?? 0);
-    }
-    this.push({ type: 'abandoned', missionId: mission.id, reason, at: time });
+    this.transact([{ type: 'abandoned', missionId: mission.id, reason, at: time }], draft => {
+      if (retry === 'never' && !draft.failed.includes(mission.id)) draft.failed.push(mission.id);
+      else if (retry === 'cooldown') draft.retryAt[mission.id] = time + (cooldownSeconds ?? 0);
+    });
     this.activeId = null; this.pickedUp = false; this.selections = {};
     return mission.id;
   }
@@ -281,20 +284,8 @@ export class MissionDirector {
   }
 
   private evaluateWith(draft: MissionProgress, condition: Condition, ctx?: DirectorContext): boolean {
-    if ('all' in condition) return condition.all.every(c => this.evaluateWith(draft, c, ctx));
-    if ('any' in condition) return condition.any.some(c => this.evaluateWith(draft, c, ctx));
-    if ('not' in condition) return !this.evaluateWith(draft, condition.not, ctx);
-    if ('missionCompleted' in condition) return draft.completed.includes(condition.missionCompleted);
-    if ('flag' in condition) return draft.flags.includes(condition.flag);
-    if ('choiceEquals' in condition) return draft.choices[condition.choiceEquals.group] === condition.choiceEquals.choice;
-    if ('choiceUnset' in condition) return draft.choices[condition.choiceUnset] === undefined;
-    if ('minDeliveries' in condition) return (ctx?.deliveries ?? 0) >= condition.minDeliveries;
-    if ('minCareerDeliveries' in condition) return (ctx?.careerDeliveries ?? 0) >= condition.minCareerDeliveries;
-    if ('minuteAtLeast' in condition) return (ctx?.minute ?? 420) >= condition.minuteAtLeast;
-    if ('minuteBefore' in condition) return (ctx?.minute ?? 420) < condition.minuteBefore;
-    if ('shiftAtLeast' in condition) return (ctx?.shift ?? 1) >= condition.shiftAtLeast;
-    if ('shiftAtMost' in condition) return (ctx?.shift ?? 1) <= condition.shiftAtMost;
-    return draft.chapter >= condition.chapter;
+    const campaign = this.effectContext ?? this.campaign?.();
+    return evaluateCondition(condition, { ...ctx, progress: draft, campaign: campaign?.state, records: campaign?.records });
   }
 
   /** Applies a bounded effect list atomically: a conflict leaves progress untouched. */
@@ -303,24 +294,7 @@ export class MissionDirector {
   }
 
   private applyEffectsTo(draft: MissionProgress, effects: readonly Effect[]): void {
-    const pending = new Map<string, string>();
-    for (const effect of effects) {
-      if ('setChoice' in effect) {
-        const { group, choice } = effect.setChoice;
-        const existing = draft.choices[group];
-        if ((existing !== undefined && existing !== choice) || (pending.has(group) && pending.get(group) !== choice)) {
-          throw new Error(`Conflicting setChoice for ${group}: ${existing ?? pending.get(group)} vs ${choice}`);
-        }
-        pending.set(group, choice);
-      }
-    }
-    for (const effect of effects) {
-      if ('setFlag' in effect) { if (!draft.flags.includes(effect.setFlag)) draft.flags.push(effect.setFlag); }
-      else if ('clearFlag' in effect) { const i = draft.flags.indexOf(effect.clearFlag); if (i >= 0) draft.flags.splice(i, 1); }
-      else if ('setChapter' in effect) { draft.chapter = Math.max(draft.chapter, effect.setChapter); }
-      else if ('setChoice' in effect) { draft.choices[effect.setChoice.group] = effect.setChoice.choice; }
-      else if ('relationship' in effect) { draft.relationships[effect.relationship.character] = Math.max(-1000, Math.min(1000, (draft.relationships[effect.relationship.character] ?? 0) + effect.relationship.delta)); }
-    }
+    applyEffectsTo(draft, effects, this.effectContext);
   }
 
   /** Clears story progress in place (explicit new-story reset). */

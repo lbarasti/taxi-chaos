@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defaultCompiledMap } from '../map/compile';
-import { missionsFor, openShoreMissions, type CompiledMissions } from './compile';
+import { missionsFor, campaignMissions, type CompiledMissions } from './compile';
 import { dialoguePreviewMarkdown, generateDialoguePreview, previewInputs } from './dialogue-preview';
 import { dialoguePreviewScene } from './dialogue-preview-scene';
 
-const campaign = openShoreMissions(defaultCompiledMap);
+const campaign = campaignMissions(defaultCompiledMap);
 const find = (shift: number, id: string) => generateDialoguePreview(campaign, { shift }).jobs.find(job => job.id === id)!;
 afterEach(() => vi.unstubAllGlobals());
 
@@ -24,7 +24,7 @@ describe('dialogue preview simulation', () => {
     expect(blocked.jobs.every(job => job.status === 'locked')).toBe(true);
     const nico = blocked.jobs.find(job => job.id === 'nico-safe-ride')!;
     expect(nico.checks.find(check => check.label.startsWith('Pickup choice'))?.passed).toBe(false);
-    expect(nico.completionEffects).toEqual(['Set flag: nico-safe']);
+    expect(nico.completionEffects).toEqual(['Set flag: nico-safe', 'Acquire record: cleaner-note']);
     expect(nico.pickupEffects).toEqual(['Commit choice: nico-trip = room']);
     const delivered = generateDialoguePreview(campaign, { shift: 8, completed: ['bea-radio-repair'] });
     expect(delivered.jobs.find(job => job.id === 'bea-radio-repair')?.status).toBe('completed');
