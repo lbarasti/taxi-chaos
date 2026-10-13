@@ -12,7 +12,7 @@
 .dashboard.boosting{border-color:#6ae3fa;box-shadow:0 0 22px #57d6f133}.dashboard.boosting #gear{color:#8ee8f7}.dashboard.boosting #boost-bar{background:#8ee8f7;box-shadow:0 0 8px #57d6f1}.escape-button,.roadside button{background:#a3ddc215;border:1px solid #a3ddc255;border-radius:6px;padding:8px 10px;font-size:10px}.escape-button{margin-top:10px;width:100%;color:#ffe0ad}.escape-button:disabled{opacity:.5}.roadside{position:fixed;top:28px;right:28px;width:300px;z-index:3;padding:16px;border-color:#dfaa6b66}.roadside strong{font-size:11px;letter-spacing:1px;color:#ffb787}.roadside p{font-size:11px;line-height:1.6;color:#c1cbbf;margin:9px 0 12px}.roadside div{display:flex;gap:8px}.roadside small{display:block;font-size:9px;color:#91a89e;line-height:1.6;margin-top:9px}.roadside button:disabled{opacity:.4}.roadside[hidden],.escape-button[hidden]{display:none}@media(max-width:700px){.roadside{top:225px;right:12px;width:180px;padding:10px}.roadside p{font-size:9px}.roadside div{flex-wrap:wrap}.roadside button{font-size:9px;padding:6px}.escape-button{font-size:9px;padding:6px}}
 .audio-settings{border:1px solid #a3ddc233;border-radius:8px;padding:10px 12px;margin:12px 0;display:flex;flex-direction:column;gap:8px;text-align:left;font-size:11px;color:#b8c3bd}.audio-settings legend{font-size:9px;letter-spacing:1.5px;color:#a3ddc2;padding:0 5px}.audio-settings label{display:flex;align-items:center;gap:10px}.audio-settings label:not(.audio-toggle){display:grid;grid-template-columns:70px 1fr 38px}.audio-settings input[type=range]{min-width:80px;width:100%;accent-color:#a3ddc2}.audio-settings input[type=checkbox]{accent-color:#a3ddc2}.audio-settings output{text-align:right;font-variant-numeric:tabular-nums}.audio-settings small{font-size:9px;color:#7f9691}.audio-credits{font-size:9px;line-height:1.5}.audio-credits summary{cursor:pointer;color:#a3ddc2}.audio-credits p{margin:5px 0;font-size:9px;line-height:1.5}.audio-credits a{color:#a3ddc2;text-decoration:underline}
 
-/* Compact HUD: the street remains visible behind condition and navigation. */
+/* Compact navigation: keep the street visible behind the current job and radar. */
 .mission{top:28px;width:320px;padding:14px 16px 0;background:#14232ad9}
 .mission-heading{margin-top:10px}
 .mission p{margin:6px 0 10px;line-height:1.5}
@@ -20,13 +20,13 @@
 .mission-data strong{margin-top:4px;font-size:18px}
 .mission-footer{margin:0 -16px;padding:9px 12px}
 .job-progress{margin:0 -16px}
-.dashboard{width:270px;padding:14px 16px 0;background:#14232ab8}
-.dashboard-footer{margin:0 -16px}
-.dashboard .heat-panel{position:static;width:auto;padding:10px 0 12px;border-top:1px solid var(--border)}
-.dashboard .heat-track{margin:6px 0}
-.dashboard .heat-panel small{display:none}
-.dashboard .heat-panel.wanted small{display:block;color:#ffd0c5}
-.dashboard:has(.wanted){border-color:#ed867666}
+/* Three readouts, no card: outlined type and a red personal-health bar. */
+.player-hud{position:fixed;z-index:1;left:28px;bottom:84px;width:190px;display:grid;justify-items:end;gap:4px;pointer-events:none;touch-action:none;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05;letter-spacing:-.7px}
+.player-hud time,.player-hud strong{font-size:min(28px,calc(280px / var(--cash-length,8)));font-weight:inherit;white-space:nowrap;-webkit-text-stroke:2px #101b20;paint-order:stroke fill;text-shadow:0 2px 0 #101b20,1px 0 0 #101b20,-1px 0 0 #101b20}
+.player-hud time{color:#f6f2e7}
+.player-hud strong{color:#81bd79}
+.player-health{width:100%;height:14px;margin-top:5px;border:3px solid #101b20;background:#252b2d;box-shadow:0 1px 2px #0006}
+.player-health i{display:block;width:100%;height:100%;background:#db5b57}
 .map-panel{width:178px;background:#14232ac2}
 .map-toggle{display:flex;align-items:center;gap:7px;width:100%;min-height:38px;padding:0 10px;border:0;background:transparent;color:#b7c7bd;font-size:8px;letter-spacing:1px}
 .map-toggle #map-status{margin-left:auto;color:var(--mint);font-size:7px}
@@ -38,7 +38,7 @@
 
 /* Touch HUD uses the screen edges, leaving the street open. */
 #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#city,.mission,.dashboard,.map-panel,.context-action{touch-action:none}
+#city,.mission,.player-hud,.map-panel,.context-action{touch-action:none}
 .mobile-hint{display:none}
 .context-action{display:none;position:fixed;z-index:4;top:28px;left:53%;transform:translateX(-50%);min-height:44px;padding:10px 16px;border:1px solid #f7ce5566;border-radius:10px;background:#14232ad9;color:var(--gold);font-size:12px}
 
@@ -57,23 +57,9 @@
   .mission.on-foot .mobile-hint{display:none}
   .job-progress{grid-column:1/-1;margin:4px -12px -9px}
   .mission.on-foot .job-progress{display:none}
-  .dashboard{top:auto;bottom:var(--edge-bottom);left:var(--edge-left);right:auto;width:var(--dash-width);padding:8px 10px;display:grid;grid-template-columns:38px minmax(0,1fr);gap:6px;align-items:center;border-radius:10px;background:#14232a99;backdrop-filter:blur(5px)}
-  .speed{flex-direction:column;gap:2px;align-items:center;align-self:center}
-  .speed>strong{font-size:27px;letter-spacing:-1.4px}
-  .speed>span{font-size:8px;letter-spacing:0;margin:0}
-  .speed small{display:none}
-  .cab-meters{margin:0}
-  .cab-meters>div{font-size:7px;letter-spacing:0;gap:4px;margin:5px 0}
-  .cab-meters>div>span{width:34px;font-size:7px}
-  .cab-meters kbd{display:none}
-  .cab-meters b{position:absolute;width:1px;height:1px;min-width:0;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
-  .meter{height:3px;min-width:12px}
-  .dashboard-footer{display:none}
-  .dashboard .heat-panel{position:static;grid-column:1/-1;grid-row:1;width:auto;border:0;border-bottom:1px solid var(--border);padding:0 0 7px;min-width:0}
-  .heat-top{font-size:7px;letter-spacing:.2px;gap:3px}
-  .heat-top #stars{font-size:12px;letter-spacing:1px;white-space:nowrap}
-  .dashboard .heat-track{margin:4px 0 0;height:2px}
-  .dashboard .heat-panel.wanted small{display:none}
+  .player-hud{bottom:var(--edge-bottom);left:var(--edge-left);width:var(--dash-width);gap:3px}
+  .player-hud time,.player-hud strong{font-size:min(20px,calc(180px / var(--cash-length,8)))}
+  .player-health{height:11px;margin-top:3px;border-width:2px}
   .map-panel{top:calc(var(--top-height) + 87px);right:var(--edge-right);bottom:auto;left:auto;width:100px;border-radius:10px;background:#14232a99;backdrop-filter:blur(5px)}
   .map-toggle{min-height:36px;font-size:8px;padding:0 8px;letter-spacing:.5px;gap:4px}
   .map-toggle #map-status{display:none}
@@ -103,9 +89,6 @@
 }
 @media(max-width:360px){
   :root{--stick-size:92px;--dash-width:124px}
-  .dashboard{padding:7px;gap:5px;grid-template-columns:38px minmax(0,1fr)}
-  .speed>strong{font-size:24px}
-  .cab-meters>div>span{width:29px;font-size:7px}
   .touch-controls .thumb-actions{left:max(calc(50% - 22px),calc(var(--dash-width) + 8px));flex-direction:column;gap:6px}
   .touch-controls button[data-key]{width:44px}
   .mission h1{font-size:15px}

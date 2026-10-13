@@ -76,17 +76,17 @@ await page.keyboard.press('Escape');assert(!(await page.locator('#interact').isV
 for(const [name,w,h,mobile] of [['portrait',390,844,true],['small',320,568,true],['landscape',844,390,true],['tablet',768,1024,true],['desktop',1440,900,false]]){
 await page.setViewportSize({width:w,height:h});await page.evaluate(()=>{__taxi.scenario('first-fare');__taxi.step(5);document.querySelector('#debug-panel').hidden=true});
 assert.equal(await page.locator('#interact').isVisible(),mobile,`${name}: contextual action visibility must match the touch HUD`);
-let rects=await page.evaluate(()=>{const out={};for(const s of ['.mission','.dashboard','.map-panel','#joystick','.thumb-actions','#interact']){let e=document.querySelector(s),r=e.getBoundingClientRect();out[s]={x:r.x,y:r.y,width:r.width,height:r.height}}return out});
+let rects=await page.evaluate(()=>{const out={};for(const s of ['.mission','.player-hud','.map-panel','#joystick','.thumb-actions','#interact']){let e=document.querySelector(s),r=e.getBoundingClientRect();out[s]={x:r.x,y:r.y,width:r.width,height:r.height}}return out});
 const overlap=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
 for(let [sel,r] of Object.entries(rects)){if(!r.width)continue;assert(r.x>=0&&r.y>=0&&r.x+r.width<=w+1&&r.y+r.height<=h+1,`${name}: ${sel} out of bounds`)}
-for(let [a,b] of [['.mission','.map-panel'],['.dashboard','#joystick'],['.dashboard','.thumb-actions'],['.thumb-actions','#joystick'],['#interact','#joystick']])assert(!overlap(rects[a],rects[b]),`${name}: ${a} overlaps ${b}`);
+for(let [a,b] of [['.mission','.map-panel'],['.player-hud','#joystick'],['.player-hud','.thumb-actions'],['.thumb-actions','#joystick'],['#interact','#joystick']])assert(!overlap(rects[a],rects[b]),`${name}: ${a} overlaps ${b}`);
 assert(rects['.mission'].y<=28,`${name}: mission still reserves header space`);
 if(mobile){assert(!(await page.locator('.controls').isVisible()));assert(rects['.mission'].height<=60);
-const speed=await page.locator('#speed').boundingBox(),unit=await page.locator('.speed>span').boundingBox();assert(unit.y>=speed.y+speed.height,`${name}: MPH is not below speed`);
-assert(await page.locator('.cab-meters b').first().evaluate(e=>getComputedStyle(e).clipPath==='inset(50%)'),`${name}: meter percentage remains visible`);
-assert(Math.abs(h-rects['.dashboard'].y-rects['.dashboard'].height-12)<1,`${name}: dashboard is not at the bottom edge`);
-assert.equal(rects['.dashboard'].x,10);assert.equal(rects['.dashboard'].width,124);
-assert(await page.evaluate(()=>{const speed=document.querySelector('#speed'),old=speed.textContent;speed.textContent='128';const fits=speed.getBoundingClientRect().right<=document.querySelector('.cab-meters').getBoundingClientRect().left;speed.textContent=old;return fits}),`${name}: three-digit speed overlaps meters`);
+assert.equal(await page.locator('.dashboard,#speed,#gear,#boost,#boost-bar,#health,#health-bar,#earnings,#deliveries,#heat-panel,#stars').count(),0);
+assert.equal(await page.locator('.player-hud> *').count(),3);
+assert.equal(await page.locator('#player-health').getAttribute('aria-valuenow'),String(await page.evaluate(()=>__taxi.state().driverHealth)));
+assert(Math.abs(h-rects['.player-hud'].y-rects['.player-hud'].height-12)<1,`${name}: player HUD is not at the bottom edge`);
+assert.equal(rects['.player-hud'].x,10);assert.equal(rects['.player-hud'].width,124);
 }
 await page.waitForTimeout(250);
 await page.screenshot({path:path.join(screenshotRoot,`${name}.png`)});console.log(name,'layout passed');

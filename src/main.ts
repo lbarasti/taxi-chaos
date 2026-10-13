@@ -12,6 +12,7 @@ import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-co
 import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
+import { bindPlayerHud, playerHudMarkup } from './player-hud';
 import { calendarLabel } from './campaign/clock';
 import type { Allegation } from './campaign/model';
 import { notebookMarkup } from './campaign/view';
@@ -39,7 +40,7 @@ document.querySelector('#app')!.innerHTML = `
   </aside>
   ${storyMarkup}
   ${inboxMarkup}
-  <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div><div class="heat-panel" id="heat-panel" role="status"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div></section>
+  ${playerHudMarkup}
   <button id="interact" class="context-action" hidden>Get in</button>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
@@ -56,6 +57,7 @@ const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode);
+const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
@@ -132,8 +134,8 @@ function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(
 bindGame();
 function hud() {
   refreshInbox();
-  const { inSand } = game.map.beach;
-  const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
+  refreshPlayerHud();
+  const g = game, job = g.job, pickup = job.stage === 'pickup', parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
   $('job-status').textContent = pickup ? 'PICKUP' : 'ON BOARD'; $('job-status').classList.toggle('green', !pickup);
   $('mission-title').textContent = pickup ? `Meet ${job.name}.` : `${job.destination}.`;
@@ -166,19 +168,8 @@ function hud() {
     $('mobile-hint').textContent = admitted ? g.harbour.exchanged ? 'New car ready · use the exit' : g.harbourPrompt ?? 'Stop fully inside container C-76' : g.policeVisible ? 'Lose the tail before paying' : g.portGateNear ? `Stop and pay $${PORT_FEE} at security` : 'Follow cyan to port security';
     $('job-progress').style.width = `${g.harbour.progress / 2.5 * 100}%`; $('job-progress').style.background = '#8edbe8';
   } else document.querySelector('.mission-data small')!.textContent = 'BASE FARE';
-  $('speed').textContent = String(speed).padStart(2, '0'); $('gear').textContent = g.onFoot ? g.tumble ? 'TUMBLING' : 'ON FOOT' : g.pendingExit ? bike ? 'JUMPING OFF' : 'DOOR OPENING' : g.player.damage.status === 'wreck' ? `${vehicleName} DOWN` : bike && !motorcycleEngineWorks(g.player.damage) ? 'ENGINE STALLED' : g.controls.boost ? 'NITRO ACTIVE' : g.controls.handbrake ? bike ? 'REAR BRAKE' : 'SLIDING' : speed < 2 ? bike ? 'COURIER BIKE' : 'IDLE' : g.controls.throttle < 0 ? 'BRAKING' : inSand(g.actor.position) ? g.player.model === 'pickup' ? 'OFF-ROAD' : 'SOFT SAND' : bike ? `BIKE · ${Math.round(Math.abs(g.lean) * 180 / Math.PI)}° LEAN` : 'ON THE MOVE';
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
-  document.querySelector('.dashboard')!.setAttribute('aria-label', g.onFoot ? 'Driver health' : bike ? 'Motorbike condition' : 'Cab condition');
-  document.querySelector('.cab-meters>div>span')!.textContent = g.onFoot ? 'HEALTH' : 'CHASSIS';
-  document.querySelector('.dashboard')!.classList.toggle('boosting', !!g.controls.boost);
-  $('health').textContent = `${Math.ceil(g.health)}%`; $('health-bar').style.width = `${g.health}%`; $('health-bar').style.background = g.health < 30 ? '#ee8675' : '#a3ddc2';
-  $('boost').textContent = `${Math.round(g.boost)}%`; $('boost-bar').style.width = `${g.boost}%`;
-  $('deliveries').textContent = `${g.jobsDone} job${g.jobsDone === 1 ? '' : 's'} this shift`; $('earnings').textContent = `+$${g.shiftEarnings} earned`;
-  $('stars').textContent = [0, 1, 2].map(i => i < g.stars ? '★' : '☆').join(' '); $('heat-panel').classList.toggle('wanted', g.stars > 0);
-  $('heat-title').textContent = g.arrest > 0 ? 'GET MOVING!' : g.stars > 0 ? (g.escape > 0 ? 'LOSING THEM…' : 'POLICE PURSUIT') : g.heat > 5 ? 'MAKING A SCENE' : 'KEEP IT CLEAN';
-  $('heat-fill').style.width = `${g.stars && g.escape ? (1 - g.escape / g.rules.escapeTime) * 100 : g.heat}%`;
-  $('heat-description').textContent = g.arrest > 0 ? `Arrest in ${(g.rules.arrestTime - g.arrest).toFixed(1)}s. Drive!` : g.stars > 0 ? (g.escape > 0 ? `Stay out of sight for ${Math.ceil(g.rules.escapeTime - g.escape)}s to escape.` : 'Break line of sight. Police use shared sightings.') : 'Damage & speeding draw unwanted attention.';
   $('map-status').textContent = g.stars ? 'PURSUIT' : 'LIVE'; $('garage').classList.toggle('near', g.garageNear);
   $('toast').textContent = g.toast; $('toast').className = `toast ${g.toastTime > 0 && g.mode === 'playing' ? 'visible' : ''} ${g.toastKind}`;
   const damage = g.player.damage;
