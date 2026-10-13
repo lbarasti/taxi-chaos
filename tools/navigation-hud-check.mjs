@@ -122,6 +122,9 @@ try {
     await page.locator('#job-status').click(); await render();
     assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
     assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
+    assert.equal(await page.locator('#texts svg[aria-hidden="true"]').count(), 1);
+    assert.equal(await page.locator('#texts img').count(), 0);
+    assert.equal(await page.locator('#dispatch-portrait').isVisible(), true);
     await shot('vacant');
     await page.locator('#texts').click();
     assert.equal(await page.locator('#mission-inbox').isVisible(), true);

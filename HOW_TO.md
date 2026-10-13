@@ -66,8 +66,8 @@ personal health and police stars stay separate at the top right.
 After an ordinary delivery, **VACANT** shows dispatch, booking and newsroom
 shortcuts. Tap **ENGAGED** before pickup to hide fare guidance and browse these
 shortcuts; tap the dispatcher portrait or **VACANT** to route the next fare.
-Bookings opens your texts; the newspaper routes to the newsroom. Hiding guidance
-does not cancel a booking or prevent a physical pickup. The minimap shows a wider
+The speech-bubble button opens your texts; the newspaper routes to the newsroom.
+Hiding guidance does not cancel a booking or prevent a physical pickup. The minimap shows a wider
 320 m neighbourhood and stays visible, without a status label or collapse button.
 
 - **Eastern bridges and highlands:** take the northern crossing to Pine Woods or the southern crossing to Eagle Highlands. Curved roads connect Pine Junction, Fern Hollow, Highland Lodge, and Eagle Lookout. F2 → **Eastern bridges / highlands** starts at Pine Bridge with a delivery to Eagle Lookout. See [screenshots and map notes](docs/eastern-highlands.md).

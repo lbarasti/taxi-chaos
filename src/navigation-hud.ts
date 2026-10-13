@@ -6,6 +6,7 @@ import { showCharacterPortrait } from './story-view';
 // Original, embedded line artwork; reference mock-up assets are not used.
 const paths = {
   pin: '<path d="M18 10c0 5-6 11-6 11S6 15 6 10a6 6 0 1 1 12 0Z"/><circle cx="12" cy="10" r="2"/>',
+  message: '<path d="M21 14a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 8h10M7 12h7"/>',
   news: '<path d="M4 5h13v15H4zM17 9h3v11H7M7 9h7M7 13h7M7 17h4"/>',
 };
 const icon = (name: keyof typeof paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
@@ -15,7 +16,7 @@ export const navigationHudMarkup = `<aside class="navigation-hud panel" aria-lab
     <div id="navigation-destination"><span class="navigation-pin">${icon('pin')}</span><div><h1 id="mission-title">Meet Mia.</h1><p id="distance"></p></div></div>
     <div id="navigation-contacts" hidden>
       <button id="dispatch" title="Dispatch · route the next fare" aria-label="Dispatch: route the next fare"><span class="story-portrait"><img id="dispatch-portrait" alt=""></span></button>
-      <button id="texts" title="Bookings · read text messages" aria-label="Bookings: read text messages"><span class="story-portrait"><img id="bookings-portrait" alt=""></span></button>
+      <button id="texts" title="Bookings · read text messages" aria-label="Bookings: read text messages">${icon('message')}</button>
       <button id="newsroom" title="Route to the newsroom" aria-label="Route to the newsroom">${icon('news')}</button>
     </div>
     <button id="job-status" class="taxi-state" title="Clear fare guidance and browse dispatch">ENGAGED</button>
@@ -79,7 +80,6 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     if (dispatcher !== g.campaignContent.dispatcher) {
       dispatcher = g.campaignContent.dispatcher;
       showCharacterPortrait(get('dispatch-portrait') as HTMLImageElement, characters[g.campaignContent.dispatcher]);
-      showCharacterPortrait(get('bookings-portrait') as HTMLImageElement, characters.iris);
     }
     panel.dataset.state = state.status.toLowerCase().replace(' ', '-');
     get('navigation-destination').hidden = state.vacant; get('navigation-contacts').hidden = !state.vacant;

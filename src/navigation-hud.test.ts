@@ -15,6 +15,16 @@ describe('consolidated navigation HUD', () => {
     for (const id of ['mission-description', 'job-progress', 'fare', 'fast-tip', 'comfort', 'notebook', 'photo', 'garage', 'harbour', 'boost-meter', 'speed']) expect(navigationHudMarkup).not.toContain(`id="${id}"`);
   });
 
+  it('uses a text-message icon for bookings while retaining the dispatcher portrait', () => {
+    const bookings = navigationHudMarkup.match(/<button id="texts"[^>]*>(.*?)<\/button>/)![1];
+    expect(bookings).toContain('<svg');
+    expect(bookings).toContain('aria-hidden="true"');
+    expect(bookings).not.toContain('<img');
+    expect(navigationHudMarkup).not.toContain('bookings-portrait');
+    expect(navigationHudMarkup).toContain('id="dispatch-portrait"');
+    expect(navigationHudMarkup).toContain('aria-label="Bookings: read text messages"');
+  });
+
   it('keeps an accessible map without a status label or collapse button', () => {
     expect(navigationHudMarkup).not.toMatch(/map-status|LIVE|PURSUIT|map-toggle|map-chevron|aria-expanded/);
     expect(navigationHudMarkup).toContain('aria-label="Local minimap:');
