@@ -12,6 +12,7 @@ const monitor=page=>{page.on('pageerror',e=>errors.push(e.message));page.on('con
 // Desktop actions stay keyboard-only, including harbour payment and emergency exit.
 const desktop=await browser.newPage({viewport:{width:1440,height:900}});monitor(desktop);
 await desktop.goto('file://'+root+'/dist/index.html?debug=1');
+assert.equal(await desktop.locator('#texts-toggle').count(),0);
 await desktop.evaluate(()=>{__taxi.scenario('first-fare');document.querySelector('#debug-panel').hidden=true});
 assert(!(await desktop.locator('#interact').isVisible()));
 await desktop.keyboard.press('KeyE');assert(await desktop.evaluate(()=>__taxi.state().onFoot));
@@ -29,6 +30,7 @@ await desktop.evaluate(()=>__taxi.scenario('harbour'));await desktop.keyboard.pr
 await desktop.evaluate(()=>__taxi.realtime());await desktop.close();
 const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});monitor(page);
 await page.goto('file://'+root+'/dist/index.html');await page.locator('#start').click();
+assert.equal(await page.locator('#texts-toggle').count(),0);
 // The header and its controls are gone; existing keyboard and pause-menu paths work.
 assert.equal(await page.locator('.topbar,#taxi-menu,#taxi-menu-toggle,#hud-clock,#cash,#district,#sound-toggle,#pause,#fullscreen,#help,#notebook-menu,[data-observe],#lab-button,#critical-status,#condition,#components').count(),0);
 await page.keyboard.press('Escape');assert(await page.locator('#resume').isVisible());await page.locator('#show-help').click();assert(await page.locator('#start').isVisible());await page.locator('#start').click();
@@ -63,7 +65,7 @@ await touch('touchStart',[point(90,82,6)]);await page.waitForTimeout(650);await 
 // Preserve the merged game-over keyboard and touch recovery paths.
 await page.evaluate(()=>{__taxi.scenario('arrest');__taxi.step(10)});assert.equal(await page.evaluate(()=>__taxi.state().mode),'arrested');await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>__taxi.state().mode),'playing');
 await page.evaluate(()=>{__taxi.scenario('cab-fire');__taxi.step(8)});assert.equal(await page.evaluate(()=>__taxi.state().mode),'wasted');await page.locator('#recover').click();assert.equal(await page.evaluate(()=>__taxi.state().mode),'playing');
-// Radar keyboard activation avoids the existing Texts/radar pointer overlap.
+// Radar retains native keyboard activation.
 await page.locator('#map-toggle').focus();await page.keyboard.press('Space');assert(!(await page.locator('#map-content').isVisible()));await page.keyboard.press('Space');assert(await page.locator('#map-content').isVisible());
 // Mobile retains emergency/payment actions without overriding the hidden state.
 for(const [scenario,label] of [['harbour','Pay $75'],['cab-fire','Bail out!']]){

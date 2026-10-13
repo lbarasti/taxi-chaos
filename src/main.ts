@@ -38,7 +38,6 @@ document.querySelector('#app')!.innerHTML = `
     <div class="job-progress"><i id="job-progress"></i></div>
   </aside>
   ${storyMarkup}
-  <button id="texts-toggle" class="texts-toggle panel" aria-expanded="false" aria-controls="mission-inbox">Texts · 0</button>
   ${inboxMarkup}
   <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div><div class="heat-panel" id="heat-panel" role="status"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div></section>
   <button id="interact" class="context-action" hidden>Get in</button>
@@ -56,7 +55,7 @@ let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
-const refreshInbox = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode);
+const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode);
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
@@ -299,7 +298,7 @@ if (dialoguePreviewMode) Object.assign(window, {
     helpOpen = statsOpen = notebookOpen = false;
     $('mission-inbox').hidden = true;
     bindGame(); modal(); hud(); refreshStory(true); renderer.draw(0);
-    if (view === 'offer') $('texts-toggle').click();
+    if (view === 'offer') openInbox();
     return { job: scene.job, state: scene.preview.state, context: scene.preview.context };
   },
 });
@@ -322,7 +321,7 @@ if (scenarioPreviewMode) {
     try {
       if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; notebookOpen = view === 'notebook'; }
       modal(); hud(); renderer.draw(0);
-      if (view === 'texts') { if (mode !== 'playing') throw new Error('Texts capture requires playing mode'); $('texts-toggle').click(); }
+      if (view === 'texts') { if (mode !== 'playing') throw new Error('Texts capture requires playing mode'); openInbox(); }
       if (view === 'story' && $('story').hidden) throw new Error('No visible ride conversation to capture');
     } finally { game.mode = mode; }
   };

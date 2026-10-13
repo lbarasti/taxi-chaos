@@ -11,15 +11,15 @@ export const inboxMarkup = `<aside id="mission-inbox" class="mission-inbox panel
 
 export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void, recordVisible: () => boolean = () => true) {
   const panel = root.querySelector<HTMLElement>('#mission-inbox')!;
-  const toggle = root.querySelector<HTMLButtonElement>('#texts-toggle')!;
   const messages = root.querySelector<HTMLElement>('#mission-texts')!;
   let signature = '';
-  const close = () => { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); focusGame(); };
-  toggle.addEventListener('click', () => {
+  const close = () => { panel.hidden = true; focusGame(); };
+  const open = () => {
+    if (currentGame().mode !== 'playing') return;
     currentGame().keys.clear();
-    panel.hidden = !panel.hidden; toggle.setAttribute('aria-expanded', String(!panel.hidden));
-    if (!panel.hidden) { refresh(); root.querySelector<HTMLButtonElement>('#texts-close')!.focus(); } else focusGame();
-  });
+    panel.hidden = false;
+    refresh(); root.querySelector<HTMLButtonElement>('#texts-close')!.focus();
+  };
   root.querySelector('#texts-close')!.addEventListener('click', close);
   panel.addEventListener('keydown', event => {
     event.stopPropagation();
@@ -31,11 +31,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
       jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds, minute: game.save.campaign.minute, shift: game.save.campaign.finished ? 15 : game.save.campaign.shift })
       .filter(id => game.missions.mission(id).offer);
     const receipts = game.save.playerRecords.texts;
-    const unread = receipts.filter(t => t.readAt === null).length;
-    toggle.textContent = `Texts · ${unread} unread`;
-    toggle.hidden = game.mode !== 'playing';
-    toggle.setAttribute('aria-label', `${unread} unread text messages, ${ids.length} available mission offers`);
-    if (game.mode !== 'playing') { panel.hidden = true; toggle.setAttribute('aria-expanded', 'false'); }
+    if (game.mode !== 'playing') panel.hidden = true;
     const next = JSON.stringify([game.missions.catalogue.revision, receipts.map(t => t.messageId), ids, game.job.missionId, game.job.stage, game.onFoot, game.save.story.failed, game.save.story.completed]);
     if (signature !== next) {
       signature = next;
@@ -79,5 +75,5 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
     }
   }
   panel.addEventListener('scroll', refresh);
-  return refresh;
+  return { refresh, open };
 }
