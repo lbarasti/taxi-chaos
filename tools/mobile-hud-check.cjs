@@ -7,7 +7,27 @@ const screenshotRoot=process.env.SCREENSHOT_DIR || path.join(root,'docs/screensh
 (async()=>{
 require('node:fs').mkdirSync(screenshotRoot,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,headless:true,args:['--no-sandbox']});
-const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const errors=[],externalRequests=[];
+const monitor=page=>{page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});page.on('request',r=>{if(/^https?:/.test(r.url()))externalRequests.push(r.url())});};
+// Desktop actions stay keyboard-only, including harbour payment and emergency exit.
+const desktop=await browser.newPage({viewport:{width:1440,height:900}});monitor(desktop);
+await desktop.goto('file://'+root+'/dist/index.html?debug=1');
+await desktop.evaluate(()=>{__taxi.scenario('first-fare');document.querySelector('#debug-panel').hidden=true});
+assert(!(await desktop.locator('#interact').isVisible()));
+await desktop.keyboard.press('KeyE');assert(await desktop.evaluate(()=>__taxi.state().onFoot));
+assert.equal(await desktop.locator('#interact').textContent(),'Get in');assert(!(await desktop.locator('#interact').isVisible()));
+await desktop.screenshot({path:path.join(screenshotRoot,'desktop-keyboard-actions.png')});
+await desktop.keyboard.press('KeyE');assert(!(await desktop.evaluate(()=>__taxi.state().onFoot)));
+await desktop.evaluate(()=>{__taxi.scenario('motorcycle');__taxi.interact();__taxi.step(0.5,['KeyS']);document.querySelector('#debug-panel').hidden=true});
+assert.equal(await desktop.locator('#interact').textContent(),'Ride motorbike');assert(!(await desktop.locator('#interact').isVisible()));
+await desktop.screenshot({path:path.join(screenshotRoot,'desktop-ride.png')});
+await desktop.keyboard.press('KeyE');assert.equal(await desktop.evaluate(()=>__taxi.state().vehicleModel),'motorcycle');
+for(const [scenario,label] of [['harbour','Pay $75'],['cab-fire','Bail out!']]){
+await desktop.evaluate(name=>__taxi.scenario(name),scenario);assert.equal(await desktop.locator('#interact').textContent(),label);assert(!(await desktop.locator('#interact').isVisible()));
+}
+await desktop.evaluate(()=>__taxi.scenario('harbour'));await desktop.keyboard.press('KeyE');assert.notEqual(await desktop.locator('#interact').textContent(),'Pay $75');
+await desktop.evaluate(()=>__taxi.realtime());await desktop.close();
+const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});monitor(page);
 await page.goto('file://'+root+'/dist/index.html');await page.locator('#start').click();
 // The header and its controls are gone; existing keyboard and pause-menu paths work.
 assert.equal(await page.locator('.topbar,#taxi-menu,#taxi-menu-toggle,#hud-clock,#cash,#district,#sound-toggle,#pause,#fullscreen,#help,#notebook-menu,[data-observe],#lab-button,#critical-status,#condition,#components').count(),0);
@@ -43,10 +63,17 @@ await touch('touchStart',[point(90,82,6)]);await page.waitForTimeout(650);await 
 // Preserve the merged game-over keyboard and touch recovery paths.
 await page.evaluate(()=>{__taxi.scenario('arrest');__taxi.step(10)});assert.equal(await page.evaluate(()=>__taxi.state().mode),'arrested');await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>__taxi.state().mode),'playing');
 await page.evaluate(()=>{__taxi.scenario('cab-fire');__taxi.step(8)});assert.equal(await page.evaluate(()=>__taxi.state().mode),'wasted');await page.locator('#recover').click();assert.equal(await page.evaluate(()=>__taxi.state().mode),'playing');
-// Radar and mobile/layout sizes, using production artifact.
-await page.locator('#map-toggle').click();assert(!(await page.locator('#map-content').isVisible()));await page.locator('#map-toggle').click();assert(await page.locator('#map-content').isVisible());
+// Radar keyboard activation avoids the existing Texts/radar pointer overlap.
+await page.locator('#map-toggle').focus();await page.keyboard.press('Space');assert(!(await page.locator('#map-content').isVisible()));await page.keyboard.press('Space');assert(await page.locator('#map-content').isVisible());
+// Mobile retains emergency/payment actions without overriding the hidden state.
+for(const [scenario,label] of [['harbour','Pay $75'],['cab-fire','Bail out!']]){
+await page.evaluate(name=>__taxi.scenario(name),scenario);assert.equal(await page.locator('#interact').textContent(),label);assert(await page.locator('#interact').isVisible());
+await page.keyboard.press('Escape');assert(!(await page.locator('#interact').isVisible()));await page.locator('#resume').click();assert(await page.locator('#interact').isVisible());
+}
+// Mobile/layout sizes, using production artifact.
 for(const [name,w,h,mobile] of [['portrait',390,844,true],['small',320,568,true],['landscape',844,390,true],['tablet',768,1024,true],['desktop',1440,900,false]]){
 await page.setViewportSize({width:w,height:h});await page.evaluate(()=>{__taxi.scenario('first-fare');__taxi.step(5);document.querySelector('#debug-panel').hidden=true});
+assert.equal(await page.locator('#interact').isVisible(),mobile,`${name}: contextual action visibility must match the touch HUD`);
 let rects=await page.evaluate(()=>{const out={};for(const s of ['.mission','.dashboard','.map-panel','#joystick','.thumb-actions','#interact']){let e=document.querySelector(s),r=e.getBoundingClientRect();out[s]={x:r.x,y:r.y,width:r.width,height:r.height}}return out});
 const overlap=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
 for(let [sel,r] of Object.entries(rects)){if(!r.width)continue;assert(r.x>=0&&r.y>=0&&r.x+r.width<=w+1&&r.y+r.height<=h+1,`${name}: ${sel} out of bounds`)}
@@ -63,7 +90,8 @@ await page.waitForTimeout(250);
 await page.screenshot({path:path.join(screenshotRoot,`${name}.png`)});console.log(name,'layout passed');
 }
 await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{__taxi.scenario('first-fare');__taxi.interact();__taxi.step(5);document.querySelector('#debug-panel').hidden=true});assert((await page.locator('.mission').boundingBox()).height<=42);await page.screenshot({path:path.join(screenshotRoot,'on-foot.png')});
+await page.evaluate(()=>{__taxi.scenario('motorcycle');__taxi.interact();__taxi.step(0.5,['KeyS']);document.querySelector('#debug-panel').hidden=true});assert.equal(await page.locator('#interact').textContent(),'Ride motorbike');assert(await page.locator('#interact').isVisible());await page.screenshot({path:path.join(screenshotRoot,'mobile-ride.png')});
 await page.evaluate(()=>{__taxi.scenario('police-chase');document.querySelector('#debug-panel').hidden=true});await page.screenshot({path:path.join(screenshotRoot,'pursuit.png')});
 await page.evaluate(()=>__taxi.realtime());
-assert.deepEqual(errors,[]);console.log('PASS: no header, pause/help/lab alternatives, two-finger input, independent releases, cancellation, blur reset, contextual actions, walking, selection prevention, radar, 5 layouts; no page errors');await browser.close();
+assert.deepEqual(errors,[]);assert.deepEqual(externalRequests,[]);console.log('PASS: no header, keyboard-only desktop actions, pause/help/lab alternatives, two-finger input, independent releases, cancellation, blur reset, mobile contextual actions, walking, selection prevention, radar, 5 layouts; no page errors or external requests');await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

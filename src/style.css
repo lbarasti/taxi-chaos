@@ -40,7 +40,7 @@
 #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #city,.mission,.dashboard,.map-panel,.context-action{touch-action:none}
 .mobile-hint{display:none}
-.context-action{position:fixed;z-index:4;top:28px;left:53%;transform:translateX(-50%);min-height:44px;padding:10px 16px;border:1px solid #f7ce5566;border-radius:10px;background:#14232ad9;color:var(--gold);font-size:12px}
+.context-action{display:none;position:fixed;z-index:4;top:28px;left:53%;transform:translateX(-50%);min-height:44px;padding:10px 16px;border:1px solid #f7ce5566;border-radius:10px;background:#14232ad9;color:var(--gold);font-size:12px}
 
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
   :root{--edge-left:max(10px,env(safe-area-inset-left,0px));--edge-right:max(10px,env(safe-area-inset-right,0px));--edge-bottom:max(12px,env(safe-area-inset-bottom,0px));--top-height:env(safe-area-inset-top,0px);--stick-size:110px;--dash-width:124px}
@@ -94,6 +94,7 @@
   .joystick.pressed{border-color:#f7ce5588}
   .joystick.pressed .joystick-knob{background:#f7ce5577;border-color:var(--gold)}
   .context-action{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 10px);left:auto;right:var(--edge-right);transform:none;max-width:150px;font-size:11px}
+  .context-action:not([hidden]){display:block}
   .roadside{top:calc(var(--top-height) + 165px);left:var(--edge-left);right:auto;width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);max-width:250px}
   .roadside p{display:none}
   .toast{top:calc(var(--top-height) + 88px);bottom:auto;left:var(--edge-left);transform:translateY(5px);width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);max-width:300px;padding:8px 10px;font-size:9px;line-height:1.4}
