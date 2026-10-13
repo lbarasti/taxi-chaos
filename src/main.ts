@@ -13,6 +13,8 @@ import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 import { bindPlayerHud, playerHudMarkup } from './player-hud';
+import { bindNavigationHud, navigationHudMarkup } from './navigation-hud';
+import './navigation-hud.css';
 import { calendarLabel } from './campaign/clock';
 import type { Allegation } from './campaign/model';
 import { notebookMarkup } from './campaign/view';
@@ -30,21 +32,13 @@ const icon = (name: keyof typeof icons) => `<svg viewBox="0 0 24 24" fill="none"
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 document.querySelector('#app')!.innerHTML = `
   <canvas id="city" aria-label="Top-down taxi driving game. Use arrow keys or WASD to drive." tabindex="0"></canvas>
-  <aside class="mission panel" aria-label="Current driving job">
-    <div class="eyebrow"><span id="job-label">YOUR FIRST FARE</span><span class="tiny-tag" id="job-status">PICKUP</span></div>
-    <div class="mission-heading"><span class="mission-icon">${icon('target')}</span><h1 id="mission-title">Meet Mia.</h1></div>
-    <p class="mobile-hint" id="mobile-hint"></p><p id="mission-description">A customer is waiting just up the street.</p>
-    <div class="mission-data"><div><small>BASE FARE</small><strong id="fare">$83 <span>+ tips</span></strong></div><div><small id="distance-label">TO PICKUP</small><strong id="distance">18 <span>m</span></strong></div></div>
-    <div class="mission-footer" id="mission-footer"><span class="ring-dot"></span> Stop inside the yellow ring to pick up.</div>
-    <div class="job-progress"><i id="job-progress"></i></div>
-  </aside>
+  ${navigationHudMarkup}
   ${storyMarkup}
   ${inboxMarkup}
   ${playerHudMarkup}
   <button id="interact" class="context-action" hidden>Get in</button>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
-  <aside class="map-panel panel" aria-label="Local radar"><button id="map-toggle" class="map-toggle" aria-expanded="true" aria-controls="map-content" aria-label="Collapse radar"><span>RADAR</span><span id="map-status">LIVE</span><span class="map-chevron" aria-hidden="true">⌄</span></button><div id="map-content"><canvas id="map" aria-label="Local minimap: yellow is your taxi, circle or edge arrow is your destination, blue square is the garage, red dots are police"></canvas></div><button id="garage" class="garage-button">${icon('wrench')}<span>Pit Stop garage</span><kbd>G</kbd></button><button id="harbour" class="garage-button"><span>Harbour · $75</span><kbd>H</kbd></button></aside>
   <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER · HOLD <kbd>A/D</kbd> FOR SIDE</span><span><kbd>G</kbd> GARAGE</span><span><kbd>H</kbd> HARBOUR</span><span><kbd>P</kbd> PAUSE</span></footer>
   <div class="touch-controls" aria-label="Touch driving controls"><div class="thumb-actions"><button data-key="boost" aria-label="Hold to boost">BOOST</button><button data-key="handbrake" aria-label="Hold handbrake">DRIFT</button></div><div id="joystick" class="joystick" role="group" aria-label="Drag to move: up accelerates, down brakes or reverses, left and right steer. On foot, drag in the direction to walk."><span class="joystick-guides" aria-hidden="true">＋</span><span class="joystick-knob" aria-hidden="true"></span></div></div>
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
@@ -56,8 +50,9 @@ let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
-const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode);
+const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
+const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, notebook: openNotebook, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
@@ -135,39 +130,9 @@ bindGame();
 function hud() {
   refreshInbox();
   refreshPlayerHud();
-  const g = game, job = g.job, pickup = job.stage === 'pickup', parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
-  $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
-  $('job-status').textContent = pickup ? 'PICKUP' : 'ON BOARD'; $('job-status').classList.toggle('green', !pickup);
-  $('mission-title').textContent = pickup ? `Meet ${job.name}.` : `${job.destination}.`;
-  $('mission-description').textContent = pickup ? `${job.name} needs a lift. Follow the yellow route on the radar.` : `${job.name} is riding with you. Make it a good one.`;
-  $('fare').innerHTML = `$${job.fare} <span>+ tips</span>`; $('distance-label').textContent = pickup ? 'TO PICKUP' : 'TO DROP-OFF'; $('distance').innerHTML = `${Math.round(dist(g.actor.position, g.target))} <span>m</span>`;
-  $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in the yellow ring to pick up.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Still earning your base fare'} <span class="comfort">${Math.round(job.comfort)}% comfort</span>`;
-  if (parcel) {
-    $('job-label').textContent = `COURIER / DELIVERY ${String(g.jobsDone + 1).padStart(2, '0')}`;
-    $('job-status').textContent = pickup ? 'PARCEL PICKUP' : 'PARCEL LOADED';
-    $('mission-title').textContent = pickup ? `Collect ${job.name}'s parcel.` : `${job.destination}.`;
-    $('mission-description').textContent = pickup ? 'Stop in the yellow ring to load your courier rack. Follow the radar route.' : 'Parcel secured on the rear rack. Stop in the green ring to deliver.';
-    $('mission-footer').innerHTML = pickup ? '<span class="ring-dot"></span> Stop in yellow to load the parcel.' : `<span class="ring-dot green"></span> ${job.elapsed < job.time ? `FAST TIP · ${Math.ceil(job.time - job.elapsed)}s` : 'NO RUSH · Base delivery pay guaranteed'} <span class="comfort">${Math.round(job.comfort)}% intact</span>`;
-  }
-  $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
-  if (pickup && job.missionId && g.campaignContent.jobWindows[job.missionId]) { $('job-label').textContent = 'DISPATCH / LOCAL BOOKING'; $('mission-description').textContent = `${job.name} · ${g.missions.mission(job.missionId).title}. Pickup before ${calendarLabel(g.campaignContent.jobWindows[job.missionId].until)}. Texts lets you choose another booking.`; }
-  if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
-  if (g.navToNewsroom) { $('job-label').textContent = 'CITY DESK'; $('job-status').textContent = 'DROP-IN'; $('mission-title').textContent = `Newsroom · ${g.campaignContent.newsroom.name}`; $('mission-description').textContent = 'Stop nearby and open the Dispatch notebook to leave selected material.'; $('distance-label').textContent = 'TO NEWSROOM'; $('mission-footer').textContent = 'Stop nearby · Pause menu → Dispatch notebook to leave copies.'; }
-  if (g.onFoot && g.tumble) { $('job-label').textContent = 'BAILOUT'; $('job-status').textContent = g.tumble.grounded ? 'ROLLING' : 'IN THE AIR'; $('mission-title').textContent = 'Brace for impact.'; $('mission-description').textContent = 'You carry the ride’s momentum into the fall. Landing hurts more at higher speeds.'; $('mission-footer').textContent = 'Recover from the roll before taking another ride.'; }
-  else if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'WASD / arrows to walk. Blue radar markers show parked cars and motorbikes.'; $('distance-label').textContent = 'TO NEXT RIDE'; $('mission-footer').textContent = g.enterableCar ? `Press E to ${g.enterableCar.definition.graphics.sprite === 'motorcycle' ? 'ride' : 'get in'}. Wallet & upgrades carry over.` : 'Follow the blue radar route. E takes a parked ride.'; }
-  document.querySelector('.mission')!.classList.toggle('on-foot', g.onFoot);
-  $('mobile-hint').textContent = g.onFoot ? '' : g.navToNewsroom ? 'Stop nearby · Notebook to leave copies' : g.navToGarage ? 'Stop at Pit Stop' : pickup ? parcel ? 'Stop in yellow to collect' : 'Stop in yellow to pick up' : `Stop in green to deliver${job.elapsed < job.time ? ` · ${Math.ceil(job.time - job.elapsed)}s tip` : ''}`;
+  const g = game, bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
+  refreshNavigationHud();
   document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach(button => { button.disabled = g.onFoot || g.mode !== 'playing'; });
-  if (!g.onFoot && (g.navToHarbour || g.harbour.vehicleId === g.player.id)) {
-    const admitted = g.harbour.vehicleId === g.player.id;
-    $('job-label').textContent = 'NORTHSTAR HARBOUR'; $('job-status').textContent = admitted ? g.harbour.exchanged ? 'CLEAN RECORD' : 'ADMITTED' : 'SECURITY';
-    $('mission-title').textContent = admitted ? g.harbour.exchanged ? 'Take the exit.' : 'Container C-76.' : g.policeVisible ? 'Lose the tail.' : g.portGateNear ? 'Pay security.' : 'Northstar Harbour.';
-    $('mission-description').textContent = admitted ? g.harbour.exchanged ? 'Your fresh car has a new identity. All police warnings are cleared.' : 'Follow cyan, drive fully inside the open container, then stop. Police must stay out of sight.' : `Follow cyan to the north docks. Entry + one car swap costs $${PORT_FEE}. Police must be out of line of sight.`;
-    $('distance-label').textContent = admitted ? g.harbour.exchanged ? 'TO EXIT' : 'TO EXCHANGE' : 'TO SECURITY'; $('mission-footer').textContent = g.harbourPrompt ?? (admitted ? 'Use the marked lanes. Keep clear of the loading cranes.' : 'Stop before the security arm, then press E to pay.');
-    $('fare').textContent = admitted ? 'PAID' : `$${PORT_FEE}`; document.querySelector('.mission-data small')!.textContent = 'ENTRY + SWAP';
-    $('mobile-hint').textContent = admitted ? g.harbour.exchanged ? 'New car ready · use the exit' : g.harbourPrompt ?? 'Stop fully inside container C-76' : g.policeVisible ? 'Lose the tail before paying' : g.portGateNear ? `Stop and pay $${PORT_FEE} at security` : 'Follow cyan to port security';
-    $('job-progress').style.width = `${g.harbour.progress / 2.5 * 100}%`; $('job-progress').style.background = '#8edbe8';
-  } else document.querySelector('.mission-data small')!.textContent = 'BASE FARE';
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
   $('map-status').textContent = g.stars ? 'PURSUIT' : 'LIVE'; $('garage').classList.toggle('near', g.garageNear);
@@ -202,13 +167,6 @@ document.addEventListener('pointerdown', event => { if (event.isTrusted) void au
 function pause() { if (game.mode === 'playing') { statsOpen = notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = notebookOpen = false; game.setMode('playing'); } }
 $('harbour').addEventListener('click', () => { game.navigateHarbour(); hud(); });
 $('garage').addEventListener('click', () => game.garage());
-$('map-toggle').addEventListener('click', () => {
-  const collapsed = !$('map-content').hidden;
-  $('map-content').hidden = collapsed;
-  $('map-toggle').setAttribute('aria-expanded', String(!collapsed));
-  $('map-toggle').setAttribute('aria-label', collapsed ? 'Expand radar' : 'Collapse radar');
-  document.querySelector('.map-panel')!.classList.toggle('collapsed', collapsed);
-});
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   if (mapEditor?.handleKey(e)) return;

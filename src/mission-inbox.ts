@@ -9,7 +9,7 @@ export const inboxMarkup = `<aside id="mission-inbox" class="mission-inbox panel
   <div id="mission-texts"></div>
 </aside>`;
 
-export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void, recordVisible: () => boolean = () => true) {
+export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void, recordVisible: () => boolean = () => true, routed: () => void = () => {}) {
   const panel = root.querySelector<HTMLElement>('#mission-inbox')!;
   const messages = root.querySelector<HTMLElement>('#mission-texts')!;
   let signature = '';
@@ -58,7 +58,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
           route.textContent = game.save.story.failed.includes(id) ? jobWindows[id] && game.save.campaign.minute >= jobWindows[id].until ? 'Missed · pickup deadline passed' : 'Missed · contact lost' : game.save.story.completed.includes(id) ? 'Delivered · message retained' : selected && game.job.stage === 'dropoff' ? 'Passenger on board' : 'Opportunity closed · message retained';
         } else route.textContent = game.job.stage === 'dropoff' ? 'Finish your current ride first' : selected ? 'Pickup routed · choice still open' : 'Route to pickup';
         route.disabled = !actionable || game.job.stage === 'dropoff' || game.onFoot;
-        route.addEventListener('click', () => { if (currentGame().routeMissionOffer(id)) close(); });
+        route.addEventListener('click', () => { if (currentGame().routeMissionOffer(id)) { routed(); close(); } });
         article.append(sender, title, text, stop, route); messages.append(article);
       }
       panel.scrollTop = scroll;

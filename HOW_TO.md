@@ -41,8 +41,9 @@ commit only when you stop at the deliberately selected pickup. Pause →
 continues during travel and at arrival. Free driving continues after the campaign.
 
 The **Pause → Dispatch notebook** keeps signed receipts, ride conversations
-and documents. **Bookmark café frontage** currently has no UI entry point after
-the taxi menu's removal; its underlying observation logic remains intact.
+and documents. The navigation card's notebook button also opens it while vacant,
+on foot or routed to the newsroom. The camera button bookmarks café frontage
+when you are stopped nearby and the observation is available.
 The café changes on the calendar whether or not you visit it. Search your own
 records to revisit the details.
 
@@ -56,6 +57,18 @@ remain in the notebook. The last edition is **Day 14 at 06:00**. See the
 ## Explore the city
 
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
+
+The **top-left navigation card** combines your current job and local minimap.
+**ENGAGED** means pickup guidance is selected; **ON BOARD** shows the destination,
+base fare, fast-tip countdown and comfort. Speed and boost reserve sit below the
+map. Clock, cash, personal health and police stars stay separate at the top right.
+
+After an ordinary delivery, **VACANT** shows dispatch, booking and newsroom
+shortcuts. Tap **ENGAGED** before pickup to hide fare guidance and browse these
+shortcuts; tap the dispatcher portrait or **VACANT** to route the next fare.
+Bookings opens your texts; the newspaper routes to the newsroom. Hiding guidance
+does not cancel a booking or prevent a physical pickup. The map chevron collapses
+only the map, leaving the job and driving readouts visible.
 
 - **Eastern bridges and highlands:** take the northern crossing to Pine Woods or the southern crossing to Eagle Highlands. Curved roads connect Pine Junction, Fern Hollow, Highland Lodge, and Eagle Lookout. F2 → **Eastern bridges / highlands** starts at Pine Bridge with a delivery to Eagle Lookout. See [screenshots and map notes](docs/eastern-highlands.md).
 - **Woodland villas and Fairway Country Club:** explore the southern loop through Millionaires Row, Woodland Estates, and Cedar Woods, with private villa drives and a golf club. F2 → **Woodland villas / golf club** starts in Woodland Estates with a passenger for Fairway Club. See the [map overview](docs/woodland-estates.md).

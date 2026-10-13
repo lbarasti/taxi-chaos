@@ -1,0 +1,104 @@
+/* Consolidated job and radar instrument. Personal status stays separate. */
+.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));width:320px;overflow:hidden;background:#10222dec;touch-action:manipulation;--nav-accent:var(--gold)}
+.navigation-hud [hidden]{display:none!important}
+.navigation-hud[data-state="on-board"],.navigation-hud[data-state="loaded"]{--nav-accent:var(--mint)}
+.navigation-hud[data-state="vacant"]{--nav-accent:#b9c9cb}
+.navigation-header{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px;min-height:78px}
+#navigation-destination{display:flex;gap:9px;align-items:center;min-width:0}
+#navigation-destination>div{min-width:0}
+.navigation-pin{display:flex;color:var(--nav-accent);flex-shrink:0}
+.navigation-pin svg{width:23px;height:23px}
+.navigation-hud h1{font-size:19px;letter-spacing:-.5px;line-height:1.2;overflow-wrap:anywhere}
+.navigation-hud #distance{font-size:10px;line-height:1.5;color:#a9bfc5;margin:4px 0 0;font-variant-numeric:tabular-nums}
+.taxi-state{flex-shrink:0;font-size:9px;font-weight:700;letter-spacing:.8px;min-width:44px;min-height:44px;padding:8px;border:1px solid var(--nav-accent);border-radius:7px;color:var(--nav-accent);background:#081b2280}
+.taxi-state:disabled{opacity:1}
+#navigation-contacts{display:flex;gap:8px;align-items:center}
+#navigation-contacts button,#navigation-tools button{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;padding:0;border:1px solid var(--border);border-radius:7px;background:#ffffff04;color:#b9ccd1}
+#navigation-contacts .story-portrait{width:42px;height:42px;border:0;border-radius:6px;aspect-ratio:1}
+.navigation-hud button:hover:not(:disabled){background:#ffffff0d;color:var(--gold)}
+.navigation-hud button:disabled:not(.taxi-state){opacity:.35}
+.navigation-chart{position:relative;border-top:1px solid var(--border);background:#0b1b2490}
+.navigation-hud #map{display:block;width:100%;height:196px;margin:0;padding:0}
+.navigation-hud .map-toggle{position:absolute;top:4px;right:4px;width:auto;min-width:44px;min-height:44px;gap:7px;padding:0 8px;border-radius:6px;background:#10222dcc;letter-spacing:.6px}
+.navigation-hud .map-toggle #map-status{display:block;margin:0;font-size:7px}
+.navigation-hud.collapsed .navigation-chart{height:44px}
+.navigation-instruction{margin:0;padding:9px 16px;color:#b7c7c8;font-size:10px;line-height:1.5;min-height:33px;border-bottom:1px solid var(--border)}
+.navigation-hud .job-progress{height:2px;margin:0;background:transparent}
+.navigation-hud .job-progress i{display:block;height:100%;background:var(--nav-accent)}
+.navigation-footer{display:flex;gap:12px;justify-content:space-between;align-items:center;min-height:94px;padding:12px 16px}
+#navigation-fare{min-width:0}
+#navigation-fare>small{display:block;color:#9bb1b9;font-size:8px;letter-spacing:1px}
+#fare{display:block;font-size:25px;font-weight:600;letter-spacing:-.7px;margin-top:3px}
+#ride-bonuses{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+#ride-bonuses span{padding:4px 5px;border:1px solid #f7ce5544;border-radius:4px;color:var(--gold);font-size:8px;white-space:nowrap}
+#ride-bonuses #comfort{color:var(--mint);border-color:#a3ddc240}
+#navigation-tools{display:flex;gap:8px}
+.navigation-speed{display:flex;gap:10px;align-items:center;border-left:1px solid var(--border);padding-left:12px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.navigation-speed>div:last-child{text-align:right}
+.navigation-speed strong{display:block;font-size:38px;font-weight:600;line-height:1;letter-spacing:-1.5px}
+.navigation-speed small{display:block;color:#9bb1b9;font-size:9px;letter-spacing:1px;margin-top:4px}
+.navigation-boost{position:relative;width:17px;height:50px;border:1px solid #80bcca55;border-radius:5px;overflow:hidden;background:#28404b}
+.navigation-boost i{position:absolute;inset:auto 0 0;background:#70bdd1}
+.navigation-boost svg{position:absolute;top:15px;left:0;width:15px;height:19px;color:#fff4b2;filter:drop-shadow(0 1px 1px #10222d)}
+.boosting .navigation-boost{border-color:#b9ecf6;box-shadow:0 0 9px #70bdd133}
+.navigation-services{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border)}
+.navigation-services button{min-height:44px;border:0;background:none;color:#9fb8c1;font-size:10px}
+.navigation-services button+button{border-left:1px solid var(--border)}
+.navigation-services button.near{color:var(--mint)}
+.navigation-services kbd{font-size:8px;margin-left:5px}
+/* Preserve the existing right-hand personal status and conversation layout. */
+.toast{max-width:calc(100% - 440px)}
+@media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
+  :root{--navigation-width:min(204px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px))}
+  .navigation-hud{top:calc(var(--top-height) + 8px);left:var(--edge-left);right:auto;width:var(--navigation-width);border-radius:10px}
+  .navigation-header{padding:8px 10px;gap:6px;min-height:68px}
+  .navigation-hud h1{font-size:14px;letter-spacing:-.3px}
+  .navigation-pin{display:none}
+  .navigation-hud #distance{font-size:9px}
+  .taxi-state{font-size:8px;padding:5px;letter-spacing:.3px;max-width:66px}
+  #navigation-contacts{gap:3px;flex-wrap:wrap}
+  .navigation-hud[data-state="vacant"] .navigation-header{padding:8px;gap:4px}
+  .navigation-hud[data-state="vacant"] .taxi-state{font-size:7px;padding:3px;letter-spacing:0}
+  #navigation-contacts button{width:44px}
+  .navigation-hud #map{height:134px;padding:0}
+  .navigation-hud .map-toggle #map-status{display:none}
+  .navigation-instruction{font-size:9px;padding:7px 10px;min-height:41px}
+  .navigation-footer{padding:9px 10px;min-height:80px;gap:7px}
+  #fare{font-size:21px}
+  #navigation-fare>small{font-size:7px}
+  #ride-bonuses{gap:3px;margin-top:4px}
+  #ride-bonuses span{font-size:7px;padding:3px}
+  .navigation-speed{gap:6px;padding-left:8px}
+  .navigation-speed strong{font-size:30px}
+  .navigation-speed small{font-size:8px}
+  .navigation-boost{width:15px;height:43px}
+  .navigation-boost svg{width:13px;top:12px}
+  #navigation-tools{gap:5px}
+  .navigation-services button{font-size:9px}
+  .navigation-services kbd{display:none}
+  .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 144px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 210px)}
+  .story-body{display:flow-root}
+  .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
+  .story-copy p{font-size:11px;min-height:90px}
+  .toast{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 64px);left:var(--edge-left);width:calc(100% - var(--edge-left) - var(--edge-right));max-width:360px}
+}
+@media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
+  :root{--navigation-width:240px}
+  .navigation-hud{max-height:calc(100dvh - var(--top-height) - 16px);overflow:auto}
+  .navigation-header{min-height:52px;padding:4px 10px}
+  #navigation-contacts{flex-wrap:nowrap}
+  .navigation-hud #map{height:85px}
+  .navigation-instruction{min-height:0;padding:5px 10px}
+  .navigation-footer{min-height:67px;padding:6px 10px}
+  .navigation-services button{min-height:44px}
+  .story,.story.collapsed,.roadside{left:calc(var(--edge-left) + 252px);right:auto;top:calc(var(--top-height) + 8px);width:calc(100vw - var(--edge-left) - var(--edge-right) - 252px - var(--dash-width) - 12px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 28px)}
+  .context-action{left:auto;right:var(--edge-right);max-width:150px}
+  .toast{left:calc(var(--edge-left) + 252px);width:calc(100vw - var(--edge-left) - var(--edge-right) - 264px);max-width:360px}
+}
+@media(max-width:360px) and (min-height:501px){
+  .navigation-hud #map{height:112px}
+  .navigation-speed strong{font-size:25px}
+  .navigation-speed{padding-left:5px;gap:4px}
+  .navigation-footer{padding:8px;gap:5px}
+  #navigation-tools{display:grid;grid-template-columns:44px;gap:3px}
+}

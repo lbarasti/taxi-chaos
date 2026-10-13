@@ -32,6 +32,7 @@ function mixHex(a: string, b: string, t: number): string {
 export class Renderer {
   ctx: CanvasRenderingContext2D; mapCtx: CanvasRenderingContext2D; width = 0; height = 0; dpr = 1; camera = vec(4, 25); zoom = 9; frames = 0; fps = 60; debugColliders = false; debugAI = false;
   lightLayer = new LightingLayer(0.5);
+  navigationRouteVisible = true;
   private sun: Vec = vec(0, 0.5);
   private shadowT = 0;
   private shadowAlpha = 0.4;
@@ -717,6 +718,7 @@ export class Renderer {
     }
   }
   edgePointer() {
+    if (!this.navigationRouteVisible) return;
     const g = this.game, p = this.screen(g.target), compact = this.width <= 700 || this.width <= 1000 && this.height <= 500;
     const left = compact ? 30 : 370, right = this.width - (compact ? 30 : 220);
     const top = compact ? this.height <= 500 ? 170 : 190 : 125;
@@ -752,7 +754,7 @@ export class Renderer {
     c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
     for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
-    c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 1.4 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke();
+    if (this.navigationRouteVisible) { c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
     const markerScale = 0.66 / s;
     if (!g.onFoot && g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
       c.strokeStyle = '#8edbe8'; c.lineWidth = 1 / s; c.beginPath(); c.arc(offer.pickup.x, offer.pickup.y, 4 * markerScale, 0, Math.PI * 2); c.stroke();
@@ -768,6 +770,6 @@ export class Renderer {
     c.lineWidth = 1.5; c.beginPath();
     if (marker.offscreen) { c.rotate(marker.angle); c.moveTo(5, 0); c.lineTo(-4, -4); c.lineTo(-2, 0); c.lineTo(-4, 4); c.closePath(); c.fill(); }
     else { c.arc(0, 0, 4, 0, Math.PI * 2); c.stroke(); }
-    c.restore(); c.fillStyle = '#b4c5c2'; c.font = '8px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position, g.map), 8, height - 5, width - 35); c.textAlign = 'right'; c.fillText('N ↑', width - 7, height - 5);
+    c.restore(); c.fillStyle = '#b4c5c2'; c.font = '10px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position, g.map), 10, height - 5, width - 42); c.textAlign = 'right'; c.fillText('N ↑', width - 10, height - 5);
   }
 }
