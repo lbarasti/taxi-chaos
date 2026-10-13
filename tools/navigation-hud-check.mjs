@@ -43,13 +43,12 @@ try {
       assert.equal(state.job.stage, 'dropoff', 'Physical driving must collect the first passenger');
       assert.equal(state.driverHealth, 100);
       assert.equal(await page.locator('#job-status').textContent(), 'ON BOARD');
-      await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
-      assert(Number(await page.locator('#speed').textContent()) > 0);
-      assert(Number(await page.locator('#boost-meter').getAttribute('aria-valuenow')) < 100);
+      state = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
+      assert(state.speed > 0);
       await page.locator('#city').focus();
       await page.evaluate(() => document.fonts.ready);
       await page.screenshot({ path: resolve(output, 'desktop-driving.png') });
-      console.log('Physical desktop pickup and boost/readout integration passed');
+      console.log('Physical desktop pickup and driving integration passed');
       // Start a separate fixture for layout captures; never teleport mid-drive.
       await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
     }
@@ -62,25 +61,29 @@ try {
       const after = await command({ op: 'step', seconds: 1 });
       await page.mouse.up();
       assert(Math.hypot(after.position.x - before.position.x, after.position.y - before.position.y) > 1, 'Mobile joystick must physically move the taxi');
-      assert(Number(await page.locator('#speed').textContent()) > 0);
+      assert(after.speed > 0);
       assert.equal(await page.locator('#joystick.pressed').count(), 0);
-      console.log('Mobile joystick pointer/readout integration passed');
+      console.log('Mobile joystick pointer/driving integration passed');
       await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
     }
     const render = () => page.evaluate(() => window.__scenario.render('world'));
     const check = async () => {
       const layout = await page.locator('.navigation-hud').evaluate(el => {
         const bounds = el.getBoundingClientRect();
-        const overflow = [...el.querySelectorAll('h1, button, .player-hud, .navigation-footer')].filter(child => {
+        const overflow = [...el.querySelectorAll('h1, button')].filter(child => {
           if (!child.getClientRects().length) return false;
           const b = child.getBoundingClientRect();
           return b.left < bounds.left - 1 || b.right > bounds.right + 1;
         }).map(child => child.id || child.className);
-        return { x: bounds.x, y: bounds.y, right: bounds.right, bottom: bounds.bottom, horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
+        const chart = el.querySelector('.navigation-chart').getBoundingClientRect();
+        return { x: bounds.x, y: bounds.y, right: bounds.right, bottom: bounds.bottom, chartBottom: chart.bottom, horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
       });
       assert(layout.x >= 0 && layout.y >= 0 && layout.right <= width && layout.bottom <= height, JSON.stringify(layout));
       assert.equal(layout.horizontalOverflow, false, `${name}: horizontal overflow`);
       assert.deepEqual(layout.overflow, [], `${name}: overflowing children`);
+      assert(Math.abs(layout.bottom - layout.chartBottom) <= 1, `${name}: widget must end at the map`);
+      assert.equal(await page.locator('.navigation-footer, .navigation-instruction, .navigation-services, #job-progress, #speed, #boost-meter, #map-status').count(), 0);
+      assert.equal((await page.locator('#map-toggle').textContent()).trim(), '⌄');
       const nav = await page.locator('.navigation-hud').boundingBox();
       const personal = await page.locator('.player-hud').boundingBox();
       assert(personal.x >= nav.x + nav.width, `${name}: personal status must stay distinct on the right`);
@@ -102,50 +105,45 @@ try {
     await shot('engaged');
     await page.locator('#job-status').click(); await render();
     assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
-    assert.equal(await page.locator('#navigation-fare').isVisible(), false);
-    // Stress the vacant footer's three-digit speed without mutating simulation.
-    await page.locator('#speed').evaluate(el => { el.textContent = '120'; }); await check(); await render();
+    assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
     await shot('vacant');
     await page.locator('#texts').click();
     assert.equal(await page.locator('#mission-inbox').isVisible(), true);
     await page.locator('#texts-close').click();
-    await page.locator('#notebook').click();
+    await page.locator('#city').focus(); await page.keyboard.press('KeyP');
+    await page.locator('#open-notebook').click();
     assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
     await page.locator('#newsroom').click(); await render();
     assert.match(await page.locator('#mission-title').textContent(), /Newsroom/);
-    assert.equal(await page.locator('#notebook').isVisible(), true);
-    await page.locator('#garage').click(); await render();
+    await page.locator('#city').focus(); await page.keyboard.press('KeyG'); await render();
     assert.equal(await page.locator('.garage-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
-    await page.locator('#harbour').click(); await render();
+    await page.locator('#city').focus(); await page.keyboard.press('KeyH'); await render();
     assert.equal(await page.locator('#mission-title').textContent(), 'Northstar Harbour.');
     // Cancel the detour via H, then use the vacant/dispatch affordance.
     await page.keyboard.press('KeyH'); await render();
     if (await page.locator('#job-status').textContent() !== 'VACANT') { await page.locator('#job-status').click(); await render(); }
     await page.locator('#dispatch').click(); await render();
     assert.equal(await page.locator('#job-status').textContent(), 'ENGAGED');
-    // Keyboard collapse keeps trip context, footer and status visible.
+    // Keyboard collapse keeps only the header and map toggle visible.
     await page.locator('#map-toggle').focus(); await page.keyboard.press('Space');
     assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'), 'false');
     assert.equal(await page.locator('#map-content').isVisible(), false);
+    assert.equal(await page.locator('.navigation-header').isVisible(), true);
     await check(); await page.keyboard.press('Space'); await render();
     assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'), 'true');
     // Fixture capture only; physical integration driving is checked separately.
     await command({ op: 'pickup' });
     assert.equal(await page.locator('#job-status').textContent(), 'ON BOARD');
-    assert.equal(await page.locator('#ride-bonuses').isVisible(), true);
     await shot('on-board');
-    await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
-    assert(Number(await page.locator('#speed').textContent()) > 0);
-    assert(Number(await page.locator('#boost-meter').getAttribute('aria-valuenow')) < 100);
+    const driving = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
+    assert(driving.speed > 0);
     await command({ op: 'deliver' });
     assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
-    assert.equal(await page.locator('#navigation-tools').isVisible(), true);
-    assert.equal(await page.locator('#ride-bonuses').isVisible(), false);
+    assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
     await page.locator('#city').focus(); await page.keyboard.press('KeyE'); await render();
     assert.equal(await page.locator('#job-status').textContent(), 'ON FOOT');
-    assert.equal(await page.locator('#boost-meter').isVisible(), false);
     await check();
     await context.close();
     console.log(`${name}: state transitions, shortcuts, keyboard collapse and layout passed`);

@@ -52,7 +52,7 @@ const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCa
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
-const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, notebook: openNotebook, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
+const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
@@ -135,7 +135,6 @@ function hud() {
   document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach(button => { button.disabled = g.onFoot || g.mode !== 'playing'; });
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
-  $('map-status').textContent = g.stars ? 'PURSUIT' : 'LIVE'; $('garage').classList.toggle('near', g.garageNear);
   $('toast').textContent = g.toast; $('toast').className = `toast ${g.toastTime > 0 && g.mode === 'playing' ? 'visible' : ''} ${g.toastKind}`;
   const damage = g.player.damage;
   $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' && (g.enterableCar.dynamics as MotorcycleDynamics).fallen ? 'Lift motorbike' : g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : g.pendingExit ? bike ? 'Jumping…' : 'Opening door…' : damage.status === 'burning' ? 'Bail out!' : g.speed > 1.2 ? bike ? 'Jump off' : 'Jump out' : bike ? 'Dismount' : 'Get out';
@@ -150,7 +149,6 @@ function hud() {
   if (g.harbourPrompt && g.mode === 'playing' && damage.status !== 'burning') {
     $('interact').hidden = !g.portGateNear; $('interact').textContent = `Pay $${PORT_FEE}`; ($('interact') as HTMLButtonElement).disabled = false;
   }
-  $('harbour').classList.toggle('near', g.navToHarbour || g.harbour.vehicleId === g.player.id);
   // Keep conversations out of emergencies and harbour interactions, without a warning banner.
   const drivingEmergency = damage.status === 'burning' || damage.status === 'wreck' || bike && !motorcycleEngineWorks(damage);
   refreshStory(g.mode === 'playing' && !g.onFoot && !g.player.sinking && !drivingEmergency && !g.harbourPrompt && $('roadside').hidden);
@@ -165,8 +163,6 @@ $('interact').addEventListener('click', interact); $('tow').addEventListener('cl
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
 function pause() { if (game.mode === 'playing') { statsOpen = notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = notebookOpen = false; game.setMode('playing'); } }
-$('harbour').addEventListener('click', () => { game.navigateHarbour(); hud(); });
-$('garage').addEventListener('click', () => game.garage());
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   if (mapEditor?.handleKey(e)) return;

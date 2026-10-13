@@ -12,8 +12,8 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 | E / mobile action | Exit or mount a nearby vehicle; pay at harbour security |
 | A or D while pressing E | Choose which side to exit a moving vehicle |
 | R | Optional tow and repair when near a wreck |
-| H / Harbour button | Set or cancel a route to harbour security |
-| G / Garage button | Set or cancel a garage route; enter when stopped nearby |
+| H | Set or cancel a route to harbour security |
+| G | Set or cancel a garage route; enter when stopped nearby |
 | P / Escape | Pause or resume |
 | M | Mute or unmute sound effects |
 | F2 | Open scenarios and the inspector |
@@ -41,9 +41,7 @@ commit only when you stop at the deliberately selected pickup. Pause →
 continues during travel and at arrival. Free driving continues after the campaign.
 
 The **Pause → Dispatch notebook** keeps signed receipts, ride conversations
-and documents. The navigation card's notebook button also opens it while vacant,
-on foot or routed to the newsroom. The camera button bookmarks café frontage
-when you are stopped nearby and the observation is available.
+and documents.
 The café changes on the calendar whether or not you visit it. Search your own
 records to revisit the details.
 
@@ -59,21 +57,21 @@ remain in the notebook. The last edition is **Day 14 at 06:00**. See the
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
 
 The **top-left navigation card** combines your current job and local minimap.
-**ENGAGED** means pickup guidance is selected; **ON BOARD** shows the destination,
-base fare, fast-tip countdown and comfort. Speed and boost reserve sit below the
-map. Clock, cash, personal health and police stars stay separate at the top right.
+**ENGAGED** means pickup guidance is selected; **ON BOARD** shows the destination.
+The card ends at the map, without lower readouts or service buttons. Clock, cash,
+personal health and police stars stay separate at the top right.
 
 After an ordinary delivery, **VACANT** shows dispatch, booking and newsroom
 shortcuts. Tap **ENGAGED** before pickup to hide fare guidance and browse these
 shortcuts; tap the dispatcher portrait or **VACANT** to route the next fare.
 Bookings opens your texts; the newspaper routes to the newsroom. Hiding guidance
 does not cancel a booking or prevent a physical pickup. The map chevron collapses
-only the map, leaving the job and driving readouts visible.
+only the map, leaving the header visible.
 
 - **Eastern bridges and highlands:** take the northern crossing to Pine Woods or the southern crossing to Eagle Highlands. Curved roads connect Pine Junction, Fern Hollow, Highland Lodge, and Eagle Lookout. F2 → **Eastern bridges / highlands** starts at Pine Bridge with a delivery to Eagle Lookout. See [screenshots and map notes](docs/eastern-highlands.md).
 - **Woodland villas and Fairway Country Club:** explore the southern loop through Millionaires Row, Woodland Estates, and Cedar Woods, with private villa drives and a golf club. F2 → **Woodland villas / golf club** starts in Woodland Estates with a passenger for Fairway Club. See the [map overview](docs/woodland-estates.md).
 - **Sunset Beach and Ocean Walk:** head to the southern waterfront for soft sand, breakable beach furniture, and a promenade between the beach and hotels. Road tyres lose traction in sand; the beach patrol pickup has off-road tyres. F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or **Ocean Walk / hotel promenade**. See the [beach guide](docs/beach.md).
-- **Northstar Harbour:** press **H** or tap **Harbour · $75** to navigate to security. Pay while in a car and out of police sight to enter and exchange your vehicle for a healthy one, clearing police heat. Wallet, upgrades, and any current fare carry over. F2 → **Northstar Harbour / car exchange**. See the [harbour guide](docs/harbour.md).
+- **Northstar Harbour:** press **H** to navigate to security. Pay while in a car and out of police sight to enter and exchange your vehicle for a healthy one, clearing police heat. Wallet, upgrades, and any current fare carry over. F2 → **Northstar Harbour / car exchange**. See the [harbour guide](docs/harbour.md).
 - **Commercial traffic:** delivery vans, flatbeds, freight trucks, and fuel trucks share the roads as NPCs. F2 → **Vans / freight traffic** or **Flammable cargo / impact**. See the [vehicle guide](docs/vehicles.md).
 
 ## Settings and sound
