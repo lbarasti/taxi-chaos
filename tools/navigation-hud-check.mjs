@@ -81,15 +81,20 @@ try {
         const row = [...el.querySelectorAll('.navigation-header h1, .navigation-header p, .navigation-header button')].filter(child => child.getClientRects().length).map(child => {
           const b = child.getBoundingClientRect(); return { id: child.id, centerY: b.y + b.height / 2 };
         });
-        return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, right: bounds.right, bottom: bounds.bottom, chartBottom: chart.bottom, mapBottom: map.bottom, headerHeight: header.height, row, horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
+        return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, right: bounds.right, bottom: bounds.bottom, chartCenter: chart.x + chart.width / 2, chartWidth: chart.width, chartHeight: chart.height, chartBorderRadius: getComputedStyle(el.querySelector('.navigation-chart')).borderRadius, chartTop: chart.top, headerBottom: header.bottom, chartBottom: chart.bottom, mapBottom: map.bottom, headerHeight: header.height, row, tallestButton: Math.max(...[...el.querySelectorAll('.navigation-header button')].filter(button => button.getClientRects().length).map(button => button.getBoundingClientRect().height)), horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
       });
       assert(layout.x >= 0 && layout.y >= 0 && layout.right <= width && layout.bottom <= height, JSON.stringify(layout));
       assert.equal(layout.horizontalOverflow, false, `${name}: horizontal overflow`);
       assert.deepEqual(layout.overflow, [], `${name}: overflowing children`);
-      assert(Math.abs(layout.width - layout.height) <= 9, `${name}: navigation box must stay nearly square`);
+      assert(Math.abs(layout.chartWidth - layout.chartHeight) <= 1, `${name}: radar must stay circular`);
+      assert.equal(layout.chartBorderRadius, '50%');
+      assert(Math.abs(layout.chartWidth - layout.width * 3 / 5) <= 0.1, `${name}: radar diameter must be three fifths of the header width`);
+      assert(Math.abs(layout.chartCenter - (layout.x + layout.width / 2)) <= 0.1, `${name}: radar must stay centered`);
+      assert(Math.abs(layout.headerHeight - layout.tallestButton - 2) <= 0.1, `${name}: header must have no extra vertical spacing`);
+      assert(layout.headerBottom > layout.chartTop, `${name}: header must join the circle`);
       assert(layout.width <= 240, `${name}: navigation box must stay small`);
-      assert(layout.headerHeight <= 52, `${name}: header must stay compact`);
-      assert(Math.abs(layout.mapBottom - layout.chartBottom) <= 1, `${name}: minimap must fit the remaining space`);
+      assert(layout.headerHeight <= 26, `${name}: header must stay compact`);
+      assert(Math.abs(layout.mapBottom - layout.chartBottom) <= 3, `${name}: minimap must fit inside the rim`);
       for (const item of layout.row) assert(Math.abs(item.centerY - layout.row[0].centerY) <= 1, `${name}: ${item.id} must stay on the same header line`);
       assert(Math.abs(layout.bottom - layout.chartBottom) <= 1, `${name}: widget must end at the map`);
       assert.equal(await page.locator('.navigation-footer, .navigation-instruction, .navigation-services, #job-progress, #speed, #boost-meter, #map-status, #map-toggle').count(), 0);
@@ -100,7 +105,8 @@ try {
       assert.equal(await page.locator('.navigation-hud .player-hud').count(), 0);
       const minimumTarget = name === 'portrait' ? 44 : 32;
       const smallTargets = await page.locator('.navigation-hud button:visible').evaluateAll((buttons, minimum) => buttons.filter(button => {
-        const b = button.getBoundingClientRect(); return b.width < minimum - 0.1 || b.height < minimum - 0.1;
+        const b = button.getBoundingClientRect(); const hitHeight = Math.max(b.height, parseFloat(getComputedStyle(button, '::after').height));
+        return b.width < minimum - 0.1 || hitHeight < minimum - 0.1;
       }).map(button => button.id), minimumTarget);
       assert.deepEqual(smallTargets, [], `${name}: targets must be at least ${minimumTarget}px`);
       assert.equal(await page.locator('#player-time').count(), 1);
@@ -119,8 +125,12 @@ try {
     await shot('long-title'); await render();
     assert.equal(await page.locator('#mission-title').getAttribute('title'), title);
     await shot('engaged');
-    await page.locator('#job-status').click(); await render();
-    assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
+    if (touch) {
+      const status = await page.locator('#job-status').boundingBox();
+      await page.touchscreen.tap(status.x + status.width / 2, status.y - 4);
+    } else await page.locator('#job-status').click();
+    await render();
+    assert.equal(await page.locator('#job-status').textContent(), 'VACANT', 'Expanded touch area above the visible button must work');
     assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
     assert.equal(await page.locator('#texts svg[aria-hidden="true"]').count(), 1);
     assert.equal(await page.locator('#texts img').count(), 0);
