@@ -30,13 +30,14 @@ describe('consolidated navigation HUD', () => {
     expect(navigationHudState(game, false)).toMatchObject({ status: 'ON BOARD', title: `${game.job.destination}.`, vacant: false, routeVisible: true });
   });
 
-  it('keeps parcel terminology and arrival guidance accurate', () => {
+  it('keeps parcel terminology and distance accurate without arrival copy', () => {
     const game = new Game(undefined, false);
     game.job.type = 'parcel';
     expect(navigationHudState(game).title).toContain('parcel');
     game.job.stage = 'dropoff';
     game.job.dropoff = { ...game.actor.position };
-    expect(navigationHudState(game)).toMatchObject({ status: 'LOADED', distance: 0, arriving: true });
+    expect(navigationHudState(game)).toMatchObject({ status: 'LOADED', distance: 0 });
+    expect(navigationHudState(game)).not.toHaveProperty('arriving');
   });
 
   it('overrides vacant guidance for detours', () => {

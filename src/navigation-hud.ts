@@ -45,7 +45,6 @@ export function navigationHudState(g: Game, fareRouted = true) {
   return {
     status, title, vacant, routeVisible: !vacant,
     distance: Math.round(dist(g.actor.position, g.target)),
-    arriving: !pickup && !detour && !g.onFoot && dist(g.actor.position, g.target) < 150,
   };
 }
 
@@ -90,7 +89,7 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     get('job-status').title = canClear ? state.vacant ? 'Route the next fare' : 'Clear fare guidance and browse dispatch' : state.status;
     get('mission-title').textContent = state.title;
     get('mission-title').title = state.title;
-    get('distance').textContent = `${state.distance} m${state.arriving ? ' · Arriving soon' : ''}`;
+    get('distance').textContent = `${state.distance} m`;
     (get('dispatch') as HTMLButtonElement).disabled = g.mode !== 'playing';
     for (const id of ['texts', 'newsroom']) (get(id) as HTMLButtonElement).disabled = !g.campaignEnabled || g.mode !== 'playing';
     return state;

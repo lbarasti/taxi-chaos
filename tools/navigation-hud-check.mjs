@@ -146,6 +146,7 @@ try {
     // Fixture capture only; physical integration driving is checked separately.
     await command({ op: 'pickup' });
     assert.equal(await page.locator('#job-status').textContent(), 'ON BOARD');
+    assert.match(await page.locator('#distance').textContent(), /^\d+ m$/);
     await shot('on-board');
     const driving = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
     assert(driving.speed > 0);
