@@ -1,12 +1,10 @@
 import './style.css';
 import { bindTouchControls } from './touch-controls';
-import { bindFullscreen } from './fullscreen';
 import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { Renderer } from './renderer';
 import { dist } from './physics';
 import { PORT_FEE } from './harbour';
-import { district } from './world';
 import { difficulties, type Difficulty } from './rules';
 import { setupLab, type LabAPI } from './lab';
 import { AudioFX } from './audio';
@@ -15,7 +13,6 @@ import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 import { calendarLabel } from './campaign/clock';
-import { campaignDefinition } from './campaign/content';
 import type { Allegation } from './campaign/model';
 import { notebookMarkup } from './campaign/view';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
@@ -23,26 +20,15 @@ import type { PreviewState } from './missions/dialogue-preview';
 import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
 
 const icons = {
-  fullscreen: '<path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/>',
   cab: '<path d="M5 17H3V9l2-5h14l2 5v8h-2M5 17h14M5 17v3M19 17v3M3 9h18M7 13h2M15 13h2M9 4V2h6v2"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   wrench: '<path d="m14 6 4 4 4-4a7 7 0 0 1-9 9l-7 7-4-4 7-7a7 7 0 0 1 9-9z"/>',
-  pause: '<path d="M8 5v14M16 5v14"/>',
   target: '<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
-  sound: '<path d="M11 5 6 9H3v6h3l5 4V5M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/>',
-  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/>',
-  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
 };
 const icon = (name: keyof typeof icons) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 document.querySelector('#app')!.innerHTML = `
   <canvas id="city" aria-label="Top-down taxi driving game. Use arrow keys or WASD to drive." tabindex="0"></canvas>
-  <header class="topbar">
-    <div class="brand"><button id="taxi-menu-toggle" class="brand-icon" aria-label="Open Taxi Chaos menu" aria-expanded="false" aria-controls="taxi-menu">${icon('cab')}</button><span>TAXI<span class="brand-light">CHAOS</span><small>THE STREETS ARE YOURS.</small></span></div><nav id="taxi-menu" class="taxi-menu panel" aria-label="Taxi Chaos menu" hidden><button id="help">How to play</button><button id="notebook-menu">Dispatch notebook</button>${campaignDefinition.observations.map(o => `<button data-observe="${o.id}">${o.label}</button>`).join('')}<button id="lab-button">Test lab <kbd>F2</kbd></button></nav>
-    <div class="top-center"><span class="live-dot"></span> ON THE CLOCK <span class="divider">/</span><span id="district">OLD TOWN</span></div>
-    <div class="hud-clock" id="hud-clock" role="timer" aria-label="World time 07:00, morning, day 1"><span class="hud-clock-icon" id="clock-sun">${icon('sun')}</span><span class="hud-clock-icon" id="clock-moon" hidden>${icon('moon')}</span><span class="hud-clock-text"><strong id="clock-time">07:00</strong><small id="clock-period">MORNING</small></span></div>
-    <div class="top-actions"><div class="cash"><small>YOUR WALLET</small><strong id="cash">$80</strong></div><button id="sound-toggle" class="icon-button" title="Mute FX · M" aria-label="Mute sound FX" aria-pressed="false">${icon('sound')}</button><button id="pause" class="icon-button" title="Pause · P" aria-label="Pause game">${icon('pause')}</button><button id="fullscreen" class="icon-button" title="Enter fullscreen" aria-label="Enter fullscreen" aria-pressed="false">${icon('fullscreen')}</button></div>
-  </header>
   <aside class="mission panel" aria-label="Current driving job">
     <div class="eyebrow"><span id="job-label">YOUR FIRST FARE</span><span class="tiny-tag" id="job-status">PICKUP</span></div>
     <div class="mission-heading"><span class="mission-icon">${icon('target')}</span><h1 id="mission-title">Meet Mia.</h1></div>
@@ -118,7 +104,7 @@ function modal() {
     }
   }
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
-  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the Taxi menu’s notebook.');
+  if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the pause menu’s Dispatch notebook.');
   $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
   $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = notebookOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
@@ -144,17 +130,12 @@ function modal() {
 }
 function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = notebookOpen = false; helpOpen = true; game.setMode('paused'); }
 function openNotebook() { if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return; notebookOpen = true; statsOpen = helpOpen = false; game.setMode('paused'); }
-function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); setMenu(false); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
+function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();
 function hud() {
   refreshInbox();
   const { inSand } = game.map.beach;
   const g = game, job = g.job, pickup = job.stage === 'pickup', speed = Math.round(g.speed * 2.237), parcel = job.type === 'parcel', bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
-  const dayNight = g.dayNight.snapshot(), night = dayNight.period === 'night';
-  $('clock-time').textContent = g.campaignEnabled && !g.save.campaign.finished ? calendarLabel(g.save.campaign.minute).split(' · ')[1] : dayNight.time; $('clock-period').textContent = g.campaignEnabled ? g.save.campaign.finished ? 'FREE DRIVING' : `DAY ${g.save.campaign.shift} / 14` : dayNight.period.toUpperCase();
-  $('hud-clock').setAttribute('aria-label', `World time ${dayNight.time}, ${dayNight.period}, campaign day ${g.save.campaign.shift} of 14`);
-  $('clock-sun').hidden = night; $('clock-moon').hidden = !night;
-  $('cash').textContent = `$${g.save.cash.toLocaleString()}`; $('district').textContent = district(g.actor.position, g.map);
   $('job-label').textContent = g.jobsDone === 0 && pickup ? 'YOUR FIRST FARE' : `FARE ${String(g.jobsDone + 1).padStart(2, '0')} / ${pickup ? 'CUSTOMER WAITING' : 'PASSENGER ON BOARD'}`;
   $('job-status').textContent = pickup ? 'PICKUP' : 'ON BOARD'; $('job-status').classList.toggle('green', !pickup);
   $('mission-title').textContent = pickup ? `Meet ${job.name}.` : `${job.destination}.`;
@@ -171,7 +152,7 @@ function hud() {
   $('job-progress').style.width = `${job.wait / 0.8 * 100}%`; $('job-progress').style.background = pickup ? '#f7ce55' : '#a3ddc2';
   if (pickup && job.missionId && g.campaignContent.jobWindows[job.missionId]) { $('job-label').textContent = 'DISPATCH / LOCAL BOOKING'; $('mission-description').textContent = `${job.name} · ${g.missions.mission(job.missionId).title}. Pickup before ${calendarLabel(g.campaignContent.jobWindows[job.missionId].until)}. Texts lets you choose another booking.`; }
   if (g.navToGarage) { $('job-label').textContent = 'TUNING & REPAIRS'; $('job-status').textContent = 'GARAGE'; $('mission-title').textContent = 'Pit Stop.'; $('mission-description').textContent = 'Follow the blue radar route back to Old Town.'; $('distance-label').textContent = 'TO GARAGE'; $('mission-footer').innerHTML = '<span class="ring-dot"></span> Stop at Pit Stop, then press G to enter.'; }
-  if (g.navToNewsroom) { $('job-label').textContent = 'CITY DESK'; $('job-status').textContent = 'DROP-IN'; $('mission-title').textContent = `Newsroom · ${g.campaignContent.newsroom.name}`; $('mission-description').textContent = 'Stop nearby and open the Dispatch notebook to leave selected material.'; $('distance-label').textContent = 'TO NEWSROOM'; $('mission-footer').textContent = 'Stop nearby · Taxi menu → Dispatch notebook to leave copies.'; }
+  if (g.navToNewsroom) { $('job-label').textContent = 'CITY DESK'; $('job-status').textContent = 'DROP-IN'; $('mission-title').textContent = `Newsroom · ${g.campaignContent.newsroom.name}`; $('mission-description').textContent = 'Stop nearby and open the Dispatch notebook to leave selected material.'; $('distance-label').textContent = 'TO NEWSROOM'; $('mission-footer').textContent = 'Stop nearby · Pause menu → Dispatch notebook to leave copies.'; }
   if (g.onFoot && g.tumble) { $('job-label').textContent = 'BAILOUT'; $('job-status').textContent = g.tumble.grounded ? 'ROLLING' : 'IN THE AIR'; $('mission-title').textContent = 'Brace for impact.'; $('mission-description').textContent = 'You carry the ride’s momentum into the fall. Landing hurts more at higher speeds.'; $('mission-footer').textContent = 'Recover from the roll before taking another ride.'; }
   else if (g.onFoot) { $('job-label').textContent = 'KEEP YOUR SHIFT GOING'; $('job-status').textContent = 'ON FOOT'; $('mission-title').textContent = 'Find a ride.'; $('mission-description').textContent = 'WASD / arrows to walk. Blue radar markers show parked cars and motorbikes.'; $('distance-label').textContent = 'TO NEXT RIDE'; $('mission-footer').textContent = g.enterableCar ? `Press E to ${g.enterableCar.definition.graphics.sprite === 'motorcycle' ? 'ride' : 'get in'}. Wallet & upgrades carry over.` : 'Follow the blue radar route. E takes a parked ride.'; }
   document.querySelector('.mission')!.classList.toggle('on-foot', g.onFoot);
@@ -202,12 +183,12 @@ function hud() {
   $('heat-description').textContent = g.arrest > 0 ? `Arrest in ${(g.rules.arrestTime - g.arrest).toFixed(1)}s. Drive!` : g.stars > 0 ? (g.escape > 0 ? `Stay out of sight for ${Math.ceil(g.rules.escapeTime - g.escape)}s to escape.` : 'Break line of sight. Police use shared sightings.') : 'Damage & speeding draw unwanted attention.';
   $('map-status').textContent = g.stars ? 'PURSUIT' : 'LIVE'; $('garage').classList.toggle('near', g.garageNear);
   $('toast').textContent = g.toast; $('toast').className = `toast ${g.toastTime > 0 && g.mode === 'playing' ? 'visible' : ''} ${g.toastKind}`;
-  $('pause').setAttribute('aria-label', g.mode === 'paused' ? 'Resume game' : 'Pause game');
   const damage = g.player.damage;
-  $('critical-status').hidden = g.mode !== 'playing' || (g.onFoot ? damage.status !== 'burning' : damage.status === 'intact' && damage.critical.engine + damage.critical.fuel + damage.critical.tyres < 15);
+  const damageWarning = damage.status === 'burning' || !g.onFoot && (damage.status === 'wreck' || bike && !motorcycleEngineWorks(damage));
+  $('critical-status').hidden = g.mode !== 'playing' || !damageWarning;
   $('critical-status').classList.toggle('burning', damage.status === 'burning');
-  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : bike && !motorcycleEngineWorks(damage) ? 'BIKE ENGINE STALLED' : 'COMPONENT DAMAGE';
-  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : g.bikeTowable ? 'Motorbike will not start · R to tow & repair' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : bike && !motorcycleEngineWorks(damage) ? 'Engine will not start · Repair or find another ride' : `ENGINE ${Math.round(damage.critical.engine)} · FUEL ${Math.round(damage.critical.fuel)} · TYRES ${Math.round(damage.critical.tyres)}`;
+  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : bike && !motorcycleEngineWorks(damage) ? 'BIKE ENGINE STALLED' : '';
+  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : g.bikeTowable ? 'Motorbike will not start · R to tow & repair' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : bike && !motorcycleEngineWorks(damage) ? 'Engine will not start · Repair or find another ride' : '';
   $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' && (g.enterableCar.dynamics as MotorcycleDynamics).fallen ? 'Lift motorbike' : g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : g.pendingExit ? bike ? 'Jumping…' : 'Opening door…' : damage.status === 'burning' ? 'Bail out!' : g.speed > 1.2 ? bike ? 'Jump off' : 'Jump out' : bike ? 'Dismount' : 'Get out';
   ($('interact') as HTMLButtonElement).disabled = !!g.pendingExit;
   $('interact').hidden = g.mode !== 'playing' || (g.onFoot ? !g.enterableCar : !!g.player.sinking);
@@ -226,26 +207,17 @@ function hud() {
   refreshStory(g.mode === 'playing' && !g.onFoot && !g.player.sinking && $('critical-status').hidden && $('roadside').hidden);
   lab?.refreshUI();
   refreshAudioControls(audio);
-  const muted = audio.preferences.muted;
-  $('sound-toggle').setAttribute('aria-pressed', String(muted));
-  $('sound-toggle').setAttribute('aria-label', muted ? 'Unmute sound FX' : 'Mute sound FX');
-  $('sound-toggle').title = `${muted ? 'Unmute' : 'Mute'} FX · M`;
-  $('sound-toggle').classList.toggle('sound-muted', muted);
 }
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
 function realtime() { if (mapEditor?.active) mapEditor.api.live(); else lab?.realtime(); }
 function interact() { if (game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
 function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
-$('sound-toggle').addEventListener('click', toggleSound);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
 function pause() { if (game.mode === 'playing') { statsOpen = notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = notebookOpen = false; game.setMode('playing'); } }
-bindFullscreen($('fullscreen'), message => game.notify(message));
 $('harbour').addEventListener('click', () => { game.navigateHarbour(); hud(); });
-$('pause').addEventListener('click', pause); $('garage').addEventListener('click', () => game.garage()); $('help').addEventListener('click', showHelp);
-$('notebook-menu').addEventListener('click', openNotebook);
-document.querySelectorAll<HTMLButtonElement>('[data-observe]').forEach(button => button.addEventListener('click', () => { setMenu(false); const observation = game.campaignContent.observations.find(o => o.id === button.dataset.observe)!; if (!game.observeScene(observation.id)) game.notify(observation.unavailable); }));
+$('garage').addEventListener('click', () => game.garage());
 $('map-toggle').addEventListener('click', () => {
   const collapsed = !$('map-content').hidden;
   $('map-content').hidden = collapsed;
@@ -253,24 +225,12 @@ $('map-toggle').addEventListener('click', () => {
   $('map-toggle').setAttribute('aria-label', collapsed ? 'Expand radar' : 'Collapse radar');
   document.querySelector('.map-panel')!.classList.toggle('collapsed', collapsed);
 });
-$('lab-button').addEventListener('click', () => { setMenu(false); if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); });
-function setMenu(open: boolean) {
-  $('taxi-menu').hidden = !open;
-  $('taxi-menu-toggle').setAttribute('aria-expanded', String(open));
-}
-$('taxi-menu-toggle').addEventListener('click', () => setMenu($('taxi-menu').hidden));
-document.addEventListener('pointerdown', event => { if (event.target instanceof Node && !$('taxi-menu').contains(event.target) && !$('taxi-menu-toggle').contains(event.target)) setMenu(false); });
-$('taxi-menu').addEventListener('keydown', event => {
-  const buttons = Array.from($('taxi-menu').querySelectorAll('button'));
-  if (event.code === 'ArrowDown' || event.code === 'ArrowUp') { event.preventDefault(); event.stopPropagation(); const index = buttons.indexOf(document.activeElement as HTMLButtonElement); buttons[(index + (event.code === 'ArrowDown' ? 1 : buttons.length - 1)) % buttons.length].focus(); }
-});
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   if (mapEditor?.handleKey(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
-  if (e.code === 'Escape' && !$('taxi-menu').hidden) { e.preventDefault(); setMenu(false); $('taxi-menu-toggle').focus(); return; }
-  if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { setMenu(false); if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
+  if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
   if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {
     e.preventDefault(); if (!e.repeat) $('recover').click(); return;
   }

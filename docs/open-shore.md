@@ -32,7 +32,7 @@ the manual-shift and automatic-publication shortcuts in the initial PR #25.
 - **Texts** shows named physical pickups and exact **pickup-before** deadlines.
   Availability is half-open: a booking expires as its deadline begins. An
   accepted passenger can still be delivered after the pickup deadline.
-- **Taxi menu → Dispatch notebook** retains conversations, signed receipts,
+- **Pause → Dispatch notebook** retains conversations, signed receipts,
   documents and deliberately bookmarked observations. Search revisits the
   wording. New records retain campaign time and source provenance.
 - Stop near the boarded **Garden Café** and select **Bookmark café frontage**.

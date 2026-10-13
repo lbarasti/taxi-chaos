@@ -1,6 +1,6 @@
 # Mobile HUD and thumb controls
 
-The taxi icon opens **How to play** and **Test lab**. The bottom menu is removed on phones/tablets, and closing the lab removes its collapsed toolbar on those screens. The far-right header button enters/exits fullscreen, using standard or prefixed WebKit APIs. Browsers without element fullscreen show a short explanation; the game does not claim to be fullscreen.
+The top bar and taxi menu are removed. The mission and other top-aligned panels use the freed space, retaining safe-area insets. Pause (**P / Escape**), mute (**M**) and Test Lab (**F2**) still work with a keyboard. Help, audio settings and the Dispatch notebook remain in the pause menu. Fullscreen and **Bookmark café frontage** have no in-game UI entry point; new touch access to header actions is deferred.
 
 A 124 px translucent stack sits in the bottom-left safe-area corner, with police pursuit/stars above speed, health/chassis and boost. MPH sits below the speed, and meter percentages are visually hidden while remaining available to screen readers. On narrow phones the centre action buttons stack vertically to keep all controls separate. The bottom-right joystick has circular travel, a centre dead zone and proportional input: up accelerates, down brakes/reverses, sideways steers; on foot, its direction and deflection control walking. BOOST and DRIFT accept a second finger independently in the bottom centre. Release, cancellation, capture loss, focus loss, pause, death and viewport changes clear held touch input.
 
@@ -9,6 +9,10 @@ The generic on-foot card is removed. Get in / Ride motorbike appears beside an a
 The HUD suppresses text selection and native touch callouts/context menus. The radar remains collapsible. Layout accounts for safe-area insets and portrait/landscape dimensions.
 
 ## Screenshots
+
+Current header-free HUD: [Desktop](screenshots/hud-no-topbar/desktop.png), [Portrait](screenshots/hud-no-topbar/portrait.png), [Landscape](screenshots/hud-no-topbar/landscape.png).
+
+The screenshots below document the earlier touch-controls implementation, before the top bar was removed.
 
 | State | Screenshot |
 | --- | --- |
@@ -26,7 +30,7 @@ The HUD suppresses text selection and native touch callouts/context menus. The r
 - All 343 tests pass with `npm test -- --maxWorkers=2 --testTimeout=20000`. Default parallel runs exceeded the existing 5-second timeout in simulation tests on this environment; no timeout settings were changed in the repository.
 - Vitest covers joystick dead zone/circular clamping, proportional driving/reverse/walking, boost gating, input reset, standard/WebKit fullscreen, browser-driven fullscreen exits, unsupported APIs and rejected requests.
 - `npm run build` checks strict TypeScript and produces the single standalone HTML.
-- `node tools/mobile-hud-check.cjs` checks that HTML with Playwright Chromium. Install Playwright/Chromium beforehand; optionally set `PLAYWRIGHT_PATH` and `CHROMIUM_PATH` to existing installations. The script regenerates the screenshots above.
-- Browser QA uses native Chromium touch events for simultaneous steering/boost and steering/handbrake, independent finger release, cancellation, focus-loss reset and on-foot movement. It also checks menu/help/lab actions, contextual enter/exit buttons, native long press selection, fullscreen enter/exit, Space/touch recovery after arrest/death, radar collapse, panel bounds/overlap across five viewport sizes, and uncaught page errors.
+- `node tools/mobile-hud-check.cjs` checks that HTML with Playwright Chromium. Install Playwright/Chromium beforehand; optionally set `PLAYWRIGHT_PATH` and `CHROMIUM_PATH` to existing installations. Set `SCREENSHOT_DIR` to choose an output directory.
+- Browser QA uses native Chromium touch events for simultaneous steering/boost and steering/handbrake, independent finger release, cancellation, focus-loss reset and on-foot movement. It also checks absent header controls, keyboard pause/help/lab alternatives, contextual enter/exit buttons, native long press selection, Space/touch recovery after arrest/death, radar collapse, panel bounds/overlap across five viewport sizes, reclaimed header space, and uncaught page errors.
 
 Chromium mobile emulation is covered. Physical iPhone/WebKit long-press behavior and element fullscreen availability still depend on the host browser; WebKit API routing is covered with unit tests.

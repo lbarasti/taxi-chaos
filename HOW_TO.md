@@ -15,10 +15,10 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 | H / Harbour button | Set or cancel a route to harbour security |
 | G / Garage button | Set or cancel a garage route; enter when stopped nearby |
 | P / Escape | Pause or resume |
-| M / speaker button | Mute or unmute sound effects |
-| F2 / Test Lab button | Open scenarios and the inspector |
+| M | Mute or unmute sound effects |
+| F2 | Open scenarios and the inspector |
 
-On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/reverse. It also moves you while on foot. Hold **BOOST** or **DRIFT** near the bottom centre with your left thumb. Vehicle actions appear when available; tilt the joystick left or right before tapping **Jump** to choose a side when leaving a moving vehicle. The taxi icon opens the game menu and Test Lab. The top-right button toggles fullscreen where supported.
+On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/reverse. It also moves you while on foot. Hold **BOOST** or **DRIFT** near the bottom centre with your left thumb. Vehicle actions appear when available; tilt the joystick left or right before tapping **Jump** to choose a side when leaving a moving vehicle. The top bar and taxi menu have been removed. Pause and Test Lab currently require a keyboard; sound settings remain on the welcome/pause screens. There is no in-game fullscreen button.
 
 ## Your shift
 
@@ -40,10 +40,11 @@ commit only when you stop at the deliberately selected pickup. Pause →
 **Ask dispatch for an ordinary fare** skips a suggested story booking. Dialogue
 continues during travel and at arrival. Free driving continues after the campaign.
 
-The **Taxi menu → Dispatch notebook** keeps signed receipts, ride conversations
-and documents. Stop near the boarded Garden Café and choose **Bookmark café
-frontage** to keep an observation. The café changes on the calendar whether or
-not you visit it. Search your own records to revisit the details.
+The **Pause → Dispatch notebook** keeps signed receipts, ride conversations
+and documents. **Bookmark café frontage** currently has no UI entry point after
+the taxi menu's removal; its underlying observation logic remains intact.
+The café changes on the calendar whether or not you visit it. Search your own
+records to revisit the details.
 
 Route to the newsroom at **Old Town South**, stop nearby and leave selected
 copies from the notebook. Source checks take **three game hours** and need
@@ -70,6 +71,6 @@ The world clock begins at **07:00** and advances while you play; pause, garage, 
 
 ## Test Lab
 
-Press **F2** or choose **Test Lab** from the game menu to try scenarios, inspect debug views, adjust traffic, or change gameplay settings. Fixtures cover deliveries, vehicles, collisions, recovery, police, fires, coastal hazards, and locations listed above. The lab can alter cash, upgrades, damage, and other test conditions; these changes may use the regular browser save. **Erase saved progress** is a separate action from resetting a test run.
+Press **F2** to try scenarios, inspect debug views, adjust traffic, or change gameplay settings. Fixtures cover deliveries, vehicles, collisions, recovery, police, fires, coastal hazards, and locations listed above. The lab uses an isolated game without changing normal progress. **Erase saved progress** is a separate action from resetting a test run.
 
 Progress and gameplay settings are stored in browser storage when available. If storage is blocked, the game remains playable, but progress may not persist.

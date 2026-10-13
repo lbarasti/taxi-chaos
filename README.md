@@ -23,7 +23,7 @@ npm run map:check -- --input src/map/default-map.json --json
 
 `npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map.
 
-For interactive testing, open **http://localhost:5173/?debug=1**, then press **F2** or choose **Test Lab**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
+For interactive testing, open **http://localhost:5173/?debug=1** or press **F2**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
 
 The opt-in browser automation harness is exposed as `window.__taxi` after opening the lab:
 
