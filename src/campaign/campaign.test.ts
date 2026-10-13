@@ -127,6 +127,31 @@ describe('Open Shore world-driven campaign', () => {
     g.resetRun(); expect(g.missionOffers.has('celia-barriers')).toBe(false);
   });
 
+  it('dates received texts on the campaign calendar across skipped time and save reloads', () => {
+    const g = make(), first = structuredClone(g.save.playerRecords.texts.find(t => t.missionId === 'celia-barriers')!);
+    expect(first.receivedMinute).toBe(dayMinute(1));
+    expect(first.expiresMinute).toBe(jobWindows['celia-barriers'].until);
+    advance(g, 3);
+    const latest = g.save.playerRecords.texts.find(t => t.missionId === 'nico-safe-ride')!;
+    expect(latest.receivedMinute).toBe(dayMinute(3));
+    expect(latest.receivedAt).toBe(first.receivedAt); // No driving elapsed during the jump.
+    expect(g.save.playerRecords.texts.find(t => t.messageId === first.messageId)).toEqual(first);
+    const restored = new Game(defaultCompiledMap, false, true, structuredClone(g.save));
+    expect(restored.save.playerRecords.texts).toEqual(g.save.playerRecords.texts);
+    for (const t of restored.save.playerRecords.texts) expect(t.expiresMinute! - t.receivedMinute!).toBeGreaterThan(0);
+    for (const mission of Object.values(openShoreCatalogue.missions)) if (mission.offer) {
+      expect(mission.offer.text).not.toMatch(/(?:Available through|Through day|Pickup before|day \d+ only)/i);
+    }
+  });
+
+  it('keeps an accepted passenger aboard after the text deadline', () => {
+    const g = make(); expect(g.routeMissionOffer('celia-barriers')).toBe(true);
+    arrive(g, g.job.pickup); expect(g.job.stage).toBe('dropoff');
+    g.advanceNarrativeTo(jobWindows['celia-barriers'].until); g.syncMissionOffers();
+    expect(g.job.missionId).toBe('celia-barriers'); expect(g.job.stage).toBe('dropoff');
+    expect(g.save.story.failed).not.toContain('celia-barriers');
+  });
+
   it('requires a deliberate café visit to acquire an observation and projects a real contractor van', () => {
     const g = make(); g.advanceNarrativeTo(dayMinute(2, 22));
     const van = g.vehicles.find(v => v.sourceId === 'campaign-ms14'); expect(van).toBeDefined();

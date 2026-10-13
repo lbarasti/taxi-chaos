@@ -7,6 +7,7 @@ import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
+import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from './text-messages';
 import { Dialogue } from './story';
 import { characters } from './characters';
 import { missionsFor, neutralMissions, campaignMissions } from './missions/compile';
@@ -25,7 +26,7 @@ import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent } f
 import { campaignCondition } from './missions/conditions';
 import { dispatchCampaignEvent } from './campaign/events';
 import { recordNote } from './campaign/effects';
-import { CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
+import { CAMPAIGN_START, CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
 import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
 import { cityBulletin } from './campaign/bulletin';
 import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
@@ -574,6 +575,7 @@ export class Game {
     this.missions.begin(missionId, this.missionContext());
     this.job = this.makeMissionJob(missionId);
   }
+  get textMessageMinute() { return this.campaignEnabled ? this.save.campaign.minute : CAMPAIGN_START + this.save.story.campaignSeconds; }
   /** Reconcile bounded authored offers without consuming the simulation RNG. */
   syncMissionOffers() {
     this.offerCheckpoint = this.save.story.campaignSeconds + 0.5;
@@ -581,6 +583,16 @@ export class Game {
     // opportunity cannot be recreated in this pass or after reloading the save.
     let changed = false;
     let routedRemoved = false;
+    for (const receipt of this.save.playerRecords.texts) {
+      const timing = textTiming(receipt, this.campaignEnabled ? this.campaignContent.jobWindows[receipt.missionId] : undefined);
+      if (receipt.receivedMinute === undefined || receipt.expiresMinute === undefined) {
+        Object.assign(receipt, timing); changed = true;
+      }
+      if (this.textMessageMinute >= timing.expiresMinute && !(this.job?.missionId === receipt.missionId && this.job.stage === 'dropoff')) {
+        routedRemoved ||= this.job?.missionId === receipt.missionId && this.job.stage === 'pickup';
+        changed = this.missions.expire(receipt.missionId, this.save.story.campaignSeconds) || changed;
+      }
+    }
     if (this.campaignEnabled) for (const [id, window] of Object.entries(this.campaignContent.jobWindows)) if (this.save.campaign.minute >= window.until && !(this.job?.missionId === id && this.job.stage === 'dropoff')) {
       routedRemoved ||= this.job?.missionId === id && this.job.stage === 'pickup';
       changed = this.missions.expire(id, this.save.story.campaignSeconds) || changed;
@@ -604,7 +616,8 @@ export class Game {
       if (this.mode === 'playing' && !records.some(t => t.messageId === offer.messageId) && records.length < MAX_TEXT_RECEIPTS) {
         records.push({ messageId: offer.messageId, missionId: id, character: offer.character, sender: characters[offer.character].name,
           title: mission.title, text: offer.text, pickup: this.missions.catalogue.stops.byId[mission.stopIds.pickup].name,
-          receivedAt: this.save.story.campaignSeconds, readAt: null });
+          receivedAt: this.save.story.campaignSeconds, readAt: null, receivedMinute: this.textMessageMinute,
+          expiresMinute: this.campaignEnabled ? this.campaignContent.jobWindows[id].until : this.textMessageMinute + DEFAULT_TEXT_LIFETIME_MINUTES });
         arriving++; changed = true;
       }
       if (!this.missionOffers.has(id)) this.missionOffers.set(id, this.makeMissionJob(id));
@@ -1158,6 +1171,11 @@ export class Game {
       j.wait += dt;
       if (j.wait >= 0.8) {
         if (j.stage === 'pickup') {
+          const receipt = this.save.playerRecords.texts.find(t => t.missionId === j.missionId);
+          if (receipt && this.textMessageMinute >= textTiming(receipt, this.campaignEnabled ? this.campaignContent.jobWindows[receipt.missionId] : undefined).expiresMinute) {
+            // A physical pickup cannot slip through between offer checkpoints.
+            this.syncMissionOffers(); return;
+          }
           if (j.missionId && this.missions.activeId !== j.missionId && !this.missions.begin(j.missionId, this.missionContext())) {
             this.newJob(); return;
           }

@@ -21,6 +21,31 @@ const ready = () => {
 };
 
 describe('parallel text offers and physical branches', () => {
+  it('gives non-campaign texts a two-day expiry and prevents expired pickups after reload', () => {
+    const g = ready(), receipt = g.save.playerRecords.texts.find(t => t.missionId === 'frankie-arcade-lift')!;
+    expect(receipt.expiresMinute! - receipt.receivedMinute!).toBe(2880);
+    expect(g.routeMissionOffer(receipt.missionId)).toBe(true);
+    g.save.story.campaignSeconds += 2880; g.syncMissionOffers();
+    expect(g.routeMissionOffer(receipt.missionId)).toBe(false);
+    expect(g.save.story.failed).toContain(receipt.missionId);
+    expect(g.save.playerRecords.texts).toContainEqual(receipt);
+    expect(g.save.story.flags).not.toContain('contact-frankie-lost');
+    const restored = new Game(defaultCompiledMap, false, 'legacy', structuredClone(g.save)); restored.start();
+    expect(restored.routeMissionOffer(receipt.missionId)).toBe(false);
+  });
+
+  it('rejects a physical pickup at expiry even between offer reconciliation checkpoints', () => {
+    const g = ready(); g.routeMissionOffer('frankie-arcade-lift');
+    const receipt = g.save.playerRecords.texts.find(t => t.missionId === 'frankie-arcade-lift')!;
+    g.save.story.campaignSeconds += receipt.expiresMinute! - g.textMessageMinute - 0.001;
+    g.syncMissionOffers();
+    g.player.body.position = { ...g.job.pickup }; g.player.body.velocity = vec(); g.job.wait = 0.795;
+    g.update(1 / 120);
+    expect(g.save.story.failed).toContain(receipt.missionId);
+    expect(g.job.missionId).not.toBe(receipt.missionId);
+    expect(g.save.story.completed).not.toContain(receipt.missionId);
+  });
+
   it('retains received/read information after a competing pickup closes its opportunity', () => {
     const g = ready(), receipt = g.save.playerRecords.texts.find(t => t.missionId === 'frankie-ledger-trail')!;
     expect(receipt.readAt).toBeNull();

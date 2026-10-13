@@ -186,6 +186,11 @@
 .mission-inbox p{font-size:12px;line-height:1.6;color:#c5d0be}
 .mission-inbox article{border-top:1px solid var(--border);padding:14px 0}
 .inbox-sender{display:flex;gap:12px;align-items:center}.inbox-sender .story-portrait{width:44px;height:44px;flex:0 0 44px;position:relative;overflow:hidden}
+.inbox-contact{min-width:0;display:flex;flex-direction:column;gap:4px}.inbox-contact strong{overflow-wrap:anywhere}.inbox-time{font-size:10px;color:#aebdb5}
+.inbox-day{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:11px;font-weight:500;letter-spacing:.6px;color:var(--mint)}.inbox-day::after{content:"";height:1px;flex:1;background:var(--border)}
+.mission-inbox .inbox-day+article{border-top:0}
+.inbox-expiry{display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--mint)}.inbox-expiry-label{font-size:10px;white-space:nowrap}.inbox-expiry-discs{display:flex;flex-wrap:wrap;gap:5px;min-width:0}.inbox-expiry-disc{width:12px;height:12px;flex:0 0 12px;border-radius:50%;border:1px solid currentColor;background:conic-gradient(currentColor var(--remaining,0deg),transparent 0deg)}
+.inbox-expiry.urgent{color:#f7ce55}.inbox-expiry.inactive{color:#7b918d}.mission-inbox #texts-load-more{margin:0 0 4px}
 .mission-inbox h3{font-size:15px;margin:12px 0 0}.mission-inbox small{display:block;color:var(--mint);font-size:10px;line-height:1.5}.mission-inbox .secondary{width:100%;font-size:11px;margin-top:12px;min-height:44px}
 @media(max-width:700px),(max-height:500px){.mission-inbox{top:16px;right:16px;max-height:calc(100dvh - 32px)}}
 .campaign-summary{margin-top:24px;border-top:1px solid var(--border);padding-top:18px;text-align:left}.campaign-summary small,.city-bulletin small,.notebook-entries small{color:var(--mint);font-size:10px;letter-spacing:1px}.campaign-summary p,.notebook-modal p{font-size:13px;line-height:1.65}.campaign-summary .campaign-hint{font-size:11px;color:var(--muted)}.campaign-summary button{width:100%;min-height:44px}.campaign-summary button:disabled{opacity:.5}

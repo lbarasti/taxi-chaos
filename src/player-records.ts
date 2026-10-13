@@ -2,6 +2,8 @@
 export type TextReceipt = {
   messageId: string; missionId: string; character: string; sender: string;
   title: string; text: string; pickup: string; receivedAt: number; readAt: number | null;
+  /** Calendar minutes, separate from elapsed driving seconds (sleep skips time). */
+  receivedMinute?: number; expiresMinute?: number;
 };
 export type NotebookEntry = { id: string; title: string; text: string; kind: 'receipt' | 'conversation' | 'document' | 'observation'; shift: number; at: number; minute?: number; source?: string };
 export type PlayerRecords = { version: 1; texts: TextReceipt[]; notebook: NotebookEntry[] };
@@ -22,7 +24,9 @@ export function parsePlayerRecords(raw: unknown): PlayerRecords {
     if (!Number.isFinite(t.receivedAt) || t.receivedAt < 0 || seen.has(t.messageId)) continue;
     const readAt = typeof t.readAt === 'number' && Number.isFinite(t.readAt) && t.readAt >= t.receivedAt ? t.readAt : null;
     records.texts.push({ messageId: t.messageId, missionId: t.missionId, character: t.character, sender: t.sender,
-      title: t.title, text: t.text, pickup: t.pickup, receivedAt: t.receivedAt, readAt });
+      title: t.title, text: t.text, pickup: t.pickup, receivedAt: t.receivedAt, readAt,
+      ...(typeof t.receivedMinute === 'number' && Number.isFinite(t.receivedMinute) && t.receivedMinute >= 0 ? { receivedMinute: t.receivedMinute,
+        ...(typeof t.expiresMinute === 'number' && Number.isFinite(t.expiresMinute) && t.expiresMinute > t.receivedMinute && t.expiresMinute - t.receivedMinute <= 15 * 1440 ? { expiresMinute: t.expiresMinute } : {}) } : {}) });
     seen.add(t.messageId);
   }
   for (const value of raw.notebook.slice(0, MAX_NOTEBOOK_ENTRIES)) {
