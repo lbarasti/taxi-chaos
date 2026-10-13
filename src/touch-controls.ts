@@ -8,6 +8,15 @@ export function joystickVector(x: number, y: number, radius: number): Vec {
   return { x: x / distance * strength, y: y / distance * strength };
 }
 
+// Driving gets its own horizontal dead zone, even with the throttle held up
+// or down. Keep the raw vector for the knob and directional walking.
+export function touchSteering(x: number): number {
+  const dead = 0.2, magnitude = Math.abs(x);
+  if (magnitude <= dead) return 0;
+  const strength = Math.min(1, (magnitude - dead) / (1 - dead));
+  return Math.sign(x) * strength * strength;
+}
+
 export function bindTouchControls(stick: HTMLElement, buttons: NodeListOf<HTMLButtonElement>, input: {
   active(): boolean;
   move(value: Vec | null): void;

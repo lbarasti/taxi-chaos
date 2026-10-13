@@ -17,6 +17,7 @@ import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } 
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicle-exit';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles';
 import { readStorage, storageKeys } from './storage';
+import { touchSteering } from './touch-controls';
 import { defaultPlayerRecords, parsePlayerRecords, MAX_TEXT_RECEIPTS, type NotebookEntry, type PlayerRecords } from './player-records';
 import { defaultCampaign, parseCampaign, type Campaign } from './campaign/state';
 import { campaignDefinition } from './campaign/content';
@@ -1008,7 +1009,7 @@ export class Game {
     if (this.comboTimer <= 0) this.combo = 0;
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
     const throttle = this.touchMove ? -this.touchMove.y : Number(has('KeyW', 'ArrowUp', 'up')) - Number(has('KeyS', 'ArrowDown', 'down'));
-    const turn = this.touchMove ? this.touchMove.x : Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left'));
+    const turn = this.touchMove ? touchSteering(this.touchMove.x) : Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left'));
     const boosting = !this.onFoot && !this.pendingExit && has('ShiftLeft', 'ShiftRight', 'boost') && this.boost > 1 && throttle > 0;
     this.controls = this.onFoot || this.pendingExit ? { throttle: 0, turn: 0, handbrake: false, boost: false } : { throttle, turn, handbrake: has('Space', 'handbrake'), boost: boosting };
     this.boost = this.settings.infiniteBoost ? 100 : clamp(this.boost + dt * (boosting ? -29 / (1 + this.save.upgrades.boost * 0.35) : 13), 0, 100);
