@@ -20,13 +20,17 @@
 .mission-data strong{margin-top:4px;font-size:18px}
 .mission-footer{margin:0 -16px;padding:9px 12px}
 .job-progress{margin:0 -16px}
-/* Three readouts, no card: outlined type and a red personal-health bar. */
+/* Minimal status: outlined type, personal health and progressively filled stars. */
 .player-hud{position:fixed;z-index:1;left:28px;bottom:84px;width:190px;display:grid;justify-items:end;gap:4px;pointer-events:none;touch-action:none;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05;letter-spacing:-.7px}
 .player-hud time,.player-hud strong{font-size:min(28px,calc(280px / var(--cash-length,8)));font-weight:inherit;white-space:nowrap;-webkit-text-stroke:2px #101b20;paint-order:stroke fill;text-shadow:0 2px 0 #101b20,1px 0 0 #101b20,-1px 0 0 #101b20}
 .player-hud time{color:#f6f2e7}
 .player-hud strong{color:#81bd79}
 .player-health{width:100%;height:14px;margin-top:5px;border:3px solid #101b20;background:#252b2d;box-shadow:0 1px 2px #0006}
 .player-health i{display:block;width:100%;height:100%;background:#db5b57}
+.player-heat{display:flex;gap:5px;margin-top:2px}
+.player-heat .heat-star{width:25px;height:25px;filter:drop-shadow(0 1px 1px #101b20)}
+.heat-star-empty{fill:#14232a88;stroke:#87988d;stroke-width:1.5}
+.heat-star-fill{fill:var(--gold)}
 .map-panel{width:178px;background:#14232ac2}
 .map-toggle{display:flex;align-items:center;gap:7px;width:100%;min-height:38px;padding:0 10px;border:0;background:transparent;color:#b7c7bd;font-size:8px;letter-spacing:1px}
 .map-toggle #map-status{margin-left:auto;color:var(--mint);font-size:7px}
@@ -60,6 +64,8 @@
   .player-hud{bottom:var(--edge-bottom);left:var(--edge-left);width:var(--dash-width);gap:3px}
   .player-hud time,.player-hud strong{font-size:min(20px,calc(180px / var(--cash-length,8)))}
   .player-health{height:11px;margin-top:3px;border-width:2px}
+  .player-heat{gap:4px;margin-top:1px}
+  .player-heat .heat-star{width:20px;height:20px}
   .map-panel{top:calc(var(--top-height) + 87px);right:var(--edge-right);bottom:auto;left:auto;width:100px;border-radius:10px;background:#14232a99;backdrop-filter:blur(5px)}
   .map-toggle{min-height:36px;font-size:8px;padding:0 8px;letter-spacing:.5px;gap:4px}
   .map-toggle #map-status{display:none}

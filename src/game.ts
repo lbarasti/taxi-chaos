@@ -1,7 +1,7 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
 import { GARAGE, HOSPITAL, World, blocksWalking, isStructural, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
-import { defaultSettings, difficulties, type Difficulty, type Settings } from './rules';
+import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
 import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
@@ -494,7 +494,7 @@ export class Game {
     const bail = Math.min(this.save.cash - impound, this.stars * 45);
     return { impound, bail, total: impound + bail };
   }
-  get stars() { return this.heat < 20 ? 0 : this.heat < 48 ? 1 : this.heat < 76 ? 2 : 3; }
+  get stars() { return this.heat < wantedThresholds[0] ? 0 : this.heat < wantedThresholds[1] ? 1 : this.heat < wantedThresholds[2] ? 2 : 3; }
   get police() { return this.vehicles.filter(v => v.kind === 'police' && v.alive && v.damage.status !== 'wreck'); }
   get policeVisible() { return this.police.some(v => dist(v.body.position, this.actor.position) < 70 && this.lineOfSight(v.body.position, this.actor.position)); }
   get exchangeCar() { return this.player.definition.access.playerDrivable && this.player.definition.physics.dynamics === 'car'; }

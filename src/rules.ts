@@ -1,3 +1,6 @@
+/** Completed HUD stars and police escalation share these heat boundaries. */
+export const wantedThresholds = Object.freeze([20, 48, 76] as const);
+
 export const difficulties = {
   cruise: { name: 'Cruise', copSpeed: 18, copEngine: 10500, maxPolice: 2, escapeTime: 6, arrestTime: 5, damageScale: 0.75, fireFuse: 9 },
   standard: { name: 'Street', copSpeed: 24, copEngine: 12500, maxPolice: 4, escapeTime: 8, arrestTime: 3.5, damageScale: 1, fireFuse: 7 },

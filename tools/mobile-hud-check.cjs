@@ -83,7 +83,8 @@ for(let [a,b] of [['.mission','.map-panel'],['.player-hud','#joystick'],['.playe
 assert(rects['.mission'].y<=28,`${name}: mission still reserves header space`);
 if(mobile){assert(!(await page.locator('.controls').isVisible()));assert(rects['.mission'].height<=60);
 assert.equal(await page.locator('.dashboard,#speed,#gear,#boost,#boost-bar,#health,#health-bar,#earnings,#deliveries,#heat-panel,#stars').count(),0);
-assert.equal(await page.locator('.player-hud> *').count(),3);
+assert.equal(await page.locator('.player-hud> *').count(),4);
+assert.equal(await page.locator('#player-heat svg').count(),3);
 assert.equal(await page.locator('#player-health').getAttribute('aria-valuenow'),String(await page.evaluate(()=>__taxi.state().driverHealth)));
 assert(Math.abs(h-rects['.player-hud'].y-rects['.player-hud'].height-12)<1,`${name}: player HUD is not at the bottom edge`);
 assert.equal(rects['.player-hud'].x,10);assert.equal(rects['.player-hud'].width,124);

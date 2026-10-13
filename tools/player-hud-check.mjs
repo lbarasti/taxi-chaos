@@ -26,7 +26,8 @@ try {
       __taxi.scenario('first-fare');
       document.querySelector('#debug-panel').hidden = true;
     });
-    assert.equal(await page.locator('.player-hud > *').count(), 3);
+    assert.equal(await page.locator('.player-hud > *').count(), 4);
+    assert.equal(await page.locator('#player-heat svg').count(), 3);
     assert.equal(await page.locator('.dashboard,#speed,#gear,#boost,#health,#stars,#heat-panel,#earnings,#deliveries,#texts-toggle').count(), 0);
     assert.equal(await page.locator('#player-time').textContent(), '07:00');
     await page.evaluate(() => __taxi.step(1));
@@ -82,8 +83,38 @@ try {
     assert(Math.abs(await page.locator('#player-health i').evaluate(element => parseFloat(element.style.width)) - health) < 0.001);
     assert.deepEqual(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
     await page.evaluate(() => __taxi.realtime());
+    // Scenario facts exercise fractional heat through the actual HUD, without
+    // adding gameplay cheats or coupling screenshots to elapsed wall time.
+    const heatPage = await context.newPage();
+    heatPage.on('pageerror', error => errors.push(error.message));
+    heatPage.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    heatPage.on('request', request => { if (/^https?:/.test(request.url())) externalRequests.push(request.url()); });
+    await heatPage.goto(`file://${path.join(root, 'dist/index.html')}?scenario-preview=1`);
+    await heatPage.evaluate(() => window.__scenario.start({ noPolice: false }));
+    for (const [heat, fills, stars] of [
+      [0, [0, 0, 0], 0], [10, [0.5, 0, 0], 0], [20, [1, 0, 0], 1],
+      [34, [1, 0.5, 0], 1], [48, [1, 1, 0], 2], [62, [1, 1, 0.5], 2],
+      [76, [1, 1, 1], 3], [100, [1, 1, 1], 3], [10, [0.5, 0, 0], 0], [0, [0, 0, 0], 0],
+    ]) {
+      await heatPage.evaluate(value => window.__scenario.execute({ op: 'facts', facts: { heat: value } }), heat);
+      assert.deepEqual(await heatPage.locator('#player-heat clipPath rect').evaluateAll(rects => rects.map(rect => Number(rect.getAttribute('width')) / 20)), fills);
+      assert.equal(await heatPage.locator('#player-heat').getAttribute('aria-valuenow'), String(heat));
+      assert.equal(await heatPage.locator('#player-heat').getAttribute('aria-valuetext'), `${stars} of 3 wanted stars; ${heat}% police attention`);
+      const state = await heatPage.evaluate(() => window.__scenario.render());
+      assert.equal(state.heat, heat);
+      assert.equal(state.stars, stars);
+    }
+    await heatPage.evaluate(() => {
+      window.__scenario.execute({ op: 'facts', facts: { heat: 34, cash: 1122 } });
+      window.__scenario.execute({ op: 'advance', to: { day: 1, hour: 12, minute: 37 } });
+    });
+    await heatPage.evaluate(() => document.fonts.ready);
+    await heatPage.screenshot({ path: path.join(output, `heat-${name}.png`) });
+    const heatBounds = await heatPage.locator('.player-hud').boundingBox();
+    assert(heatBounds.x >= 0 && heatBounds.y >= 0 && heatBounds.x + heatBounds.width <= width && heatBounds.y + heatBounds.height <= height);
+    assert.deepEqual(await heatPage.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
     await context.close();
-    console.log(`PASS ${name}: HH:MM clock, wallet, driver health, vehicle exit/entry, physical bailout, large balances`);
+    console.log(`PASS ${name}: HH:MM clock, wallet, driver health, vehicle exit/entry, physical bailout, large balances, progressive heat stars and reset`);
   }
   assert.deepEqual(errors, []);
   assert.deepEqual(externalRequests, []);
