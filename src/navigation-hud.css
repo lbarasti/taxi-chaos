@@ -1,36 +1,40 @@
 /* Consolidated job and radar instrument. Personal status stays separate. */
-.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));--navigation-width:240px;width:var(--navigation-width);height:calc(var(--navigation-width) - 8px);display:flex;flex-direction:column;overflow:hidden;background:#10222dec;touch-action:manipulation;--nav-accent:var(--gold)}
+.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));--navigation-width:240px;--radar-size:calc(var(--navigation-width) * .6);width:var(--navigation-width);display:flex;flex-direction:column;overflow:visible;background:none;border:0;box-shadow:none;backdrop-filter:none;touch-action:manipulation;--nav-accent:var(--gold)}
 .navigation-hud [hidden]{display:none!important}
 .navigation-hud[data-state="on-board"],.navigation-hud[data-state="loaded"]{--nav-accent:var(--mint)}
 .navigation-hud[data-state="vacant"]{--nav-accent:#b9c9cb}
-.navigation-header{display:flex;flex-shrink:0;gap:6px;align-items:center;justify-content:space-between;padding:6px 10px;min-height:44px}
+.navigation-header{position:relative;z-index:1;display:flex;flex-shrink:0;gap:6px;align-items:center;justify-content:space-between;padding:0 9px;border:1px solid #91adb04d;border-radius:12px;background:#10222df5;box-shadow:0 2px 8px #06121b30}
 #navigation-destination{display:flex;flex:1;gap:6px;align-items:center;min-width:0}
 #navigation-destination>div{display:flex;flex:1;gap:6px;align-items:center;min-width:0}
 .navigation-pin{display:flex;color:var(--nav-accent);flex-shrink:0}
 .navigation-pin svg{width:17px;height:17px}
 .navigation-hud h1{flex:1;min-width:0;font-size:13px;letter-spacing:-.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .navigation-hud #distance{flex-shrink:0;font-size:8px;line-height:1.4;color:#a9bfc5;margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
-.taxi-state{flex-shrink:0;font-size:7px;font-weight:700;letter-spacing:.4px;min-width:32px;min-height:32px;padding:5px;border:1px solid var(--nav-accent);border-radius:5px;color:var(--nav-accent);background:#081b2280}
+.taxi-state{flex-shrink:0;font-size:7px;font-weight:700;letter-spacing:.4px;min-width:32px;min-height:24px;height:24px;padding:2px 5px;border:1px solid var(--nav-accent);border-radius:5px;color:var(--nav-accent);background:#081b2280}
 .taxi-state:disabled{opacity:1}
 #navigation-contacts{display:flex;gap:4px;align-items:center}
-#navigation-contacts button{display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;padding:0;border:1px solid var(--border);border-radius:5px;background:#ffffff04;color:#b9ccd1}
+#navigation-contacts button{display:grid;place-items:center;width:32px;height:24px;flex-shrink:0;padding:0;border:1px solid var(--border);border-radius:5px;background:#ffffff04;color:#b9ccd1}
 #navigation-contacts svg{width:16px;height:16px}
-#navigation-contacts .story-portrait{width:28px;height:28px;border:0;border-radius:4px;aspect-ratio:1}
+#navigation-contacts .story-portrait{width:22px;height:22px;border:0;border-radius:4px;aspect-ratio:1}
+/* Keep generous hit areas without making the visible header taller. */
+.navigation-header button{position:relative;overflow:visible}
+.navigation-header button::after{content:"";position:absolute;left:-1px;right:-1px;top:50%;height:32px;transform:translateY(-50%)}
 .navigation-hud button:hover:not(:disabled){background:#ffffff0d;color:var(--gold)}
 .navigation-hud button:disabled:not(.taxi-state){opacity:.35}
-.navigation-chart{position:relative;flex:1;min-height:0;border-top:1px solid var(--border);background:#0b1b2490}
+.navigation-chart{position:relative;flex:none;align-self:center;width:var(--radar-size);height:var(--radar-size);margin-top:-8px;border:3px solid #91adb04d;border-radius:50%;overflow:hidden;background:#0b1b24;box-shadow:0 0 0 1px #06121b80,inset 0 0 0 1px #06121b80,0 6px 18px #06121b30}
 .navigation-hud #map{display:block;width:100%;height:100%;margin:0;padding:0}
 /* Preserve the existing right-hand personal status and conversation layout. */
 .toast{max-width:calc(100% - 440px)}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
   :root{--navigation-width:min(196px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px))}
   .navigation-hud{--navigation-width:inherit;top:calc(var(--top-height) + 8px);left:var(--edge-left);right:auto;border-radius:10px}
-  .navigation-header{padding:4px 6px;gap:4px;min-height:52px}
+  .navigation-header{padding:0 5px;gap:4px;border-radius:10px}
   .navigation-hud h1{font-size:12px}
   .navigation-pin{display:none}
-  .taxi-state{min-width:44px;min-height:44px;padding:4px;letter-spacing:0;max-width:60px}
+  .taxi-state{min-width:44px;padding:2px 4px;letter-spacing:0;max-width:60px}
   #navigation-contacts{gap:0}
-  #navigation-contacts button{width:44px;height:44px}
+  #navigation-contacts button{width:44px}
+  .navigation-header button::after{height:44px}
   .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 144px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 210px)}
   .story-body{display:flow-root}
   .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
@@ -39,15 +43,12 @@
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
   :root{--navigation-width:180px}
-  /* Leave 112 px for Boost/Drift plus 16 px clearance below the 8 px top edge. */
-  .navigation-hud{max-height:calc(100dvh - var(--top-height) - var(--edge-bottom) - 136px);overflow:auto}
   .story,.story.collapsed,.roadside{left:calc(var(--edge-left) + var(--navigation-width) + 12px);right:auto;top:calc(var(--top-height) + 8px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - var(--dash-width) - 24px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 28px)}
   .context-action{left:auto;right:var(--edge-right);max-width:150px}
   .toast{left:calc(var(--edge-left) + var(--navigation-width) + 12px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 24px);max-width:360px}
 }
 /* Narrow layouts keep one row with 32 px targets (above the 24 px WCAG minimum). */
 @media(max-width:360px), (max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
-  .navigation-header{min-height:40px}
-  #navigation-contacts button{width:32px;height:32px}
-  .taxi-state{min-width:32px;min-height:32px;padding:3px}
+  #navigation-contacts button{width:32px}
+  .taxi-state{min-width:32px;padding:2px 3px}
 }

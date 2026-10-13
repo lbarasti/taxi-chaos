@@ -737,10 +737,12 @@ export class Renderer {
     if (!width || !height) return; // Hidden or unmounted radar needs no drawing work.
     const pixelsW = Math.round(width * this.dpr), pixelsH = Math.round(height * this.dpr);
     if (this.map.width !== pixelsW || this.map.height !== pixelsH) { this.map.width = pixelsW; this.map.height = pixelsH; }
-    const c = this.mapCtx, g = this.game, chartHeight = height - 18;
-    const view = radarView(g.actor.position, width, chartHeight), s = view.scale;
+    const c = this.mapCtx, g = this.game;
+    const view = radarView(g.actor.position, width, height), s = view.scale;
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.clearRect(0, 0, width, height);
-    c.save(); c.beginPath(); c.rect(0, 0, width, chartHeight); c.clip();
+    c.save(); c.beginPath(); c.arc(view.center.x, view.center.y, view.radius, 0, Math.PI * 2); c.clip();
+    c.fillStyle = '#0b1b24'; c.fillRect(0, 0, width, height);
+    c.save();
     c.translate(view.offset.x, view.offset.y); c.scale(s, s);
     trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = '#45634a'; c.fill();
     for (const ridge of RIDGES) { trace(c, ridge, true); c.fillStyle = '#717566'; c.fill(); }
@@ -764,12 +766,18 @@ export class Renderer {
     for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }
     c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.scale(markerScale, markerScale); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();
     c.restore();
-    const marker = radarMarker(g.target, view, width, chartHeight);
+    const marker = radarMarker(g.target, view);
     c.save(); c.translate(marker.position.x, marker.position.y);
     c.strokeStyle = c.fillStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT;
     c.lineWidth = 1.5; c.beginPath();
     if (marker.offscreen) { c.rotate(marker.angle); c.moveTo(5, 0); c.lineTo(-4, -4); c.lineTo(-2, 0); c.lineTo(-4, 4); c.closePath(); c.fill(); }
     else { c.arc(0, 0, 4, 0, Math.PI * 2); c.stroke(); }
-    c.restore(); c.fillStyle = '#b4c5c2'; c.font = '10px "Space Grotesk", sans-serif'; c.textAlign = 'left'; c.fillText(district(g.actor.position, g.map), 10, height - 5, width - 42); c.textAlign = 'right'; c.fillText('N ↑', width - 10, height - 5);
+    c.restore();
+    const neighbourhood = district(g.actor.position, g.map);
+    c.font = '10px "Space Grotesk", sans-serif'; c.textAlign = 'center';
+    const labelWidth = Math.min(c.measureText(neighbourhood).width + 18, width * 0.64);
+    c.fillStyle = '#10222ded'; c.beginPath(); c.roundRect((width - labelWidth) / 2, height - 31, labelWidth, 18, 9); c.fill();
+    c.fillStyle = '#b4c5c2'; c.fillText(neighbourhood, width / 2, height - 18, labelWidth - 12);
+    c.restore();
   }
 }
