@@ -20,7 +20,7 @@ export const navigationHudMarkup = `<aside class="navigation-hud panel" aria-lab
     </div>
     <button id="job-status" class="taxi-state" title="Clear fare guidance and browse dispatch">ENGAGED</button>
   </header>
-  <div class="navigation-chart"><div id="map-content"><canvas id="map" aria-label="Local minimap: yellow is your taxi, circles or edge arrows are destinations, blue squares are the garage or parked rides, red dots are police"></canvas></div><button id="map-toggle" class="map-toggle" aria-expanded="true" aria-controls="map-content" aria-label="Collapse navigation map"><span class="map-chevron" aria-hidden="true">⌄</span></button></div>
+  <div class="navigation-chart"><canvas id="map" aria-label="Local minimap: yellow is your taxi, circles or edge arrows are destinations, blue squares are the garage or parked rides, red dots are police"></canvas></div>
 </aside>`;
 
 /** View-only state: dispatch, physics, pickups and the saved game remain authoritative. */
@@ -73,12 +73,6 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
   });
   get('texts').addEventListener('click', actions.texts);
   get('newsroom').addEventListener('click', () => { currentGame().navigateNewsroom(); refresh(); actions.focus(); });
-  get('map-toggle').addEventListener('click', () => {
-    const collapsed = !get('map-content').hidden;
-    get('map-content').hidden = collapsed; panel.classList.toggle('collapsed', collapsed);
-    get('map-toggle').setAttribute('aria-expanded', String(!collapsed));
-    get('map-toggle').setAttribute('aria-label', collapsed ? 'Expand navigation map' : 'Collapse navigation map');
-  });
   let dispatcher = '';
   function refresh() {
     const g = currentGame(), state = navigationHudState(g, view().routed);

@@ -82,8 +82,8 @@ try {
       assert.equal(layout.horizontalOverflow, false, `${name}: horizontal overflow`);
       assert.deepEqual(layout.overflow, [], `${name}: overflowing children`);
       assert(Math.abs(layout.bottom - layout.chartBottom) <= 1, `${name}: widget must end at the map`);
-      assert.equal(await page.locator('.navigation-footer, .navigation-instruction, .navigation-services, #job-progress, #speed, #boost-meter, #map-status').count(), 0);
-      assert.equal((await page.locator('#map-toggle').textContent()).trim(), '⌄');
+      assert.equal(await page.locator('.navigation-footer, .navigation-instruction, .navigation-services, #job-progress, #speed, #boost-meter, #map-status, #map-toggle').count(), 0);
+      assert.equal(await page.locator('#map').isVisible(), true);
       const nav = await page.locator('.navigation-hud').boundingBox();
       const personal = await page.locator('.player-hud').boundingBox();
       assert(personal.x >= nav.x + nav.width, `${name}: personal status must stay distinct on the right`);
@@ -126,13 +126,7 @@ try {
     if (await page.locator('#job-status').textContent() !== 'VACANT') { await page.locator('#job-status').click(); await render(); }
     await page.locator('#dispatch').click(); await render();
     assert.equal(await page.locator('#job-status').textContent(), 'ENGAGED');
-    // Keyboard collapse keeps only the header and map toggle visible.
-    await page.locator('#map-toggle').focus(); await page.keyboard.press('Space');
-    assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'), 'false');
-    assert.equal(await page.locator('#map-content').isVisible(), false);
-    assert.equal(await page.locator('.navigation-header').isVisible(), true);
-    await check(); await page.keyboard.press('Space'); await render();
-    assert.equal(await page.locator('#map-toggle').getAttribute('aria-expanded'), 'true');
+    await check();
     // Fixture capture only; physical integration driving is checked separately.
     await command({ op: 'pickup' });
     assert.equal(await page.locator('#job-status').textContent(), 'ON BOARD');
@@ -146,7 +140,7 @@ try {
     assert.equal(await page.locator('#job-status').textContent(), 'ON FOOT');
     await check();
     await context.close();
-    console.log(`${name}: state transitions, shortcuts, keyboard collapse and layout passed`);
+    console.log(`${name}: state transitions, shortcuts, always-visible minimap and layout passed`);
   }
   assert.deepEqual(errors, [], 'Browser errors');
   assert.deepEqual(requests, [], 'External runtime requests');

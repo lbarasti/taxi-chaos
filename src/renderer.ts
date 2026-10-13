@@ -734,7 +734,7 @@ export class Renderer {
     const { BEACH_OUTLINE, PROMENADE, BEACH_HOTELS } = this.game.map.beach;
     const { roadPath } = this.game.world.navigation;
     const width = this.map.clientWidth, height = this.map.clientHeight;
-    if (!width || !height) return; // Collapsed radar needs no drawing work.
+    if (!width || !height) return; // Hidden or unmounted radar needs no drawing work.
     const pixelsW = Math.round(width * this.dpr), pixelsH = Math.round(height * this.dpr);
     if (this.map.width !== pixelsW || this.map.height !== pixelsH) { this.map.width = pixelsW; this.map.height = pixelsH; }
     const c = this.mapCtx, g = this.game, chartHeight = height - 18;

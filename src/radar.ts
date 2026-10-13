@@ -1,8 +1,8 @@
 import { vec, type Vec } from './physics';
 
-// A fixed 160 m neighbourhood stays legible as the map is made smaller.
+// A fixed 320 m neighbourhood gives wider context at desktop and touch sizes.
 export function radarView(actor: Vec, width: number, height: number) {
-  const scale = (width - 16) / 160;
+  const scale = (width - 16) / 320;
   const center = vec(width / 2, height / 2);
   return { scale, center, offset: vec(center.x - actor.x * scale, center.y - actor.y * scale) };
 }

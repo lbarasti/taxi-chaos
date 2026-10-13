@@ -9,14 +9,21 @@ describe('local radar navigation', () => {
         const view = radarView(actor, width, height);
         expect(actor.x * view.scale + view.offset.x).toBeCloseTo(width / 2);
         expect(actor.y * view.scale + view.offset.y).toBeCloseTo(height / 2);
-        expect(view.scale * 160).toBeCloseTo(width - 16);
+        expect(view.scale * 320).toBeCloseTo(width - 16);
       }
     }
   });
   it('leaves nearby destinations in their actual positions', () => {
     const view = radarView(vec(4, 25), 176, 126);
-    expect(radarMarker(vec(14, 38), view, 176, 126)).toEqual({ position: vec(98, 76), angle: Math.atan2(13, 10), offscreen: false });
+    expect(radarMarker(vec(14, 38), view, 176, 126)).toEqual({ position: vec(93, 69.5), angle: Math.atan2(13, 10), offscreen: false });
     expect(radarMarker(vec(4, 25), view, 176, 126).offscreen).toBe(false);
+  });
+  it('shows destinations 100 m away inside the wider desktop and touch view', () => {
+    for (const [width, height] of [[320, 178], [204, 116], [240, 67], [176, 126], [114, 90]]) {
+      const actor = vec(4, 25), view = radarView(actor, width, height);
+      expect(radarMarker(vec(actor.x + 100, actor.y), view, width, height).offscreen).toBe(false);
+      expect(radarMarker(vec(actor.x - 100, actor.y), view, width, height).offscreen).toBe(false);
+    }
   });
   it('keeps distant destinations visible and preserves bearing in every direction', () => {
     for (const [width, height] of [[176, 126], [114, 90]]) {

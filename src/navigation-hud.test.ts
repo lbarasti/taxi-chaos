@@ -7,18 +7,17 @@ describe('consolidated navigation HUD', () => {
     expect(navigationHudMarkup.match(/id="map"/g)).toHaveLength(1);
     expect(navigationHudMarkup).not.toContain('class="player-hud"');
     expect(navigationHudMarkup).not.toMatch(/https?:|<image|target|lightning/i);
-    for (const id of ['dispatch', 'texts', 'newsroom', 'job-status', 'mission-title', 'distance', 'map-toggle']) expect(navigationHudMarkup).toContain(`id="${id}"`);
+    for (const id of ['dispatch', 'texts', 'newsroom', 'job-status', 'mission-title', 'distance']) expect(navigationHudMarkup).toContain(`id="${id}"`);
   });
 
   it('ends at the minimap without instructions, readouts or service buttons below it', () => {
-    expect(navigationHudMarkup).toMatch(/<\/button><\/div>\s*<\/aside>$/);
+    expect(navigationHudMarkup).toMatch(/<\/canvas><\/div>\s*<\/aside>$/);
     for (const id of ['mission-description', 'job-progress', 'fare', 'fast-tip', 'comfort', 'notebook', 'photo', 'garage', 'harbour', 'boost-meter', 'speed']) expect(navigationHudMarkup).not.toContain(`id="${id}"`);
   });
 
-  it('keeps an accessible collapse chevron without a live or pursuit label', () => {
-    expect(navigationHudMarkup).not.toMatch(/map-status|LIVE|PURSUIT/);
-    expect(navigationHudMarkup).toContain('aria-label="Collapse navigation map"');
-    expect(navigationHudMarkup).toContain('class="map-chevron"');
+  it('keeps an accessible map without a status label or collapse button', () => {
+    expect(navigationHudMarkup).not.toMatch(/map-status|LIVE|PURSUIT|map-toggle|map-chevron|aria-expanded/);
+    expect(navigationHudMarkup).toContain('aria-label="Local minimap:');
   });
 
   it('distinguishes engaged, on-board and vacant without mutating the fare', () => {

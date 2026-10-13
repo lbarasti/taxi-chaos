@@ -172,7 +172,7 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {
     e.preventDefault(); if (!e.repeat) $('recover').click(); return;
   }
-  // Preserve native keyboard activation for HUD buttons, including radar toggle.
+  // Preserve native keyboard activation for HUD buttons.
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
