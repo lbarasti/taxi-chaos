@@ -40,6 +40,8 @@ Other useful harness methods include `step`, `scenario`, `spawnVehicle`, `contac
 
 Automated browser tests should use an isolated browser context, especially when working with shared browser sessions or saved progress. The test API supports deterministic stepping without wall-clock waits. `loadScenario(game, name)` in `src/lab.ts` is also available to Node tests without a DOM.
 
+After building, `node tools/text-messages-check.mjs` checks the inbox offline on desktop and three touch layouts, including date grouping, loading older texts, read tracking, live countdowns and expired pickups. Screenshots go to `scenario-runs/text-messages/`; pass a directory argument to choose another destination. Set `CHROMIUM_PATH` to use an existing Chromium installation.
+
 ## Map development
 
 [`src/map/default-map.json`](src/map/default-map.json) is the authored source for the shipped map. Validate it with `npm run map:check -- --input src/map/default-map.json --json`. Map studio drafts are in memory until exported; the [Map studio guide](docs/map-editor.md) covers editing, validation, preview, import/export, and CLI workflows.
