@@ -56,7 +56,9 @@ remain in the notebook. The last edition is **Day 14 at 06:00**. See the
 
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
 
-The **top-left navigation card** combines your current job and local minimap.
+The **top-left navigation card** combines your current job and local minimap in
+a compact, nearly square box. Destination, distance and status share one header
+line; long names are shortened visually, with the full name available on hover.
 **ENGAGED** means pickup guidance is selected; **ON BOARD** shows the destination.
 The card ends at the map, without lower readouts or service buttons. Clock, cash,
 personal health and police stars stay separate at the top right.

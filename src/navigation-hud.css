@@ -1,39 +1,36 @@
 /* Consolidated job and radar instrument. Personal status stays separate. */
-.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));width:320px;overflow:hidden;background:#10222dec;touch-action:manipulation;--nav-accent:var(--gold)}
+.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));--navigation-width:240px;width:var(--navigation-width);height:calc(var(--navigation-width) - 8px);display:flex;flex-direction:column;overflow:hidden;background:#10222dec;touch-action:manipulation;--nav-accent:var(--gold)}
 .navigation-hud [hidden]{display:none!important}
 .navigation-hud[data-state="on-board"],.navigation-hud[data-state="loaded"]{--nav-accent:var(--mint)}
 .navigation-hud[data-state="vacant"]{--nav-accent:#b9c9cb}
-.navigation-header{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px;min-height:78px}
-#navigation-destination{display:flex;gap:9px;align-items:center;min-width:0}
-#navigation-destination>div{min-width:0}
+.navigation-header{display:flex;flex-shrink:0;gap:6px;align-items:center;justify-content:space-between;padding:6px 10px;min-height:44px}
+#navigation-destination{display:flex;flex:1;gap:6px;align-items:center;min-width:0}
+#navigation-destination>div{display:flex;flex:1;gap:6px;align-items:center;min-width:0}
 .navigation-pin{display:flex;color:var(--nav-accent);flex-shrink:0}
-.navigation-pin svg{width:23px;height:23px}
-.navigation-hud h1{font-size:19px;letter-spacing:-.5px;line-height:1.2;overflow-wrap:anywhere}
-.navigation-hud #distance{font-size:10px;line-height:1.5;color:#a9bfc5;margin:4px 0 0;font-variant-numeric:tabular-nums}
-.taxi-state{flex-shrink:0;font-size:9px;font-weight:700;letter-spacing:.8px;min-width:44px;min-height:44px;padding:8px;border:1px solid var(--nav-accent);border-radius:7px;color:var(--nav-accent);background:#081b2280}
+.navigation-pin svg{width:17px;height:17px}
+.navigation-hud h1{flex:1;min-width:0;font-size:13px;letter-spacing:-.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.navigation-hud #distance{flex-shrink:0;font-size:8px;line-height:1.4;color:#a9bfc5;margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.taxi-state{flex-shrink:0;font-size:7px;font-weight:700;letter-spacing:.4px;min-width:32px;min-height:32px;padding:5px;border:1px solid var(--nav-accent);border-radius:5px;color:var(--nav-accent);background:#081b2280}
 .taxi-state:disabled{opacity:1}
-#navigation-contacts{display:flex;gap:8px;align-items:center}
-#navigation-contacts button{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;padding:0;border:1px solid var(--border);border-radius:7px;background:#ffffff04;color:#b9ccd1}
-#navigation-contacts .story-portrait{width:42px;height:42px;border:0;border-radius:6px;aspect-ratio:1}
+#navigation-contacts{display:flex;gap:4px;align-items:center}
+#navigation-contacts button{display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;padding:0;border:1px solid var(--border);border-radius:5px;background:#ffffff04;color:#b9ccd1}
+#navigation-contacts svg{width:16px;height:16px}
+#navigation-contacts .story-portrait{width:28px;height:28px;border:0;border-radius:4px;aspect-ratio:1}
 .navigation-hud button:hover:not(:disabled){background:#ffffff0d;color:var(--gold)}
 .navigation-hud button:disabled:not(.taxi-state){opacity:.35}
-.navigation-chart{position:relative;border-top:1px solid var(--border);background:#0b1b2490}
-.navigation-hud #map{display:block;width:100%;height:196px;margin:0;padding:0}
+.navigation-chart{position:relative;flex:1;min-height:0;border-top:1px solid var(--border);background:#0b1b2490}
+.navigation-hud #map{display:block;width:100%;height:100%;margin:0;padding:0}
 /* Preserve the existing right-hand personal status and conversation layout. */
 .toast{max-width:calc(100% - 440px)}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
-  :root{--navigation-width:min(204px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px))}
-  .navigation-hud{top:calc(var(--top-height) + 8px);left:var(--edge-left);right:auto;width:var(--navigation-width);border-radius:10px}
-  .navigation-header{padding:8px 10px;gap:6px;min-height:68px}
-  .navigation-hud h1{font-size:14px;letter-spacing:-.3px}
+  :root{--navigation-width:min(196px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px))}
+  .navigation-hud{--navigation-width:inherit;top:calc(var(--top-height) + 8px);left:var(--edge-left);right:auto;border-radius:10px}
+  .navigation-header{padding:4px 6px;gap:4px;min-height:52px}
+  .navigation-hud h1{font-size:12px}
   .navigation-pin{display:none}
-  .navigation-hud #distance{font-size:9px}
-  .taxi-state{font-size:8px;padding:5px;letter-spacing:.3px;max-width:66px}
-  #navigation-contacts{gap:3px;flex-wrap:wrap}
-  .navigation-hud[data-state="vacant"] .navigation-header{padding:8px;gap:4px}
-  .navigation-hud[data-state="vacant"] .taxi-state{font-size:7px;padding:3px;letter-spacing:0}
-  #navigation-contacts button{width:44px}
-  .navigation-hud #map{height:134px;padding:0}
+  .taxi-state{min-width:44px;min-height:44px;padding:4px;letter-spacing:0;max-width:60px}
+  #navigation-contacts{gap:0}
+  #navigation-contacts button{width:44px;height:44px}
   .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 144px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 210px)}
   .story-body{display:flow-root}
   .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
@@ -41,15 +38,15 @@
   .toast{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 64px);left:var(--edge-left);width:calc(100% - var(--edge-left) - var(--edge-right));max-width:360px}
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
-  :root{--navigation-width:240px}
+  :root{--navigation-width:180px}
   .navigation-hud{max-height:calc(100dvh - var(--top-height) - 16px);overflow:auto}
-  .navigation-header{min-height:52px;padding:4px 10px}
-  #navigation-contacts{flex-wrap:nowrap}
-  .navigation-hud #map{height:85px}
-  .story,.story.collapsed,.roadside{left:calc(var(--edge-left) + 252px);right:auto;top:calc(var(--top-height) + 8px);width:calc(100vw - var(--edge-left) - var(--edge-right) - 252px - var(--dash-width) - 12px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 28px)}
+  .story,.story.collapsed,.roadside{left:calc(var(--edge-left) + var(--navigation-width) + 12px);right:auto;top:calc(var(--top-height) + 8px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - var(--dash-width) - 24px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 28px)}
   .context-action{left:auto;right:var(--edge-right);max-width:150px}
-  .toast{left:calc(var(--edge-left) + 252px);width:calc(100vw - var(--edge-left) - var(--edge-right) - 264px);max-width:360px}
+  .toast{left:calc(var(--edge-left) + var(--navigation-width) + 12px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 24px);max-width:360px}
 }
-@media(max-width:360px) and (min-height:501px){
-  .navigation-hud #map{height:112px}
+/* Narrow layouts keep one row with 32 px targets (above the 24 px WCAG minimum). */
+@media(max-width:360px), (max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
+  .navigation-header{min-height:40px}
+  #navigation-contacts button{width:32px;height:32px}
+  .taxi-state{min-width:32px;min-height:32px;padding:3px}
 }

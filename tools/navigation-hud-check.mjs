@@ -76,11 +76,21 @@ try {
           return b.left < bounds.left - 1 || b.right > bounds.right + 1;
         }).map(child => child.id || child.className);
         const chart = el.querySelector('.navigation-chart').getBoundingClientRect();
-        return { x: bounds.x, y: bounds.y, right: bounds.right, bottom: bounds.bottom, chartBottom: chart.bottom, horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
+        const header = el.querySelector('.navigation-header').getBoundingClientRect();
+        const map = el.querySelector('#map').getBoundingClientRect();
+        const row = [...el.querySelectorAll('.navigation-header h1, .navigation-header p, .navigation-header button')].filter(child => child.getClientRects().length).map(child => {
+          const b = child.getBoundingClientRect(); return { id: child.id, centerY: b.y + b.height / 2 };
+        });
+        return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, right: bounds.right, bottom: bounds.bottom, chartBottom: chart.bottom, mapBottom: map.bottom, headerHeight: header.height, row, horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
       });
       assert(layout.x >= 0 && layout.y >= 0 && layout.right <= width && layout.bottom <= height, JSON.stringify(layout));
       assert.equal(layout.horizontalOverflow, false, `${name}: horizontal overflow`);
       assert.deepEqual(layout.overflow, [], `${name}: overflowing children`);
+      assert(Math.abs(layout.width - layout.height) <= 9, `${name}: navigation box must stay nearly square`);
+      assert(layout.width <= 240, `${name}: navigation box must stay small`);
+      assert(layout.headerHeight <= 52, `${name}: header must stay compact`);
+      assert(Math.abs(layout.mapBottom - layout.chartBottom) <= 1, `${name}: minimap must fit the remaining space`);
+      for (const item of layout.row) assert(Math.abs(item.centerY - layout.row[0].centerY) <= 1, `${name}: ${item.id} must stay on the same header line`);
       assert(Math.abs(layout.bottom - layout.chartBottom) <= 1, `${name}: widget must end at the map`);
       assert.equal(await page.locator('.navigation-footer, .navigation-instruction, .navigation-services, #job-progress, #speed, #boost-meter, #map-status, #map-toggle').count(), 0);
       assert.equal(await page.locator('#map').isVisible(), true);
@@ -88,10 +98,11 @@ try {
       const personal = await page.locator('.player-hud').boundingBox();
       assert(personal.x >= nav.x + nav.width, `${name}: personal status must stay distinct on the right`);
       assert.equal(await page.locator('.navigation-hud .player-hud').count(), 0);
-      const smallTargets = await page.locator('.navigation-hud button:visible').evaluateAll(buttons => buttons.filter(button => {
-        const b = button.getBoundingClientRect(); return b.width < 43.9 || b.height < 43.9;
-      }).map(button => button.id));
-      assert.deepEqual(smallTargets, [], `${name}: touch targets must be at least 44px`);
+      const minimumTarget = name === 'portrait' ? 44 : 32;
+      const smallTargets = await page.locator('.navigation-hud button:visible').evaluateAll((buttons, minimum) => buttons.filter(button => {
+        const b = button.getBoundingClientRect(); return b.width < minimum - 0.1 || b.height < minimum - 0.1;
+      }).map(button => button.id), minimumTarget);
+      assert.deepEqual(smallTargets, [], `${name}: targets must be at least ${minimumTarget}px`);
       assert.equal(await page.locator('#player-time').count(), 1);
       assert.equal(await page.locator('#map').count(), 1);
     };
@@ -102,6 +113,11 @@ try {
       await page.screenshot({ path: resolve(output, `${name}-${state}.png`) });
     };
     assert.equal(await page.locator('#job-status').textContent(), 'ENGAGED');
+    const longTitle = 'Meet Officer Lena Ortiz.';
+    const title = await page.locator('#mission-title').textContent();
+    await page.locator('#mission-title').evaluate((el, text) => { el.textContent = text; }, longTitle);
+    await shot('long-title'); await render();
+    assert.equal(await page.locator('#mission-title').getAttribute('title'), title);
     await shot('engaged');
     await page.locator('#job-status').click(); await render();
     assert.equal(await page.locator('#job-status').textContent(), 'VACANT');

@@ -89,6 +89,7 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     (get('job-status') as HTMLButtonElement).disabled = !canClear;
     get('job-status').title = canClear ? state.vacant ? 'Route the next fare' : 'Clear fare guidance and browse dispatch' : state.status;
     get('mission-title').textContent = state.title;
+    get('mission-title').title = state.title;
     get('distance').textContent = `${state.distance} m${state.arriving ? ' · Arriving soon' : ''}`;
     (get('dispatch') as HTMLButtonElement).disabled = g.mode !== 'playing';
     for (const id of ['texts', 'newsroom']) (get(id) as HTMLButtonElement).disabled = !g.campaignEnabled || g.mode !== 'playing';
