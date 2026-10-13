@@ -40,7 +40,7 @@ document.querySelector('#app')!.innerHTML = `
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
   <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER · HOLD <kbd>A/D</kbd> FOR SIDE</span><span><kbd>G</kbd> GARAGE</span><span><kbd>H</kbd> HARBOUR</span><span><kbd>P</kbd> PAUSE</span></footer>
-  <div class="touch-controls" aria-label="Touch driving controls"><div class="thumb-actions"><button data-key="boost" aria-label="Hold to boost">BOOST</button><button data-key="handbrake" aria-label="Hold handbrake">DRIFT</button></div><div id="joystick" class="joystick" role="group" aria-label="Drag to move: up accelerates, down brakes or reverses, left and right steer. On foot, drag in the direction to walk."><span class="joystick-guides" aria-hidden="true">＋</span><span class="joystick-knob" aria-hidden="true"></span></div></div>
+  <div class="touch-controls" aria-label="Touch driving controls"><div class="thumb-actions"><button data-key="boost" aria-label="Hold to boost"><span>BOOST</span></button><button data-key="handbrake" aria-label="Hold handbrake">DRIFT</button></div><div id="joystick" class="joystick" role="group" aria-label="Drag to move: up accelerates, down brakes or reverses, left and right steer. On foot, drag in the direction to walk."><span class="joystick-guides" aria-hidden="true">＋</span><span class="joystick-knob" aria-hidden="true"></span></div></div>
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
@@ -133,6 +133,9 @@ function hud() {
   const g = game, bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
   refreshNavigationHud();
   document.querySelectorAll<HTMLButtonElement>('[data-key]').forEach(button => { button.disabled = g.onFoot || g.mode !== 'playing'; });
+  const boostButton = document.querySelector<HTMLButtonElement>('[data-key="boost"]')!;
+  boostButton.style.setProperty('--boost-level', String(g.boost / 100));
+  boostButton.setAttribute('aria-label', `Hold to boost (${Math.round(g.boost)}% tank remaining)`);
   document.querySelector('.controls>span:nth-child(2)')!.lastChild!.textContent = bike && !g.onFoot ? ' REAR BRAKE' : ' DRIFT';
   document.querySelector<HTMLButtonElement>('[data-key="handbrake"]')!.textContent = bike && !g.onFoot ? 'BRAKE' : 'DRIFT';
   $('toast').textContent = g.toast; $('toast').className = `toast ${g.toastTime > 0 && g.mode === 'playing' ? 'visible' : ''} ${g.toastKind}`;

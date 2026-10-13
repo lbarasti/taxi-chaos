@@ -77,9 +77,12 @@
   .garage-button kbd{display:none}
   .controls{display:none}
   .touch-controls{display:block;position:fixed;z-index:4;inset:auto var(--edge-right) var(--edge-bottom) var(--edge-left);height:var(--stick-size);pointer-events:none}
-  .touch-controls .thumb-actions{position:absolute;bottom:0;left:max(calc(50% - 64px),calc(var(--dash-width) + 8px));display:flex;gap:8px;align-items:end}
-  .touch-controls button[data-key]{width:48px;height:52px;min-height:48px;font-size:9px;border:1px solid #f7ce5555;background:#14232ab8;color:var(--gold);border-radius:12px;touch-action:none;pointer-events:auto}
+  .touch-controls .thumb-actions{position:absolute;bottom:0;left:0;display:flex;flex-direction:column;gap:8px}
+  .touch-controls button[data-key]{width:64px;height:52px;min-height:48px;font-size:9px;border:1px solid #f7ce5555;background:#14232ab8;color:var(--gold);border-radius:12px;touch-action:none;pointer-events:auto}
   .touch-controls button.pressed{background:#f7ce5555;border-color:var(--gold)}
+  .touch-controls button[data-key="boost"]{position:relative;isolation:isolate;overflow:hidden;color:#fff2c8}
+  .touch-controls button[data-key="boost"]::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,#f7ce5566,#f7ce552b);box-shadow:inset 0 1px 0 #f7ce55bb;transform:scaleY(var(--boost-level,1));transform-origin:bottom;transition:transform .1s linear;pointer-events:none;z-index:-1}
+  .touch-controls button[data-key="boost"].pressed{background:#14232ab8}
   .touch-controls button:disabled{opacity:.3}
   .touch-controls .joystick{display:grid;align-items:center;gap:0;position:absolute;right:0;bottom:0;width:var(--stick-size);height:var(--stick-size);border-radius:50%;border:1px solid #b5c9b54a;background:radial-gradient(circle,#18303940,#183039a6);touch-action:none;pointer-events:auto;display:grid;place-items:center}
   .joystick-guides{font-size:70px;font-weight:400;color:#a3ddc220;line-height:1}
@@ -94,10 +97,11 @@
   .toast.visible{transform:translateY(0)}
   .debug-panel{bottom:var(--edge-bottom)}
 }
+@media(prefers-reduced-motion:reduce){
+  .touch-controls button[data-key="boost"]::before{transition:none}
+}
 @media(max-width:360px){
   :root{--stick-size:92px;--dash-width:124px}
-  .touch-controls .thumb-actions{left:max(calc(50% - 22px),calc(var(--dash-width) + 8px));flex-direction:column;gap:6px}
-  .touch-controls button[data-key]{width:44px}
   .mission h1{font-size:15px}
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
