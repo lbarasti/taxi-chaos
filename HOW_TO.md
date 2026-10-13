@@ -67,6 +67,7 @@ After an ordinary delivery, **VACANT** shows dispatch, booking and newsroom
 shortcuts. Tap **ENGAGED** before pickup to hide fare guidance and browse these
 shortcuts; tap the dispatcher portrait or **VACANT** to route the next fare.
 The speech-bubble button opens your texts; the newspaper routes to the newsroom.
+Tap **ENGAGED** to clear newsroom guidance and return to the shortcuts.
 Hiding guidance does not cancel a booking or prevent a physical pickup. The minimap shows a wider
 320 m neighbourhood and stays visible, without a status label or collapse button.
 

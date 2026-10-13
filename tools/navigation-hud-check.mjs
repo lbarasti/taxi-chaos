@@ -133,8 +133,18 @@ try {
     await page.locator('#open-notebook').click();
     assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
+    const beforeNewsroom = await render();
     await page.locator('#newsroom').click(); await render();
     assert.match(await page.locator('#mission-title').textContent(), /Newsroom/);
+    assert.equal(await page.locator('#job-status').isEnabled(), true);
+    await page.locator('#job-status').click();
+    const afterNewsroom = await render();
+    assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
+    assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
+    assert.deepEqual(afterNewsroom.job, beforeNewsroom.job, 'Cancelling newsroom guidance must preserve the booking');
+    await page.locator('#dispatch').click(); await render();
+    assert.doesNotMatch(await page.locator('#mission-title').textContent(), /Newsroom/);
+    await page.locator('#job-status').click(); await render();
     await page.locator('#city').focus(); await page.keyboard.press('KeyG'); await render();
     assert.equal(await page.locator('.garage-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });

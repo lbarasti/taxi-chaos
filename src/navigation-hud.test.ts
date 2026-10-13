@@ -71,4 +71,16 @@ describe('consolidated navigation HUD', () => {
     game.tumble = { elapsed: 0, duration: 1, speed: 10, side: -1, bike: false, grounded: false };
     expect(navigationHudState(game).title).toBe('Brace for impact.');
   });
+
+  it('returns to vacant after clearing newsroom guidance without cancelling the booking', () => {
+    const game = new Game(undefined, false);
+    game.start();
+    const booking = structuredClone(game.job);
+    game.navigateNewsroom();
+    expect(navigationHudState(game, false)).toMatchObject({ vacant: false, routeVisible: true });
+    game.navigateNewsroom();
+    expect(navigationHudState(game, false)).toMatchObject({ status: 'VACANT', vacant: true, routeVisible: false });
+    expect(game.navToNewsroom).toBe(false);
+    expect(game.job).toEqual(booking);
+  });
 });

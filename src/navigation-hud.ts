@@ -68,8 +68,10 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
   get('dispatch').addEventListener('click', routeFare);
   get('job-status').addEventListener('click', () => {
     const g = currentGame();
-    if (g.mode !== 'playing' || g.onFoot || g.job.stage !== 'pickup' || g.navToGarage || g.navToNewsroom || g.navToHarbour || g.harbour.vehicleId === g.player.id) return;
-    view().routed = !view().routed; refresh(); actions.focus();
+    if (g.mode !== 'playing' || g.onFoot || g.job.stage !== 'pickup' || g.navToGarage || g.navToHarbour || g.harbour.vehicleId === g.player.id) return;
+    if (g.navToNewsroom) { g.navigateNewsroom(); view().routed = false; }
+    else view().routed = !view().routed;
+    refresh(); actions.focus();
   });
   get('texts').addEventListener('click', actions.texts);
   get('newsroom').addEventListener('click', () => { currentGame().navigateNewsroom(); refresh(); actions.focus(); });
@@ -84,9 +86,9 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     panel.dataset.state = state.status.toLowerCase().replace(' ', '-');
     get('navigation-destination').hidden = state.vacant; get('navigation-contacts').hidden = !state.vacant;
     get('job-status').textContent = state.status;
-    const canClear = g.mode === 'playing' && g.job.stage === 'pickup' && !g.onFoot && !g.navToGarage && !g.navToNewsroom && !g.navToHarbour && g.harbour.vehicleId !== g.player.id;
+    const canClear = g.mode === 'playing' && g.job.stage === 'pickup' && !g.onFoot && !g.navToGarage && !g.navToHarbour && g.harbour.vehicleId !== g.player.id;
     (get('job-status') as HTMLButtonElement).disabled = !canClear;
-    get('job-status').title = canClear ? state.vacant ? 'Route the next fare' : 'Clear fare guidance and browse dispatch' : state.status;
+    get('job-status').title = canClear ? state.vacant ? 'Route the next fare' : g.navToNewsroom ? 'Clear newsroom guidance and browse dispatch' : 'Clear fare guidance and browse dispatch' : state.status;
     get('mission-title').textContent = state.title;
     get('mission-title').title = state.title;
     get('distance').textContent = `${state.distance} m`;
