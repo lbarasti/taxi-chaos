@@ -79,15 +79,15 @@ assert.equal(await page.locator('#interact').isVisible(),mobile,`${name}: contex
 let rects=await page.evaluate(()=>{const out={};for(const s of ['.mission','.player-hud','.map-panel','#joystick','.thumb-actions','#interact']){let e=document.querySelector(s),r=e.getBoundingClientRect();out[s]={x:r.x,y:r.y,width:r.width,height:r.height}}return out});
 const overlap=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
 for(let [sel,r] of Object.entries(rects)){if(!r.width)continue;assert(r.x>=0&&r.y>=0&&r.x+r.width<=w+1&&r.y+r.height<=h+1,`${name}: ${sel} out of bounds`)}
-for(let [a,b] of [['.mission','.map-panel'],['.player-hud','#joystick'],['.player-hud','.thumb-actions'],['.thumb-actions','#joystick'],['#interact','#joystick']])assert(!overlap(rects[a],rects[b]),`${name}: ${a} overlaps ${b}`);
+for(let [a,b] of [['.mission','.map-panel'],['.mission','.player-hud'],['.player-hud','.map-panel'],['.map-panel','#joystick'],['.map-panel','.thumb-actions'],['.map-panel','#interact'],['.player-hud','#joystick'],['.player-hud','.thumb-actions'],['.thumb-actions','#joystick'],['#interact','#joystick']])assert(!overlap(rects[a],rects[b]),`${name}: ${a} overlaps ${b}`);
 assert(rects['.mission'].y<=28,`${name}: mission still reserves header space`);
-if(mobile){assert(!(await page.locator('.controls').isVisible()));assert(rects['.mission'].height<=60);
+if(mobile){assert(!(await page.locator('.controls').isVisible()));assert(rects['.mission'].height<=75);
 assert.equal(await page.locator('.dashboard,#speed,#gear,#boost,#boost-bar,#health,#health-bar,#earnings,#deliveries,#heat-panel,#stars').count(),0);
 assert.equal(await page.locator('.player-hud> *').count(),4);
 assert.equal(await page.locator('#player-heat svg').count(),3);
 assert.equal(await page.locator('#player-health').getAttribute('aria-valuenow'),String(await page.evaluate(()=>__taxi.state().driverHealth)));
-assert(Math.abs(h-rects['.player-hud'].y-rects['.player-hud'].height-12)<1,`${name}: player HUD is not at the bottom edge`);
-assert.equal(rects['.player-hud'].x,10);assert.equal(rects['.player-hud'].width,124);
+assert.equal(rects['.player-hud'].y,8,`${name}: player HUD is not at the top edge`);
+assert.equal(w-rects['.player-hud'].x-rects['.player-hud'].width,10);assert.equal(rects['.player-hud'].width,124);
 }
 await page.waitForTimeout(250);
 await page.screenshot({path:path.join(screenshotRoot,`${name}.png`)});console.log(name,'layout passed');

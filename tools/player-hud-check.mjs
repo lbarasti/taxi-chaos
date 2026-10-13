@@ -9,11 +9,42 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const output = process.env.SCREENSHOT_DIR ?? path.join(root, 'docs/screenshots/minimal-player-hud');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const errors = [], externalRequests = [];
+async function screenshot(page, name, prefix = '') {
+  if (['desktop', 'portrait', 'small', 'landscape'].includes(name)) {
+    await page.screenshot({ path: path.join(output, `${prefix}${name}.png`) });
+  }
+}
+async function checkLayout(page, name, width, height, touch, insets = {}) {
+  const rects = await page.evaluate(() => {
+    const out = {};
+    for (const selector of ['.mission', '.player-hud', '.map-panel', '#story', '#roadside', '#toast', '#joystick', '.thumb-actions', '#interact']) {
+      const element = document.querySelector(selector);
+      if (!element.getClientRects().length) continue;
+      if (selector === '#toast' && !element.classList.contains('visible')) continue;
+      const { x, y, width, height } = element.getBoundingClientRect();
+      out[selector] = { x, y, width, height };
+    }
+    return out;
+  });
+  const status = rects['.player-hud'];
+  assert.equal(status.y, insets.top ?? (touch ? 8 : 28), `${name}: status must stay at the top edge`);
+  assert.equal(width - status.x - status.width, insets.right ?? (touch ? 10 : 28), `${name}: status must stay at the right edge`);
+  for (const [selector, rect] of Object.entries(rects)) {
+    assert(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width + 1 && rect.y + rect.height <= height + 1, `${name}: ${selector} exceeds viewport`);
+  }
+  const entries = Object.entries(rects);
+  for (let i = 0; i < entries.length; i++) for (let j = i + 1; j < entries.length; j++) {
+    const [a, one] = entries[i], [b, two] = entries[j];
+    assert(!(one.x < two.x + two.width && one.x + one.width > two.x && one.y < two.y + two.height && one.y + one.height > two.y), `${name}: ${a} overlaps ${b}`);
+  }
+}
 try {
   await mkdir(output, { recursive: true });
   for (const [name, width, height, touch] of [
     ['desktop', 1440, 900, false], ['portrait', 390, 844, true],
     ['small', 320, 568, true], ['landscape', 844, 390, true],
+    ['compact-landscape', 568, 320, true], ['tablet', 768, 1024, true],
+    ['narrow-desktop', 900, 650, false], ['short-desktop', 701, 501, false],
   ]) {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, offline: true });
     const page = await context.newPage();
@@ -63,9 +94,10 @@ try {
       return time.fontSize === cash.fontSize && time.fontWeight === cash.fontWeight;
     }), 'time and cash must have equal prominence');
     await page.evaluate(() => document.fonts.ready);
+    await checkLayout(page, name, width, height, touch);
     const bounds = await page.locator('.player-hud').boundingBox();
     assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width && bounds.y + bounds.height <= height);
-    await page.screenshot({ path: path.join(output, `${name}.png`) });
+    await screenshot(page, name);
     for (const balance of [0, 10000000, 99999999999]) {
       await page.evaluate(value => __taxi.cash(value - __taxi.state().cash), balance);
       assert.equal(await page.locator('#player-cash').textContent(), `$${balance.toLocaleString('en-US')}`);
@@ -81,6 +113,14 @@ try {
     assert(health > 0 && health < 100);
     assert.equal(await page.locator('#player-health').getAttribute('aria-valuenow'), String(health));
     assert(Math.abs(await page.locator('#player-health i').evaluate(element => parseFloat(element.style.width)) - health) < 0.001);
+    await page.evaluate(() => {
+      __taxi.scenario('first-fare');
+      __taxi.damageVehicle(__taxi.state().playerId, { health: 0 });
+      __taxi.interact();
+      __taxi.step(2);
+    });
+    await page.locator('#roadside').waitFor({ state: 'visible' });
+    await checkLayout(page, `${name} wreck recovery`, width, height, touch);
     assert.deepEqual(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
     await page.evaluate(() => __taxi.realtime());
     // Scenario facts exercise fractional heat through the actual HUD, without
@@ -109,10 +149,31 @@ try {
       window.__scenario.execute({ op: 'advance', to: { day: 1, hour: 12, minute: 37 } });
     });
     await heatPage.evaluate(() => document.fonts.ready);
-    await heatPage.screenshot({ path: path.join(output, `heat-${name}.png`) });
+    await checkLayout(heatPage, name, width, height, touch);
+    await screenshot(heatPage, name, 'heat-');
     const heatBounds = await heatPage.locator('.player-hud').boundingBox();
     assert(heatBounds.x >= 0 && heatBounds.y >= 0 && heatBounds.x + heatBounds.width <= width && heatBounds.y + heatBounds.height <= height);
     assert.deepEqual(await heatPage.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
+    // Full and minimized conversations must leave the top-right widget visible.
+    await page.bringToFront();
+    await page.evaluate(() => window.__dialoguePreview({ character: 'bea' }, 'bea-first-shift', 'pickup'));
+    await page.locator('#story').waitFor({ state: 'visible' });
+    await page.locator('#story img').evaluateAll(images => Promise.all(images.map(image => image.decode())));
+    await checkLayout(page, `${name} story`, width, height, touch);
+    await screenshot(page, name, 'story-');
+    await page.locator('#story-close').click();
+    await checkLayout(page, `${name} minimized story`, width, height, touch);
+    if (touch) {
+      await page.evaluate(() => {
+        document.documentElement.style.setProperty('--top-height', '24px');
+        document.documentElement.style.setProperty('--edge-right', '26px');
+      });
+      await checkLayout(page, `${name} safe area`, width, height, touch, { top: 32, right: 26 });
+      await page.evaluate(() => {
+        document.documentElement.style.removeProperty('--top-height');
+        document.documentElement.style.removeProperty('--edge-right');
+      });
+    }
     await context.close();
     console.log(`PASS ${name}: HH:MM clock, wallet, driver health, vehicle exit/entry, physical bailout, large balances, progressive heat stars and reset`);
   }
