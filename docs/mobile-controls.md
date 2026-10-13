@@ -4,13 +4,13 @@ The top bar and taxi menu are removed. The mission and other top-aligned panels 
 
 A 124 px translucent stack sits in the bottom-left safe-area corner, with police pursuit/stars above speed, health/chassis and boost. MPH sits below the speed, and meter percentages are visually hidden while remaining available to screen readers. On narrow phones the centre action buttons stack vertically to keep all controls separate. The bottom-right joystick has circular travel, a centre dead zone and proportional input: up accelerates, down brakes/reverses, sideways steers; on foot, its direction and deflection control walking. BOOST and DRIFT accept a second finger independently in the bottom centre. Release, cancellation, capture loss, focus loss, pause, death and viewport changes clear held touch input.
 
-The generic on-foot card is removed. Get in / Ride motorbike appears beside an accessible parked ride, Get out / Dismount appears at safe speeds, and Bail out appears during a fire. Burning-vehicle warnings remain. The mobile mission shows the current objective, distance, and a short pickup/delivery instruction. Find a ride is one row with no fare or keyboard instructions.
+The generic on-foot card and shared fire/wreck/stalled-bike/harbour warning banner are removed. Get in / Ride motorbike appears beside an accessible parked ride, Get out / Dismount appears at safe speeds, and Bail out appears during a fire. Harbour payment and the separate roadside tow/repair panel remain available. The mobile mission shows the current objective, distance, and a short pickup/delivery instruction. Find a ride is one row with no fare or keyboard instructions.
 
 The HUD suppresses text selection and native touch callouts/context menus. The radar remains collapsible. Layout accounts for safe-area insets and portrait/landscape dimensions.
 
 ## Screenshots
 
-Current header-free HUD: [Desktop](screenshots/hud-no-topbar/desktop.png), [Portrait](screenshots/hud-no-topbar/portrait.png), [Landscape](screenshots/hud-no-topbar/landscape.png).
+Current header-free HUD: [Desktop](screenshots/hud-no-topbar/desktop.png), [Portrait](screenshots/hud-no-topbar/portrait.png), [Landscape](screenshots/hud-no-topbar/landscape.png), [Fire without a warning banner](screenshots/hud-no-topbar/fire-no-banner.png).
 
 The screenshots below document the earlier touch-controls implementation, before the top bar was removed.
 

@@ -41,7 +41,6 @@ document.querySelector('#app')!.innerHTML = `
   <button id="texts-toggle" class="texts-toggle panel" aria-expanded="false" aria-controls="mission-inbox">Texts · 0</button>
   ${inboxMarkup}
   <section class="dashboard panel" aria-label="Cab condition"><div class="speed"><strong id="speed">00</strong><span>MPH<small id="gear">IDLE</small></span></div><div class="cab-meters"><div><span>CHASSIS</span><div class="meter"><i id="health-bar"></i></div><b id="health">100%</b></div><div><span>BOOST <kbd>⇧</kbd></span><div class="meter"><i id="boost-bar"></i></div><b id="boost">100%</b></div></div><div class="dashboard-footer"><span id="deliveries">0 fares this shift</span><span id="earnings">+$0 earned</span></div><div class="heat-panel" id="heat-panel" role="status"><div class="heat-top"><span id="heat-title">KEEP IT CLEAN</span><span id="stars">☆ ☆ ☆</span></div><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-description">A little mischief goes a long way.</small></div></section>
-  <div class="critical-status panel" id="critical-status" hidden><strong id="condition">ENGINE DAMAGE</strong><span id="components"></span></div>
   <button id="interact" class="context-action" hidden>Get in</button>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
@@ -184,11 +183,6 @@ function hud() {
   $('map-status').textContent = g.stars ? 'PURSUIT' : 'LIVE'; $('garage').classList.toggle('near', g.garageNear);
   $('toast').textContent = g.toast; $('toast').className = `toast ${g.toastTime > 0 && g.mode === 'playing' ? 'visible' : ''} ${g.toastKind}`;
   const damage = g.player.damage;
-  const damageWarning = damage.status === 'burning' || !g.onFoot && (damage.status === 'wreck' || bike && !motorcycleEngineWorks(damage));
-  $('critical-status').hidden = g.mode !== 'playing' || !damageWarning;
-  $('critical-status').classList.toggle('burning', damage.status === 'burning');
-  $('condition').textContent = g.onFoot ? damage.status === 'burning' ? `ABANDONED ${vehicleName} · ${damage.fuse.toFixed(1)}s` : 'ON FOOT · FIND A PARKED RIDE' : damage.status === 'burning' ? `${vehicleName} ON FIRE · ${damage.fuse.toFixed(1)}s` : damage.status === 'wreck' ? `${vehicleName} DESTROYED` : bike && !motorcycleEngineWorks(damage) ? 'BIKE ENGINE STALLED' : '';
-  $('components').textContent = g.onFoot ? damage.status === 'burning' ? 'Run clear! The fire will still detonate.' : g.bikeTowable ? 'Motorbike will not start · R to tow & repair' : 'WASD / arrows to walk · E beside a car or bike' : damage.status === 'burning' ? 'E · BAIL OUT NOW, THEN RUN CLEAR. Pit Stop can extinguish fire before detonation.' : bike && !motorcycleEngineWorks(damage) ? 'Engine will not start · Repair or find another ride' : '';
   $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' && (g.enterableCar.dynamics as MotorcycleDynamics).fallen ? 'Lift motorbike' : g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : g.pendingExit ? bike ? 'Jumping…' : 'Opening door…' : damage.status === 'burning' ? 'Bail out!' : g.speed > 1.2 ? bike ? 'Jump off' : 'Jump out' : bike ? 'Dismount' : 'Get out';
   ($('interact') as HTMLButtonElement).disabled = !!g.pendingExit;
   $('interact').hidden = g.mode !== 'playing' || (g.onFoot ? !g.enterableCar : !!g.player.sinking);
@@ -199,12 +193,12 @@ function hud() {
   ($('tow') as HTMLButtonElement).disabled = damage.status === 'wreck' && g.time - g.player.wreckAt < 1.2;
   $('tow-price').textContent = `Optional tow & repair: $${Math.min(g.save.cash, 60)} · or take another ride for free`;
   if (g.harbourPrompt && g.mode === 'playing' && damage.status !== 'burning') {
-    $('critical-status').hidden = false; $('condition').textContent = g.portGateNear ? 'PORT SECURITY' : 'CONTAINER C-76'; $('components').textContent = g.harbourPrompt;
     $('interact').hidden = !g.portGateNear; $('interact').textContent = `Pay $${PORT_FEE}`; ($('interact') as HTMLButtonElement).disabled = false;
   }
   $('harbour').classList.toggle('near', g.navToHarbour || g.harbour.vehicleId === g.player.id);
-  // Emergency and recovery instructions take priority on compact screens.
-  refreshStory(g.mode === 'playing' && !g.onFoot && !g.player.sinking && $('critical-status').hidden && $('roadside').hidden);
+  // Keep conversations out of emergencies and harbour interactions, without a warning banner.
+  const drivingEmergency = damage.status === 'burning' || damage.status === 'wreck' || bike && !motorcycleEngineWorks(damage);
+  refreshStory(g.mode === 'playing' && !g.onFoot && !g.player.sinking && !drivingEmergency && !g.harbourPrompt && $('roadside').hidden);
   lab?.refreshUI();
   refreshAudioControls(audio);
 }

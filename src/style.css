@@ -7,10 +7,9 @@
 .modal-backdrop{grid-template-columns:minmax(0,1fr)}.modal{min-width:0;width:min(620px,100%)}.garage-modal{width:min(650px,100%)}
 .debug-panel{display:flex;align-items:center;gap:4px;pointer-events:auto;background:#15272be8;padding:5px 7px;border-radius:5px;border:1px solid #a3ddc233;white-space:nowrap}.debug-panel>span{margin-right:4px;color:#a3ddc2}.debug-panel button{font:8px monospace;padding:3px 5px;border:1px solid #a3ddc222;border-radius:3px;background:#a3ddc20a;color:#b8d0bf}.debug-panel button:hover{background:#a3ddc22a}
 @media(max-width:700px){.debug-panel{bottom:38px;padding:2px 4px;gap:2px}.debug-panel>span{font-size:5px;margin-right:2px}.debug-panel button{font-size:6px;padding:2px 3px}}
-.play-options{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:18px 0;color:#b6c6b8;font-size:10px}.play-options label{display:flex;align-items:center;gap:8px}.play-options input{accent-color:var(--gold);width:14px;height:14px}.play-options label>span{font-size:8px;color:#869c8f}.play-options select{font:inherit;background:#223b3b;color:#d9e1c8;padding:6px 9px;border:1px solid #a3ddc233;border-radius:5px}.critical-status{position:fixed;left:28px;bottom:300px;width:270px;z-index:1;padding:13px 16px;border-color:#dfaa6b55}.critical-status strong{display:block;font-size:10px;color:#e4b994;letter-spacing:1px}.critical-status span{display:block;font-size:7px;color:#abbaa9;letter-spacing:.7px;margin-top:7px}.critical-status.burning{background:#442627ed;border-color:#f6926870}.critical-status.burning strong{color:#ffb787}@media(max-height:780px){.critical-status{bottom:270px;padding:8px 13px}.critical-status span{font-size:6px}}@media(max-width:1000px){.critical-status{left:18px;width:240px}}@media(max-width:700px){.critical-status{left:12px;bottom:322px;width:172px;padding:9px}.critical-status strong{font-size:8px}.critical-status span{font-size:6px;letter-spacing:0}.play-options{flex-wrap:wrap;font-size:9px}.play-options label>span{display:none}}
+.play-options{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:18px 0;color:#b6c6b8;font-size:10px}.play-options label{display:flex;align-items:center;gap:8px}.play-options input{accent-color:var(--gold);width:14px;height:14px}.play-options label>span{font-size:8px;color:#869c8f}.play-options select{font:inherit;background:#223b3b;color:#d9e1c8;padding:6px 9px;border:1px solid #a3ddc233;border-radius:5px}@media(max-width:700px){.play-options{flex-wrap:wrap;font-size:9px}.play-options label>span{display:none}}
 .shift-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px}.shift-stats small{display:block;line-height:1.5}
-.critical-status{top:28px;bottom:auto;left:53%;width:320px;transform:translateX(-50%);z-index:3}@media(max-width:700px){.critical-status{top:auto;bottom:322px;left:12px;width:172px;transform:none}}
-.dashboard.boosting{border-color:#6ae3fa;box-shadow:0 0 22px #57d6f133}.dashboard.boosting #gear{color:#8ee8f7}.dashboard.boosting #boost-bar{background:#8ee8f7;box-shadow:0 0 8px #57d6f1}.escape-button,.roadside button{background:#a3ddc215;border:1px solid #a3ddc255;border-radius:6px;padding:8px 10px;font-size:10px}.escape-button{margin-top:10px;width:100%;color:#ffe0ad}.escape-button:disabled{opacity:.5}.critical-status span{line-height:1.6}.roadside{position:fixed;top:28px;right:28px;width:300px;z-index:3;padding:16px;border-color:#dfaa6b66}.roadside strong{font-size:11px;letter-spacing:1px;color:#ffb787}.roadside p{font-size:11px;line-height:1.6;color:#c1cbbf;margin:9px 0 12px}.roadside div{display:flex;gap:8px}.roadside small{display:block;font-size:9px;color:#91a89e;line-height:1.6;margin-top:9px}.roadside button:disabled{opacity:.4}.roadside[hidden],.escape-button[hidden]{display:none}@media(max-width:700px){.roadside{top:225px;right:12px;width:180px;padding:10px}.roadside p{font-size:9px}.roadside div{flex-wrap:wrap}.roadside button{font-size:9px;padding:6px}.escape-button{font-size:9px;padding:6px}}
+.dashboard.boosting{border-color:#6ae3fa;box-shadow:0 0 22px #57d6f133}.dashboard.boosting #gear{color:#8ee8f7}.dashboard.boosting #boost-bar{background:#8ee8f7;box-shadow:0 0 8px #57d6f1}.escape-button,.roadside button{background:#a3ddc215;border:1px solid #a3ddc255;border-radius:6px;padding:8px 10px;font-size:10px}.escape-button{margin-top:10px;width:100%;color:#ffe0ad}.escape-button:disabled{opacity:.5}.roadside{position:fixed;top:28px;right:28px;width:300px;z-index:3;padding:16px;border-color:#dfaa6b66}.roadside strong{font-size:11px;letter-spacing:1px;color:#ffb787}.roadside p{font-size:11px;line-height:1.6;color:#c1cbbf;margin:9px 0 12px}.roadside div{display:flex;gap:8px}.roadside small{display:block;font-size:9px;color:#91a89e;line-height:1.6;margin-top:9px}.roadside button:disabled{opacity:.4}.roadside[hidden],.escape-button[hidden]{display:none}@media(max-width:700px){.roadside{top:225px;right:12px;width:180px;padding:10px}.roadside p{font-size:9px}.roadside div{flex-wrap:wrap}.roadside button{font-size:9px;padding:6px}.escape-button{font-size:9px;padding:6px}}
 .audio-settings{border:1px solid #a3ddc233;border-radius:8px;padding:10px 12px;margin:12px 0;display:flex;flex-direction:column;gap:8px;text-align:left;font-size:11px;color:#b8c3bd}.audio-settings legend{font-size:9px;letter-spacing:1.5px;color:#a3ddc2;padding:0 5px}.audio-settings label{display:flex;align-items:center;gap:10px}.audio-settings label:not(.audio-toggle){display:grid;grid-template-columns:70px 1fr 38px}.audio-settings input[type=range]{min-width:80px;width:100%;accent-color:#a3ddc2}.audio-settings input[type=checkbox]{accent-color:#a3ddc2}.audio-settings output{text-align:right;font-variant-numeric:tabular-nums}.audio-settings small{font-size:9px;color:#7f9691}.audio-credits{font-size:9px;line-height:1.5}.audio-credits summary{cursor:pointer;color:#a3ddc2}.audio-credits p{margin:5px 0;font-size:9px;line-height:1.5}.audio-credits a{color:#a3ddc2;text-decoration:underline}
 
 /* Compact HUD: the street remains visible behind condition and navigation. */
@@ -39,10 +38,9 @@
 
 /* Touch HUD uses the screen edges, leaving the street open. */
 #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#city,.mission,.dashboard,.map-panel,.critical-status,.context-action{touch-action:none}
+#city,.mission,.dashboard,.map-panel,.context-action{touch-action:none}
 .mobile-hint{display:none}
 .context-action{position:fixed;z-index:4;top:28px;left:53%;transform:translateX(-50%);min-height:44px;padding:10px 16px;border:1px solid #f7ce5566;border-radius:10px;background:#14232ad9;color:var(--gold);font-size:12px}
-.critical-status:not([hidden])~.context-action{top:128px}
 
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
   :root{--edge-left:max(10px,env(safe-area-inset-left,0px));--edge-right:max(10px,env(safe-area-inset-right,0px));--edge-bottom:max(12px,env(safe-area-inset-bottom,0px));--top-height:env(safe-area-inset-top,0px);--stick-size:110px;--dash-width:124px}
@@ -95,15 +93,11 @@
   .joystick-knob{position:absolute;width:42px;height:42px;border-radius:50%;background:#a3ddc24d;border:1px solid #a3ddc280;transform:translate(var(--stick-x,0px),var(--stick-y,0px));pointer-events:none;box-shadow:0 2px 10px #08151c44}
   .joystick.pressed{border-color:#f7ce5588}
   .joystick.pressed .joystick-knob{background:#f7ce5577;border-color:var(--gold)}
-  .context-action,.critical-status:not([hidden])~.context-action{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 10px);left:auto;right:var(--edge-right);transform:none;max-width:150px;font-size:11px}
-  .critical-status{top:calc(var(--top-height) + 88px);bottom:auto;left:var(--edge-left);right:auto;width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);max-width:250px;padding:8px 10px;transform:none}
-  .critical-status strong{font-size:9px}
-  .critical-status span{font-size:8px;letter-spacing:0}
+  .context-action{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 10px);left:auto;right:var(--edge-right);transform:none;max-width:150px;font-size:11px}
   .roadside{top:calc(var(--top-height) + 165px);left:var(--edge-left);right:auto;width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);max-width:250px}
   .roadside p{display:none}
   .toast{top:calc(var(--top-height) + 88px);bottom:auto;left:var(--edge-left);transform:translateY(5px);width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);max-width:300px;padding:8px 10px;font-size:9px;line-height:1.4}
   .toast.visible{transform:translateY(0)}
-  .critical-status:not([hidden])~.toast{top:calc(var(--top-height) + 184px)}
   .debug-panel{bottom:var(--edge-bottom)}
 }
 @media(max-width:360px){
@@ -121,10 +115,8 @@
   .map-panel{top:calc(var(--top-height) + 8px);width:90px}
   #map{height:56px}
   .map-toggle{min-height:30px}.garage-button{min-height:30px}
-  .critical-status{top:calc(var(--top-height) + 80px);width:240px}
   .roadside{top:calc(var(--top-height) + 80px);left:270px;width:200px}
   .toast{top:calc(var(--top-height) + 8px);left:calc(46vw + 20px);width:calc(54vw - 136px)}
-  .critical-status:not([hidden])~.toast{top:calc(var(--top-height) + 8px)}
 }
 
 /* Game-over text stays legible while the blast and street remain visible. */
