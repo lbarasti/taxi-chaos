@@ -118,10 +118,12 @@ export class AudioFX {
     if (!enabled) { this.stopAll(); this.audible = false; this.framePeak = 0; return; }
     if (this.previewUntil > ctx.currentTime) { game.sounds.clear(); this.audible = true; this.measure(); return; }
     if (this.previewUntil) this.stopPreview();
+    const ambient = live && game.mode === 'intro';
     const running = live && (game.mode === 'playing' || game.mode === 'wasted');
-    this.smooth(this.world!.gain, running ? 1 : 0, 0.025);
-    this.audible = running;
+    this.smooth(this.world!.gain, running ? 1 : ambient ? 0.35 : 0, ambient ? 0.6 : 0.25);
+    this.audible = running || ambient;
     const desired = new Map<string, LoopTarget>();
+    if (ambient) desired.set('engine', { asset: 'engine', gain: 0.2, rate: 0.85, cutoff: 950 });
     if (running) {
       for (const event of events.sort((a, b) => b.priority - a.priority)) if (event.cue !== 'pulp' || game.settings.gore) this.play(event);
       const player = game.player, driving = game.mode === 'playing' && !game.onFoot && !player.sinking && player.damage.status !== 'wreck';

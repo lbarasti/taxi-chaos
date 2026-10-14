@@ -33,6 +33,7 @@ export class Renderer {
   ctx: CanvasRenderingContext2D; mapCtx: CanvasRenderingContext2D; width = 0; height = 0; dpr = 1; camera = vec(4, 25); zoom = 9; frames = 0; fps = 60; debugColliders = false; debugAI = false;
   lightLayer = new LightingLayer(0.5);
   navigationRouteVisible = true;
+  private ambientTime = 0;
   private sun: Vec = vec(0, 0.5);
   private shadowT = 0;
   private shadowAlpha = 0.4;
@@ -50,7 +51,10 @@ export class Renderer {
     this.frames++; const g = this.game, c = this.ctx, p = g.actor;
     const targetZoom = clamp(Math.min(this.width / 125, this.height / 86), 5, 10.5) * (1 - clamp(g.speed / 160, 0, 0.2));
     this.zoom += (targetZoom - this.zoom) * Math.min(1, dt * 3);
-    const wanted = add(p.position, scale(p.velocity, 0.65));
+    if (g.mode === 'intro') this.ambientTime += dt;
+    const wanted = g.mode === 'intro'
+      ? add(p.position, vec(16 + Math.sin(this.ambientTime * 0.12) * 12, -8 + Math.cos(this.ambientTime * 0.1) * 10))
+      : add(p.position, scale(p.velocity, 0.65));
     this.camera = add(this.camera, scale(sub(wanted, this.camera), Math.min(1, dt * 5)));
     const lighting = g.dayNight.lighting;
     this.sun = scale(lighting.sunDirection, Math.max(0, lighting.shadowLength));

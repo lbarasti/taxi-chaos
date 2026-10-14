@@ -1,0 +1,33 @@
+import type { Game } from './game';
+import { calendarLabel } from './campaign/clock';
+import { readStorage, storageKeys } from './storage';
+
+export type InputDevice = 'keyboard' | 'touch' | 'xbox' | 'playstation';
+export function savedCampaignAvailable(): boolean {
+  try {
+    const save = JSON.parse(readStorage(storageKeys.save) ?? 'null');
+    return save?.story?.version === 1 && save?.playerRecords?.version === 1 && save?.campaign?.version === 2;
+  } catch { return false; }
+}
+const escape = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
+export function splashPrompts(device: InputDevice): string {
+  const prompts = device === 'touch' ? [['DRAG', 'drive'], ['DRIFT', 'handbrake'], ['BOOST', 'boost']]
+    : device === 'xbox' || device === 'playstation' ? [['LS + RT / LT', 'drive'], [device === 'playstation' ? '□' : 'X', 'handbrake'], [device === 'playstation' ? '×' : 'A', 'boost']]
+    : [['WASD / ↑↓←→', 'drive'], ['SPACE', 'handbrake'], ['SHIFT', 'boost']];
+  return prompts.map(([key, action]) => `<span><kbd>${key}</kbd> ${action}</span>`).join('');
+}
+export function splashMarkup(game: Game, saved: boolean, settings: string): string {
+  const job = game.job;
+  return `<div class="intro-eyebrow"><span class="live-dot"></span> WELCOME TO TAXI CHAOS</div>
+    <h2 id="modal-title">A little cab.<br><em>A lot of trouble.</em></h2>
+    <p class="intro-copy">Pick up. Drop off. Get paid.<br>How you get there is entirely your business.</p>
+    <section class="splash-save" aria-label="${saved ? 'Saved campaign' : 'Your first shift'}">
+      <div class="splash-save-heading"><span class="live-dot"></span><span>${saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(calendarLabel(game.save.campaign.minute))}</small></div>
+      <div class="splash-snapshot"><div><small>WALLET</small><strong>$${game.save.cash.toLocaleString()}</strong></div><div><small>DELIVERIES</small><strong>${game.save.deliveries}</strong></div><div><small>CAMPAIGN</small><strong>Day ${game.save.campaign.shift}<span> / 14</span></strong></div></div>
+      <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
+    </section>
+    <button class="primary" id="start"><span>${saved ? 'Continue' : 'Start your shift'}</span><span class="splash-action-glyph" aria-hidden="true">↵</span></button>
+    <div class="intro-controls" id="splash-prompts"></div>
+    <details class="splash-guide"><summary>The street rules <span>＋</span></summary><div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p></div></div></details>
+    <details class="splash-settings"><summary>Shift settings <span>＋</span></summary>${settings}</details>`;
+}

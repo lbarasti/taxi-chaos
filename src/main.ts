@@ -1,4 +1,5 @@
 import './style.css';
+import { savedCampaignAvailable, splashMarkup, splashPrompts, type InputDevice } from './splash';
 import { bindTouchControls } from './touch-controls';
 import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
@@ -46,6 +47,7 @@ document.querySelector('#app')!.innerHTML = `
 `;
 const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
 const scenarioPreviewMode = new URLSearchParams(location.search).has('scenario-preview');
+const hasSavedCampaign = !dialoguePreviewMode && !scenarioPreviewMode && savedCampaignAvailable();
 let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
@@ -53,6 +55,14 @@ const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city'
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
+let inputDevice: InputDevice = 'keyboard';
+function detectInput(device: InputDevice) {
+  inputDevice = device;
+  const prompts = $('splash-prompts');
+  if (prompts) prompts.innerHTML = splashPrompts(device);
+  const glyph = document.querySelector('.splash-action-glyph');
+  if (glyph) glyph.textContent = device === 'touch' ? '→' : device === 'playstation' ? '×' : device === 'xbox' ? 'A' : '↵';
+}
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
@@ -73,8 +83,11 @@ function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; am
 function modal() {
   const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing';
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
+  overlay.classList.toggle('splash-backdrop', game.mode === 'intro' && !helpOpen);
+  document.body.classList.toggle('splash-active', game.mode === 'intro' && !helpOpen);
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
-  if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
+  if (game.mode === 'intro' && !helpOpen) { card.classList.add('splash-modal'); card.innerHTML = splashMarkup(game, hasSavedCampaign, settingsMarkup()); detectInput(inputDevice); }
+  else if (helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
   else if (game.mode === 'paused' && notebookOpen) { card.classList.add('notebook-modal'); card.innerHTML = notebookMarkup(game); }
   else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
   else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-stats">Shift stats</button><button class="secondary" id="show-help">How to play</button>`;
@@ -100,7 +113,7 @@ function modal() {
   }
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the pause menu’s Dispatch notebook.');
-  $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
+  $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') { renderer.camera = { ...game.actor.position }; game.start(); } else game.setMode('playing'); $('city').focus(); });
   $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = notebookOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
@@ -121,7 +134,7 @@ function modal() {
   $('repair')?.addEventListener('click', () => game.repair());
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => game.buy(button.dataset.upgrade as Upgrade)));
   bindAudioControls(card, audio);
-  if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
+  if (!overlay.hidden) ((game.mode === 'intro' ? $('start') : null) ?? card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
 function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = notebookOpen = false; helpOpen = true; game.setMode('paused'); }
 function openNotebook() { if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return; notebookOpen = true; statsOpen = helpOpen = false; game.setMode('paused'); }
@@ -164,10 +177,11 @@ function interact() { if (game.mode !== 'playing') return; if (externalClock && 
 function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
-document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
+document.addEventListener('pointerdown', event => { detectInput(event.pointerType === 'touch' ? 'touch' : 'keyboard'); if (event.isTrusted) void audio.unlock(); }, { capture: true });
 function pause() { if (game.mode === 'playing') { statsOpen = notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = notebookOpen = false; game.setMode('playing'); } }
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
+  detectInput('keyboard');
   if (mapEditor?.handleKey(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
@@ -195,6 +209,27 @@ const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HT
   begin: () => { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; },
 });
 window.addEventListener('resize', resetTouch);
+let previousPadButtons: boolean[] = [];
+let previousPadAxes: number[] = [];
+const padKeys = new Set<string>();
+function pollController() {
+  const pad = Array.from(navigator.getGamepads?.() ?? []).find(p => p?.connected && p.mapping === 'standard');
+  const pressed = pad?.buttons.map(b => b.pressed) ?? [];
+  const activity = pressed.some((value, index) => value && !previousPadButtons[index]) || !!pad?.axes.some((a, index) => Math.abs(a) > 0.25 && Math.abs(a - (previousPadAxes[index] ?? 0)) > 0.1);
+  if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
+  if (pad && game.mode === 'intro' && pressed[0] && !previousPadButtons[0]) $('start')?.click();
+  else if (pad && pressed[9] && !previousPadButtons[9]) pause();
+  for (const key of padKeys) game.keys.delete(key);
+  padKeys.clear();
+  if (pad && game.mode === 'playing' && (inputDevice === 'xbox' || inputDevice === 'playstation')) {
+    const add = (key: string, active: boolean) => { if (active) { padKeys.add(key); game.keys.add(key); } };
+    add('KeyA', pad.axes[0] < -0.2); add('KeyD', pad.axes[0] > 0.2);
+    add('KeyW', pressed[7] || pad.axes[1] < -0.2); add('KeyS', pressed[6] || pad.axes[1] > 0.2);
+    add('Space', pressed[2]); add('ShiftLeft', pressed[0]);
+  }
+  previousPadButtons = pressed;
+  previousPadAxes = pad ? [...pad.axes] : [];
+}
 let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode || scenarioPreviewMode, timeScale = 1;
 const STEP = 1 / 120;
 function frame(now: number) {
@@ -203,6 +238,7 @@ function frame(now: number) {
   if (scenarioPreviewMode) return;
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
   if (!externalClock) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
+  pollController();
   audio.update(game, !externalClock, !document.hidden && document.hasFocus());
   if (!mapEditor?.editing) renderer.draw(dt);
   hudClock += dt; if (hudClock > 0.1) { hud(); hudClock = 0; }

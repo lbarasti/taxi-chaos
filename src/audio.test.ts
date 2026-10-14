@@ -30,6 +30,15 @@ describe('audio lifecycle and bounded mixer', () => {
     audio.configure({ muted: false }); await Promise.all([audio.unlock(), audio.unlock()]);
     expect(create).toHaveBeenCalledTimes(1); expect(audio.state().status).toBe('ready');
   });
+  it('keeps startup silent until unlock, then fades idle ambience without advancing the campaign', async () => {
+    const ctx = fakeContext(), create = vi.fn(() => ctx as unknown as AudioContext);
+    const audio = new AudioFX(create), game = new Game(undefined, false);
+    const minute = game.save.campaign.minute;
+    audio.update(game, true, true); expect(create).not.toHaveBeenCalled();
+    await audio.unlock(); audio.update(game, true, true);
+    expect(audio.state().loops).toEqual(['engine']); expect(game.save.campaign.minute).toBe(minute);
+    audio.update(game, true, false); expect(audio.state().loops).toEqual([]);
+  });
   it('silences world loops for pause, fixed clock, background and mute', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
     await audio.unlock(); game.start(); audio.update(game, true, true); expect(audio.state().loops).toContain('engine');

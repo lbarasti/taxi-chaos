@@ -1,0 +1,27 @@
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
+const context = await browser.newContext({viewport:{width:1440,height:900}});
+const page = await context.newPage(); const errors=[], requests=[];
+page.on('pageerror',e=>errors.push(e.message)); page.on('request',r=>{if(/^https?:/.test(r.url()) && !r.url().startsWith('http://localhost:4173/')) requests.push(r.url())});
+const html = await readFile('dist/index.html', 'utf8');
+await context.route('http://localhost:4173/**', route => route.fulfill({contentType:'text/html',body:html}));
+await page.goto('http://localhost:4173/');
+await page.waitForTimeout(400);
+assert.match(await page.locator('#start').innerText(),/Start your shift/);
+const first = await page.locator('#city').screenshot(); await page.waitForTimeout(600); const second=await page.locator('#city').screenshot(); assert(!first.equals(second),'ambient camera moves');
+await page.screenshot({path:'docs/screenshots/splash/desktop.png'});
+await page.locator('#start').click(); await page.keyboard.press('p');
+assert.match(await page.locator('#modal-title').innerText(),/Take a breather/); assert.equal(await page.locator('.splash-modal').count(),0);
+await page.reload(); assert.match(await page.locator('#start').innerText(),/Continue/);
+await page.evaluate(()=>{window.testPad={connected:true,mapping:'standard',id:'DualSense',axes:[0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};navigator.getGamepads=()=>[window.testPad];window.testPad.buttons[2].pressed=true;});
+await page.waitForTimeout(100); assert.match(await page.locator('#splash-prompts').innerText(),/□/);
+await page.evaluate(()=>{window.testPad.buttons[2].pressed=false}); await page.keyboard.press('z'); assert.match(await page.locator('#splash-prompts').innerText(),/WASD/);
+await page.evaluate(()=>{navigator.getGamepads=()=>[]});
+for (const [name,width,height] of [['portrait',390,844],['small',320,568],['landscape',844,390]]) {
+ await page.setViewportSize({width,height}); assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:`docs/screenshots/splash/${name}.png`});
+ await page.locator('#start').click(); assert(await page.locator('#overlay').isHidden()); await page.reload();
+}
+assert.deepEqual(errors,[]); assert.deepEqual(requests,[]); await browser.close(); console.log('Offline splash QA passed: new/returning saves, moving camera, glyphs, pause, desktop and mobile; no console errors or external requests.');
