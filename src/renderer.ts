@@ -38,6 +38,7 @@ export class Renderer {
   private shadowT = 0;
   private shadowAlpha = 0.4;
   private daylight = 0;
+  private introTransition: { from: Vec; elapsed: number; game: Game } | null = null;
   constructor(public canvas: HTMLCanvasElement, public map: HTMLCanvasElement, public game: Game) {
     this.ctx = canvas.getContext('2d')!; this.mapCtx = map.getContext('2d')!; this.resize(); window.addEventListener('resize', () => this.resize());
   }
@@ -47,6 +48,14 @@ export class Renderer {
   rect(x: number, y: number, w: number, h: number, color: string, stroke?: string) { const c = this.ctx; c.fillStyle = color; c.fillRect(x, y, w, h); if (stroke) { c.strokeStyle = stroke; c.lineWidth = 0.1; c.strokeRect(x, y, w, h); } }
   circle(p: Vec, r: number, color: string) { const c = this.ctx; c.beginPath(); c.arc(p.x, p.y, r, 0, Math.PI * 2); c.fillStyle = color; c.fill(); }
   label(text: string, x: number, y: number, size: number, color: string, weight = '500') { const c = this.ctx; c.font = `${weight} ${size}px "Space Grotesk", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = color; c.fillText(text, x, y); }
+  startIntroTransition() {
+    const actor = this.game.actor;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.camera = add(actor.position, scale(actor.velocity, 0.65));
+      return;
+    }
+    this.introTransition = { from: { ...this.camera }, elapsed: 0, game: this.game };
+  }
   draw(dt: number) {
     this.frames++; const g = this.game, c = this.ctx, p = g.actor;
     const targetZoom = clamp(Math.min(this.width / 125, this.height / 86), 5, 10.5) * (1 - clamp(g.speed / 160, 0, 0.2));
@@ -55,7 +64,17 @@ export class Renderer {
     const wanted = g.mode === 'intro'
       ? add(p.position, vec(16 + Math.sin(this.ambientTime * 0.12) * 12, -8 + Math.cos(this.ambientTime * 0.1) * 10))
       : add(p.position, scale(p.velocity, 0.65));
-    this.camera = add(this.camera, scale(sub(wanted, this.camera), Math.min(1, dt * 5)));
+    const transition = this.introTransition;
+    if (transition && g.mode === 'playing' && transition.game === g) {
+      transition.elapsed = Math.min(1.2, transition.elapsed + dt);
+      const t = transition.elapsed / 1.2;
+      const eased = t * t * (3 - 2 * t);
+      this.camera = add(transition.from, scale(sub(wanted, transition.from), eased));
+      if (t === 1) this.introTransition = null;
+    } else {
+      this.introTransition = null;
+      this.camera = add(this.camera, scale(sub(wanted, this.camera), Math.min(1, dt * 5)));
+    }
     const lighting = g.dayNight.lighting;
     this.sun = scale(lighting.sunDirection, Math.max(0, lighting.shadowLength));
     this.shadowT = clamp(lighting.shadowOpacity * 1.4, 0, 1);

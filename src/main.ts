@@ -64,6 +64,7 @@ function detectInput(device: InputDevice) {
   if (glyph) glyph.textContent = device === 'touch' ? '→' : device === 'playstation' ? '×' : device === 'xbox' ? 'A' : '↵';
 }
 let helpOpen = false;
+let splashExiting = false;
 let statsOpen = false;
 let notebookOpen = false;
 let lab: LabAPI | undefined;
@@ -81,7 +82,10 @@ function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; am
   return `<h2 id="modal-title" class="danger">${title}</h2><div class="game-over-bill">${rows}</div><button class="primary" id="recover"><span class="continue-keyboard">Press space bar to continue</span><span class="continue-touch">Tap to continue</span></button>`;
 }
 function modal() {
-  const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing';
+  const overlay = $('overlay'), card = $('modal');
+  if (splashExiting && game.mode === 'playing') return;
+  splashExiting = false; overlay.classList.remove('splash-exiting'); overlay.inert = false;
+  overlay.hidden = game.mode === 'playing';
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
   overlay.classList.toggle('splash-backdrop', game.mode === 'intro' && !helpOpen);
   document.body.classList.toggle('splash-active', game.mode === 'intro' && !helpOpen);
@@ -113,7 +117,16 @@ function modal() {
   }
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the pause menu’s Dispatch notebook.');
-  $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') { renderer.camera = { ...game.actor.position }; game.start(); } else game.setMode('playing'); $('city').focus(); });
+  $('start')?.addEventListener('click', () => {
+    realtime(); externalClock = false; helpOpen = false;
+    if (game.mode === 'intro') {
+      splashExiting = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (splashExiting) { overlay.classList.add('splash-exiting'); overlay.inert = true; }
+      game.start(); renderer.startIntroTransition();
+      if (splashExiting) window.setTimeout(() => { if (splashExiting) { splashExiting = false; modal(); } }, 550);
+    } else game.setMode('playing');
+    $('city').focus();
+  });
   $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = notebookOpen = false; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));

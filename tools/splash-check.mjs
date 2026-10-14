@@ -12,7 +12,14 @@ await page.waitForTimeout(400);
 assert.match(await page.locator('#start').innerText(),/Start your shift/);
 const first = await page.locator('#city').screenshot(); await page.waitForTimeout(600); const second=await page.locator('#city').screenshot(); assert(!first.equals(second),'ambient camera moves');
 await page.screenshot({path:'docs/screenshots/splash/desktop.png'});
-await page.locator('#start').click(); await page.keyboard.press('p');
+await page.locator('#start').click();
+assert(await page.locator('#overlay').isVisible(),'drawer stays visible while fading');
+await page.waitForTimeout(250);
+const fadingOpacity = Number(await page.locator('#overlay').evaluate(element=>getComputedStyle(element).opacity));
+assert(fadingOpacity > 0 && fadingOpacity < 1,'drawer fades out');
+await page.screenshot({path:'docs/screenshots/splash/transition.png'});
+await page.locator('#overlay').waitFor({state:'hidden'});
+await page.keyboard.press('p');
 assert.match(await page.locator('#modal-title').innerText(),/Take a breather/); assert.equal(await page.locator('.splash-modal').count(),0);
 await page.reload(); assert.match(await page.locator('#start').innerText(),/Continue/);
 await page.evaluate(()=>{window.testPad={connected:true,mapping:'standard',id:'DualSense',axes:[0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};navigator.getGamepads=()=>[window.testPad];window.testPad.buttons[2].pressed=true;});
@@ -22,6 +29,6 @@ await page.evaluate(()=>{navigator.getGamepads=()=>[]});
 for (const [name,width,height] of [['portrait',390,844],['small',320,568],['landscape',844,390]]) {
  await page.setViewportSize({width,height}); assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:`docs/screenshots/splash/${name}.png`});
- await page.locator('#start').click(); assert(await page.locator('#overlay').isHidden()); await page.reload();
+ await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'}); await page.reload();
 }
 assert.deepEqual(errors,[]); assert.deepEqual(requests,[]); await browser.close(); console.log('Offline splash QA passed: new/returning saves, moving camera, glyphs, pause, desktop and mobile; no console errors or external requests.');
