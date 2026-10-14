@@ -15,7 +15,8 @@ import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 import { bindPlayerHud, playerHudMarkup } from './player-hud';
 import { bindNavigationHud, navigationHudMarkup } from './navigation-hud';
 import './navigation-hud.css';
-import { calendarLabel } from './campaign/clock';
+import { pauseDashboardMarkup } from './pause-dashboard';
+import './pause-dashboard.css';
 import type { Allegation } from './campaign/model';
 import { notebookMarkup } from './campaign/view';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
@@ -39,7 +40,7 @@ document.querySelector('#app')!.innerHTML = `
   <button id="interact" class="context-action" hidden>Get in</button>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
-  <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER · HOLD <kbd>A/D</kbd> FOR SIDE</span><span><kbd>G</kbd> GARAGE</span><span><kbd>H</kbd> HARBOUR</span><span><kbd>P</kbd> PAUSE</span></footer>
+  <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER · HOLD <kbd>A/D</kbd> FOR SIDE</span><span><kbd>G</kbd> GARAGE</span><span><kbd>H</kbd> HARBOUR</span><button id="pause-toggle" aria-label="Pause game">Ⅱ Pause <kbd>P</kbd></button></footer>
   <div class="touch-controls" aria-label="Touch driving controls"><div class="thumb-actions"><button data-key="boost" aria-label="Hold to boost"><span>BOOST</span></button><button data-key="handbrake" aria-label="Hold handbrake">DRIFT</button></div><div id="joystick" class="joystick" role="group" aria-label="Drag to move: up accelerates, down brakes or reverses, left and right steer. On foot, drag in the direction to walk."><span class="joystick-guides" aria-hidden="true">＋</span><span class="joystick-knob" aria-hidden="true"></span></div></div>
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
@@ -50,12 +51,17 @@ let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
-const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
+const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => { if (game.mode === 'paused') $('show-messages')?.focus(); else $('city').focus(); }, () => !scenarioPreviewMode, () => { refreshNavigationHud.routeFare(); if (game.mode === 'paused') modal(); }, pause);
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let helpOpen = false;
 let statsOpen = false;
 let notebookOpen = false;
+let settingsOpen = false;
+let confirmation: 'abandon' | 'ordinary' | 'sleep' | undefined;
+const navigationPanel = document.querySelector<HTMLElement>('.navigation-hud')!;
+const navigationAnchor = document.createComment('Gameplay navigation');
+navigationPanel.before(navigationAnchor);
 let lab: LabAPI | undefined;
 let mapEditor: MapEditor | undefined;
 let normalGame: Game | undefined;
@@ -72,12 +78,26 @@ function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; am
 }
 function modal() {
   const overlay = $('overlay'), card = $('modal'); overlay.hidden = game.mode === 'playing';
+  // Restore the same live canvas before replacing any pause markup.
+  navigationAnchor.after(navigationPanel);
+  const paused = game.mode === 'paused';
+  overlay.classList.toggle('pause-overlay', paused);
+  document.body.classList.toggle('is-paused', paused);
+  if (!paused) { settingsOpen = false; confirmation = undefined; }
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
-  if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
+  if (paused && confirmation) {
+    card.classList.add('pause-confirmation');
+    const title = confirmation === 'abandon' ? 'Abandon this ride?' : confirmation === 'ordinary' ? 'Replace this fare?' : 'Sleep until morning?';
+    const description = confirmation === 'abandon' ? 'This passenger or parcel will be left behind. You will lose this fare, and a story booking may not be available again.' : confirmation === 'ordinary' ? 'Dispatch will replace your current pickup with an ordinary fare. Any active story booking will be released.' : `Wake ${game.sleepPreview.label}. The city advances ${game.sleepPreview.hours.toFixed(1)} game hours. ${game.sleepPreview.expiring.length ? `Bookings closing while you sleep: ${game.sleepPreview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked vehicle and cash stay as they are.`;
+    card.innerHTML = '<div class="eyebrow">CHECK WITH DISPATCH</div><h2 id="modal-title"></h2><p id="confirmation-copy"></p><button class="primary" id="cancel-action">Keep paused</button><button class="pause-action pause-risk" id="confirm-action">Confirm</button>';
+    $('modal-title').textContent = title; $('confirmation-copy').textContent = description;
+  }
+  else if (paused && settingsOpen) { card.classList.add('pause-settings'); card.innerHTML = `<div class="eyebrow">OFF THE CLOCK / OPTIONS</div><h2 id="modal-title">Settings.</h2><p>Changes save automatically. Your shift stays paused.</p>${settingsMarkup()}<button class="primary" id="settings-back">Back to dashboard ${icon('arrow')}</button>`; }
+  else if (game.mode === 'intro' || helpOpen) card.innerHTML = introduction(helpOpen).replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
   else if (game.mode === 'paused' && notebookOpen) { card.classList.add('notebook-modal'); card.innerHTML = notebookMarkup(game); }
   else if (game.mode === 'paused' && statsOpen) card.innerHTML = `<div class="eyebrow">THIS SHIFT</div><h2 id="modal-title">Shift stats.</h2><p>Your time on the streets, in numbers.</p><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div><button class="primary" id="stats-back">Back to pause menu ${icon('arrow')}</button>`;
-  else if (game.mode === 'paused') card.innerHTML = `<div class="eyebrow">OFF THE CLOCK</div><h2 id="modal-title">Take a breather.</h2><p>The city can wait a minute.</p><div class="pause-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div></div><button class="primary" id="resume">Back to the streets ${icon('arrow')}</button><button class="secondary" id="show-stats">Shift stats</button><button class="secondary" id="show-help">How to play</button>`;
+  else if (game.mode === 'paused') { card.classList.add('pause-dashboard'); card.innerHTML = pauseDashboardMarkup(game, refreshNavigationHud()); $('pause-map-slot').append(navigationPanel); }
   else if (game.mode === 'garage') {
     const upgrades = (Object.entries(upgradeInfo) as [Upgrade, typeof upgradeInfo.engine][]).map(([key, u]) => { const level = game.save.upgrades[key], price = game.price(key); return `<div class="upgrade"><div><span class="upgrade-number">0${Object.keys(upgradeInfo).indexOf(key) + 1}</span><h3>${u.name}</h3><p>${u.subtitle}</p><small>${u.detail}</small><div class="level">${[1, 2, 3].map(i => `<i class="${i <= level ? 'filled' : ''}"></i>`).join('')}<span>LEVEL ${level} / 3</span></div></div><button class="buy" data-upgrade="${key}" ${level >= 3 || game.save.cash < price ? 'disabled' : ''}>${level >= 3 ? 'MAXED' : `$${price}`}</button></div>`; }).join('');
     const repairPrice = game.repairPrice;
@@ -91,27 +111,35 @@ function modal() {
     const bill = game.arrestBill;
     card.innerHTML = gameOverMarkup('BUSTED', [{ label: 'Impound bill', amount: bill.impound }, { label: 'Bail', amount: bill.bail }]);
   }
-  if (game.mode === 'paused' && !helpOpen && !statsOpen && !notebookOpen) {
-    card.innerHTML = card.innerHTML.replace('<button class="primary"', `${settingsMarkup()}<button class="primary"`);
-    if (game.campaignEnabled) {
-      const preview = game.sleepPreview;
-      card.innerHTML += `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p><button class="secondary" id="open-notebook">Dispatch notebook</button><button class="secondary" id="sleep" ${game.sleepReason ? 'disabled' : ''}>${game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`}</button><p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>${!game.garageNear && !game.save.campaign.finished ? '<button class="secondary" id="sleep-route">Route to Pit Stop</button>' : ''}${game.job.stage === 'dropoff' ? '<button class="secondary" id="abandon-ride">Abandon this ride</button>' : '<button class="secondary" id="ordinary-fare">Ask dispatch for an ordinary fare</button>'}</div>`;
-    }
-  }
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('Buildings bite back.', 'Buildings bite back. Hold W + Shift for a nitro burst.');
   if (game.mode === 'intro' || helpOpen) card.innerHTML = card.innerHTML.replace('No fuel stops. No time-outs. Just one more fare.', 'Two weeks pass while you drive. Park at Pit Stop to sleep until morning.<br>Dispatch mixes everyday and recurring customers. Texts let you choose a booking. Keep records in the pause menu’s Dispatch notebook.');
   $('start')?.addEventListener('click', () => { realtime(); externalClock = false; helpOpen = false; if (game.mode === 'intro') game.start(); else game.setMode('playing'); $('city').focus(); });
-  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; statsOpen = notebookOpen = false; game.setMode('playing'); $('city').focus(); });
+  $('resume')?.addEventListener('click', resumeGame);
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
   $('difficulty-option')?.addEventListener('change', e => game.configure({ difficulty: (e.target as HTMLSelectElement).value as Difficulty }));
   $('show-help')?.addEventListener('click', showHelp);
+  $('show-messages')?.addEventListener('click', openInbox);
+  $('show-settings')?.addEventListener('click', () => { settingsOpen = true; modal(); });
+  $('settings-back')?.addEventListener('click', () => { settingsOpen = false; modal(); $('show-settings').focus(); });
   $('show-stats')?.addEventListener('click', () => { statsOpen = true; modal(); });
   $('open-notebook')?.addEventListener('click', openNotebook);
-  $('sleep')?.addEventListener('click', () => { if (game.sleep()) { realtime(); externalClock = false; $('city').focus(); } });
+  $('sleep')?.addEventListener('click', () => { confirmation = 'sleep'; modal(); });
   $('sleep-route')?.addEventListener('click', () => { realtime(); externalClock = false; game.setMode('playing'); game.garage(); $('city').focus(); });
-  $('ordinary-fare')?.addEventListener('click', () => { game.newJob(false, 'replaced', true); realtime(); externalClock = false; game.setMode('playing'); $('city').focus(); });
-  $('abandon-ride')?.addEventListener('click', () => { game.newJob(false, 'shift'); modal(); });
+  $('ordinary-fare')?.addEventListener('click', () => { confirmation = 'ordinary'; modal(); });
+  $('abandon-ride')?.addEventListener('click', () => { confirmation = 'abandon'; modal(); });
+  $('cancel-action')?.addEventListener('click', () => { const action = confirmation; confirmation = undefined; modal(); $(action === 'sleep' ? 'sleep' : action === 'abandon' ? 'abandon-ride' : 'ordinary-fare')?.focus(); });
+  $('confirm-action')?.addEventListener('click', () => {
+    const action = confirmation; confirmation = undefined;
+    if (action === 'sleep') { if (game.sleep()) { realtime(); externalClock = false; $('city').focus(); } else modal(); }
+    else if (action) { game.newJob(false, action === 'abandon' ? 'shift' : 'replaced', action === 'ordinary'); modal(); }
+  });
+  $('pause-fullscreen')?.addEventListener('click', async () => {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
+    catch { if ($('fullscreen-status')) $('fullscreen-status').textContent = 'Fullscreen is unavailable in this browser.'; }
+    refreshFullscreen();
+  });
+  refreshFullscreen();
   $('notebook-back')?.addEventListener('click', () => { notebookOpen = false; modal(); });
   $('notebook-route')?.addEventListener('click', () => { notebookOpen = false; realtime(); externalClock = false; game.setMode('playing'); game.navigateNewsroom(); hud(); $('city').focus(); });
   card.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => button.addEventListener('click', () => { if (game.submitMaterial(button.dataset.submit!)) { modal(); } }));
@@ -123,9 +151,11 @@ function modal() {
   bindAudioControls(card, audio);
   if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
-function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; statsOpen = notebookOpen = false; helpOpen = true; game.setMode('paused'); }
-function openNotebook() { if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return; notebookOpen = true; statsOpen = helpOpen = false; game.setMode('paused'); }
-function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
+function refreshFullscreen() { const button = $('pause-fullscreen'); if (button) { button.firstChild!.textContent = document.fullscreenElement ? 'Exit fullscreen ' : 'Fullscreen '; button.setAttribute('aria-pressed', String(!!document.fullscreenElement)); } }
+document.addEventListener('fullscreenchange', refreshFullscreen);
+function showHelp() { if (game.mode !== 'playing' && game.mode !== 'paused' && game.mode !== 'intro') return; settingsOpen = false; statsOpen = notebookOpen = false; helpOpen = true; game.setMode('paused'); }
+function openNotebook() { if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return; notebookOpen = true; settingsOpen = false; statsOpen = helpOpen = false; game.setMode('paused'); }
+function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); if (game.mode !== 'playing') audio.silence(game); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();
 function hud() {
   refreshInbox();
@@ -165,13 +195,16 @@ function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.da
 $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => { if (event.isTrusted) void audio.unlock(); }, { capture: true });
-function pause() { if (game.mode === 'playing') { statsOpen = notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; helpOpen = false; statsOpen = notebookOpen = false; game.setMode('playing'); } }
+function resumeGame() { realtime(); externalClock = false; helpOpen = settingsOpen = statsOpen = notebookOpen = false; confirmation = undefined; accumulator = 0; last = performance.now(); $('mission-inbox').hidden = true; game.setMode('playing'); $('city').focus(); }
+function pause() { if (game.mode === 'playing') { helpOpen = settingsOpen = statsOpen = notebookOpen = false; confirmation = undefined; $('mission-inbox').hidden = true; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') resumeGame(); }
+$('pause-toggle').addEventListener('click', pause);
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   if (mapEditor?.handleKey(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
   if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
+  if (e.code === 'Escape' || e.code === 'KeyP' && !target?.closest('input, select, textarea')) { e.preventDefault(); if (!e.repeat) pause(); return; }
   if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {
     e.preventDefault(); if (!e.repeat) $('recover').click(); return;
   }
@@ -179,7 +212,7 @@ window.addEventListener('keydown', e => {
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
-   if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
+   if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),summary,a[href]')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') game.garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; }
   if (game.mode === 'playing') game.keys.add(e.code);
@@ -204,7 +237,7 @@ function frame(now: number) {
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
   if (!externalClock) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
   audio.update(game, !externalClock, !document.hidden && document.hasFocus());
-  if (!mapEditor?.editing) renderer.draw(dt);
+  if (!mapEditor?.editing) renderer.draw(game.mode === 'playing' ? dt : 0);
   hudClock += dt; if (hudClock > 0.1) { hud(); hudClock = 0; }
   requestAnimationFrame(frame);
 }

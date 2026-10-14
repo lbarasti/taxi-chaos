@@ -635,7 +635,7 @@ export class Game {
   }
   /** Routing a text is reversible; acceptance and branch effects happen at pickup. */
   routeMissionOffer(id: MissionId): boolean {
-    if (this.mode !== 'playing' || this.onFoot || this.job.stage === 'dropoff') return false;
+    if ((this.mode !== 'playing' && this.mode !== 'paused') || this.onFoot || this.job.stage === 'dropoff') return false;
     this.syncMissionOffers();
     const offer = this.missionOffers.get(id);
     if (!offer) return false;

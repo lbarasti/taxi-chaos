@@ -11,7 +11,7 @@ export const inboxMarkup = `<aside id="mission-inbox" class="mission-inbox panel
   <button id="texts-load-more" class="secondary" hidden>Load more</button>
 </aside>`;
 
-export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void, recordVisible: () => boolean = () => true, routed: () => void = () => {}) {
+export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, focusGame: () => void, recordVisible: () => boolean = () => true, routed: () => void = () => {}, resumePaused: () => void = () => {}) {
   const panel = root.querySelector<HTMLElement>('#mission-inbox')!;
   const messages = root.querySelector<HTMLElement>('#mission-texts')!;
   const loadMore = root.querySelector<HTMLButtonElement>('#texts-load-more')!;
@@ -19,7 +19,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
   let historyDays = TEXT_HISTORY_DAYS, historyGame = currentGame(), countdownMinute = -1;
   const close = () => { panel.hidden = true; focusGame(); };
   const open = () => {
-    if (currentGame().mode !== 'playing') return;
+    if (currentGame().mode !== 'playing' && currentGame().mode !== 'paused') return;
     currentGame().keys.clear();
     historyDays = TEXT_HISTORY_DAYS; signature = ''; panel.scrollTop = 0;
     panel.hidden = false;
@@ -29,7 +29,15 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
   loadMore.addEventListener('click', () => { historyDays += TEXT_HISTORY_DAYS; refresh(); });
   panel.addEventListener('keydown', event => {
     event.stopPropagation();
-    if (event.key === 'Escape') { event.preventDefault(); close(); }
+    if (event.code === 'Escape' || event.code === 'KeyP' && currentGame().mode === 'paused') {
+      event.preventDefault(); if (event.repeat) return;
+      const paused = currentGame().mode === 'paused'; close(); if (paused) resumePaused();
+    }
+    if (event.key === 'Tab' && currentGame().mode === 'paused') {
+      const buttons = Array.from(panel.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')).filter(button => button.getClientRects().length);
+      const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      if (buttons.length) { event.preventDefault(); buttons[(current + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); }
+    }
   });
   function refresh() {
     const game = currentGame();
@@ -41,7 +49,8 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
       .filter(id => game.missions.mission(id).offer && !game.save.playerRecords.texts.some(t => t.missionId === id && textTiming(t, windowFor(id)).expiresMinute <= now));
     const receipts = game.save.playerRecords.texts;
     const history = textHistory(receipts, now, historyDays, windowFor);
-    if (game.mode !== 'playing') panel.hidden = true;
+    panel.classList.toggle('pause-inbox', game.mode === 'paused');
+    if (game.mode !== 'playing' && game.mode !== 'paused') panel.hidden = true;
     const next = JSON.stringify([game.missions.catalogue.revision, receipts.map(t => [t.messageId, t.receivedMinute, t.expiresMinute]), textDay(now), historyDays, ids, game.job.missionId, game.job.stage, game.onFoot, game.save.story.failed, game.save.story.completed]);
     if (signature !== next) {
       signature = next;
