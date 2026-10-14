@@ -16,18 +16,20 @@ export function splashPrompts(device: InputDevice): string {
     : [['WASD / ↑↓←→', 'drive'], ['SPACE', 'handbrake'], ['SHIFT', 'boost']];
   return prompts.map(([key, action]) => `<span><kbd>${key}</kbd> ${action}</span>`).join('');
 }
-export function splashMarkup(game: Game, saved: boolean, settings: string): string {
+export function splashMarkup(game: Game, saved: boolean, settings: string, actions = ''): string {
+  const paused = game.mode === 'paused';
   const job = game.job;
   return `<div class="intro-eyebrow"><span class="live-dot"></span> WELCOME TO TAXI CHAOS</div>
     <h2 id="modal-title">A little cab.<br><em>A lot of trouble.</em></h2>
     <p class="intro-copy">Pick up. Drop off. Get paid.<br>How you get there is entirely your business.</p>
-    <section class="splash-save" aria-label="${saved ? 'Saved campaign' : 'Your first shift'}">
-      <div class="splash-save-heading"><span class="live-dot"></span><span>${saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(calendarLabel(game.save.campaign.minute))}</small></div>
+    <section class="splash-save" aria-label="${paused ? 'Current shift' : saved ? 'Saved campaign' : 'Your first shift'}">
+      <div class="splash-save-heading"><span class="live-dot"></span><span>${paused ? 'YOUR CURRENT SHIFT · PAUSED' : saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(calendarLabel(game.save.campaign.minute))}</small></div>
       <div class="splash-snapshot"><div><small>WALLET</small><strong>$${game.save.cash.toLocaleString()}</strong></div><div><small>DELIVERIES</small><strong>${game.save.deliveries}</strong></div><div><small>CAMPAIGN</small><strong>Day ${game.save.campaign.shift}<span> / 14</span></strong></div></div>
       <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
     </section>
-    <button class="primary" id="start"><span>${saved ? 'Continue' : 'Start your shift'}</span><span class="splash-action-glyph" aria-hidden="true">↵</span></button>
+    <button class="primary" id="start"><span>${paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift'}</span><span class="splash-action-glyph" aria-hidden="true">↵</span></button>
     <div class="intro-controls" id="splash-prompts"></div>
-    <details class="splash-guide"><summary>The street rules <span>＋</span></summary><div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p></div></div></details>
-    <details class="splash-settings"><summary>Shift settings <span>＋</span></summary>${settings}</details>`;
+    <details class="splash-guide"><summary>The street rules <span>＋</span></summary><div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back. Hold W + Shift for a nitro burst.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p></div></div></details>
+    <details class="splash-settings"><summary>Shift settings <span>＋</span></summary>${settings}</details>
+    ${paused ? `<details class="splash-shift"><summary>This shift <span>＋</span></summary><div class="pause-stats shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div>${actions}</details>` : ''}`;
 }

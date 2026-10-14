@@ -14,6 +14,17 @@ describe('startup splash', () => {
     const html = splashMarkup(game, true, ''); expect(html).toContain('Continue'); expect(html).toContain('$320'); expect(html).toContain('RIDE IN PROGRESS'); expect(html).toContain('&lt;Market&gt;');
     expect(splashMarkup(game, false, '')).toContain('Start your shift');
   });
+  it('reuses the start drawer with live progress and resume for a paused shift', () => {
+    const game = new Game(undefined, false); game.start(); game.setMode('paused');
+    game.shiftEarnings = 175; game.jobsDone = 3; game.smashed = 9; game.kills = 2;
+    const html = splashMarkup(game, false, '<div>Audio settings</div>', '<button>Dispatch notebook</button>');
+    expect(html).toContain('A little cab.'); expect(html).toContain('Resume your shift');
+    expect(html).toContain('YOUR CURRENT SHIFT · PAUSED'); expect(html).not.toContain('Start your shift');
+    expect(html).toContain('$175'); expect(html).toContain('PEDESTRIAN FATALITIES');
+    expect(html).toContain('Audio settings'); expect(html).toContain('Dispatch notebook');
+    game.mode = 'intro';
+    expect(splashMarkup(game, true, '', '<button>Dispatch notebook</button>')).not.toContain('Dispatch notebook');
+  });
   it('maps prompts to the most recent device', () => {
     expect(splashPrompts('keyboard')).toContain('WASD'); expect(splashPrompts('touch')).toContain('DRAG'); expect(splashPrompts('xbox')).toContain('X'); expect(splashPrompts('playstation')).toContain('□');
   });
