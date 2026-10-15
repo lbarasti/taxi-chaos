@@ -8,11 +8,14 @@ import { VERIFICATION_MINUTES } from './scheduler';
 export const escape = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 
 /** Shared notebook record widget; general notes can explicitly omit source controls. */
-export function recordMarkup(game: Game, entry: NotebookEntry, source = Object.hasOwn(game.campaignContent.materials, entry.id)): string {
+export function recordMarkup(game: Game, entry: NotebookEntry, source = Object.hasOwn(game.campaignContent.materials, entry.id), selectable = false): string {
   const campaign = game.save.campaign, closed = campaign.minute >= LAST_EDITION || campaign.finished;
   const receipt = campaign.newsroom.received[entry.id];
   const label = receipt ? receipt.verifiedAt !== null ? 'Source checked · copy retained' : `Received · source check due ${calendarLabel(receipt.at + VERIFICATION_MINUTES)}` : closed ? 'Edition closed · record retained' : game.newsroomNear ? 'Leave a copy at the newsroom' : `Bring to ${escape(game.campaignContent.newsroom.name)}`;
-  return `<article data-record="${escape(entry.id)}"><small>${entry.minute !== undefined ? calendarLabel(entry.minute).toUpperCase() : `DAY ${entry.shift}`} · ${entry.kind.toUpperCase()}</small><h3>${escape(entry.title)}</h3><p>${escape(entry.text)}</p>${source ? `<button class="menu-item" id="submit-${escape(entry.id)}" data-submit="${escape(entry.id)}" ${receipt || !game.newsroomNear || closed ? 'disabled' : ''}>${label}</button>` : ''}</article>`;
+  const metadata = `${entry.minute !== undefined ? calendarLabel(entry.minute).toUpperCase() : `DAY ${entry.shift}`} · ${entry.kind.toUpperCase()}`;
+  const available = source && !receipt && game.newsroomNear && !closed;
+  if (selectable) return `<article data-record="${escape(entry.id)}"><button class="menu-item newsroom-source" id="submit-${escape(entry.id)}" ${available ? `data-submit="${escape(entry.id)}"` : 'aria-disabled="true"'}><span class="source-meta">${metadata}</span><span class="source-title">${escape(entry.title)}</span><span class="source-text">${escape(entry.text)}</span><span class="source-action">${label}</span></button></article>`;
+  return `<article data-record="${escape(entry.id)}"><small>${metadata}</small><h3>${escape(entry.title)}</h3><p>${escape(entry.text)}</p>${source ? `<button class="menu-item" id="submit-${escape(entry.id)}" data-submit="${escape(entry.id)}" ${available ? '' : 'disabled'}>${label}</button>` : ''}</article>`;
 }
 
 /** Only admitted cases are shown here; detailed incomplete-story guidance is separate. */

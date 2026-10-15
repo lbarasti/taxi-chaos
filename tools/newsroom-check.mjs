@@ -57,11 +57,16 @@ try {
       await activate(`#newsroom-open-${id}`);
       assert.equal(await page.locator(`#newsroom-open-${id}`).getAttribute('aria-pressed'), 'true');
       assert.equal(await page.locator('[data-newsroom-section][aria-pressed="true"]').count(), 1);
-      if (width < 1000) assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-detail');
+      assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-menu', 'activation selects the right pane’s first item, Back');
+      assert.equal(await page.locator('#newsroom-detail button').first().getAttribute('id'), 'newsroom-menu');
     };
-    const records = () => page.locator('#newsroom-detail [data-record]').evaluateAll(articles => articles.map(article => article.dataset.record));
+    const records = group => page.locator(`${group ? `#newsroom-${group} + p + .notebook-entries` : '#newsroom-detail'} [data-record]`).evaluateAll(articles => articles.map(article => article.dataset.record));
     const close = async () => {
       await page.keyboard.press('Escape');
+      if (await page.locator('#overlay').isVisible()) {
+        assert.match(await page.evaluate(() => document.activeElement.id), /^newsroom-open-/);
+        await page.keyboard.press('Escape');
+      }
       assert.equal(await page.locator('#overlay').isVisible(), false);
       assert.equal(await page.evaluate(() => document.activeElement.id), 'city');
     };
@@ -85,12 +90,20 @@ try {
       assert(width >= 1000 ? result.sideBySide : result.stacked, `${name}: menu/detail placement`);
       assert(result.width <= (width >= 1000 ? 1080 : 540));
       assert(result.buttons.every(b => b.width >= 44 && b.height >= 44), `${name}: shared actions stay touch-sized`);
-      for (const id of ['notebook-route', 'newsroom-open-to-submit', 'newsroom-open-checking', 'newsroom-open-checked', 'newsroom-open-stories', 'start']) {
+      for (const id of ['notebook-route', 'newsroom-open-sources', 'newsroom-open-stories', 'start']) {
         await page.locator(`#${id}`).scrollIntoViewIfNeeded();
         const b = await page.locator(`#${id}`).boundingBox();
         assert(b.x >= -1 && b.y >= -1 && b.x + b.width <= width + 1 && b.y + b.height <= height + 1, `${name}: ${id} remains reachable`);
       }
       await page.locator('#modal').evaluate(modal => { modal.scrollTop = 0; });
+      await page.locator('.newsroom-menu-panel').evaluate(panel => { panel.scrollTop = 0; });
+    };
+    // Normalize explicit scrolling of a short left pane, not changes in its alignment.
+    const menuPositions = () => page.locator('.newsroom-menu-content').evaluate(panel => [...panel.querySelectorAll('#modal-title, .game-menu button')].map(element => ({ id: element.id, y: element.getBoundingClientRect().top + panel.parentElement.scrollTop })));
+    const stableMenu = async baseline => {
+      if (width < 1000) return;
+      const positions = await menuPositions();
+      for (const [index, position] of positions.entries()) assert(Math.abs(position.y - baseline[index].y) < 1, `${name}: ${position.id} must not shift with detail content/scrolling`);
     };
 
     const original = await state();
@@ -100,10 +113,13 @@ try {
     await layout();
     // Merely selecting/focusing a row must not populate its detail panel.
     await page.keyboard.press('ArrowDown');
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-open-to-submit');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-open-sources');
     assert.match(await page.locator('#newsroom-detail').textContent(), /Choose a section/);
     await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-menu');
     assert.match(await page.locator('#newsroom-detail').textContent(), /No collected sources awaiting submission/);
+    await page.keyboard.press('ArrowDown');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-menu', 'empty detail still has an accessible return action');
     await close();
     const after = await state();
     assert.deepEqual(after.campaign, original.campaign); assert.deepEqual(after.job, original.job);
@@ -123,21 +139,58 @@ try {
     await command({ op: 'route', mission: 'nico-safe-ride' });
     await command({ op: 'pickup' }); await command({ op: 'deliver' });
     await open('3 sources to submit · 0 sources being checked · No stories ready for the editor');
-    await select('to-submit');
+    await select('sources');
     assert.equal(await page.locator('[data-submit]:not(:disabled)').count(), 0, 'sources still require a physical newsroom visit');
+    assert.equal(await page.locator('[data-record] button[aria-disabled="true"]').count(), 3, 'unavailable sources remain selectable');
+    await page.keyboard.press('ArrowDown');
+    const remoteBefore = await page.locator('#newsroom-detail').innerHTML();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('#newsroom-detail').innerHTML(), remoteBefore, 'selecting an unavailable source does not submit it');
     await close();
     await command({ op: 'place', at: 'newsroom' }); await command({ op: 'submit', material: 'cleaner-note' });
     const retained = (await state()).notebookIds;
     const summary = '2 sources to submit · 1 source being checked · No stories ready for the editor';
-    await open(summary); await select('to-submit');
-    assert.deepEqual(await records(), ['cafe-photo', 'barrier-receipt']);
+    await open(summary);
+    const menuBefore = await menuPositions();
+    await select('sources');
+    await stableMenu(menuBefore);
+    assert.deepEqual(await records('to-submit'), ['cafe-photo', 'barrier-receipt']);
+    assert.deepEqual(await records('checking'), ['cleaner-note']);
+    assert.deepEqual(await records('checked'), []);
+    assert.equal((await records()).length, 3, 'all collected publication sources appear together');
+    assert.equal(await page.locator('[data-newsroom-section]').count(), 2);
+    assert.equal(await page.locator('#newsroom-open-to-submit, #newsroom-open-checking, #newsroom-open-checked').count(), 0);
     await layout(); await shot('summary');
-    await select('checking');
-    assert.deepEqual(await records(), ['cleaner-note']);
+    // Focus/navigation stays in the right pane and reaches real submission controls.
+    await select('sources');
+    await page.keyboard.press('ArrowDown');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'submit-cafe-photo');
+    assert.equal(await page.locator('[data-record="cafe-photo"] > button').getAttribute('data-selected'), 'true', 'the whole source is selected');
+    assert.equal(await page.locator('#submit-cafe-photo').evaluate(element => getComputedStyle(element).borderLeftColor), 'rgb(247, 206, 85)', 'selected source has the gold accent');
+    await shot('source-selected');
+    await page.keyboard.press('ArrowDown');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'submit-barrier-receipt');
+    await page.keyboard.press('ArrowDown');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'submit-cleaner-note', 'checking sources are also selectable');
+    assert.equal(await page.locator('#submit-cleaner-note').getAttribute('data-selected'), 'true');
+    if (!touch) {
+      await page.locator('[data-record="cafe-photo"] .source-text').hover();
+      assert.equal(await page.locator('#submit-cafe-photo').getAttribute('data-selected'), 'true', 'hover selects the entire record, not a nested action');
+      await page.locator('[data-record="cleaner-note"] .source-text').hover();
+    }
+    const checkingBefore = await page.locator('#newsroom-detail').innerHTML(); await page.keyboard.press('Enter');
+    assert.equal(await page.locator('#newsroom-detail').innerHTML(), checkingBefore, 'checking copies cannot be submitted again');
+    await page.keyboard.press('ArrowDown');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-menu');
+    await stableMenu(menuBefore);
     assert.match(await page.locator('[data-record="cleaner-note"]').textContent(), /source check due Day 3 · 10:/);
+    const leftScroll = await page.locator('.newsroom-menu-panel').evaluate(panel => panel.scrollTop);
+    await page.locator('#newsroom-checking').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('.newsroom-menu-panel').evaluate(panel => panel.scrollTop), leftScroll, 'scrolling the right pane does not scroll the left');
     await shot('checking');
-    await select('checked'); assert.deepEqual(await records(), []);
+    await stableMenu(menuBefore);
     await select('stories'); assert.equal(await page.locator('[data-story]').count(), 0);
+    await stableMenu(menuBefore);
     assert.equal(await page.locator('[data-record="contractor-register"]').count(), 0);
     if (touch) {
       await activate('#newsroom-menu');
@@ -151,31 +204,40 @@ try {
         return { top: parseFloat(style.paddingTop), left: parseFloat(style.paddingLeft), bottom: parseFloat(style.paddingBottom), right: parseFloat(style.paddingRight) };
       });
       for (const edge of Object.keys(insets)) assert(padding[edge] >= insets[edge]);
-      await layout(); await select('to-submit'); await layout();
+      await layout(); await select('sources'); await layout();
       await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: 0, bottom: 0, right: 0 } }); await cdp.detach();
     }
     await page.locator('#notebook-route').focus(); await page.keyboard.press('Shift+Tab');
-    const last = width >= 1000 ? (await records()).length ? 'submit-barrier-receipt' : 'start' : 'newsroom-menu';
-    assert.equal(await page.evaluate(() => document.activeElement.id), last);
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'start', 'left menu wraps independently of detail controls');
     await page.keyboard.press('ArrowDown'); assert.equal(await page.evaluate(() => document.activeElement.id), 'notebook-route');
     await activate('#start');
 
     await command({ op: 'advance', minutes: 180 });
     await open('2 sources to submit · 0 sources being checked · No stories ready for the editor');
-    await select('checked'); assert.deepEqual(await records(), ['cleaner-note']);
+    await select('sources'); assert.deepEqual(await records('checked'), ['cleaner-note']);
     await select('stories'); assert.equal(await page.locator('[data-story]').count(), 0, 'a checked source is not a story');
-    await select('to-submit'); await activate('#submit-barrier-receipt');
-    assert.deepEqual(await records(), ['cafe-photo']);
-    await activate('#submit-cafe-photo'); assert.deepEqual(await records(), []);
-    await select('checking'); assert.deepEqual(await records(), ['cafe-photo', 'barrier-receipt']);
+    await select('sources');
+    const beforeSubmission = await menuPositions();
+    await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'submit-barrier-receipt');
+    await page.keyboard.press('Enter');
+    assert.deepEqual(await records('to-submit'), ['cafe-photo']);
+    assert.deepEqual(await records('checking'), ['barrier-receipt']);
+    assert.equal(await page.evaluate(() => document.querySelector('#newsroom-detail').contains(document.activeElement)), true, 'regrouping retains right-pane focus');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'submit-barrier-receipt', 'submitted row stays selected after moving to Being checked');
+    await stableMenu(beforeSubmission);
+    await activate('#submit-cafe-photo'); assert.deepEqual(await records('to-submit'), []);
+    assert.deepEqual(await records('checking'), ['cafe-photo', 'barrier-receipt']);
+    assert.deepEqual(await records('checked'), ['cleaner-note']);
+    await stableMenu(beforeSubmission);
     await close(); assert.deepEqual((await state()).notebookIds, retained, 'all originals and general notes retained');
     await command({ op: 'advance', minutes: 180 });
     const ready = '0 sources to submit · 0 sources being checked · 1 story ready for the editor';
-    await open(ready); await select('checked'); assert.equal((await records()).length, 3); await shot('checked');
+    await open(ready); await select('sources'); assert.equal((await records('checked')).length, 3); await shot('checked');
     await select('stories'); assert.match(await page.locator('[data-story="coordination"]').textContent(), /Ready for editorial review/);
     await shot('ready'); await close();
     await command({ op: 'reload' });
-    await open(ready); await select('checked'); assert.equal((await records()).length, 3);
+    await open(ready); await select('sources'); assert.equal((await records('checked')).length, 3);
     await select('stories'); await activate('#publish-coordination');
     assert.match(await page.locator('[data-story="coordination"]').textContent(), /Editor accepted · Day 4 · 06:00 edition/);
     assert.equal(await page.locator('[data-publish]').count(), 0);
@@ -185,7 +247,7 @@ try {
     assert.match(await page.locator('[data-story="coordination"]').textContent(), /Published · Day 4 · 06:00 edition/);
     await shot('published'); await close();
     await page.locator('#city').focus(); await page.keyboard.press('KeyE'); assert.equal((await state()).onFoot, true);
-    await open(empty); await select('checked'); assert.equal((await records()).length, 3); await close();
+    await open(empty); await select('sources'); assert.equal((await records('checked')).length, 3); await close();
     // The notebook remains available from the ordinary pause menu, not the newsroom.
     await page.keyboard.press('KeyP'); await activate('#open-notebook'); await waitForDrawer(page, 'notebook');
     assert.equal(await page.locator('#notebook-back').textContent(), 'Back to pause menu');
@@ -211,14 +273,18 @@ try {
       window.testPad = { connected: true, mapping: 'standard', id: 'DualSense', axes: [0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
       navigator.getGamepads = () => [window.testPad]; window.testPad.buttons[13].pressed = true;
     });
-    await page.waitForFunction(() => document.activeElement.id === 'newsroom-open-to-submit');
+    await page.waitForFunction(() => document.activeElement.id === 'newsroom-open-sources');
     assert.match(await page.locator('#menu-hint').textContent(), /D-pad Select · × Confirm/);
     assert.match(await page.locator('#newsroom-detail').textContent(), /Choose a section/);
     await page.evaluate(() => { window.testPad.buttons[13].pressed = false; }); await page.waitForTimeout(50);
     await page.evaluate(() => { window.testPad.buttons[0].pressed = true; });
-    await page.waitForFunction(() => document.querySelector('#newsroom-open-to-submit').getAttribute('aria-pressed') === 'true');
+    await page.waitForFunction(() => document.activeElement.id === 'newsroom-menu');
+    assert.equal(await page.locator('#newsroom-open-sources').getAttribute('aria-pressed'), 'true');
     assert.match(await page.locator('#newsroom-detail').textContent(), /No collected sources awaiting submission/);
     await page.evaluate(() => { window.testPad.buttons[0].pressed = false; window.testPad.buttons[1].pressed = true; });
+    await page.waitForFunction(() => document.activeElement.id === 'newsroom-open-sources');
+    await page.evaluate(() => { window.testPad.buttons[1].pressed = false; }); await page.waitForTimeout(50);
+    await page.evaluate(() => { window.testPad.buttons[1].pressed = true; });
     await page.locator('#overlay').waitFor({ state: 'hidden' });
     await page.evaluate(() => { navigator.getGamepads = () => []; }); await page.waitForTimeout(150);
     const resumed = await page.evaluate(() => window.__taxi.state());

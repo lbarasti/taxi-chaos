@@ -42,8 +42,8 @@ export class DrawerMenu {
       } else { this.select(item); this.touchArmed = null; }
     }, true);
   }
-  private items() {
-    return Array.from(this.root.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]'))
+  private items(scope = this.selected?.closest<HTMLElement>('[data-menu-scope]') ?? this.root) {
+    return Array.from(scope.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]'))
       .filter(item => !item.hidden && item.getClientRects().length > 0);
   }
   private item(target: EventTarget | null) {
@@ -61,17 +61,23 @@ export class DrawerMenu {
   get selectionId() { return this.selected?.id; }
   reset(id?: string) {
     this.touchArmed = null; this.pointerType = '';
-    const items = this.items();
+    const items = this.items(this.root);
     const item = items.find(item => item.id === id) ?? items[0];
     this.selected = null;
     if (item) this.select(item);
+  }
+  /** Activated two-pane menus navigate within the pane until explicitly returning. */
+  focusScope(scope: HTMLElement) {
+    this.touchArmed = null;
+    const first = this.items(scope)[0];
+    if (first) this.select(first);
   }
   move(delta: number) {
     const items = this.items();
     if (!items.length) return;
     this.touchArmed = null;
     const current = items.indexOf(this.selected!);
-    this.select(items[(Math.max(0, current) + delta + items.length) % items.length]);
+    this.select(items[current < 0 ? delta > 0 ? 0 : items.length - 1 : (current + delta + items.length) % items.length]);
     this.selected?.scrollIntoView({ block: 'nearest' });
   }
   adjust(delta: number) {

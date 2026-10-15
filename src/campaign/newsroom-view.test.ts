@@ -49,23 +49,26 @@ describe('newsroom drawer', () => {
     expect(records.checking.map(e => e.id)).toEqual(['cleaner-note']);
     expect(records.checked).toEqual([]);
     const html = newsroomMarkup(game);
-    for (const [key, title] of [['to-submit', 'To submit'], ['checking', 'Being checked'], ['checked', 'Checked sources'], ['stories', 'Published stories']]) {
+    for (const [key, title] of [['sources', 'Sources'], ['stories', 'Published stories']]) {
       expect(html).toContain(`data-newsroom-section="${key}"`);
       expect(html).toContain(`<span>${title}</span>`);
       expect(html).toContain(`aria-controls="newsroom-detail" aria-pressed="false"`);
     }
     expect(html).not.toContain('data-record=');
+    const detail = newsroomMarkup(game, 'sources');
     for (const [key, entries] of [['to-submit', records.toSubmit], ['checking', records.checking], ['checked', records.checked]] as const) {
-      const detail = newsroomMarkup(game, key);
+      expect(html).not.toContain(`data-newsroom-section="${key}"`);
+      expect(detail).toContain(`id="newsroom-${key}"`);
+      const group = detail.split(`id="newsroom-${key}"`)[1].split('</section>')[0];
       for (const entry of entries) {
         expect(detail.match(new RegExp(`data-record="${entry.id}"`, 'g'))).toHaveLength(1);
-        expect(detail).toContain(recordMarkup(game, entry));
+        expect(group).toContain(recordMarkup(game, entry, true, true));
       }
       for (const id of ['conversation', 'ordinary-fare', 'bea-repair']) expect(detail).not.toContain(`data-record="${id}"`);
     }
-    expect(newsroomMarkup(game, 'checking')).toContain(`source check due ${calendarLabel(game.save.campaign.newsroom.received['cleaner-note'].at + 180)}`);
-    expect(newsroomMarkup(game, 'checking')).not.toContain('data-record="cafe-photo"');
-    expect(newsroomMarkup(game, 'to-submit')).not.toContain('data-record="cleaner-note"');
+    expect(detail).toContain(`source check due ${calendarLabel(game.save.campaign.newsroom.received['cleaner-note'].at + 180)}`);
+    expect(detail.indexOf('id="newsroom-to-submit"')).toBeLessThan(detail.indexOf('id="newsroom-checking"'));
+    expect(detail.indexOf('id="newsroom-checking"')).toBeLessThan(detail.indexOf('id="newsroom-checked"'));
     // A duplicated legacy entry cannot inflate the source list or summary.
     game.save.playerRecords.notebook.push({ ...records.toSubmit[0] });
     expect(newsroomRecords(game).toSubmit).toHaveLength(2);
@@ -80,10 +83,34 @@ describe('newsroom drawer', () => {
     game.advanceNarrativeTo(game.save.campaign.minute + 1);
     expect(newsroomRecords(game).checking).toEqual([]);
     expect(newsroomRecords(game).checked.map(e => e.id)).toEqual(['cleaner-note']);
-    expect(newsroomMarkup(game, 'checked')).toContain('Source checked · copy retained');
-    expect(newsroomMarkup(game, 'checked')).toContain('Verified material, not necessarily a complete story.');
+    expect(newsroomMarkup(game, 'sources')).toContain('Source checked · copy retained');
+    expect(newsroomMarkup(game, 'sources')).toContain('Verified material, not necessarily a complete story.');
     expect(newsroomMarkup(game, 'stories')).not.toContain('data-story=');
     expect(game.save.playerRecords.notebook).toHaveLength(1);
+  });
+
+  it('starts the detail pane with Back and makes every source one selectable row with only valid actions', () => {
+    const game = new Game(undefined, false);
+    game.start(); game.player.body.position = { ...game.newsroom }; game.setMode('paused');
+    collect(game, 'cafe-photo', 'cleaner-note', 'barrier-receipt');
+    submit(game, 'cleaner-note'); game.advanceNarrativeTo(game.save.campaign.minute + 180);
+    submit(game, 'barrier-receipt');
+    const html = newsroomMarkup(game, 'sources').split('id="newsroom-detail"')[1];
+    expect(html.indexOf('id="newsroom-menu"')).toBeLessThan(html.indexOf('id="newsroom-detail-title"'));
+    expect(html.match(/class="menu-item newsroom-source"/g)).toHaveLength(3);
+    for (const id of ['cafe-photo', 'cleaner-note', 'barrier-receipt']) {
+      const row = html.split(`data-record="${id}"`)[1].split('</article>')[0];
+      expect(row.match(/<button /g)).toHaveLength(1);
+      expect(row).not.toMatch(/\sdisabled(?:\s|>)/);
+      expect(row).toContain(`id="submit-${id}"`);
+      if (id === 'cafe-photo') {
+        expect(row).toContain('data-submit="cafe-photo"');
+        expect(row).not.toContain('aria-disabled');
+      } else {
+        expect(row).toContain('aria-disabled="true"');
+        expect(row).not.toContain('data-submit');
+      }
+    }
   });
 
   it('does not equate a checked source or a fully collected route with a ready story', () => {
@@ -136,9 +163,9 @@ describe('newsroom drawer', () => {
     game.save.campaign.minute = LAST_EDITION;
     expect(newsroomSummary(game)).toMatchObject({ toSubmit: 1, ready: 0, closed: true });
     expect(newsroomMarkup(game)).toContain('The final edition has closed.');
-    expect(newsroomMarkup(game, 'to-submit')).toContain('Final edition closed · unsubmitted copies retained.');
+    expect(newsroomMarkup(game, 'sources')).toContain('Final edition closed · unsubmitted copies retained.');
     expect(newsroomMarkup(game, 'stories')).toContain('Publication deadline passed.');
-    expect(newsroomMarkup(game, 'to-submit')).toContain('Edition closed · record retained');
+    expect(newsroomMarkup(game, 'sources')).toContain('Edition closed · record retained');
     expect(newsroomSummary(game).summary).toContain('1 source not submitted');
     game.save.campaign.minute = 600; game.save.campaign.finished = true;
     expect(newsroomSummary(game)).toMatchObject({ ready: 0, closed: true });

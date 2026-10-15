@@ -75,9 +75,19 @@ for a publishable story in the Newsroom panel.
 
 Implemented as the third slice, with the clarified menu/detail layout:
 
-- The first desktop column contains Route to newsroom, To submit, Being checked,
-  Checked sources, Published stories and Back to the streets. Activating a section
-  fills the second column; focus, hover and directional selection alone do not.
+- The first desktop column contains Route to newsroom, Sources, Published stories
+  and Back to the streets. Activating a section fills the second column; focus,
+  hover and directional selection alone do not. Sources shows all collected
+  publication material together, grouped into To submit, Being checked and
+  Checked sources.
+- Activation moves selection to the right pane's first item, Back. Each entire
+  source record is a selectable, gold-accented row. Enter/click (or touch
+  select/confirm) acts directly on the record when submission is available;
+  checking, checked and otherwise unavailable records remain selectable without
+  offering invalid actions. Selection follows a submitted record into its new group.
+- Desktop panes scroll independently and the left menu is vertically aligned
+  independently of right-pane content. Keyboard/controller navigation stays in
+  the selected pane until Back/Escape returns to the left menu.
 - The panel has no Other notes section or Dispatch notebook link. General
   conversations, ordinary fare history and authored non-publication material stay
   in the ordinary pause notebook and do not appear in publication-source lists.
@@ -86,7 +96,7 @@ Implemented as the third slice, with the clarified menu/detail layout:
   The story pane retains authoritative editorial readiness, scheduled editions
   and published editions, without exposing incomplete routes or future material.
 - Mobile uses the same menu and selected detail in a single-column flow, with a
-  Back to newsroom menu action. All actions retain the existing physical-visit,
+  Back action at the start of the detail pane. All actions retain the existing physical-visit,
   source-check, editorial-approval, dependency and deadline rules.
 - Detailed explanations for incomplete stories remain step 4.
 
@@ -188,22 +198,28 @@ Screenshots from the actual HUD entry:
   retained copies, exact check boundaries, editorial dependencies and deadlines.
 - `node tools/newsroom-check.mjs` checks the standalone HTML offline in six
   desktop/touch layouts: left-menu/right-detail geometry, mobile stacking,
-  explicit activation versus mere selection, actual completion times, physical
+  explicit activation versus mere selection, Back-first focus transfer, whole-source
+  gold selection and direct actions, independent pane navigation/scrolling, stable
+  left-menu alignment, actual completion times, physical
   submission restrictions, submit → check → request → edition, save reload,
   source retention, keyboard wrapping, touch confirmation, controller activation,
   44 px controls, safe areas, paused clocks and realtime restoration.
 - `SCREENSHOT_DIR=scenario-runs/start-pause node tools/splash-check.mjs`,
   `node tools/navigation-hud-check.mjs` and `node tools/observations-check.mjs`
   retain shared-drawer and physical desktop/touch driving/riding coverage.
-- `npm test -- --testTimeout=30000`: 59 files / 743 tests passed.
+- `npm test` (default timeout): 743 tests passed; the existing countryside test
+  “pursues a rural sighting over Pine Bridge and follows the ridge bends” reached
+  the 5-second timeout, including when rerun alone. No timeout override or
+  simulation shortening was applied. All nine Newsroom unit tests passed.
 - `npm run build`: strict TypeScript and standalone production build passed.
 - Browser checks completed without console errors or external runtime requests.
 
-| Desktop: menu and selected sources | Desktop: source check completion time |
+| Desktop: Back-first source pane | Desktop: whole-source selection |
 | --- | --- |
-| ![Left menu and selected To submit record widgets](screenshots/newsroom-sections/desktop-summary.png) | ![Being checked pane with actual completion time](screenshots/newsroom-sections/desktop-checking.png) |
+| ![Left menu and grouped source pane with Back selected first](screenshots/newsroom-sections/desktop-summary.png) | ![Entire source record selected with gold accent](screenshots/newsroom-sections/desktop-source-selected.png) |
 
+[Source check completion time](screenshots/newsroom-sections/desktop-checking.png) ·
 [Editorial readiness](screenshots/newsroom-sections/desktop-ready.png) ·
 [Published edition](screenshots/newsroom-sections/desktop-published.png) ·
-[Portrait source check](screenshots/newsroom-sections/portrait-checking.png) ·
+[Portrait whole-source selection](screenshots/newsroom-sections/portrait-source-selected.png) ·
 [Compact landscape source check](screenshots/newsroom-sections/landscape-480-checking.png)

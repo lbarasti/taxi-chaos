@@ -25,15 +25,17 @@ export class GameDrawer {
     this.menu = new DrawerMenu(root, () => this.active && !this.transition && !root.closest('[inert]'));
     root.addEventListener('click', event => {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
-      if (!this.active || this.transition || !button || button.disabled) return;
+      if (!this.active || this.transition || !button || button.disabled || button.getAttribute('aria-disabled') === 'true') return;
       const game = options.game(), page = button.dataset.page;
       if (page && isDrawerPage(page)) { void this.open(page); return; }
       if (this.page === 'newsroom' && button.dataset.newsroomSection && isNewsroomSection(button.dataset.newsroomSection)) {
         this.newsroomSection = button.dataset.newsroomSection;
         this.refresh();
-        if (!matchMedia('(min-width:1000px)').matches) {
-          const detail = this.root.querySelector<HTMLElement>('#newsroom-detail');
-          detail?.focus({ preventScroll: true }); detail?.scrollIntoView({ block: 'start' });
+        const detail = this.root.querySelector<HTMLElement>('#newsroom-detail');
+        if (detail) {
+          this.menu.focusScope(detail);
+          detail.scrollTop = 0;
+          if (!matchMedia('(min-width:1000px)').matches) detail.scrollIntoView({ block: 'start' });
         }
         return;
       }
@@ -44,7 +46,7 @@ export class GameDrawer {
         case 'ordinary-fare': game.newJob(false, 'replaced', true); options.play(); break;
         case 'abandon-ride': game.newJob(false, 'shift'); this.refresh(); break;
         case 'notebook-route': options.play(); game.navigateNewsroom(); break;
-        case 'newsroom-menu': this.root.querySelector<HTMLElement>(`#newsroom-open-${this.newsroomSection}`)?.focus(); this.root.scrollTop = 0; break;
+        case 'newsroom-menu': this.focusNewsroomMenu(); break;
       }
       if (button.dataset.submit && game.submitMaterial(button.dataset.submit)) this.refresh();
       if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
@@ -93,7 +95,11 @@ export class GameDrawer {
     this.paint(animate ? backwards ? -1 : 1 : 0);
   }
   back() {
-    if (this.page === 'newsroom') { this.options.play(); return true; }
+    if (this.page === 'newsroom') {
+      if (this.root.querySelector('#newsroom-detail')?.contains(document.activeElement)) this.focusNewsroomMenu();
+      else this.options.play();
+      return true;
+    }
     const parent = drawerParent(this.page, this.entry);
     if (!parent) return false;
     void this.open(parent); return true;
@@ -119,6 +125,10 @@ export class GameDrawer {
     const samePage = this.root.dataset.page === this.page;
     const selected = samePage ? this.menu.selectionId : this.selections.get(this.page);
     const scroll = samePage ? this.root.scrollTop : 0;
+    const detail = this.root.querySelector<HTMLElement>('#newsroom-detail');
+    const detailFocused = samePage && detail?.contains(document.activeElement);
+    const detailScroll = samePage ? detail?.scrollTop ?? 0 : 0;
+    const menuScroll = samePage ? this.root.querySelector('.newsroom-menu-panel')?.scrollTop ?? 0 : 0;
     const search = samePage ? this.root.querySelector<HTMLInputElement>('#notebook-search')?.value : '';
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
@@ -128,8 +138,19 @@ export class GameDrawer {
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);
     this.menu.reset(selected);
+    const nextDetail = this.root.querySelector<HTMLElement>('#newsroom-detail');
+    if (detailFocused && nextDetail && !nextDetail.contains(document.activeElement)) this.menu.focusScope(nextDetail);
+    if (nextDetail) nextDetail.scrollTop = detailScroll;
+    const menuPanel = this.root.querySelector('.newsroom-menu-panel');
+    if (menuPanel) menuPanel.scrollTop = menuScroll;
     this.root.scrollTop = scroll;
     if (!samePage) this.root.querySelector<HTMLElement>('[data-selected]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    else if (detailFocused) nextDetail?.querySelector<HTMLElement>('[data-selected]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  private focusNewsroomMenu() {
+    this.root.querySelector<HTMLElement>(`#newsroom-open-${this.newsroomSection}`)?.focus({ preventScroll: true });
+    if (!matchMedia('(min-width:1000px)').matches) this.root.scrollTop = 0;
+    this.root.querySelector<HTMLElement>(`#newsroom-open-${this.newsroomSection}`)?.scrollIntoView({ block: 'nearest' });
   }
   private filterNotebook() {
     const query = this.root.querySelector<HTMLInputElement>('#notebook-search')!.value.toLocaleLowerCase();
