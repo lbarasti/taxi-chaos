@@ -140,8 +140,8 @@ try {
     assert.equal(await page.locator('#mission-inbox').isVisible(), true);
     await page.locator('#texts-close').click();
     await page.locator('#city').focus(); await page.keyboard.press('KeyP');
-    await page.locator('.splash-shift > summary').click();
     await page.locator('#open-notebook').click();
+    await page.locator('#modal[data-page="notebook"]').waitFor();
     assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
     const beforeNewsroom = await render();

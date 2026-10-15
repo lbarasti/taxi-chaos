@@ -1,5 +1,6 @@
 import './style.css';
-import { savedCampaignAvailable, splashMarkup, splashPrompts, type InputDevice } from './splash';
+import { savedCampaignAvailable, splashMarkup, splashPrompts, drawerHeading, streetRulesMarkup, shiftMarkup, type DrawerPage, type InputDevice } from './splash';
+import { DrawerMenu } from './drawer-menu';
 import { bindTouchControls } from './touch-controls';
 import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
@@ -9,7 +10,7 @@ import { PORT_FEE } from './harbour';
 import { difficulties, type Difficulty } from './rules';
 import { setupLab, type LabAPI } from './lab';
 import { AudioFX } from './audio';
-import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
+import { audioMarkup, audioCreditsMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
 import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
@@ -18,7 +19,7 @@ import { bindNavigationHud, navigationHudMarkup } from './navigation-hud';
 import './navigation-hud.css';
 import { calendarLabel } from './campaign/clock';
 import type { Allegation } from './campaign/model';
-import { notebookMarkup } from './campaign/view';
+import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
 import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
@@ -49,22 +50,46 @@ const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city'
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
-let inputDevice: InputDevice = 'keyboard';
+let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
 function detectInput(device: InputDevice) {
   inputDevice = device;
   const prompts = $('splash-prompts');
   if (prompts) prompts.innerHTML = splashPrompts(device);
-  const glyph = document.querySelector('.splash-action-glyph');
-  if (glyph) glyph.textContent = device === 'touch' ? '→' : device === 'playstation' ? '×' : device === 'xbox' ? 'A' : '↵';
+  const hint = $('menu-hint');
+  if (hint) hint.textContent = device === 'touch' ? 'Tap to select · Tap again to confirm' : device === 'xbox' || device === 'playstation' ? `D-pad Select · ${device === 'playstation' ? '×' : 'A'} Confirm` : '↑ ↓ Select · Enter Confirm';
 }
 let splashExiting = false;
-let notebookOpen = false;
+let drawerPage: DrawerPage = 'home';
+let drawerTransition: Animation | undefined;
+let drawerBackwards = false;
+const drawerMenu = new DrawerMenu($('modal'));
+const drawerSelections = new Map<DrawerPage, string>();
+const drawerParents: Partial<Record<DrawerPage, DrawerPage>> = { settings: 'home', rules: 'home', shift: 'home', credits: 'settings', notebook: 'home', 'notebook-guide': 'notebook' };
+function sharedDrawer() { return game.mode === 'intro' || game.mode === 'paused'; }
+async function navigateDrawer(page: DrawerPage) {
+  if (!sharedDrawer() || drawerTransition || page === drawerPage) return;
+  const selected = drawerMenu.selectionId;
+  if (selected) drawerSelections.set(drawerPage, selected);
+  drawerBackwards = drawerParents[drawerPage] === page;
+  const content = $('modal').querySelector('.drawer-page');
+  if (content && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const current = getComputedStyle(content);
+    const animation = content.animate([{ opacity: current.opacity, transform: current.transform }, { opacity: 0, transform: `translateX(${drawerBackwards ? 14 : -14}px)` }], { duration: 120, easing: 'ease-in', fill: 'forwards' });
+    drawerTransition = animation;
+    try { await animation.finished; } catch { return; }
+    if (drawerTransition !== animation) return;
+    drawerTransition = undefined;
+  }
+  if (!sharedDrawer()) return;
+  drawerPage = page;
+  modal(true);
+}
 let lab: LabAPI | undefined;
 let mapEditor: MapEditor | undefined;
 let normalGame: Game | undefined;
 let laboratoryGame: Game | undefined;
 function settingsMarkup() {
-  return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio)}`;
+  return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio, true)}`;
 }
 function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; amount: number }[]) {
   const rows = charges.map(({ label, amount }) => `<div><span>${label}</span><strong>−$${amount}</strong></div>`).join('');
@@ -75,19 +100,42 @@ function campaignMarkup(): string {
   const preview = game.sleepPreview;
   return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p><button class="secondary" id="open-notebook">Dispatch notebook</button><button class="secondary" id="sleep" ${game.sleepReason ? 'disabled' : ''}>${game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`}</button><p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>${!game.garageNear && !game.save.campaign.finished ? '<button class="secondary" id="sleep-route">Route to Pit Stop</button>' : ''}${game.job.stage === 'dropoff' ? '<button class="secondary" id="abandon-ride">Abandon this ride</button>' : '<button class="secondary" id="ordinary-fare">Ask dispatch for an ordinary fare</button>'}</div>`;
 }
-function modal() {
+function modal(pageChanged = false) {
   const overlay = $('overlay'), card = $('modal');
-  const expanded = Array.from(card.querySelectorAll<HTMLDetailsElement>('details[open]')).map(details => details.className);
+  drawerTransition?.cancel(); drawerTransition = undefined;
+  const previousPage = card.dataset.page;
+  const samePage = !pageChanged && sharedDrawer() && previousPage === drawerPage && card.classList.contains('splash-modal');
+  const focused = samePage && card.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
+  const focusId = focused?.id;
+  const audioKey = focused?.dataset.audio;
+  const selectedId = samePage ? drawerMenu.selectionId : drawerSelections.get(drawerPage);
+  const scroll = samePage ? card.scrollTop : 0;
   if (splashExiting && game.mode === 'playing') return;
   splashExiting = false; overlay.classList.remove('splash-exiting'); overlay.inert = false;
   overlay.hidden = game.mode === 'playing';
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
-  const sharedMenu = game.mode === 'intro' || (game.mode === 'paused' && !notebookOpen);
+  const sharedMenu = sharedDrawer();
   overlay.classList.toggle('splash-backdrop', sharedMenu);
   document.body.classList.toggle('splash-active', sharedMenu);
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
-  if (sharedMenu) { card.classList.add('splash-modal'); card.innerHTML = splashMarkup(game, hasSavedCampaign, settingsMarkup(), campaignMarkup()); detectInput(inputDevice); }
-  else if (game.mode === 'paused' && notebookOpen) { card.classList.add('notebook-modal'); card.innerHTML = notebookMarkup(game); }
+  if (sharedMenu) {
+    card.classList.add('splash-modal');
+    card.dataset.page = drawerPage;
+    let content = '';
+    switch (drawerPage) {
+      case 'home': content = splashMarkup(game, hasSavedCampaign); break;
+      case 'settings': content = drawerHeading('Settings.') + settingsMarkup(); break;
+      case 'credits': content = drawerHeading('Sound credits.', 'settings') + audioCreditsMarkup(); break;
+      case 'rules': content = drawerHeading('The street rules.') + streetRulesMarkup(); break;
+      case 'shift': content = drawerHeading('This shift.') + shiftMarkup(game, campaignMarkup()); break;
+      case 'notebook': card.classList.add('notebook-modal'); content = notebookMarkup(game); break;
+      case 'notebook-guide': content = drawerHeading('Keeping records.', 'notebook') + notebookGuideMarkup(game); break;
+    }
+    card.innerHTML = `<div class="drawer-page${pageChanged ? ' drawer-entering' : ''}" style="--drawer-direction:${drawerBackwards ? -1 : 1}">${content}</div>`;
+    card.querySelectorAll('button').forEach(button => { button.className = 'menu-item'; });
+    card.querySelectorAll<HTMLElement>('.play-options label, .audio-settings label, .notebook-search').forEach(label => label.classList.add('menu-field'));
+    detectInput(inputDevice);
+  }
   else if (game.mode === 'garage') {
     const upgrades = (Object.entries(upgradeInfo) as [Upgrade, typeof upgradeInfo.engine][]).map(([key, u]) => { const level = game.save.upgrades[key], price = game.price(key); return `<div class="upgrade"><div><span class="upgrade-number">0${Object.keys(upgradeInfo).indexOf(key) + 1}</span><h3>${u.name}</h3><p>${u.subtitle}</p><small>${u.detail}</small><div class="level">${[1, 2, 3].map(i => `<i class="${i <= level ? 'filled' : ''}"></i>`).join('')}<span>LEVEL ${level} / 3</span></div></div><button class="buy" data-upgrade="${key}" ${level >= 3 || game.save.cash < price ? 'disabled' : ''}>${level >= 3 ? 'MAXED' : `$${price}`}</button></div>`; }).join('');
     const repairPrice = game.repairPrice;
@@ -102,7 +150,7 @@ function modal() {
     card.innerHTML = gameOverMarkup('BUSTED', [{ label: 'Impound bill', amount: bill.impound }, { label: 'Bail', amount: bill.bail }]);
   }
   $('start')?.addEventListener('click', () => {
-    realtime(); externalClock = false; notebookOpen = false;
+    realtime(); externalClock = false; drawerPage = 'home';
     if (game.mode === 'intro') {
       splashExiting = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (splashExiting) { overlay.classList.add('splash-exiting'); overlay.inert = true; }
@@ -111,7 +159,7 @@ function modal() {
     } else game.setMode('playing');
     $('city').focus();
   });
-  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; notebookOpen = false; game.setMode('playing'); $('city').focus(); });
+  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; drawerPage = 'home'; game.setMode('playing'); $('city').focus(); });
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
   $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
   $('difficulty-option')?.addEventListener('change', e => game.configure({ difficulty: (e.target as HTMLSelectElement).value as Difficulty }));
@@ -120,19 +168,30 @@ function modal() {
   $('sleep-route')?.addEventListener('click', () => { realtime(); externalClock = false; game.setMode('playing'); game.garage(); $('city').focus(); });
   $('ordinary-fare')?.addEventListener('click', () => { game.newJob(false, 'replaced', true); realtime(); externalClock = false; game.setMode('playing'); $('city').focus(); });
   $('abandon-ride')?.addEventListener('click', () => { game.newJob(false, 'shift'); modal(); });
-  $('notebook-back')?.addEventListener('click', () => { notebookOpen = false; modal(); });
-  $('notebook-route')?.addEventListener('click', () => { notebookOpen = false; realtime(); externalClock = false; game.setMode('playing'); game.navigateNewsroom(); hud(); $('city').focus(); });
+  $('notebook-back')?.addEventListener('click', () => { void navigateDrawer('home'); });
+  $('notebook-route')?.addEventListener('click', () => { drawerPage = 'home'; realtime(); externalClock = false; game.setMode('playing'); game.navigateNewsroom(); hud(); $('city').focus(); });
   card.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => button.addEventListener('click', () => { if (game.submitMaterial(button.dataset.submit!)) { modal(); } }));
   card.querySelectorAll<HTMLButtonElement>('[data-publish]').forEach(button => button.addEventListener('click', () => { if (game.requestPublication(button.dataset.publish as Allegation)) modal(); }));
   $('notebook-search')?.addEventListener('input', e => { const query = (e.target as HTMLInputElement).value.toLocaleLowerCase(); card.querySelectorAll<HTMLElement>('[data-record]').forEach(article => { article.hidden = !article.textContent?.toLocaleLowerCase().includes(query); }); });
   $('repair')?.addEventListener('click', () => game.repair());
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => game.buy(button.dataset.upgrade as Upgrade)));
-  if (sharedMenu) card.querySelectorAll<HTMLDetailsElement>('details').forEach(details => { details.open = expanded.includes(details.className); });
+  card.querySelectorAll<HTMLElement>('[data-page]').forEach(button => button.addEventListener('click', () => { void navigateDrawer(button.dataset.page as DrawerPage); }));
   bindAudioControls(card, audio);
-  if (!overlay.hidden) ((sharedMenu ? $('start') : null) ?? card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
+  if (!overlay.hidden && sharedMenu) {
+    // Settings can re-render after a preference change; keep the active edit and scroll.
+    drawerMenu.reset(selectedId, !focused);
+    const restore = focusId ? $(focusId) : audioKey ? card.querySelector<HTMLElement>(`[data-audio="${audioKey}"]`) : null;
+    restore?.focus({ preventScroll: true });
+    card.scrollTop = scroll;
+    if (!samePage) card.querySelector<HTMLElement>('[data-selected]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  } else if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
-function openNotebook() { if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return; notebookOpen = true; game.setMode('paused'); }
-function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
+function openNotebook() {
+  if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return;
+  if (game.mode === 'paused') void navigateDrawer('notebook');
+  else { drawerPage = 'notebook'; game.setMode('paused'); }
+}
+function bindGame() { game.onModeChange = () => { if (!sharedDrawer()) { drawerPage = 'home'; drawerSelections.clear(); } resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();
 function hud() {
   refreshInbox();
@@ -171,14 +230,27 @@ function interact() { if (game.mode !== 'playing') return; if (externalClock && 
 function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
-document.addEventListener('pointerdown', event => { detectInput(event.pointerType === 'touch' ? 'touch' : 'keyboard'); if (event.isTrusted) void audio.unlock(); }, { capture: true });
-function pause() { if (game.mode === 'playing') { notebookOpen = false; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; notebookOpen = false; game.setMode('playing'); } }
+document.addEventListener('pointerdown', event => {
+  inputDevice = event.pointerType === 'touch' ? 'touch' : 'keyboard';
+  if (event.isTrusted) void audio.unlock();
+}, { capture: true });
+// Refresh hints after the click target is fixed. Changing their wrapping while a
+// finger is down can shift a scrolled menu row away from the release position.
+document.addEventListener('click', () => detectInput(inputDevice), { capture: true });
+function pause() { if (game.mode === 'playing') { drawerPage = 'home'; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; drawerPage = 'home'; game.setMode('playing'); } }
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   detectInput('keyboard');
   if (mapEditor?.handleKey(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
+  if (sharedDrawer() && !$('overlay').inert && !target?.closest('#debug-panel')) {
+    if (drawerTransition) { e.preventDefault(); return; }
+    if (e.code === 'Escape' && drawerPage !== 'home') {
+      e.preventDefault(); if (!e.repeat) void navigateDrawer(drawerParents[drawerPage] ?? 'home'); return;
+    }
+    if (drawerMenu.handleKey(e)) return;
+  }
   if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
   if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {
     e.preventDefault(); if (!e.repeat) $('recover').click(); return;
@@ -211,8 +283,15 @@ function pollController() {
   const pressed = pad?.buttons.map(b => b.pressed) ?? [];
   const activity = pressed.some((value, index) => value && !previousPadButtons[index]) || !!pad?.axes.some((a, index) => Math.abs(a) > 0.25 && Math.abs(a - (previousPadAxes[index] ?? 0)) > 0.1);
   if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
-  if (pad && (game.mode === 'intro' || (game.mode === 'paused' && !notebookOpen)) && pressed[0] && !previousPadButtons[0]) $('start')?.click();
-  else if (pad && pressed[9] && !previousPadButtons[9]) pause();
+  if (pad && sharedDrawer()) {
+    if (!drawerTransition && !$('overlay').inert) {
+      if (pressed[12] && !previousPadButtons[12]) drawerMenu.move(-1);
+      if (pressed[13] && !previousPadButtons[13]) drawerMenu.move(1);
+      if (pressed[0] && !previousPadButtons[0]) drawerMenu.activate();
+      if (pressed[1] && !previousPadButtons[1] && drawerPage !== 'home') void navigateDrawer(drawerParents[drawerPage] ?? 'home');
+    }
+  }
+  if (pad && pressed[9] && !previousPadButtons[9]) pause();
   for (const key of padKeys) game.keys.delete(key);
   padKeys.clear();
   if (pad && game.mode === 'playing' && (inputDevice === 'xbox' || inputDevice === 'playstation')) {
@@ -273,7 +352,7 @@ if (dialoguePreviewMode) Object.assign(window, {
     externalClock = true; accumulator = 0; resetTouch();
     const scene = dialoguePreviewScene(input, missionId, view, legacy);
     game = scene.game; renderer.game = game; renderer.camera = { ...game.actor.position };
-    notebookOpen = false;
+    drawerPage = 'home';
     $('mission-inbox').hidden = true;
     bindGame(); modal(); hud(); refreshStory(true); renderer.draw(0);
     if (view === 'offer') openInbox();
@@ -293,11 +372,11 @@ if (scenarioPreviewMode) {
     if (!focus) throw new Error(`Unavailable camera focus: ${frame.focus}`);
     renderer.camera = { ...focus };
     renderer.zoom = frame.zoom ?? Math.max(5, Math.min(10.5, window.innerWidth / 125, window.innerHeight / 86));
-    bindGame(); notebookOpen = false;
+    bindGame(); drawerPage = 'home';
     $('mission-inbox').hidden = true;
     const mode = game.mode;
     try {
-      if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; notebookOpen = view === 'notebook'; }
+      if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; drawerPage = view === 'notebook' ? 'notebook' : 'home'; }
       modal(); hud(); renderer.draw(0);
       if (view === 'texts') { if (mode !== 'playing') throw new Error('Texts capture requires playing mode'); openInbox(); }
       if (view === 'story' && $('story').hidden) throw new Error('No visible ride conversation to capture');

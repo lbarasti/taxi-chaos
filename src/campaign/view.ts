@@ -17,7 +17,7 @@ export function notebookMarkup(game: Game): string {
     <h2 id="modal-title">Your working day.</h2>
     <p>Signed slips, things people said, and scenes you bookmarked. Keep your own interpretation.</p>
     <div class="city-bulletin"><small>LOCAL COVERAGE</small><p>${escape(game.campaignBulletin)}</p></div>
-    <details class="notebook-guide"><summary>Keeping records & visiting the newsroom</summary><p>${escape(newsroom.guide)}</p></details>
+    <button class="menu-item" id="menu-notebook-guide" data-page="notebook-guide">Keeping records &amp; visiting the newsroom</button>
     <div class="notebook-actions"><button class="secondary" id="notebook-route">${game.navToNewsroom ? 'Cancel newsroom route' : 'Route to newsroom'}</button><button class="secondary" id="notebook-back">Back to pause menu</button></div>
     ${cases ? `<section class="editorial-cases"><h3>At the editor’s desk</h3>${cases}</section>` : ''}
     <label class="notebook-search">Find a record <input id="notebook-search" type="search" placeholder="Name, address or words…"></label>
@@ -26,4 +26,8 @@ export function notebookMarkup(game: Game): string {
       const label = receipt ? receipt.verifiedAt !== null ? 'Source checked · copy retained' : `Received · source check due ${calendarLabel(receipt.at + 180)}` : closed ? 'Edition closed · record retained' : game.newsroomNear ? 'Leave a copy at the newsroom' : `Bring to ${escape(newsroom.name)}`;
       return `<article data-record="${escape(entry.id)}"><small>${entry.minute !== undefined ? calendarLabel(entry.minute).toUpperCase() : `DAY ${entry.shift}`} · ${entry.kind.toUpperCase()}</small><h3>${escape(entry.title)}</h3><p>${escape(entry.text)}</p>${evidence ? `<button class="secondary" data-submit="${entry.id}" ${receipt || !game.newsroomNear || closed ? 'disabled' : ''}>${label}</button>` : ''}</article>`;
     }).join('') : '<p>No records yet. Work a fare, or bookmark a scene you want to remember.</p>'}</div>`;
+}
+
+export function notebookGuideMarkup(game: Game) {
+  return `<p>${escape(game.campaignContent.newsroom.guide)}</p>`;
 }
