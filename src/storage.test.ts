@@ -18,7 +18,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('Taxi Chaos current-format storage', () => {
   it('loads and updates current progress, settings and preferences', () => {
-    const save = { ...defaultSave(), cash: 975, deliveries: 12, best: 600, upgrades: { engine: 2, grip: 1, armor: 3, boost: 1 } };
+    const save = { ...defaultSave(), cash: 975, deliveries: 12, best: 600 };
     const settings = { gore: true, difficulty: 'chaos' }, preferences = { muted: true, volume: 0.4, sirens: 0.1 };
     const { values } = mockStorage([
       [storageKeys.save, JSON.stringify(save)], [storageKeys.settings, JSON.stringify(settings)], [storageKeys.audio, JSON.stringify(preferences)],
@@ -26,7 +26,7 @@ describe('Taxi Chaos current-format storage', () => {
     const game = new Game(), audio = new AudioFX();
     expect(game.save).toEqual(save); expect(game.settings).toMatchObject(settings); expect(audio.preferences).toEqual(preferences);
     game.save.cash += 100; game.persist(); game.configure({ difficulty: 'cruise' }); audio.configure({ muted: false });
-    expect(JSON.parse(values.get(storageKeys.save)!)).toEqual({ ...save, cash: 1075 });
+    expect(JSON.parse(values.get(storageKeys.save)!)).toEqual({ ...JSON.parse(JSON.stringify(game.save)), cash: 1075 });
     expect(JSON.parse(values.get(storageKeys.settings)!)).toEqual({ gore: true, difficulty: 'cruise' });
     expect(JSON.parse(values.get(storageKeys.audio)!)).toEqual({ ...preferences, muted: false });
   });

@@ -229,7 +229,7 @@ describe('LAB isolation and preservation rules', () => {
     const g = make();
     g.configure({ difficulty: 'chaos', gore: true, invincible: true, infiniteBoost: true, noPolice: true });
     g.save.cash = 999;
-    g.save.upgrades.grip = 2;
+    g.player.upgrades.grip = 2;
     loadScenario(g, 'first-fare');
     expect(g.settings.difficulty).toBe('chaos');
     expect(g.settings.gore).toBe(false);
@@ -237,7 +237,7 @@ describe('LAB isolation and preservation rules', () => {
     expect(g.settings.infiniteBoost).toBe(false);
     expect(g.settings.noPolice).toBe(false);
     expect(g.save.cash).toBe(999);
-    expect(g.save.upgrades.grip).toBe(2);
+    expect(g.player.upgrades.grip).toBe(2);
     expect(g.player.dynamics.grip).toBeGreaterThan(1250);
   });
 

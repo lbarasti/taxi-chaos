@@ -72,7 +72,7 @@ describe('courier motorcycle integration', () => {
     const g = takeBike(), cash = g.save.cash;
     expect(g.player.model).toBe('motorcycle'); expect(g.player.kind).toBe('taxi'); expect(g.onFoot).toBe(false);
     expect(g.job.type).toBe('parcel'); expect(g.job.customerId).toBe(-1); expect(g.world.people.some(p => p.role === 'customer')).toBe(false);
-    g.save.upgrades.engine = 2; g.applyUpgrades(); expect(g.player.baseEngine).toBeCloseTo(BIKE_ENGINE * 1.44); expect(g.save.cash).toBe(cash);
+    g.player.upgrades.engine = 2; g.applyUpgrades(); expect(g.player.baseEngine).toBeCloseTo(BIKE_ENGINE * 1.44); expect(g.save.cash).toBe(cash);
     runGame(g, 0.5, ['KeyW']); expect(g.speed).toBeGreaterThan(3); expect(g.snapshot().vehicleModel).toBe('motorcycle');
   });
   it('loads and delivers a real parcel, pays once, and dispatches another without a phantom passenger', () => {

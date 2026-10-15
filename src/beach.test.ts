@@ -137,7 +137,7 @@ describe('physical sand handling', () => {
     expect(dynamics.grip).toBe(def.physics.grip); expect(dynamics.engineForce).toBe(def.physics.engineForce);
   });
   it('uses sand for bikes too, restores upgrades, and makes sand ruts rather than black skid marks', () => {
-    const g = quiet(); g.player.body.position = vec(64, 249); g.player.body.angle = 0; g.save.upgrades.grip = 2; g.applyUpgrades();
+    const g = quiet(); g.player.body.position = vec(64, 249); g.player.body.angle = 0; g.player.upgrades.grip = 2; g.applyUpgrades();
     run(g, 1, ['KeyW']); expect(g.snapshot().surface).toBe('sand'); expect(g.skids.some(s => s.sand)).toBe(true);
     g.player.body.position = vec(80, 240); g.player.body.velocity = vec(); run(g, 0.1);
     expect(g.player.dynamics.surface.grip).toBe(1); expect(g.player.dynamics.grip).toBeCloseTo(1250 * 1.36);

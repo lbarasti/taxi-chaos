@@ -100,15 +100,17 @@ describe('harbour security and paid exchange', () => {
     cop.body.position = vec(120, -40); g.updateHarbour(1); expect(g.harbour.progress).toBe(0);
     expect(g.harbour.exchanged).toBe(false);
   });
-  it('issues a different healthy car, retains wallet/upgrades/passenger and clears every pursuit field', () => {
-    const g = quiet(); atGate(g); g.save.cash = 200; g.save.upgrades.engine = 2; g.enterHarbour(); atContainer(g);
+  it('issues a different healthy car, retains wallet/passenger but leaves upgrades behind and clears every pursuit field', () => {
+    const g = quiet(); atGate(g); g.save.cash = 200; g.player.upgrades.engine = 2; g.enterHarbour(); atContainer(g);
     const old = g.player; old.damage.health = 30; g.boost = 3; g.job.stage = 'dropoff'; const job = g.job;
     const cop = g.vehicle('police', 108, -58, 0, '#eee'); cop.ai.seenAt = 10;
     g.heat = 95; g.arrest = 2; g.escape = 3; g.speedingTime = 3; g.policeIntel.seenAt = 10;
     g.updateHarbour(SWAP_SECONDS);
     expect(g.player.id).not.toBe(old.id); expect(g.player.color).not.toBe(old.color); expect(old.alive).toBe(false);
     expect(g.player.body.position).toEqual(SWAP_EXIT); expect(g.health).toBe(100); expect(g.boost).toBe(100);
-    expect(g.save.cash).toBe(125); expect(g.save.upgrades.engine).toBe(2); expect(g.player.baseEngine).toBeGreaterThan(old.definition.physics.engineForce); expect(g.job).toBe(job);
+    const reloaded = new Game(g.map, false, false, g.save);
+    expect(reloaded.player.upgrades.engine).toBe(0); expect(reloaded.vehicles.some(v => v.upgrades.engine === 2)).toBe(false);
+    expect(g.save.cash).toBe(125); expect(g.player.upgrades.engine).toBe(0); expect(old.upgrades.engine).toBe(2); expect(g.player.baseEngine).toBe(old.definition.physics.engineForce); expect(g.job).toBe(job);
     expect(g.heat + g.arrest + g.escape + g.speedingTime).toBe(0); expect(g.police).toHaveLength(0); expect(g.policeIntel.seenAt).toBe(-100); expect(g.stars).toBe(0);
     run(g, 0.1); expect(g.heat).toBe(0); g.crime(55); expect(g.stars).toBe(2); g.law(1 / 120); expect(g.police.length).toBeGreaterThan(0);
   });

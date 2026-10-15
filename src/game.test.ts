@@ -19,9 +19,9 @@ describe('cab jobs and economy', () => {
     expect(g.save.cash).toBe(expected); expect(g.jobsDone).toBe(1);
   });
   it('charges upgrades, applies physics changes, caps levels and rejects unaffordable buys', () => {
-    const g = make(); expect(g.buy('engine')).toBe(false); g.save.cash = 3000;
+    const g = make(); g.garage(); expect(g.buy('engine')).toBe(false); g.save.cash = 3000;
     const cash = g.save.cash; expect(g.buy('engine')).toBe(true); expect(g.save.cash).toBe(cash - 160); expect(g.player.dynamics.engineForce).toBeGreaterThan(10500);
-    g.buy('engine'); g.buy('engine'); expect(g.buy('engine')).toBe(false); expect(g.save.upgrades.engine).toBe(3);
+    g.buy('engine'); g.buy('engine'); expect(g.buy('engine')).toBe(false); expect(g.player.upgrades.engine).toBe(3);
   });
   it('freezes physics and job clocks while paused', () => {
     const g = make(); g.job.stage = 'dropoff'; g.setMode('paused'); step(g, 2, ['KeyW']); expect(g.speed).toBe(0); expect(g.time).toBe(0); expect(g.job.elapsed).toBe(0);
@@ -51,7 +51,7 @@ describe('destruction, police and recovery', () => {
     const overlap = contact(g.player.body, building.body); expect(overlap?.depth ?? 0).toBeLessThan(0.025);
   });
   it('reinforced chassis materially reduces damage for the same collision', () => {
-    const collide = (armor: number) => { const g = make(); g.save.upgrades.armor = armor; g.player.body.position = vec(14, 4); g.player.body.angle = Math.PI / 2; g.player.body.velocity = vec(0, 28); step(g, 1, ['KeyW']); return g.health; };
+    const collide = (armor: number) => { const g = make(); g.player.upgrades.armor = armor; g.player.body.position = vec(14, 4); g.player.body.angle = Math.PI / 2; g.player.body.velocity = vec(0, 28); step(g, 1, ['KeyW']); return g.health; };
     const normal = collide(0), reinforced = collide(3); expect(normal).toBeLessThan(80); expect(reinforced).toBeGreaterThan(90); expect(reinforced).toBeGreaterThan(normal + 20);
   });
   it('arrests a contained stopped cab and charges affordable bail', () => {
@@ -64,7 +64,7 @@ describe('destruction, police and recovery', () => {
     step(g, 8.3); expect(g.stars).toBe(0); expect(g.police.length).toBe(0); expect(g.eventLog.some(e => e.includes('LOST THEM'))).toBe(true);
   });
   it('repeatable lab scenarios reset world destruction while retaining purchased upgrades', () => {
-    const g = make(); g.save.cash = 500; g.buy('grip'); g.world.props[0].alive = false; g.smashed = 10;
-    g.resetRun(); expect(g.world.props[0].alive).toBe(true); expect(g.smashed).toBe(0); expect(g.save.upgrades.grip).toBe(1); expect(g.player.dynamics.grip).toBeGreaterThan(1250);
+    const g = make(); g.save.cash = 500; g.garage(); g.buy('grip'); g.world.props[0].alive = false; g.smashed = 10;
+    g.resetRun(); expect(g.world.props[0].alive).toBe(true); expect(g.smashed).toBe(0); expect(g.player.upgrades.grip).toBe(1); expect(g.player.dynamics.grip).toBeGreaterThan(1250);
   });
 });
