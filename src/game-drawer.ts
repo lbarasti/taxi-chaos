@@ -1,8 +1,8 @@
 import type { Game } from './game';
 import type { AudioFX } from './audio';
-import type { Difficulty } from './rules';
+import { createSettings, type SettingsControls } from './settings';
+import { bindSettingControls } from './setting-controls';
 import type { Allegation } from './campaign/model';
-import { bindAudioControls } from './audio-controls';
 import { DrawerMenu } from './drawer-menu';
 import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
 import { splashPrompts, type InputDevice } from './splash';
@@ -10,12 +10,15 @@ import type { DrawerPage } from './drawer-markup';
 
 // Owns only the title/pause drawer. Gameplay, garage and recovery stay in main.
 export class GameDrawer {
+  private settings: SettingsControls;
+  private refreshSettings = () => {};
   private page: DrawerPage = 'home';
   private transition?: Animation;
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
   private device: InputDevice = 'keyboard';
   constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void }) {
+    this.settings = createSettings(options.game, options.audio);
     this.menu = new DrawerMenu(root, () => this.active && !this.transition && !root.closest('[inert]'));
     root.addEventListener('click', event => {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
@@ -33,11 +36,6 @@ export class GameDrawer {
       if (button.dataset.submit && game.submitMaterial(button.dataset.submit)) this.refresh();
       if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
     });
-    root.addEventListener('change', event => {
-      const input = event.target as HTMLInputElement | HTMLSelectElement;
-      if (input.id === 'gore-option') options.game().configure({ gore: (input as HTMLInputElement).checked });
-      if (input.id === 'difficulty-option') options.game().configure({ difficulty: input.value as Difficulty });
-    });
     root.addEventListener('input', event => {
       if ((event.target as HTMLElement).id === 'notebook-search') this.filterNotebook();
     });
@@ -49,13 +47,9 @@ export class GameDrawer {
   }
   refresh() {
     this.transition?.cancel(); this.transition = undefined;
-    // Keep native controls mounted: changing a setting needs no DOM/focus rebuild.
-    if (this.page === 'settings' && this.root.dataset.page === 'settings') {
-      this.root.classList.add('splash-modal');
-      const { settings } = this.options.game();
-      this.root.querySelector<HTMLInputElement>('#gore-option')!.checked = settings.gore;
-      this.root.querySelector<HTMLSelectElement>('#difficulty-option')!.value = settings.difficulty;
-    } else this.paint();
+    this.root.classList.add('splash-modal');
+    if (this.page === 'settings' && this.root.dataset.page === 'settings') this.refreshSettings();
+    else this.paint();
   }
   async open(page: DrawerPage, { animate = true } = {}) {
     // Capture previews can choose a page before entering paused mode.
@@ -83,6 +77,7 @@ export class GameDrawer {
     void this.open(parent); return true;
   }
   move(delta: number) { if (this.active && !this.transition) this.menu.move(delta); }
+  adjust(delta: number) { if (this.active && !this.transition) this.menu.adjust(delta); }
   activate() { if (this.active && !this.transition) this.menu.activate(); }
   handleKey(event: KeyboardEvent) {
     if (!this.active) return false;
@@ -106,9 +101,9 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), audio: this.options.audio, saved: this.options.saved })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
-    bindAudioControls(this.root, this.options.audio);
+    this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);
     this.menu.reset(selected);
     this.root.scrollTop = scroll;

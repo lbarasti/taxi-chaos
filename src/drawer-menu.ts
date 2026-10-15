@@ -71,6 +71,15 @@ export class DrawerMenu {
     this.select(items[(Math.max(0, current) + delta + items.length) % items.length]);
     this.selected?.scrollIntoView({ block: 'nearest' });
   }
+  adjust(delta: number) {
+    const input = this.selected;
+    if (!(input instanceof HTMLInputElement)) return;
+    if (input.type === 'checkbox') input.click();
+    else if (input.type === 'range') {
+      if (delta > 0) input.stepUp(); else input.stepDown();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
   activate() { this.selected?.click(); }
   handleKey(event: KeyboardEvent) {
     const native = event.target instanceof Element ? event.target.closest('input, select') : null;

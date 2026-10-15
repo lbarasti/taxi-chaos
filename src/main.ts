@@ -196,6 +196,8 @@ function pollController() {
   if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
   if (pad && drawer.active && !$('overlay').inert) {
     if (pressed[12] && !previousPadButtons[12]) drawer.move(-1);
+    if (pressed[14] && !previousPadButtons[14]) drawer.adjust(-1);
+    if (pressed[15] && !previousPadButtons[15]) drawer.adjust(1);
     if (pressed[13] && !previousPadButtons[13]) drawer.move(1);
     if (pressed[0] && !previousPadButtons[0]) drawer.activate();
     if (pressed[1] && !previousPadButtons[1]) drawer.back();

@@ -38,6 +38,7 @@ export function splashMarkup(game: Game, saved: boolean): string {
       ${menuItem(paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift', { id: 'start' })}
       ${menuItem('The street rules', { id: 'menu-rules', page: 'rules' })}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
+      ${menuItem('Credits', { id: 'menu-credits', page: 'credits' })}
       ${paused ? `${game.campaignEnabled ? menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' }) : ''}${menuItem('This shift', { id: 'menu-shift', page: 'shift' })}` : ''}
     </nav>
     <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
