@@ -55,8 +55,8 @@ predicate. General records do not inflate the source count; checked material,
 blocked dependencies and scheduled/published stories do not inflate readiness.
 After the final edition, unsubmitted records remain visible without promising
 that they can still be submitted. Submission, verification and publication
-rules are unchanged. Steps 3–5 remain follow-up work; a two-column newsroom
-layout can be added later without replacing the shared menu components.
+rules are unchanged. This single-column entry was the starting point for step 3;
+the current menu/detail layout below supersedes its notebook shortcut.
 
 ## 3. Separate useful sources from general notes
 
@@ -68,10 +68,27 @@ Organize the panel into:
 | Being checked | Submitted sources, with the actual completion time |
 | Checked sources | Verified material, not necessarily a complete story |
 | Stories | Editorial readiness, scheduled editions and published stories |
-| Other notes | General conversations, ordinary fare history and other records |
 
 Not every authored material contributes to a publication route. Keep those
-records readable without advertising them as evidence for a publishable story.
+records in the ordinary pause notebook, without advertising them as evidence
+for a publishable story in the Newsroom panel.
+
+Implemented as the third slice, with the clarified menu/detail layout:
+
+- The first desktop column contains Route to newsroom, To submit, Being checked,
+  Checked sources, Published stories and Back to the streets. Activating a section
+  fills the second column; focus, hover and directional selection alone do not.
+- The panel has no Other notes section or Dispatch notebook link. General
+  conversations, ordinary fare history and authored non-publication material stay
+  in the ordinary pause notebook and do not appear in publication-source lists.
+- Source lists reuse the notebook's record widgets, retain originals, show actual
+  completion times and move checked material separately from admitted stories.
+  The story pane retains authoritative editorial readiness, scheduled editions
+  and published editions, without exposing incomplete routes or future material.
+- Mobile uses the same menu and selected detail in a single-column flow, with a
+  Back to newsroom menu action. All actions retain the existing physical-visit,
+  source-check, editorial-approval, dependency and deadline rules.
+- Detailed explanations for incomplete stories remain step 4.
 
 ## 4. Explain each story's next step
 
@@ -163,3 +180,30 @@ Screenshots from the actual HUD entry:
 | ![Single-column newsroom page using pause-menu components](screenshots/newsroom/desktop-summary.png) | ![Mobile newsroom page with the shared touch actions](screenshots/newsroom/portrait-summary.png) |
 
 [Story ready for the editor](screenshots/newsroom/desktop-ready.png)
+
+### Source separation / menu-detail slice checks
+
+- `src/campaign/newsroom-view.test.ts` covers activation-dependent markup,
+  route-membership classification, deduplication, non-publication exclusion,
+  retained copies, exact check boundaries, editorial dependencies and deadlines.
+- `node tools/newsroom-check.mjs` checks the standalone HTML offline in six
+  desktop/touch layouts: left-menu/right-detail geometry, mobile stacking,
+  explicit activation versus mere selection, actual completion times, physical
+  submission restrictions, submit → check → request → edition, save reload,
+  source retention, keyboard wrapping, touch confirmation, controller activation,
+  44 px controls, safe areas, paused clocks and realtime restoration.
+- `SCREENSHOT_DIR=scenario-runs/start-pause node tools/splash-check.mjs`,
+  `node tools/navigation-hud-check.mjs` and `node tools/observations-check.mjs`
+  retain shared-drawer and physical desktop/touch driving/riding coverage.
+- `npm test -- --testTimeout=30000`: 59 files / 743 tests passed.
+- `npm run build`: strict TypeScript and standalone production build passed.
+- Browser checks completed without console errors or external runtime requests.
+
+| Desktop: menu and selected sources | Desktop: source check completion time |
+| --- | --- |
+| ![Left menu and selected To submit record widgets](screenshots/newsroom-sections/desktop-summary.png) | ![Being checked pane with actual completion time](screenshots/newsroom-sections/desktop-checking.png) |
+
+[Editorial readiness](screenshots/newsroom-sections/desktop-ready.png) ·
+[Published edition](screenshots/newsroom-sections/desktop-published.png) ·
+[Portrait source check](screenshots/newsroom-sections/portrait-checking.png) ·
+[Compact landscape source check](screenshots/newsroom-sections/landscape-480-checking.png)

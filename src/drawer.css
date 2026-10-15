@@ -40,6 +40,29 @@
 @media(max-width:420px){.credit-row{grid-template-columns:1fr;gap:2px}}
 @media(prefers-reduced-motion:reduce){.credit-row{transition:none}}
 .splash-modal .notebook-actions{flex-direction:column}.splash-modal .campaign-summary{margin-top:0}.drawer-page>p,.splash-modal .notebook-entries p{font-size:13px;line-height:1.7;color:#b8c7bd}.splash-modal .eyebrow{line-height:1.7}
+/* Newsroom keeps notebook widgets and one scroll surface, widening only on desktop. */
+.splash-modal[data-page="newsroom"]{background:linear-gradient(105deg,#14242cf5 0%,#17262df0 55%,#203039eb 100%);user-select:text}
+.newsroom-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+.newsroom-columns>div{min-width:0}
+.newsroom-menu-panel>p{font-size:13px;line-height:1.7;color:#b8c7bd}
+.newsroom-menu-panel>.intro-copy{font-size:14px;color:#aebcaf;margin-bottom:22px}
+.newsroom-section{min-width:0;overflow-wrap:anywhere}
+.newsroom-section:focus{outline:none}
+.newsroom-section>h3{font-size:24px;margin:0 0 12px;color:var(--mint)}
+.newsroom-section>p{font-size:12px;line-height:1.65;color:#b8c7bd;margin:0 0 12px}
+.newsroom-section .notebook-entries article{padding:14px 0}
+.newsroom-section .notebook-entries h3{font-size:17px;margin:8px 0;letter-spacing:0}
+.newsroom-section .notebook-entries small{line-height:1.7}
+.splash-modal .newsroom-section .menu-item{font-size:12px}
+.splash-modal .newsroom-section .menu-item:disabled{opacity:.8}
+.splash-modal .menu-item[aria-pressed="true"]{border-left-color:var(--mint);background:#a3ddc210}
+.newsroom-empty{margin:0;padding:12px 0;border-top:1px solid var(--border)}
+@media(min-width:1000px){
+  .splash-modal[data-page="newsroom"]{width:min(1080px,100vw)}
+  [data-page="newsroom"] .newsroom-columns{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:48px}
+  [data-page="newsroom"] .newsroom-section{padding-top:44px}
+  [data-page="newsroom"] #newsroom-menu{display:none}
+}
 .drawer-entering{animation:drawer-in .24s cubic-bezier(.2,.75,.25,1) both}
 @keyframes drawer-in{from{opacity:0;transform:translateX(calc(18px * var(--drawer-direction,1)))}to{opacity:1;transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.drawer-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field{transition:none}}

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../game';
 import { recordNote } from './effects';
 import { campaignDefinition } from './content';
-import { dayMinute, LAST_EDITION } from './clock';
+import { calendarLabel, dayMinute, LAST_EDITION } from './clock';
 import { approvePublication, receiveMaterial } from './scheduler';
-import { notebookMarkup } from './view';
-import { newsroomMarkup, newsroomSummary } from './newsroom-view';
+import { notebookMarkup, recordMarkup } from './view';
+import { newsroomMarkup, newsroomRecords, newsroomSummary } from './newsroom-view';
 import { drawerParent, isDrawerPage } from '../drawer-view';
 
 function collect(game: Game, ...ids: string[]) {
@@ -26,10 +26,64 @@ describe('newsroom drawer', () => {
     expect(newsroomSummary(game).summary).toBe('2 sources to submit · 1 source being checked · No stories ready for the editor');
     const html = newsroomMarkup(game);
     expect(html).toContain('class="game-menu"'); expect(html).toContain('class="menu-item"');
-    expect(html).toContain('Route to newsroom'); expect(html).toContain('Dispatch notebook');
-    expect(html).not.toContain('data-submit'); expect(html).not.toContain('data-publish');
-    for (const material of Object.values(game.campaignContent.materials)) expect(html).not.toContain(material.title);
+    expect(html).toContain('Route to newsroom'); expect(html).not.toContain('Dispatch notebook');
+    expect(html).not.toContain('Other notes');
+    expect(html).not.toContain('data-publish');
+    for (const entry of game.save.playerRecords.notebook) expect(html).not.toContain(entry.title);
+    for (const [id, material] of Object.entries(game.campaignContent.materials)) {
+      if (!game.save.playerRecords.notebook.some(entry => entry.id === id)) expect(html).not.toContain(material.title);
+    }
+    for (const claim of Object.values(game.campaignContent.claims)) expect(html).not.toContain(claim.title);
+    expect(html).not.toContain('data-submit="bea-repair"');
+    expect(html).not.toContain('data-submit="ordinary-fare"');
     expect(game.save).toEqual(before);
+  });
+
+  it('partitions discovered records exactly once and reuses notebook widgets without advertising general notes', () => {
+    const game = new Game(undefined, false);
+    collect(game, 'cafe-photo', 'barrier-receipt', 'cleaner-note', 'bea-repair', 'ordinary-fare');
+    recordNote(game.campaignContext, { id: 'conversation', title: 'A conversation', text: 'Just chatting.', kind: 'conversation' });
+    submit(game, 'cleaner-note', 'bea-repair');
+    const records = newsroomRecords(game);
+    expect(records.toSubmit.map(e => e.id)).toEqual(['barrier-receipt', 'cafe-photo']);
+    expect(records.checking.map(e => e.id)).toEqual(['cleaner-note']);
+    expect(records.checked).toEqual([]);
+    const html = newsroomMarkup(game);
+    for (const [key, title] of [['to-submit', 'To submit'], ['checking', 'Being checked'], ['checked', 'Checked sources'], ['stories', 'Published stories']]) {
+      expect(html).toContain(`data-newsroom-section="${key}"`);
+      expect(html).toContain(`<span>${title}</span>`);
+      expect(html).toContain(`aria-controls="newsroom-detail" aria-pressed="false"`);
+    }
+    expect(html).not.toContain('data-record=');
+    for (const [key, entries] of [['to-submit', records.toSubmit], ['checking', records.checking], ['checked', records.checked]] as const) {
+      const detail = newsroomMarkup(game, key);
+      for (const entry of entries) {
+        expect(detail.match(new RegExp(`data-record="${entry.id}"`, 'g'))).toHaveLength(1);
+        expect(detail).toContain(recordMarkup(game, entry));
+      }
+      for (const id of ['conversation', 'ordinary-fare', 'bea-repair']) expect(detail).not.toContain(`data-record="${id}"`);
+    }
+    expect(newsroomMarkup(game, 'checking')).toContain(`source check due ${calendarLabel(game.save.campaign.newsroom.received['cleaner-note'].at + 180)}`);
+    expect(newsroomMarkup(game, 'checking')).not.toContain('data-record="cafe-photo"');
+    expect(newsroomMarkup(game, 'to-submit')).not.toContain('data-record="cleaner-note"');
+    // A duplicated legacy entry cannot inflate the source list or summary.
+    game.save.playerRecords.notebook.push({ ...records.toSubmit[0] });
+    expect(newsroomRecords(game).toSubmit).toHaveLength(2);
+    expect(newsroomSummary(game).toSubmit).toBe(2);
+  });
+
+  it('moves sources at the exact check boundary, retains copies and does not invent a story', () => {
+    const game = new Game(undefined, false);
+    collect(game, 'cleaner-note'); submit(game, 'cleaner-note');
+    game.advanceNarrativeTo(game.save.campaign.minute + 179);
+    expect(newsroomRecords(game).checking.map(e => e.id)).toEqual(['cleaner-note']);
+    game.advanceNarrativeTo(game.save.campaign.minute + 1);
+    expect(newsroomRecords(game).checking).toEqual([]);
+    expect(newsroomRecords(game).checked.map(e => e.id)).toEqual(['cleaner-note']);
+    expect(newsroomMarkup(game, 'checked')).toContain('Source checked · copy retained');
+    expect(newsroomMarkup(game, 'checked')).toContain('Verified material, not necessarily a complete story.');
+    expect(newsroomMarkup(game, 'stories')).not.toContain('data-story=');
+    expect(game.save.playerRecords.notebook).toHaveLength(1);
   });
 
   it('does not equate a checked source or a fully collected route with a ready story', () => {
@@ -44,11 +98,15 @@ describe('newsroom drawer', () => {
     expect(newsroomSummary(game).ready).toBe(0);
     game.advanceNarrativeTo(game.save.campaign.minute + 1);
     expect(newsroomSummary(game).summary).toBe('0 sources to submit · 0 sources being checked · 1 story ready for the editor');
+    expect(newsroomMarkup(game, 'stories')).toContain('Ready for editorial review.');
     expect(approvePublication(game.save.campaign, 'coordination', game.campaignContext)).toBe(true);
     expect(newsroomSummary(game).ready).toBe(0);
+    expect(newsroomMarkup(game, 'stories')).toContain(`Editor accepted · ${calendarLabel(dayMinute(2, 6))} edition.`);
     game.advanceNarrativeTo(dayMinute(2, 6));
     expect(game.save.campaign.publications).toHaveLength(1);
     expect(newsroomSummary(game).ready).toBe(0);
+    expect(newsroomMarkup(game, 'stories')).toContain(`Published · ${calendarLabel(dayMinute(2, 6))} edition.`);
+    expect(newsroomMarkup(game, 'stories')).not.toContain('data-publish=');
   });
 
   it('uses approval dependencies independently from verification and publication conditions', () => {
@@ -58,6 +116,9 @@ describe('newsroom drawer', () => {
     game.advanceNarrativeTo(game.save.campaign.minute + 180);
     expect(Object.keys(game.save.campaign.newsroom.cases)).toHaveLength(3);
     expect(newsroomSummary(game).ready).toBe(2); // knowledge awaits both approvals
+    const knowledge = newsroomMarkup(game, 'stories').split('data-story="knowledge"')[1].split('</article>')[0];
+    expect(knowledge).toContain('Not ready for editorial review.');
+    expect(knowledge).not.toContain('Ready for editorial review.');
     expect(approvePublication(game.save.campaign, 'coordination', game.campaignContext)).toBe(true);
     expect(newsroomSummary(game).ready).toBe(1);
     expect(approvePublication(game.save.campaign, 'policing', game.campaignContext)).toBe(true);
@@ -75,6 +136,9 @@ describe('newsroom drawer', () => {
     game.save.campaign.minute = LAST_EDITION;
     expect(newsroomSummary(game)).toMatchObject({ toSubmit: 1, ready: 0, closed: true });
     expect(newsroomMarkup(game)).toContain('The final edition has closed.');
+    expect(newsroomMarkup(game, 'to-submit')).toContain('Final edition closed · unsubmitted copies retained.');
+    expect(newsroomMarkup(game, 'stories')).toContain('Publication deadline passed.');
+    expect(newsroomMarkup(game, 'to-submit')).toContain('Edition closed · record retained');
     expect(newsroomSummary(game).summary).toContain('1 source not submitted');
     game.save.campaign.minute = 600; game.save.campaign.finished = true;
     expect(newsroomSummary(game)).toMatchObject({ ready: 0, closed: true });

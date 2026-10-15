@@ -3,6 +3,7 @@ import type { AudioFX } from './audio';
 import { createSettings, type SettingsControls } from './settings';
 import { bindSettingControls } from './setting-controls';
 import type { Allegation } from './campaign/model';
+import { isNewsroomSection, type NewsroomSection } from './campaign/newsroom-view';
 import { DrawerMenu } from './drawer-menu';
 import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
 import { splashPrompts, type InputDevice } from './splash';
@@ -14,6 +15,7 @@ export class GameDrawer {
   private refreshSettings = () => {};
   private page: DrawerPage = 'home';
   private entry: 'home' | 'newsroom' = 'home';
+  private newsroomSection: NewsroomSection | null = null;
   private transition?: Animation;
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
@@ -26,6 +28,15 @@ export class GameDrawer {
       if (!this.active || this.transition || !button || button.disabled) return;
       const game = options.game(), page = button.dataset.page;
       if (page && isDrawerPage(page)) { void this.open(page); return; }
+      if (this.page === 'newsroom' && button.dataset.newsroomSection && isNewsroomSection(button.dataset.newsroomSection)) {
+        this.newsroomSection = button.dataset.newsroomSection;
+        this.refresh();
+        if (!matchMedia('(min-width:1000px)').matches) {
+          const detail = this.root.querySelector<HTMLElement>('#newsroom-detail');
+          detail?.focus({ preventScroll: true }); detail?.scrollIntoView({ block: 'start' });
+        }
+        return;
+      }
       switch (button.id) {
         case 'start': options.play(); break;
         case 'sleep': if (game.sleep()) options.play(); break;
@@ -33,6 +44,7 @@ export class GameDrawer {
         case 'ordinary-fare': game.newJob(false, 'replaced', true); options.play(); break;
         case 'abandon-ride': game.newJob(false, 'shift'); this.refresh(); break;
         case 'notebook-route': options.play(); game.navigateNewsroom(); break;
+        case 'newsroom-menu': this.root.querySelector<HTMLElement>(`#newsroom-open-${this.newsroomSection}`)?.focus(); this.root.scrollTop = 0; break;
       }
       if (button.dataset.submit && game.submitMaterial(button.dataset.submit)) this.refresh();
       if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
@@ -46,11 +58,13 @@ export class GameDrawer {
     const game = this.options.game();
     if (game.mode !== 'playing' || !game.campaignEnabled) return;
     this.entry = this.page = 'newsroom';
+    this.newsroomSection = null;
     game.setMode('paused');
   }
   reset() {
     this.transition?.cancel(); this.transition = undefined;
     this.page = this.entry = 'home'; this.selections.clear(); delete this.root.dataset.page;
+    this.newsroomSection = null;
   }
   refresh() {
     this.transition?.cancel(); this.transition = undefined;
@@ -109,7 +123,7 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry, newsroomSection: this.newsroomSection })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);

@@ -3,7 +3,7 @@ import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
 import { calendarLabel } from './campaign/clock';
 import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
-import { newsroomMarkup } from './campaign/newsroom-view';
+import { newsroomMarkup, type NewsroomSection } from './campaign/newsroom-view';
 import { creditsMarkup } from './credits';
 import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
@@ -41,11 +41,11 @@ function campaignMarkup(game: Game) {
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
 }
-export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home' }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom' }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
-    case 'newsroom': return newsroomMarkup(game);
+    case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;
     case 'rules': body = streetRulesMarkup(); break;
