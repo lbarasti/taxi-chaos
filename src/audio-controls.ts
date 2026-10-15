@@ -32,6 +32,6 @@ export function refreshAudioControls(audio: AudioFX) {
   for (const output of Array.from(document.querySelectorAll<HTMLOutputElement>('[data-audio-out]'))) {
     const key = output.dataset.audioOut as 'volume' | 'sirens'; output.textContent = `${Math.round(state[key] * 100)}%`;
   }
-  const message = state.muted ? 'FX muted.' : state.volume === 0 ? 'FX volume is zero.' : state.status === 'locked' ? 'Sound starts with your first click or driving key.' : state.status === 'loading' ? 'Preparing sound FX…' : state.status === 'unavailable' ? 'Sound unavailable in this browser.' : state.context !== 'running' ? 'Click or press a driving key to resume sound.' : state.failures.length ? `${state.decoded}/${state.total} sounds ready; some samples unavailable.` : 'FX ready · Sirens at 0% disables sirens.';
+  const message = state.muted ? 'FX muted.' : state.volume === 0 ? 'FX volume is zero.' : state.status === 'locked' ? 'Sound starts with your first click or driving key.' : state.status === 'loading' ? 'Preparing sound FX…' : state.status === 'unavailable' ? 'Sound unavailable in this browser.' : state.context !== 'running' ? 'Click or press a driving key to resume sound.' : state.failures.length ? `${state.decoded}/${state.total} sounds ready; some samples unavailable.` : 'FX ready.';
   for (const label of Array.from(document.querySelectorAll<HTMLElement>('[data-audio-status]'))) label.textContent = message;
 }

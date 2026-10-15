@@ -1,9 +1,10 @@
 import type { Game } from './game';
 import type { AudioFX } from './audio';
 import { difficulties } from './rules';
+import { settingRow } from './setting-controls';
 import { calendarLabel } from './campaign/clock';
 import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
-import { audioMarkup, audioCreditsMarkup } from './audio-controls';
+import { audioCreditsMarkup } from './audio-controls';
 import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
 
@@ -12,7 +13,7 @@ const pages = {
   settings: { title: 'Settings.', parent: 'home' },
   rules: { title: 'The street rules.', parent: 'home' },
   shift: { title: 'This shift.', parent: 'home' },
-  credits: { title: 'Sound credits.', parent: 'settings' },
+  credits: { title: 'Credits.', parent: 'home' },
   notebook: { title: '', parent: 'home' },
   'notebook-guide': { title: 'Keeping records.', parent: 'notebook' },
 } as const satisfies Record<DrawerPage, { title: string; parent: DrawerPage | null }>;
@@ -20,8 +21,15 @@ export const drawerParent = (page: DrawerPage) => pages[page].parent;
 export const isDrawerPage = (page: string): page is DrawerPage => Object.hasOwn(pages, page);
 
 function settingsMarkup(game: Game, audio: AudioFX) {
-  const choices = Object.entries(difficulties).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('');
-  return `<div class="play-options"><label class="menu-field"><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label class="menu-field">Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${choices}</select></label></div>${audioMarkup(audio, { credits: 'page' })}`;
+  const p = audio.preferences;
+  return `<fieldset class="settings-group"><legend>GAMEPLAY</legend>
+    ${settingRow('gore', 'Pulp gore', game.settings.gore ? 'On' : 'Off', 'Fatal impacts & blood')}
+    ${settingRow('difficulty', 'Difficulty', difficulties[game.settings.difficulty].name)}
+  </fieldset><fieldset class="settings-group"><legend>AUDIO</legend>
+    ${settingRow('muted', 'Mute FX', p.muted ? 'On' : 'Off')}
+    ${settingRow('volume', 'FX volume', `${Math.round(p.volume * 100)}%`)}
+    ${settingRow('sirens', 'Sirens', `${Math.round(p.sirens * 100)}%`)}
+  </fieldset>`;
 }
 function campaignMarkup(game: Game) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';

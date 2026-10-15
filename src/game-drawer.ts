@@ -1,6 +1,7 @@
 import type { Game } from './game';
 import type { AudioFX } from './audio';
-import type { Difficulty } from './rules';
+import { difficulties, type Difficulty } from './rules';
+import { stepChoice, stepVolume, type SettingKey } from './setting-controls';
 import type { Allegation } from './campaign/model';
 import { bindAudioControls } from './audio-controls';
 import { DrawerMenu } from './drawer-menu';
@@ -21,6 +22,10 @@ export class GameDrawer {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
       if (!this.active || this.transition || !button || button.disabled) return;
       const game = options.game(), page = button.dataset.page;
+      if (button.dataset.step) {
+        this.changeSetting(button.closest<HTMLElement>('[data-setting]')!.dataset.setting as SettingKey, Number(button.dataset.step));
+        return;
+      }
       if (page && isDrawerPage(page)) { void this.open(page); return; }
       switch (button.id) {
         case 'start': options.play(); break;
@@ -33,12 +38,11 @@ export class GameDrawer {
       if (button.dataset.submit && game.submitMaterial(button.dataset.submit)) this.refresh();
       if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
     });
-    root.addEventListener('change', event => {
-      const input = event.target as HTMLInputElement | HTMLSelectElement;
-      if (input.id === 'gore-option') options.game().configure({ gore: (input as HTMLInputElement).checked });
-      if (input.id === 'difficulty-option') options.game().configure({ difficulty: input.value as Difficulty });
-    });
     root.addEventListener('input', event => {
+      if ((event.target as HTMLElement).id === 'difficulty-slider') {
+        options.game().configure({ difficulty: (Object.keys(difficulties) as Difficulty[])[Number((event.target as HTMLInputElement).value)] });
+        this.refreshSettings();
+      }
       if ((event.target as HTMLElement).id === 'notebook-search') this.filterNotebook();
     });
   }
@@ -49,14 +53,37 @@ export class GameDrawer {
   }
   refresh() {
     this.transition?.cancel(); this.transition = undefined;
-    // Keep native controls mounted: changing a setting needs no DOM/focus rebuild.
-    if (this.page === 'settings' && this.root.dataset.page === 'settings') {
-      this.root.classList.add('splash-modal');
-      const { settings } = this.options.game();
-      this.root.querySelector<HTMLInputElement>('#gore-option')!.checked = settings.gore;
-      this.root.querySelector<HTMLSelectElement>('#difficulty-option')!.value = settings.difficulty;
-    } else this.paint();
+    this.root.classList.add('splash-modal');
+    if (this.page === 'settings' && this.root.dataset.page === 'settings') this.refreshSettings();
+    else this.paint();
   }
+  private refreshSettings() {
+    const { settings } = this.options.game(), p = this.options.audio.preferences;
+    const values: Record<SettingKey, string> = { gore: settings.gore ? 'On' : 'Off', difficulty: difficulties[settings.difficulty].name, muted: p.muted ? 'On' : 'Off', volume: `${Math.round(p.volume * 100)}%`, sirens: `${Math.round(p.sirens * 100)}%` };
+    this.root.querySelectorAll<HTMLElement>('[data-setting]').forEach(row => {
+      const value = values[row.dataset.setting as SettingKey];
+      if (row.dataset.setting === 'difficulty') {
+        row.querySelector('[data-difficulty-label]')!.textContent = value;
+        const slider = row.querySelector<HTMLInputElement>('input')!;
+        slider.value = String(Object.keys(difficulties).indexOf(settings.difficulty));
+        slider.setAttribute('aria-valuetext', value);
+        return;
+      }
+      const output = row.querySelector('output')!;
+      if (output.textContent !== value) output.textContent = value;
+    });
+  }
+  private changeSetting(key: SettingKey, delta: number) {
+    const game = this.options.game(), audio = this.options.audio, p = audio.preferences;
+    if (key === 'gore') game.configure({ gore: !game.settings.gore });
+    else if (key === 'difficulty') game.configure({ difficulty: stepChoice(Object.keys(difficulties) as Difficulty[], game.settings.difficulty, delta) });
+    else {
+      audio.configure(key === 'muted' ? { muted: !p.muted } : { [key]: stepVolume(p[key], delta) });
+      void audio.unlock();
+    }
+    this.refreshSettings();
+  }
+
   async open(page: DrawerPage, { animate = true } = {}) {
     // Capture previews can choose a page before entering paused mode.
     if (!this.active) { this.page = page; return; }
@@ -83,6 +110,7 @@ export class GameDrawer {
     void this.open(parent); return true;
   }
   move(delta: number) { if (this.active && !this.transition) this.menu.move(delta); }
+  adjust(delta: number) { if (this.active && !this.transition) this.menu.adjust(delta); }
   activate() { if (this.active && !this.transition) this.menu.activate(); }
   handleKey(event: KeyboardEvent) {
     if (!this.active) return false;

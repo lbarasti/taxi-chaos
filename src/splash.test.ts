@@ -30,14 +30,14 @@ describe('startup splash', () => {
   it('uses equally styled actions and separate pages without accordions', () => {
     const game = new Game(undefined, false);
     const html = splashMarkup(game, false);
-    expect(html.match(/class="menu-item"/g)).toHaveLength(3);
+    expect(html.match(/class="menu-item"/g)).toHaveLength(4);
     expect(html).not.toContain('class="primary"');
     expect(menuItem('<Start>', { id: '"start', disabled: true })).toContain('id="&quot;start" disabled><span>&lt;Start&gt;</span>');
     expect(html).not.toContain('<details'); expect(html).not.toContain('<summary');
     expect(html).not.toContain('Chase the fare.');
     expect(streetRulesMarkup()).toContain('Chase the fare.');
     expect(drawerHeading('Settings.', 'home')).toContain('data-page="home"');
-    expect(drawerHeading('Sound credits.', 'settings')).toContain('data-page="settings"');
+    expect(drawerHeading('Credits.', 'home')).toContain('data-page="home"');
   });
   it('maps prompts to the most recent device', () => {
     expect(splashPrompts('keyboard')).toContain('WASD'); expect(splashPrompts('touch')).toContain('DRAG'); expect(splashPrompts('xbox')).toContain('X'); expect(splashPrompts('playstation')).toContain('□');
