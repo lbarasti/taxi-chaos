@@ -26,10 +26,10 @@ try {
       green++;
       const px = x + (i / 4) % w, py = y + Math.floor(i / 4 / w);
       const distance = Math.hypot(px / dpr - aura.x, py / dpr - aura.y) / aura.radius;
-      // Outside the actual vehicle: reject the old tiny roof outline, even if it is green.
+      // Sample the soft spill around the bike; the cab cue is intentionally roof-sized.
       if (distance > 0.4 && distance < 0.65) spill++;
     }
-    return { cue: aura.cue, green, spill };
+    return { cue: aura.cue, green, spill, radius: aura.radius };
   }, api);
   for (const { name, width, height, touch } of [
     { name: 'desktop', width: 1440, height: 900, touch: false },
@@ -97,7 +97,7 @@ try {
       const roof = await auraPixels(page, '__scenario');
       assert(roof?.cue === 'roof', 'the renderer must paint the cab roof aura');
       assert(roof.green > 0, 'the roof aura must put green pixels on the canvas');
-      assert(roof.spill > 50, `the roof aura must visibly spill beyond the cab, got ${roof.spill} pixels`);
+      assert(roof.radius <= 15, `the cab glow must stay roof-sized, got ${roof.radius}px radius`);
       state = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
       assert(state.speed > 0);
       await page.locator('#city').focus();
@@ -285,6 +285,7 @@ try {
     assert.match(await mapLabel(), /DELIVER · /);
     assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), 'roof');
     if (touch) await closeStory();
+    if (name === 'desktop' || name === 'portrait') await command({ op: 'step', seconds: 2.4 }); // clear pickup text for roof-glow evidence
     await shot('on-board');
     const driving = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
     assert(driving.speed > 0);
@@ -342,13 +343,24 @@ try {
     await page.locator('#city').focus();
     await page.evaluate(() => document.fonts.ready);
     await step(0.02, []);
+    if (await page.locator('#story').isVisible()) await page.locator('#story-close').click();
     assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), 'body');
     // The renderer must actually paint the body aura, not just set the predicate.
     const body = await auraPixels(page, '__taxi');
     assert(body?.cue === 'body', 'the renderer must paint the bike body aura');
     assert(body.green > 0, 'the body aura must put green pixels on the canvas');
     assert(body.spill > 50, `the bike aura must visibly spill beyond the body, got ${body.spill} pixels`);
+    assert(body.radius <= 34, `the bike underglow must stay compact, got ${body.radius}px radius`);
     await page.screenshot({ path: resolve(output, 'desktop-bike-on-board.png') });
+    await page.evaluate(() => window.__taxi.dayNight({ hour: 22, frozen: true }));
+    const night = await auraPixels(page, '__taxi');
+    assert(night?.green > 0, 'the ground underglow must remain readable at night');
+    await page.screenshot({ path: resolve(output, 'desktop-bike-on-board-night.png') });
+    for (const [layout, viewport] of [['portrait', { width: 390, height: 844 }], ['landscape', { width: 844, height: 390 }]]) {
+      await page.setViewportSize(viewport);
+      await step(0.02, []);
+      await page.screenshot({ path: resolve(output, `${layout}-bike-on-board-night.png`) });
+    }
     await context.close();
     console.log('Courier bike on-board aura through physical riding passed');
   }

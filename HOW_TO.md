@@ -67,8 +67,8 @@ Destinations use one distinctive symbol each: a ringed circle for a pickup, a
 diamond for a delivery, and drawn garage, newsroom, harbour and container
 markers. A chevron on the rim points along the destination bearing, whether the
 destination still sits on the wheel or beyond it. Once a passenger or parcel is
-aboard, the cab's roof sign (or the courier bike's body) emits a bright green
-light with the same soft spill as police lights, not an outlined circle. The
+aboard, a soft green light stays within the cab roof's footprint, or lights a
+small patch of ground underneath the courier bike without tinting its artwork. The
 wheel itself stays free of cargo badges. While walking, parked
 rides, the garage and the newsroom stay marked and no permanent instruction bar
 covers the map.

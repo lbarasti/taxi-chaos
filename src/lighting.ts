@@ -50,6 +50,8 @@ export type LightSource = {
   spread?: number;
   /** Radial core fraction (0 = soft centre, 0.4 = flatter pool). */
   inner?: number;
+  /** Paint coloured spill before raised sprites, not over them in the final lighting pass. */
+  groundOnly?: boolean;
   /**
    * Opt this light into building occlusion. Cones are always occluded (they read as street-level
    * beams); radial lamps leave this off so storefront/awning spill stays soft.
@@ -502,6 +504,23 @@ export class LightingLayer {
     }
   }
 
+  /** Ground-level coloured spill. Call after terrain/marks and before people or vehicles. */
+  renderGroundGlow(ctx: CanvasRenderingContext2D, opts: LightingRenderOptions): void {
+    const lights = opts.lights.filter(light => light.groundOnly);
+    if (!lights.length || !this.ensure(opts.width, opts.height)) return;
+    const glow = this.glowCtx!, params = ambientPass(opts.state);
+    glow.setTransform(1, 0, 0, 1, 0, 0);
+    glow.globalCompositeOperation = 'source-over';
+    glow.clearRect(0, 0, this.maskWidth, this.maskHeight);
+    glow.globalAlpha = 1;
+    for (const light of lights) this.drawLight(glow, light, params, 'glow', opts);
+    ctx.save();
+    ctx.setTransform(opts.dpr, 0, 0, opts.dpr, 0, 0);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 1;
+    ctx.drawImage(this.glow!, 0, 0, this.maskWidth, this.maskHeight, 0, 0, opts.width, opts.height);
+    ctx.restore();
+  }
+
   render(ctx: CanvasRenderingContext2D, opts: LightingRenderOptions): void {
     if (!this.ensure(opts.width, opts.height)) return;
     const params = ambientPass(opts.state);
@@ -544,7 +563,8 @@ export class LightingLayer {
     glow.globalCompositeOperation = 'source-over';
     glow.clearRect(0, 0, this.maskWidth, this.maskHeight);
     glow.globalAlpha = 1;
-    for (const light of opts.lights) this.drawLight(glow, light, params, 'glow', opts);
+    // Ground lights still open the ambient mask, but must not bleach raised sprite colours.
+    for (const light of opts.lights) if (!light.groundOnly) this.drawLight(glow, light, params, 'glow', opts);
 
     // 4. Composite mask (darken) then glow (lighten) back onto the scene at full resolution.
     ctx.globalCompositeOperation = 'source-over';

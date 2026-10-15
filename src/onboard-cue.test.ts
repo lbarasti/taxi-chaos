@@ -13,25 +13,26 @@ function takeBike() {
 }
 
 describe('on-board world cue', () => {
-  it('uses a broad saturated green light like the police aura, even in daylight', () => {
+  it('confines the cab glow to its roof instead of spilling across the street', () => {
     const g = new Game(undefined, false);
     expect(onBoardLight(g, g.player)).toBeNull();
     g.job.stage = 'dropoff';
     const light = onBoardLight(g, g.player, true)!;
-    expect(light).toMatchObject({ cue: 'roof', radius: 7.5, color: [74, 255, 132], intensity: 0.9 });
+    expect(light).toMatchObject({ cue: 'roof', radius: 1.4, color: [74, 255, 132], intensity: 0.6, groundOnly: false });
+    expect(light.radius * 2).toBeLessThan(g.player.body.w);
     expect(light.artificial).toBeUndefined(); // no dusk/dawn dimming
     expect(light.profile).toBeUndefined(); // shared soft radial sprite, no ring or cone
     expect({ x: light.x, y: light.y }).toEqual(g.player.body.toWorld({ x: -0.1, y: 0 }));
     g.time += 1;
     expect(onBoardLight(g, g.player, true)).toEqual(light); // reduced motion: steady light
-    expect(onBoardLight(g, g.player)!.intensity).toBeGreaterThan(0.8);
+    expect(onBoardLight(g, g.player)!.intensity).toBeGreaterThan(0.5);
     g.newJob(false);
     expect(onBoardLight(g, g.player)).toBeNull();
   });
 
-  it('lights the bike body with a broad soft glow and no leftover light when abandoned', () => {
+  it('gives the bike a compact dimmer ground glow and no leftover light when abandoned', () => {
     const g = takeBike(); g.job.stage = 'dropoff';
-    expect(onBoardLight(g, g.player, true)).toMatchObject({ cue: 'body', ...g.player.body.position, radius: 6.5, intensity: 0.9 });
+    expect(onBoardLight(g, g.player, true)).toMatchObject({ cue: 'body', ...g.player.body.position, radius: 3.2, intensity: 0.6, groundOnly: true });
     g.onFoot = true;
     expect(onBoardLight(g, g.player)).toBeNull();
     g.onFoot = false; g.player.alive = false;

@@ -102,6 +102,14 @@ export class Renderer {
       c.beginPath(); for (const s of batch) { c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); } c.stroke();
     }
     c.globalAlpha = 1;
+    const groundAura = onBoardLight(g, g.player, this.reducedMotion);
+    if (groundAura?.groundOnly && this.visible(g.player.body.position)) {
+      // Ground spill precedes every raised sprite: the bike, rider and parcel retain their colours.
+      this.lightLayer.renderGroundGlow(c, {
+        width: this.width, height: this.height, dpr: this.dpr, state: lighting, lights: [groundAura],
+        zoom: this.zoom, project: point => this.screen(point),
+      });
+    }
     for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
     this.campaignFrontages();
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
@@ -238,8 +246,7 @@ export class Renderer {
       vehicles: g.vehicles, props: g.world.props, blasts: g.fx.blasts,
     };
     const viewport = this.worldViewport();
-    // Use exactly the police-light compositor: a saturated core spilling softly onto the road,
-    // visible in daylight too, rather than an outlined circle over the vehicle.
+    // Reuse the soft-light compositor, with a roof-sized cab glow or compact bike underglow.
     const aura = onBoardLight(g, g.player, this.reducedMotion);
     const sources = collectLights(scene);
     if (aura) sources.push(aura);

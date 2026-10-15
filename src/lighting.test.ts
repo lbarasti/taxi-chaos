@@ -221,6 +221,35 @@ describe('LightingLayer', () => {
     expect(main.calls.drawImage).toBeGreaterThanOrEqual(2);
   });
 
+  it('paints underglow only on the ground layer, while still opening the final ambient mask', () => {
+    const contexts: ReturnType<typeof mockCtx>[] = [];
+    const subject = new LightingLayer(0.5, (width, height) => {
+      const rec = mockCtx(); contexts.push(rec);
+      return { width, height, getContext: () => rec.ctx } as unknown as HTMLCanvasElement;
+    });
+    const ground: LightSource = { x: 100, y: 100, radius: 3.2, color: [74, 255, 132], intensity: 0.6, groundOnly: true };
+    const roof: LightSource = { ...ground, groundOnly: false, color: [255, 74, 74] };
+    const main = mockCtx(), options = opts([ground, roof]);
+    subject.renderGroundGlow(main.ctx, options);
+    expect(main.calls.drawImage).toBe(1);
+    const [mask, glow] = contexts;
+    expect(mask.calls.drawImage ?? 0).toBe(0);
+    expect(glow.calls.drawImage).toBe(1); // ground-only, not the police/roof light
+    const groundSprite = glow.args.drawImage[0][0];
+    subject.render(main.ctx, options);
+    expect(mask.calls.drawImage).toBe(2); // both sources keep the night mask readable
+    expect(glow.calls.drawImage).toBe(2); // only the roof light in the final overlay
+    expect(glow.args.drawImage[1][0]).not.toBe(groundSprite);
+  });
+
+  it('skips the ground pass when no underglow is active', () => {
+    const main = mockCtx(), subject = layer();
+    subject.renderGroundGlow(main.ctx, opts([]));
+    subject.renderGroundGlow(main.ctx, opts([{ x: 0, y: 0, radius: 7.5, color: [74, 255, 132], intensity: 0.9 }]));
+    expect(main.calls.drawImage ?? 0).toBe(0);
+    expect(subject.spriteCount).toBe(0);
+  });
+
   it('reuses cached sprites across frames and only grows for new colours', () => {
     const subject = layer();
     const main = mockCtx();
