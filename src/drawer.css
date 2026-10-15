@@ -1,0 +1,31 @@
+/* Start and pause share the same splash drawer. */
+.splash-active #app>.controls,.splash-active .touch-controls,.splash-active .navigation-hud,.splash-active .player-hud,.splash-active .toast{visibility:hidden}
+.splash-backdrop{display:flex;justify-content:flex-start;align-items:stretch;padding:0;background:transparent;backdrop-filter:none}
+.splash-backdrop.splash-exiting{opacity:0;pointer-events:none;transition:opacity .55s ease-in-out}
+.splash-modal{display:flex;flex-direction:column;width:min(540px,100vw);height:100dvh;max-height:none;padding:32px 38px;background:linear-gradient(105deg,#14242c9e 0%,#17262d85 55%,#20303970 100%);border:0;border-right:1px solid #a3ddc235;border-radius:0;box-shadow:18px 0 64px #06121b80;backdrop-filter:none;overscroll-behavior:contain}
+.drawer-page{flex-shrink:0;min-width:0;margin-block:auto;text-align:left}.drawer-page>.intro-copy{font-size:14px;line-height:1.7;color:#aebcaf;margin-bottom:22px}
+.splash-modal h2{font-size:54px;margin:22px 0 14px;letter-spacing:-2.5px}
+.splash-save{border:1px solid #a3ddc229;border-radius:12px;background:#0d1d244d;padding:18px;margin-bottom:18px}.splash-save-heading{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:1.3px;color:var(--mint)}.splash-save-heading small{margin-left:auto;color:#aebcaf;font-size:9px;letter-spacing:0}.splash-snapshot{display:flex;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--border)}.splash-snapshot small,.splash-mission small{display:block;font-size:8px;letter-spacing:1.4px;color:#a7b7ac}.splash-snapshot strong{display:block;font-size:25px;font-weight:500;margin-top:7px}.splash-snapshot strong span{font-size:12px;color:var(--muted)}.splash-mission{padding-top:16px}.splash-mission small{color:var(--gold)}.splash-mission strong{display:block;font-size:18px;margin-top:8px}.splash-mission p{font-size:11px;line-height:1.6;color:#aebcaf;margin:7px 0 0}.splash-mission p span{display:block;color:var(--mint)}
+/* Every action has the same weight; selection supplies the emphasis. */
+.game-menu{display:grid;gap:3px}
+.splash-modal .menu-item{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:48px;margin:0;padding:12px 15px;border:1px solid transparent;border-left:3px solid transparent;border-radius:3px;background:transparent;color:#d4ded4;text-align:left;font-size:16px;font-weight:500;line-height:1.4;touch-action:manipulation;transition:background .16s ease,color .16s ease,border-color .16s ease}
+.splash-modal .menu-item::after{content:"›";opacity:0;transform:translateX(-5px);color:var(--gold);transition:opacity .16s ease,transform .16s ease}
+.splash-modal .menu-item[data-selected]{color:#fff3cb;background:#f7ce5518;border-color:#f7ce5533;border-left-color:var(--gold)}
+.splash-modal .menu-item[data-selected]::after{opacity:1;transform:translateX(0)}
+.splash-modal .menu-item:focus-visible{outline:1px solid #f7ce5588;outline-offset:2px}
+.splash-modal .menu-item:disabled{opacity:.4}
+.menu-hint{font-size:10px;letter-spacing:.4px;color:#aebcaf;margin:17px 0 0}
+.splash-modal .intro-controls{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:14px;font-size:10px;margin:17px 0}.splash-modal .intro-controls>span{display:flex;align-items:center;gap:6px}
+.splash-modal .intro-grid{grid-template-columns:1fr;gap:22px;margin:20px 0;border:0;padding:12px 0}.splash-modal .intro-grid p{font-size:12px}.splash-modal .intro-grid strong{font-size:15px}
+.splash-modal .play-options{display:grid;align-items:stretch;gap:10px;font-size:13px;margin:24px 0}
+.splash-modal .play-options label{min-height:48px;justify-content:space-between}.splash-modal .play-options label>span{font-size:10px}
+.splash-modal .menu-field{border:1px solid transparent;border-radius:4px;padding:8px;transition:background .16s,border-color .16s}
+.splash-modal .menu-field:has([data-selected]){background:#f7ce5510;border-color:#f7ce5555}
+.splash-modal .audio-settings{gap:12px;padding:16px 8px;font-size:13px}.splash-modal .audio-settings label{min-height:44px}.splash-modal .audio-settings label:not(.audio-toggle){grid-template-columns:65px minmax(0,1fr) 36px}.splash-modal .audio-settings input[type=range]{min-width:0}.splash-modal .audio-settings .menu-item{font-size:13px}
+.splash-modal .audio-credits{font-size:13px;line-height:1.8;margin:24px 0}.splash-modal .audio-credits p{font-size:12px;margin:16px 0}.splash-modal .audio-credits a{overflow-wrap:anywhere}.splash-modal a[data-selected]{outline:2px solid var(--gold);outline-offset:3px}
+.splash-modal .notebook-actions{flex-direction:column}.splash-modal .campaign-summary{margin-top:0}.drawer-page>p,.splash-modal .notebook-entries p{font-size:13px;line-height:1.7;color:#b8c7bd}.splash-modal .eyebrow{line-height:1.7}
+.drawer-entering{animation:drawer-in .24s cubic-bezier(.2,.75,.25,1) both}
+@keyframes drawer-in{from{opacity:0;transform:translateX(calc(18px * var(--drawer-direction,1)))}to{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.drawer-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field{transition:none}}
+@media(max-width:700px){.splash-modal{width:min(420px,calc(100vw - 24px));padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.splash-modal h2{font-size:clamp(34px,8vw,48px)}.splash-save{padding:14px}.splash-save-heading{flex-wrap:wrap}.splash-save-heading small{margin-left:0;width:100%}.splash-snapshot strong{font-size:22px}.splash-modal .intro-controls{gap:8px;font-size:9px}.splash-modal .intro-grid{grid-template-columns:1fr}.splash-modal .intro-grid>div>span{margin-bottom:5px}}
+@media(max-height:650px){.splash-modal{padding-top:20px;padding-bottom:20px}.splash-modal h2{font-size:40px;margin-top:14px}.drawer-page>.intro-copy{margin-bottom:14px}.splash-snapshot{padding:12px 0}}

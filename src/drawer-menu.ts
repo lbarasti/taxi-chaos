@@ -4,9 +4,9 @@ export class DrawerMenu {
   private selected: HTMLElement | null = null;
   private touchArmed: HTMLElement | null = null;
   private pointerType = '';
-  constructor(private root: HTMLElement) {
+  constructor(private root: HTMLElement, private enabled: () => boolean) {
     root.addEventListener('pointerdown', event => {
-      if (!root.classList.contains('splash-modal')) return;
+      if (!this.enabled()) return;
       this.pointerType = event.pointerType;
       const item = this.item(event.target);
       if (event.pointerType === 'touch' && item?.matches('button, a')) {
@@ -16,18 +16,18 @@ export class DrawerMenu {
       }
     }, true);
     root.addEventListener('pointermove', event => {
-      if (!root.classList.contains('splash-modal')) return;
+      if (!this.enabled()) return;
       if (event.pointerType !== 'mouse') return;
       const item = this.item(event.target);
-      if (item && item !== this.selected) { this.touchArmed = null; this.select(item); }
+      if (item && item !== this.selected) this.select(item);
     });
     root.addEventListener('focusin', event => {
-      if (!root.classList.contains('splash-modal')) return;
+      if (!this.enabled()) return;
       const item = this.item(event.target);
       if (item) this.select(item);
     });
     root.addEventListener('click', event => {
-      if (!root.classList.contains('splash-modal')) return;
+      if (!this.enabled()) return;
       const item = this.item(event.target);
       if (!item) return;
       const touch = event.detail > 0 && (('pointerType' in event && event.pointerType === 'touch') || this.pointerType === 'touch');
@@ -40,28 +40,28 @@ export class DrawerMenu {
     }, true);
   }
   private items() {
-    return Array.from(this.root.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, a[href]'))
+    return Array.from(this.root.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]'))
       .filter(item => !item.hidden && item.getClientRects().length > 0);
   }
   private item(target: EventTarget | null) {
     const item = target instanceof Element ? target.closest<HTMLElement>('button, input, select, a[href]') : null;
-    return item && this.items().includes(item) ? item : null;
+    return item && this.root.contains(item) && !item.matches(':disabled') && item.getClientRects().length ? item : null;
   }
-  private select(item: HTMLElement, focus = true) {
+  private select(item: HTMLElement) {
     if (item !== this.selected) this.touchArmed = null;
     this.root.querySelectorAll('[data-selected]').forEach(element => { element.removeAttribute('data-selected'); element.removeAttribute('aria-current'); });
     this.selected = item;
     item.setAttribute('data-selected', 'true');
     if (item.matches('button, a')) item.setAttribute('aria-current', 'true');
-    if (focus) item.focus({ preventScroll: true });
+    item.focus({ preventScroll: true });
   }
   get selectionId() { return this.selected?.id; }
-  reset(id?: string, focus = true) {
+  reset(id?: string) {
     this.touchArmed = null; this.pointerType = '';
     const items = this.items();
     const item = items.find(item => item.id === id) ?? items[0];
     this.selected = null;
-    if (item) this.select(item, focus);
+    if (item) this.select(item);
   }
   move(delta: number) {
     const items = this.items();

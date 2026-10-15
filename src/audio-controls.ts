@@ -1,13 +1,14 @@
+import { menuItem } from './drawer-markup';
 import type { AudioFX } from './audio';
 
-export function audioMarkup(audio: AudioFX, drawer = false) {
+export function audioMarkup(audio: AudioFX, { credits = 'inline' }: { credits?: 'inline' | 'page' } = {}) {
   const p = audio.preferences;
   return `<fieldset class="audio-settings"><legend>SOUND FX</legend>
-    <label class="audio-toggle"><input type="checkbox" data-audio="muted" ${p.muted ? 'checked' : ''}> Mute FX</label>
-    <label>FX volume <input type="range" min="0" max="100" step="1" value="${Math.round(p.volume * 100)}" data-audio="volume" aria-label="FX volume"><output data-audio-out="volume">${Math.round(p.volume * 100)}%</output></label>
-    <label>Sirens <input type="range" min="0" max="100" step="1" value="${Math.round(p.sirens * 100)}" data-audio="sirens" aria-label="Siren volume"><output data-audio-out="sirens">${Math.round(p.sirens * 100)}%</output></label>
+    <label class="audio-toggle menu-field"><input type="checkbox" data-audio="muted" ${p.muted ? 'checked' : ''}> Mute FX</label>
+    <label class="menu-field">FX volume <input type="range" min="0" max="100" step="1" value="${Math.round(p.volume * 100)}" data-audio="volume" aria-label="FX volume"><output data-audio-out="volume">${Math.round(p.volume * 100)}%</output></label>
+    <label class="menu-field">Sirens <input type="range" min="0" max="100" step="1" value="${Math.round(p.sirens * 100)}" data-audio="sirens" aria-label="Siren volume"><output data-audio-out="sirens">${Math.round(p.sirens * 100)}%</output></label>
     <small data-audio-status>Sound starts with your first click or driving key.</small>
-    ${drawer ? '<button class="menu-item" id="menu-credits" data-page="credits"><span>Sound credits &amp; licences</span><span class="menu-cursor" aria-hidden="true">›</span></button>' : audioCreditsMarkup()}
+    ${credits === 'page' ? menuItem('Sound credits & licences', { id: 'menu-credits', page: 'credits' }) : audioCreditsMarkup()}
   </fieldset>`;
 }
 export function audioCreditsMarkup() {

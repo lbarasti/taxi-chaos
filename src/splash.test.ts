@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { savedCampaignAvailable, splashMarkup, splashPrompts, shiftMarkup, streetRulesMarkup, drawerHeading } from './splash';
+import { savedCampaignAvailable, splashMarkup, splashPrompts, shiftMarkup, streetRulesMarkup } from './splash';
+import { drawerHeading, menuItem } from './drawer-markup';
 import { defaultSave, Game } from './game';
 describe('startup splash', () => {
   it('recognizes only a compatible campaign and handles inaccessible storage', () => {
@@ -31,10 +32,11 @@ describe('startup splash', () => {
     const html = splashMarkup(game, false);
     expect(html.match(/class="menu-item"/g)).toHaveLength(3);
     expect(html).not.toContain('class="primary"');
+    expect(menuItem('<Start>', { id: '"start', disabled: true })).toContain('id="&quot;start" disabled><span>&lt;Start&gt;</span>');
     expect(html).not.toContain('<details'); expect(html).not.toContain('<summary');
     expect(html).not.toContain('Chase the fare.');
     expect(streetRulesMarkup()).toContain('Chase the fare.');
-    expect(drawerHeading('Settings.')).toContain('data-page="home"');
+    expect(drawerHeading('Settings.', 'home')).toContain('data-page="home"');
     expect(drawerHeading('Sound credits.', 'settings')).toContain('data-page="settings"');
   });
   it('maps prompts to the most recent device', () => {

@@ -1,3 +1,4 @@
+import { menuItem } from './drawer-markup';
 import type { Game } from './game';
 import { calendarLabel } from './campaign/clock';
 import { readStorage, storageKeys } from './storage';
@@ -15,11 +16,6 @@ export function splashPrompts(device: InputDevice): string {
     : device === 'xbox' || device === 'playstation' ? [['LS + RT / LT', 'drive'], [device === 'playstation' ? '□' : 'X', 'handbrake'], [device === 'playstation' ? '×' : 'A', 'boost']]
     : [['WASD / ↑↓←→', 'drive'], ['SPACE', 'handbrake'], ['SHIFT', 'boost']];
   return prompts.map(([key, action]) => `<span><kbd>${key}</kbd> ${action}</span>`).join('');
-}
-export type DrawerPage = 'home' | 'settings' | 'rules' | 'shift' | 'credits' | 'notebook' | 'notebook-guide';
-export const menuItem = (label: string, attributes: string) => `<button class="menu-item" ${attributes}><span>${label}</span><span class="menu-cursor" aria-hidden="true">›</span></button>`;
-export function drawerHeading(title: string, back: DrawerPage = 'home') {
-  return `<div class="intro-eyebrow">TAXI CHAOS / MENU</div><h2 id="modal-title">${title}</h2>${menuItem('Back', `id="drawer-back" data-page="${back}"`)}`;
 }
 export function streetRulesMarkup() {
   return `<div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back. Hold W + Shift for a nitro burst.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p><p><small>Physics foundation: Pat Kerr's Motion Lab v0.8.2.</small></p></div></div><div class="intro-controls" id="splash-prompts"></div>`;
@@ -39,10 +35,10 @@ export function splashMarkup(game: Game, saved: boolean): string {
       <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
     </section>
     <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
-      ${menuItem(paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift', 'id="start"')}
-      ${menuItem('The street rules', 'id="menu-rules" data-page="rules"')}
-      ${menuItem('Settings', 'id="menu-settings" data-page="settings"')}
-      ${paused ? `${game.campaignEnabled ? menuItem('Dispatch notebook', 'id="open-notebook"') : ''}${menuItem('This shift', 'id="menu-shift" data-page="shift"')}` : ''}
+      ${menuItem(paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift', { id: 'start' })}
+      ${menuItem('The street rules', { id: 'menu-rules', page: 'rules' })}
+      ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
+      ${paused ? `${game.campaignEnabled ? menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' }) : ''}${menuItem('This shift', { id: 'menu-shift', page: 'shift' })}` : ''}
     </nav>
     <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
 }

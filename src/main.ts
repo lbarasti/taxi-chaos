@@ -1,25 +1,22 @@
 import './style.css';
-import { savedCampaignAvailable, splashMarkup, splashPrompts, drawerHeading, streetRulesMarkup, shiftMarkup, type DrawerPage, type InputDevice } from './splash';
-import { DrawerMenu } from './drawer-menu';
+import { savedCampaignAvailable, type InputDevice } from './splash';
+import { GameDrawer } from './game-drawer';
+import './drawer.css';
 import { bindTouchControls } from './touch-controls';
 import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { Renderer } from './renderer';
 import { dist } from './physics';
 import { PORT_FEE } from './harbour';
-import { difficulties, type Difficulty } from './rules';
 import { setupLab, type LabAPI } from './lab';
 import { AudioFX } from './audio';
-import { audioMarkup, audioCreditsMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
+import { refreshAudioControls } from './audio-controls';
 import { MapEditor } from './map/editor';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 import { bindPlayerHud, playerHudMarkup } from './player-hud';
 import { bindNavigationHud, navigationHudMarkup } from './navigation-hud';
 import './navigation-hud.css';
-import { calendarLabel } from './campaign/clock';
-import type { Allegation } from './campaign/model';
-import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
 import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
@@ -51,92 +48,31 @@ const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), ()
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
-function detectInput(device: InputDevice) {
-  inputDevice = device;
-  const prompts = $('splash-prompts');
-  if (prompts) prompts.innerHTML = splashPrompts(device);
-  const hint = $('menu-hint');
-  if (hint) hint.textContent = device === 'touch' ? 'Tap to select · Tap again to confirm' : device === 'xbox' || device === 'playstation' ? `D-pad Select · ${device === 'playstation' ? '×' : 'A'} Confirm` : '↑ ↓ Select · Enter Confirm';
-}
+const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu });
+drawer.setInputDevice(inputDevice);
+function detectInput(device: InputDevice) { inputDevice = device; drawer.setInputDevice(device); }
 let splashExiting = false;
-let drawerPage: DrawerPage = 'home';
-let drawerTransition: Animation | undefined;
-let drawerBackwards = false;
-const drawerMenu = new DrawerMenu($('modal'));
-const drawerSelections = new Map<DrawerPage, string>();
-const drawerParents: Partial<Record<DrawerPage, DrawerPage>> = { settings: 'home', rules: 'home', shift: 'home', credits: 'settings', notebook: 'home', 'notebook-guide': 'notebook' };
-function sharedDrawer() { return game.mode === 'intro' || game.mode === 'paused'; }
-async function navigateDrawer(page: DrawerPage) {
-  if (!sharedDrawer() || drawerTransition || page === drawerPage) return;
-  const selected = drawerMenu.selectionId;
-  if (selected) drawerSelections.set(drawerPage, selected);
-  drawerBackwards = drawerParents[drawerPage] === page;
-  const content = $('modal').querySelector('.drawer-page');
-  if (content && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const current = getComputedStyle(content);
-    const animation = content.animate([{ opacity: current.opacity, transform: current.transform }, { opacity: 0, transform: `translateX(${drawerBackwards ? 14 : -14}px)` }], { duration: 120, easing: 'ease-in', fill: 'forwards' });
-    drawerTransition = animation;
-    try { await animation.finished; } catch { return; }
-    if (drawerTransition !== animation) return;
-    drawerTransition = undefined;
-  }
-  if (!sharedDrawer()) return;
-  drawerPage = page;
-  modal(true);
-}
 let lab: LabAPI | undefined;
 let mapEditor: MapEditor | undefined;
 let normalGame: Game | undefined;
 let laboratoryGame: Game | undefined;
-function settingsMarkup() {
-  return `<div class="play-options"><label><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label>Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${(Object.entries(difficulties) as [Difficulty, typeof difficulties.standard][]).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label></div>${audioMarkup(audio, true)}`;
-}
 function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; amount: number }[]) {
   const rows = charges.map(({ label, amount }) => `<div><span>${label}</span><strong>−$${amount}</strong></div>`).join('');
   return `<h2 id="modal-title" class="danger">${title}</h2><div class="game-over-bill">${rows}</div><button class="primary" id="recover"><span class="continue-keyboard">Press space bar to continue</span><span class="continue-touch">Tap to continue</span></button>`;
 }
-function campaignMarkup(): string {
-  if (game.mode !== 'paused' || !game.campaignEnabled) return '';
-  const preview = game.sleepPreview;
-  return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p><button class="secondary" id="open-notebook">Dispatch notebook</button><button class="secondary" id="sleep" ${game.sleepReason ? 'disabled' : ''}>${game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`}</button><p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>${!game.garageNear && !game.save.campaign.finished ? '<button class="secondary" id="sleep-route">Route to Pit Stop</button>' : ''}${game.job.stage === 'dropoff' ? '<button class="secondary" id="abandon-ride">Abandon this ride</button>' : '<button class="secondary" id="ordinary-fare">Ask dispatch for an ordinary fare</button>'}</div>`;
-}
-function modal(pageChanged = false) {
+function modal() {
   const overlay = $('overlay'), card = $('modal');
-  drawerTransition?.cancel(); drawerTransition = undefined;
-  const previousPage = card.dataset.page;
-  const samePage = !pageChanged && sharedDrawer() && previousPage === drawerPage && card.classList.contains('splash-modal');
-  const focused = samePage && card.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
-  const focusId = focused?.id;
-  const audioKey = focused?.dataset.audio;
-  const selectedId = samePage ? drawerMenu.selectionId : drawerSelections.get(drawerPage);
-  const scroll = samePage ? card.scrollTop : 0;
   if (splashExiting && game.mode === 'playing') return;
   splashExiting = false; overlay.classList.remove('splash-exiting'); overlay.inert = false;
   overlay.hidden = game.mode === 'playing';
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
-  const sharedMenu = sharedDrawer();
+  const sharedMenu = drawer.active;
   overlay.classList.toggle('splash-backdrop', sharedMenu);
   document.body.classList.toggle('splash-active', sharedMenu);
   card.className = `modal ${game.mode === 'garage' ? 'garage-modal' : ''}`;
-  if (sharedMenu) {
-    card.classList.add('splash-modal');
-    card.dataset.page = drawerPage;
-    let content = '';
-    switch (drawerPage) {
-      case 'home': content = splashMarkup(game, hasSavedCampaign); break;
-      case 'settings': content = drawerHeading('Settings.') + settingsMarkup(); break;
-      case 'credits': content = drawerHeading('Sound credits.', 'settings') + audioCreditsMarkup(); break;
-      case 'rules': content = drawerHeading('The street rules.') + streetRulesMarkup(); break;
-      case 'shift': content = drawerHeading('This shift.') + shiftMarkup(game, campaignMarkup()); break;
-      case 'notebook': card.classList.add('notebook-modal'); content = notebookMarkup(game); break;
-      case 'notebook-guide': content = drawerHeading('Keeping records.', 'notebook') + notebookGuideMarkup(game); break;
-    }
-    card.innerHTML = `<div class="drawer-page${pageChanged ? ' drawer-entering' : ''}" style="--drawer-direction:${drawerBackwards ? -1 : 1}">${content}</div>`;
-    card.querySelectorAll('button').forEach(button => { button.className = 'menu-item'; });
-    card.querySelectorAll<HTMLElement>('.play-options label, .audio-settings label, .notebook-search').forEach(label => label.classList.add('menu-field'));
-    detectInput(inputDevice);
-  }
-  else if (game.mode === 'garage') {
+  if (sharedMenu) drawer.refresh();
+  else drawer.reset();
+  if (game.mode === 'garage') {
     const upgrades = (Object.entries(upgradeInfo) as [Upgrade, typeof upgradeInfo.engine][]).map(([key, u]) => { const level = game.save.upgrades[key], price = game.price(key); return `<div class="upgrade"><div><span class="upgrade-number">0${Object.keys(upgradeInfo).indexOf(key) + 1}</span><h3>${u.name}</h3><p>${u.subtitle}</p><small>${u.detail}</small><div class="level">${[1, 2, 3].map(i => `<i class="${i <= level ? 'filled' : ''}"></i>`).join('')}<span>LEVEL ${level} / 3</span></div></div><button class="buy" data-upgrade="${key}" ${level >= 3 || game.save.cash < price ? 'disabled' : ''}>${level >= 3 ? 'MAXED' : `$${price}`}</button></div>`; }).join('');
     const repairPrice = game.repairPrice;
     card.innerHTML = `<div class="eyebrow">OLD TOWN / TUNING & REPAIRS <span class="garage-wallet">$${game.save.cash}</span></div><h2 id="modal-title">Pit Stop.</h2><p>Good drivers invest in bad decisions.</p><div class="upgrades">${upgrades}</div><div class="repair"><div><strong>Patch it up</strong><small>Restore your chassis to 100%.</small></div><button class="buy" id="repair" ${repairPrice === 0 || game.save.cash < repairPrice ? 'disabled' : ''}>${repairPrice === 0 ? 'ALL GOOD' : `$${repairPrice}`}</button></div><button class="primary" id="resume">Back to the streets ${arrowIcon}</button>`;
@@ -149,50 +85,26 @@ function modal(pageChanged = false) {
     const bill = game.arrestBill;
     card.innerHTML = gameOverMarkup('BUSTED', [{ label: 'Impound bill', amount: bill.impound }, { label: 'Bail', amount: bill.bail }]);
   }
-  $('start')?.addEventListener('click', () => {
-    realtime(); externalClock = false; drawerPage = 'home';
-    if (game.mode === 'intro') {
-      splashExiting = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (splashExiting) { overlay.classList.add('splash-exiting'); overlay.inert = true; }
-      game.start(); renderer.startIntroTransition();
-      if (splashExiting) window.setTimeout(() => { if (splashExiting) { splashExiting = false; modal(); } }, 550);
-    } else game.setMode('playing');
-    $('city').focus();
-  });
-  $('resume')?.addEventListener('click', () => { realtime(); externalClock = false; drawerPage = 'home'; game.setMode('playing'); $('city').focus(); });
+  $('resume')?.addEventListener('click', playFromMenu);
   $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
-  $('gore-option')?.addEventListener('change', e => game.configure({ gore: (e.target as HTMLInputElement).checked }));
-  $('difficulty-option')?.addEventListener('change', e => game.configure({ difficulty: (e.target as HTMLSelectElement).value as Difficulty }));
-  $('open-notebook')?.addEventListener('click', openNotebook);
-  $('sleep')?.addEventListener('click', () => { if (game.sleep()) { realtime(); externalClock = false; $('city').focus(); } });
-  $('sleep-route')?.addEventListener('click', () => { realtime(); externalClock = false; game.setMode('playing'); game.garage(); $('city').focus(); });
-  $('ordinary-fare')?.addEventListener('click', () => { game.newJob(false, 'replaced', true); realtime(); externalClock = false; game.setMode('playing'); $('city').focus(); });
-  $('abandon-ride')?.addEventListener('click', () => { game.newJob(false, 'shift'); modal(); });
-  $('notebook-back')?.addEventListener('click', () => { void navigateDrawer('home'); });
-  $('notebook-route')?.addEventListener('click', () => { drawerPage = 'home'; realtime(); externalClock = false; game.setMode('playing'); game.navigateNewsroom(); hud(); $('city').focus(); });
-  card.querySelectorAll<HTMLButtonElement>('[data-submit]').forEach(button => button.addEventListener('click', () => { if (game.submitMaterial(button.dataset.submit!)) { modal(); } }));
-  card.querySelectorAll<HTMLButtonElement>('[data-publish]').forEach(button => button.addEventListener('click', () => { if (game.requestPublication(button.dataset.publish as Allegation)) modal(); }));
-  $('notebook-search')?.addEventListener('input', e => { const query = (e.target as HTMLInputElement).value.toLocaleLowerCase(); card.querySelectorAll<HTMLElement>('[data-record]').forEach(article => { article.hidden = !article.textContent?.toLocaleLowerCase().includes(query); }); });
   $('repair')?.addEventListener('click', () => game.repair());
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => game.buy(button.dataset.upgrade as Upgrade)));
-  card.querySelectorAll<HTMLElement>('[data-page]').forEach(button => button.addEventListener('click', () => { void navigateDrawer(button.dataset.page as DrawerPage); }));
-  bindAudioControls(card, audio);
-  if (!overlay.hidden && sharedMenu) {
-    // Settings can re-render after a preference change; keep the active edit and scroll.
-    drawerMenu.reset(selectedId, !focused);
-    const restore = focusId ? $(focusId) : audioKey ? card.querySelector<HTMLElement>(`[data-audio="${audioKey}"]`) : null;
-    restore?.focus({ preventScroll: true });
-    card.scrollTop = scroll;
-    if (!samePage) card.querySelector<HTMLElement>('[data-selected]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  } else if (!overlay.hidden) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
+  if (!overlay.hidden && !sharedMenu) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
-function openNotebook() {
-  if (!game.campaignEnabled || (game.mode !== 'playing' && game.mode !== 'paused')) return;
-  if (game.mode === 'paused') void navigateDrawer('notebook');
-  else { drawerPage = 'notebook'; game.setMode('paused'); }
+function playFromMenu() {
+  const overlay = $('overlay');
+  realtime(); externalClock = false;
+  if (game.mode === 'intro') {
+    splashExiting = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (splashExiting) { overlay.classList.add('splash-exiting'); overlay.inert = true; }
+    game.start(); renderer.startIntroTransition();
+    if (splashExiting) window.setTimeout(() => { if (splashExiting) { splashExiting = false; modal(); } }, 550);
+  } else if (game.mode !== 'playing') game.setMode('playing');
+  $('city').focus();
 }
-function bindGame() { game.onModeChange = () => { if (!sharedDrawer()) { drawerPage = 'home'; drawerSelections.clear(); } resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
+function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();
+
 function hud() {
   refreshInbox();
   refreshPlayerHud();
@@ -237,29 +149,23 @@ document.addEventListener('pointerdown', event => {
 // Refresh hints after the click target is fixed. Changing their wrapping while a
 // finger is down can shift a scrolled menu row away from the release position.
 document.addEventListener('click', () => detectInput(inputDevice), { capture: true });
-function pause() { if (game.mode === 'playing') { drawerPage = 'home'; game.setMode('paused'); } else if (game.mode === 'paused' || game.mode === 'garage') { realtime(); externalClock = false; drawerPage = 'home'; game.setMode('playing'); } }
+function pause() { if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   detectInput('keyboard');
   if (mapEditor?.handleKey(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
-  if (sharedDrawer() && !$('overlay').inert && !target?.closest('#debug-panel')) {
-    if (drawerTransition) { e.preventDefault(); return; }
-    if (e.code === 'Escape' && drawerPage !== 'home') {
-      e.preventDefault(); if (!e.repeat) void navigateDrawer(drawerParents[drawerPage] ?? 'home'); return;
-    }
-    if (drawerMenu.handleKey(e)) return;
-  }
+  if (!$('overlay').inert && !target?.closest('#debug-panel') && drawer.handleKey(e)) return;
   if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
   if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {
     e.preventDefault(); if (!e.repeat) $('recover').click(); return;
   }
   // Preserve native keyboard activation for HUD buttons.
-  if (target?.closest('button, summary') && (e.code === 'Space' || e.code === 'Enter')) return;
+  if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
-   if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select,summary')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
+   if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') game.garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; }
   if (game.mode === 'playing') game.keys.add(e.code);
@@ -283,13 +189,11 @@ function pollController() {
   const pressed = pad?.buttons.map(b => b.pressed) ?? [];
   const activity = pressed.some((value, index) => value && !previousPadButtons[index]) || !!pad?.axes.some((a, index) => Math.abs(a) > 0.25 && Math.abs(a - (previousPadAxes[index] ?? 0)) > 0.1);
   if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
-  if (pad && sharedDrawer()) {
-    if (!drawerTransition && !$('overlay').inert) {
-      if (pressed[12] && !previousPadButtons[12]) drawerMenu.move(-1);
-      if (pressed[13] && !previousPadButtons[13]) drawerMenu.move(1);
-      if (pressed[0] && !previousPadButtons[0]) drawerMenu.activate();
-      if (pressed[1] && !previousPadButtons[1] && drawerPage !== 'home') void navigateDrawer(drawerParents[drawerPage] ?? 'home');
-    }
+  if (pad && drawer.active && !$('overlay').inert) {
+    if (pressed[12] && !previousPadButtons[12]) drawer.move(-1);
+    if (pressed[13] && !previousPadButtons[13]) drawer.move(1);
+    if (pressed[0] && !previousPadButtons[0]) drawer.activate();
+    if (pressed[1] && !previousPadButtons[1]) drawer.back();
   }
   if (pad && pressed[9] && !previousPadButtons[9]) pause();
   for (const key of padKeys) game.keys.delete(key);
@@ -352,7 +256,7 @@ if (dialoguePreviewMode) Object.assign(window, {
     externalClock = true; accumulator = 0; resetTouch();
     const scene = dialoguePreviewScene(input, missionId, view, legacy);
     game = scene.game; renderer.game = game; renderer.camera = { ...game.actor.position };
-    drawerPage = 'home';
+    drawer.reset();
     $('mission-inbox').hidden = true;
     bindGame(); modal(); hud(); refreshStory(true); renderer.draw(0);
     if (view === 'offer') openInbox();
@@ -372,11 +276,11 @@ if (scenarioPreviewMode) {
     if (!focus) throw new Error(`Unavailable camera focus: ${frame.focus}`);
     renderer.camera = { ...focus };
     renderer.zoom = frame.zoom ?? Math.max(5, Math.min(10.5, window.innerWidth / 125, window.innerHeight / 86));
-    bindGame(); drawerPage = 'home';
+    bindGame(); drawer.reset();
     $('mission-inbox').hidden = true;
     const mode = game.mode;
     try {
-      if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; drawerPage = view === 'notebook' ? 'notebook' : 'home'; }
+      if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; void drawer.open(view === 'notebook' ? 'notebook' : 'home', { animate: false }); }
       modal(); hud(); renderer.draw(0);
       if (view === 'texts') { if (mode !== 'playing') throw new Error('Texts capture requires playing mode'); openInbox(); }
       if (view === 'story' && $('story').hidden) throw new Error('No visible ride conversation to capture');
