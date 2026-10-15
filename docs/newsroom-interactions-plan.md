@@ -30,7 +30,7 @@ undiscovered sources as a checklist, or change the wider input/binding system.
 
 Implemented as the first slice: the camera appears near eligible scenes, highlights
 when recordable and keeps a checked state once saved. The other quick actions and
-newsroom routing retain their existing behaviour. Steps 2–5 remain follow-up work.
+newsroom routing retain their existing behaviour in that slice.
 
 ## 2. Give newsroom records a direct entry point
 
@@ -41,6 +41,22 @@ guidance. Keep “Route to newsroom” inside that panel. Show a concise summary
 
 The panel must be accessible directly from the HUD without finding the pause
 notebook. Do not implement this replacement as part of observation gathering.
+
+Implemented as the second slice: the HUD newsroom icon opens a single-column
+page in the shared pause drawer. It reuses the existing menu rows, scrolling,
+keyboard/controller navigation, touch select/confirm and responsive styling;
+opening the page pauses play without changing guidance or collecting records.
+Routing is an explicit action inside the panel. The existing Dispatch notebook
+is one action away and returns to the newsroom when opened from there.
+
+The summary counts discovered sources used by authored publication routes,
+pending source checks and stories that pass the actual editorial-approval
+predicate. General records do not inflate the source count; checked material,
+blocked dependencies and scheduled/published stories do not inflate readiness.
+After the final edition, unsubmitted records remain visible without promising
+that they can still be submitted. Submission, verification and publication
+rules are unchanged. Steps 3–5 remain follow-up work; a two-column newsroom
+layout can be added later without replacing the shared menu components.
 
 ## 3. Separate useful sources from general notes
 
@@ -120,3 +136,30 @@ Screenshots from the actual quick-action flow:
 
 [Portrait touch](screenshots/observations/portrait-recorded.png) ·
 [Compact landscape touch](screenshots/observations/landscape-480-recorded.png)
+
+### Newsroom entry slice checks
+
+- `src/campaign/newsroom-view.test.ts` covers discovered-source counts, general
+  records, deduplication, check completion, incomplete routes, approval versus
+  publication dependencies, scheduled/published stories, deadlines, independent
+  authored claims and entry-aware notebook back navigation.
+- `node tools/newsroom-check.mjs` checks the standalone HTML offline in six
+  desktop/touch layouts: native HUD entry, accurate summaries, explicit routing,
+  unchanged records/bookings, keyboard focus/activation, touch confirmation,
+  notebook/guide back navigation, reachable 44 px controls, asymmetric safe
+  areas, save reconstruction and on-foot entry. A separate realtime fixture
+  verifies paused physics/clocks, controller navigation and realtime restoration.
+- `SCREENSHOT_DIR=scenario-runs/start-pause node tools/splash-check.mjs` checks
+  the reused drawer, touch controls and controller behavior. The navigation and
+  observation checks above retain physical driving/riding integration coverage.
+- `npm test -- --testTimeout=30000`: 59 files / 741 tests passed.
+- `npm run build`: strict TypeScript and standalone production build passed.
+- All browser checks completed without console errors or external runtime requests.
+
+Screenshots from the actual HUD entry:
+
+| Desktop summary | Portrait touch |
+| --- | --- |
+| ![Single-column newsroom page using pause-menu components](screenshots/newsroom/desktop-summary.png) | ![Mobile newsroom page with the shared touch actions](screenshots/newsroom/portrait-summary.png) |
+
+[Story ready for the editor](screenshots/newsroom/desktop-ready.png)

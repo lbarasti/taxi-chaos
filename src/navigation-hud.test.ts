@@ -35,6 +35,7 @@ describe('radar-first navigation HUD', () => {
     for (const id of ['dispatch', 'texts', 'newsroom', 'observe']) expect(actions).toContain(`id="${id}"`);
     expect(actions.match(/<button/g)).toHaveLength(4);
     expect(actions).toMatch(/<button id="observe"[^>]*hidden disabled/);
+    expect(actions).toMatch(/<button id="newsroom"[^>]*aria-label="Newsroom: view records and story readiness"[^>]*aria-haspopup="dialog"/);
     // Every action is a real, named button; the chart keeps no interactive markup.
     for (const button of actions.match(/<button[^>]*>/g)!) expect(button).toMatch(/aria-label="[^"]+"/);
     expect(navigationHudMarkup).toMatch(/<canvas id="map" role="img" aria-label="Local minimap:/);

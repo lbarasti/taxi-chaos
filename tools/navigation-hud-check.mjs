@@ -255,7 +255,10 @@ try {
     await command({ op: 'mode', mode: 'playing' });
     // Booking newsroom guidance clears through the same toggle and keeps the booking.
     const booking = (await render()).job;
-    await page.locator('#newsroom').click(); await render();
+    await page.locator('#newsroom').click();
+    await waitForDrawer(page, 'newsroom');
+    assert.match(await page.locator('#newsroom-summary').textContent(), /No stories ready for the editor/);
+    await page.locator('#notebook-route').click(); await render();
     assert.match(await mapLabel(), /NEWSROOM · /);
     assert.equal(await target(), 'newsroom');
     assert.equal(await page.locator('#dispatch').isEnabled(), true);
