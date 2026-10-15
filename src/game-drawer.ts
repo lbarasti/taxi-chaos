@@ -8,11 +8,12 @@ import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
 import { splashPrompts, type InputDevice } from './splash';
 import type { DrawerPage } from './drawer-markup';
 
-// Owns only the title/pause drawer. Gameplay, garage and recovery stay in main.
+// The title, pause and HUD newsroom entry share one mobile-friendly drawer.
 export class GameDrawer {
   private settings: SettingsControls;
   private refreshSettings = () => {};
   private page: DrawerPage = 'home';
+  private entry: 'home' | 'newsroom' = 'home';
   private transition?: Animation;
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
@@ -41,9 +42,15 @@ export class GameDrawer {
     });
   }
   get active() { const { mode } = this.options.game(); return mode === 'intro' || mode === 'paused'; }
+  openNewsroom() {
+    const game = this.options.game();
+    if (game.mode !== 'playing' || !game.campaignEnabled) return;
+    this.entry = this.page = 'newsroom';
+    game.setMode('paused');
+  }
   reset() {
     this.transition?.cancel(); this.transition = undefined;
-    this.page = 'home'; this.selections.clear(); delete this.root.dataset.page;
+    this.page = this.entry = 'home'; this.selections.clear(); delete this.root.dataset.page;
   }
   refresh() {
     this.transition?.cancel(); this.transition = undefined;
@@ -57,7 +64,7 @@ export class GameDrawer {
     if (this.transition || page === this.page) return;
     const selection = this.menu.selectionId;
     if (selection) this.selections.set(this.page, selection);
-    const backwards = drawerParent(this.page) === page;
+    const backwards = drawerParent(this.page, this.entry) === page;
     const content = this.root.querySelector('.drawer-page');
     if (animate && content && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const current = getComputedStyle(content);
@@ -72,7 +79,8 @@ export class GameDrawer {
     this.paint(animate ? backwards ? -1 : 1 : 0);
   }
   back() {
-    const parent = drawerParent(this.page);
+    if (this.page === 'newsroom') { this.options.play(); return true; }
+    const parent = drawerParent(this.page, this.entry);
     if (!parent) return false;
     void this.open(parent); return true;
   }
@@ -82,7 +90,7 @@ export class GameDrawer {
   handleKey(event: KeyboardEvent) {
     if (!this.active) return false;
     if (this.transition) { event.preventDefault(); return true; }
-    if (event.code === 'Escape' && drawerParent(this.page)) {
+    if (event.code === 'Escape' && (this.page === 'newsroom' || drawerParent(this.page, this.entry))) {
       event.preventDefault(); if (!event.repeat) this.back(); return true;
     }
     return this.menu.handleKey(event);
@@ -101,7 +109,7 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);

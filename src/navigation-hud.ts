@@ -23,7 +23,7 @@ export const navigationHudMarkup = `<aside class="navigation-hud" aria-label="Ta
 <div class="navigation-actions" role="group" aria-label="Dispatch and campaign shortcuts">
   <button id="dispatch" aria-pressed="true" aria-label="Dispatch: route the next fare" title="Dispatch: route the next fare">${icon('dispatch')}</button>
   <button id="texts" aria-label="Bookings: read text messages" title="Bookings · read text messages">${icon('message')}</button>
-  <button id="newsroom" aria-label="Route to the newsroom" title="Route to the newsroom">${icon('news')}</button>
+  <button id="newsroom" aria-label="Newsroom: view records and story readiness" title="Newsroom · records and story readiness" aria-haspopup="dialog" aria-controls="modal">${icon('news')}</button>
   <button id="observe" aria-label="Record a nearby observation" title="Record a nearby observation" hidden disabled>${icon('camera')}<span class="observation-recorded" aria-hidden="true">${icon('check')}</span></button>
 </div>`;
 
@@ -71,7 +71,7 @@ export function navigationHudState(g: Game, fareRouted = true) {
   };
 }
 
-export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, actions: { texts: () => void; focus: () => void; routeVisibility: (visible: boolean) => void }) {
+export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, actions: { texts: () => void; newsroom: () => void; focus: () => void; routeVisibility: (visible: boolean) => void }) {
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = root.querySelector<HTMLElement>('.navigation-hud')!;
   const dispatch = get('dispatch') as HTMLButtonElement;
@@ -109,7 +109,10 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     refresh(); actions.focus();
   });
   get('texts').addEventListener('click', actions.texts);
-  get('newsroom').addEventListener('click', () => { currentGame().navigateNewsroom(); refresh(); actions.focus(); });
+  get('newsroom').addEventListener('click', () => {
+    const g = currentGame();
+    if (g.mode === 'playing' && g.campaignEnabled) actions.newsroom();
+  });
   observe.addEventListener('click', () => {
     const g = currentGame(), action = observationActionState(g);
     if (action && !action.disabled) g.observeScene(action.id);

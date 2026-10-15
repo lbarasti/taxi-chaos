@@ -5,7 +5,7 @@ import { canApprove } from './events';
 import { LAST_EDITION, calendarLabel } from './clock';
 
 const escape = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
-export function notebookMarkup(game: Game): string {
+export function notebookMarkup(game: Game, back: 'home' | 'newsroom' = 'home'): string {
   const { materials, claims, newsroom } = game.campaignContent;
   const campaign = game.save.campaign, closed = campaign.minute >= LAST_EDITION || campaign.finished;
   const entries = [...game.save.playerRecords.notebook].reverse();
@@ -19,7 +19,7 @@ export function notebookMarkup(game: Game): string {
     <p>Signed slips, things people said, and scenes you bookmarked. Keep your own interpretation.</p>
     <div class="city-bulletin"><small>LOCAL COVERAGE</small><p>${escape(game.campaignBulletin)}</p></div>
     ${menuItem('Keeping records & visiting the newsroom', { id: 'menu-notebook-guide', page: 'notebook-guide' })}
-    <div class="notebook-actions">${menuItem(game.navToNewsroom ? 'Cancel newsroom route' : 'Route to newsroom', { id: 'notebook-route' })}${menuItem('Back to pause menu', { id: 'notebook-back', page: 'home' })}</div>
+    <div class="notebook-actions">${menuItem(game.navToNewsroom ? 'Cancel newsroom route' : 'Route to newsroom', { id: 'notebook-route' })}${menuItem(back === 'newsroom' ? 'Back to newsroom' : 'Back to pause menu', { id: 'notebook-back', page: back })}</div>
     ${cases ? `<section class="editorial-cases"><h3>At the editor’s desk</h3>${cases}</section>` : ''}
     <label class="notebook-search menu-field">Find a record <input id="notebook-search" type="search" placeholder="Name, address or words…"></label>
     <div class="notebook-entries">${entries.length ? entries.map(entry => {
