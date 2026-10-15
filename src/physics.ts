@@ -15,6 +15,7 @@ export const normalize = (v: Vec) => scale(v, 1 / (length(v) || 1));
 export const angleDiff = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
 export class Body {
+  vertices?: readonly Vec[];
   position: Vec; velocity = vec(); angle = 0; angularVelocity = 0; force = vec(); torque = 0;
   constructor(x: number, y: number, public mass = 1000, public w = 4.2, public h = 2.1) { this.position = vec(x, y); }
   get inertia() { return this.mass * (this.w ** 2 + this.h ** 2) / 12; }
@@ -25,7 +26,7 @@ export class Body {
   addForce(f: Vec, p = this.position) { this.force = add(this.force, f); this.torque += cross(sub(p, this.position), f); }
   impulse(f: Vec, p = this.position) { this.velocity = add(this.velocity, scale(f, this.invMass)); this.angularVelocity += cross(sub(p, this.position), f) * this.invInertia; }
   integrate(dt: number) { this.velocity = add(this.velocity, scale(this.force, dt * this.invMass)); this.angularVelocity += this.torque * dt * this.invInertia; this.position = add(this.position, scale(this.velocity, dt)); this.angle += this.angularVelocity * dt; this.force = vec(); this.torque = 0; }
-  corners() { return [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)].map(p => this.toWorld(p)); }
+  corners() { if (this.vertices) return this.vertices.map(p => this.toWorld(p)); return [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)].map(p => this.toWorld(p)); }
 }
 
 export type Controls = { throttle: number; turn: number; handbrake: boolean; boost?: boolean };
@@ -87,7 +88,10 @@ export type Contact = { normal: Vec; depth: number; point: Vec };
 // SAT for rotated rectangles, including a face midpoint for stable face contacts.
 export function contact(a: Body, b: Body): Contact | null {
   const ac = a.corners(), bc = b.corners(); let depth = Infinity, normal = vec();
-  const axes = [rotate(vec(1, 0), a.angle), rotate(vec(0, 1), a.angle), rotate(vec(1, 0), b.angle), rotate(vec(0, 1), b.angle)];
+  const bodyAxes = (body: Body, corners: Vec[]) => body.vertices
+    ? corners.map((p,i) => { const edge=sub(corners[(i+1)%corners.length],p); return normalize(vec(-edge.y,edge.x)); })
+    : [rotate(vec(1,0),body.angle),rotate(vec(0,1),body.angle)];
+  const axes = [...bodyAxes(a,ac), ...bodyAxes(b,bc)];
   for (let axis of axes) {
     const ap = ac.map(p => dot(p, axis)), bp = bc.map(p => dot(p, axis));
     const overlap = Math.min(Math.max(...ap), Math.max(...bp)) - Math.max(Math.min(...ap), Math.min(...bp));
@@ -137,6 +141,16 @@ export class SpatialHash<T extends { body: Body; alive: boolean }> {
 
 /** Exact segment/OBB test; thin walls cannot be skipped by sampled sight rays. */
 export function segmentIntersectsBody(a: Vec, b: Vec, body: Body): boolean {
+  if (body.vertices) {
+    const polygon=body.corners(), delta=sub(b,a); let enter=0,leave=1;
+    for (let i=0;i<polygon.length;i++) {
+      const p=polygon[i],edge=sub(polygon[(i+1)%polygon.length],p),side=cross(edge,sub(a,p)),rate=cross(edge,delta);
+      if(Math.abs(rate)<1e-9) { if(side<0)return false; continue; }
+      if(rate>0)enter=Math.max(enter,-side/rate);else leave=Math.min(leave,-side/rate);
+      if(enter>leave)return false;
+    }
+    return leave>1e-5&&enter<1-1e-5;
+  }
   const start = rotate(sub(a, body.position), -body.angle), end = rotate(sub(b, body.position), -body.angle), delta = sub(end, start);
   let enter = 0, leave = 1;
   for (const axis of ['x', 'y'] as const) {

@@ -1,4 +1,4 @@
-import { Body, SpatialHash, cross, dist, dot, sub, rotate, add, vec, type Vec } from './physics';
+import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
@@ -87,7 +87,14 @@ export class World {
         this.add('lamp', 249, y + side * 9, 0.6, 0.6, '#a7bfbb');
       }
     }
-    for (const p of map.document.countryProps) this.add(p.kind, p.position.x, p.position.y, p.width, p.height, p.color, p.label, p.angle).sourceId = p.id;
+    for (const p of map.document.countryProps) {
+      if (p.id.startsWith('poble-lot-') && map.pobleSec) continue;
+      this.add(p.kind, p.position.x, p.position.y, p.width, p.height, p.color, p.label, p.angle).sourceId = p.id;
+    }
+    for (const roof of map.pobleSec?.roofs ?? []) {
+      const prop=this.add('building',roof.position.x,roof.position.y,roof.w,roof.h,roof.color,'',roof.angle);
+      prop.sourceId=roof.sourceId; prop.body.vertices=roof.outline;
+    }
     // Separate RNG preserves the existing city's layouts, traffic and deterministic fixtures.
     const ruralRandom = seeded(map.document.generation.ruralSeed);
     // Keep the original candidate lattice/RNG draws; carry the southern stream in
@@ -135,7 +142,7 @@ export class World {
       const residentRandom = seeded(1882), savedRandom = this.random;
       this.random = residentRandom;
       for (const [i, cell] of map.pobleSec.cells.entries()) {
-        const home = add(cell.center, rotate(vec(-13.5, -7.5), map.pobleSec.angle));
+        const home = cell.home;
         this.addPerson(home, 'civilian', ['#d5a474', '#8ca99a', '#e4c780', '#c58d81'][i % 4]);
       }
       this.random = savedRandom;

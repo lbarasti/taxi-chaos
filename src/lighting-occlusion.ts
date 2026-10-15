@@ -40,7 +40,7 @@ export type Occluder = {
 export type OccluderProp = {
   kind: string;
   alive: boolean;
-  body: { position: OcclusionPoint; angle?: number; w: number; h: number };
+  body: { position: OcclusionPoint; angle?: number; w: number; h: number; vertices?: readonly OcclusionPoint[]; corners?: () => OcclusionPoint[] };
 };
 
 /** Kinds whose roofs are raised above the street and must not receive street-level light. */
@@ -72,7 +72,7 @@ export function occluderFor(prop: OccluderProp): Occluder | null {
   const lifted = prop.kind === 'building';
   const x0 = -hw + (lifted ? FACADE_OFFSET_X : 0);
   const y0 = -hh + (lifted ? FACADE_OFFSET_Y : 0);
-  const points = rectCorners(body.position, finite(body.angle, 0), x0, y0, hw, hh);
+  const points = body.vertices && body.corners ? body.corners() : rectCorners(body.position, finite(body.angle, 0), x0, y0, hw, hh);
   let cx = 0, cy = 0;
   for (const p of points) { cx += p.x; cy += p.y; }
   cx /= points.length; cy /= points.length;

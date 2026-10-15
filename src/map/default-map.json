@@ -242,2568 +242,6 @@
       "width": 0.6
     },
     {
-      "id": "poble-block-0-0-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 357.039,
-        "y": 28.782
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-0-0-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 365.392,
-        "y": 30.826
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-0-0-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 373.746,
-        "y": 32.871
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "BAR SECO"
-    },
-    {
-      "id": "poble-block-0-0-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 352.19,
-        "y": 48.597
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-0-0-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 360.543,
-        "y": 50.642
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "FLORS"
-    },
-    {
-      "id": "poble-block-0-0-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 368.897,
-        "y": 52.686
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-0-0-w",
-      "owner": "highlands",
-      "position": {
-        "x": 353.934,
-        "y": 38.523
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-0-e",
-      "owner": "highlands",
-      "position": {
-        "x": 372.001,
-        "y": 42.945
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-0-0-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 362.968,
-        "y": 40.734
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-0-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 351.735,
-        "y": 30.264
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-0-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 377.766,
-        "y": 36.634
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-0-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 373.131,
-        "y": 55.575
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-1-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 392.007,
-        "y": 37.339
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-0-1-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 400.36,
-        "y": 39.384
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-0-1-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 408.714,
-        "y": 41.428
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CAFE BLAI"
-    },
-    {
-      "id": "poble-block-0-1-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 387.158,
-        "y": 57.155
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-0-1-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 395.511,
-        "y": 59.199
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "CASA MATA"
-    },
-    {
-      "id": "poble-block-0-1-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 403.865,
-        "y": 61.243
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-0-1-w",
-      "owner": "highlands",
-      "position": {
-        "x": 388.902,
-        "y": 47.081
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-1-e",
-      "owner": "highlands",
-      "position": {
-        "x": 406.969,
-        "y": 51.502
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-0-1-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 397.936,
-        "y": 49.291
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-1-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 386.703,
-        "y": 38.821
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-1-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 412.735,
-        "y": 45.192
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-1-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 408.099,
-        "y": 64.133
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-2-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 426.975,
-        "y": 45.897
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-0-2-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 435.329,
-        "y": 47.941
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-0-2-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 443.682,
-        "y": 49.985
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-0-2-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 422.126,
-        "y": 65.712
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-0-2-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 430.48,
-        "y": 67.756
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "BAR SECO"
-    },
-    {
-      "id": "poble-block-0-2-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 438.833,
-        "y": 69.801
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-0-2-w",
-      "owner": "highlands",
-      "position": {
-        "x": 423.871,
-        "y": 55.638
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-2-e",
-      "owner": "highlands",
-      "position": {
-        "x": 441.938,
-        "y": 60.059
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-0-2-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 432.904,
-        "y": 57.849
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-2-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 421.671,
-        "y": 47.378
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-2-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 447.703,
-        "y": 53.749
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-2-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 443.068,
-        "y": 72.69
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-3-market",
-      "owner": "highlands",
-      "position": {
-        "x": 467.635,
-        "y": 67.377
-      },
-      "kind": "building",
-      "width": 19,
-      "height": 22,
-      "angle": 0.24,
-      "color": "#bea98c",
-      "label": "MERCAT DE LES TRES XEMENEIES"
-    },
-    {
-      "id": "poble-block-0-3-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 456.639,
-        "y": 55.936
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-3-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 482.671,
-        "y": 62.306
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-0-3-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 478.036,
-        "y": 81.247
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-0-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 348.006,
-        "y": 65.693
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-1-0-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 356.36,
-        "y": 67.737
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-1-0-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 364.713,
-        "y": 69.782
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAFE BLAI"
-    },
-    {
-      "id": "poble-block-1-0-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 343.157,
-        "y": 85.508
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-1-0-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 351.51,
-        "y": 87.553
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "CASA MATA"
-    },
-    {
-      "id": "poble-block-1-0-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 359.864,
-        "y": 89.597
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-1-0-w",
-      "owner": "highlands",
-      "position": {
-        "x": 344.902,
-        "y": 75.434
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-0-e",
-      "owner": "highlands",
-      "position": {
-        "x": 362.968,
-        "y": 79.856
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-1-0-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 353.935,
-        "y": 77.645
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-0-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 342.702,
-        "y": 67.175
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-0-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 368.734,
-        "y": 73.545
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-0-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 364.099,
-        "y": 92.486
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-1-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 382.974,
-        "y": 74.25
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-1-1-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 391.328,
-        "y": 76.295
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-1-1-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 399.681,
-        "y": 78.339
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-1-1-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 378.125,
-        "y": 94.066
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-1-1-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 386.479,
-        "y": 96.11
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "BAR SECO"
-    },
-    {
-      "id": "poble-block-1-1-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 394.832,
-        "y": 98.154
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-1-1-w",
-      "owner": "highlands",
-      "position": {
-        "x": 379.87,
-        "y": 83.992
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-1-e",
-      "owner": "highlands",
-      "position": {
-        "x": 397.937,
-        "y": 88.413
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-1-1-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 388.903,
-        "y": 86.202
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-1-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 377.67,
-        "y": 75.732
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-1-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 403.702,
-        "y": 82.102
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-1-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 399.067,
-        "y": 101.043
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-cafe",
-      "owner": "highlands",
-      "position": {
-        "x": 431.445,
-        "y": 105.879
-      },
-      "kind": "kiosk",
-      "width": 4,
-      "height": 3,
-      "angle": 0.24,
-      "color": "#b26048",
-      "label": "QUIOSC DEL SOL"
-    },
-    {
-      "id": "poble-block-1-2-tree-0",
-      "owner": "highlands",
-      "position": {
-        "x": 418.002,
-        "y": 85.087
-      },
-      "kind": "tree",
-      "width": 1.5,
-      "height": 1.5,
-      "angle": 0.24,
-      "color": "#64815a",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-tree-1",
-      "owner": "highlands",
-      "position": {
-        "x": 434.515,
-        "y": 89.128
-      },
-      "kind": "tree",
-      "width": 1.5,
-      "height": 1.5,
-      "angle": 0.24,
-      "color": "#64815a",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-tree-2",
-      "owner": "highlands",
-      "position": {
-        "x": 413.961,
-        "y": 101.6
-      },
-      "kind": "tree",
-      "width": 1.5,
-      "height": 1.5,
-      "angle": 0.24,
-      "color": "#64815a",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-bench",
-      "owner": "highlands",
-      "position": {
-        "x": 421.257,
-        "y": 105.444
-      },
-      "kind": "bench",
-      "width": 3,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#ab8158",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 412.638,
-        "y": 84.289
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 438.67,
-        "y": 90.66
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-2-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 434.035,
-        "y": 109.601
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-3-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 452.911,
-        "y": 91.365
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-1-3-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 461.264,
-        "y": 93.409
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "CASA MATA"
-    },
-    {
-      "id": "poble-block-1-3-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 469.618,
-        "y": 95.453
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-1-3-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 448.061,
-        "y": 111.18
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-1-3-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 456.415,
-        "y": 113.224
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-1-3-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 464.768,
-        "y": 115.269
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-1-3-w",
-      "owner": "highlands",
-      "position": {
-        "x": 449.806,
-        "y": 101.106
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-3-e",
-      "owner": "highlands",
-      "position": {
-        "x": 467.873,
-        "y": 105.527
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-1-3-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 458.84,
-        "y": 103.317
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-3-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 447.606,
-        "y": 92.847
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-3-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 473.638,
-        "y": 99.217
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-1-3-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 469.003,
-        "y": 118.158
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-0-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 338.973,
-        "y": 102.604
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-2-0-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 347.327,
-        "y": 104.648
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-2-0-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 355.68,
-        "y": 106.692
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-2-0-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 334.124,
-        "y": 122.419
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-2-0-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 342.478,
-        "y": 124.463
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "BAR SECO"
-    },
-    {
-      "id": "poble-block-2-0-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 350.831,
-        "y": 126.508
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-2-0-w",
-      "owner": "highlands",
-      "position": {
-        "x": 335.869,
-        "y": 112.345
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-0-e",
-      "owner": "highlands",
-      "position": {
-        "x": 353.936,
-        "y": 116.766
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-2-0-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 344.902,
-        "y": 114.556
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-0-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 333.669,
-        "y": 104.086
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-0-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 359.701,
-        "y": 110.456
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-0-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 355.066,
-        "y": 129.397
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-1-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 373.942,
-        "y": 111.161
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-2-1-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 382.295,
-        "y": 113.205
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "MURAL DEL DRAC"
-    },
-    {
-      "id": "poble-block-2-1-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 390.649,
-        "y": 115.25
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-2-1-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 369.092,
-        "y": 130.976
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-2-1-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 377.446,
-        "y": 133.021
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAFE BLAI"
-    },
-    {
-      "id": "poble-block-2-1-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 385.799,
-        "y": 135.065
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-2-1-w",
-      "owner": "highlands",
-      "position": {
-        "x": 370.837,
-        "y": 120.902
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-1-e",
-      "owner": "highlands",
-      "position": {
-        "x": 388.904,
-        "y": 125.324
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-2-1-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 379.871,
-        "y": 123.113
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-1-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 368.637,
-        "y": 112.643
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-1-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 394.669,
-        "y": 119.013
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-1-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 390.034,
-        "y": 137.954
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-2-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 408.91,
-        "y": 119.718
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-2-2-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 417.263,
-        "y": 121.763
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "CASA MATA"
-    },
-    {
-      "id": "poble-block-2-2-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 425.617,
-        "y": 123.807
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-2-2-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 404.061,
-        "y": 139.534
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-2-2-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 412.414,
-        "y": 141.578
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-2-2-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 420.768,
-        "y": 143.622
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-2-2-w",
-      "owner": "highlands",
-      "position": {
-        "x": 405.805,
-        "y": 129.46
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-2-e",
-      "owner": "highlands",
-      "position": {
-        "x": 423.872,
-        "y": 133.881
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-2-2-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 414.839,
-        "y": 131.67
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-2-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 403.606,
-        "y": 121.2
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-2-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 429.637,
-        "y": 127.571
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-2-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 425.002,
-        "y": 146.512
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-3-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 443.878,
-        "y": 128.276
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-2-3-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 452.231,
-        "y": 130.32
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "BAR SECO"
-    },
-    {
-      "id": "poble-block-2-3-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 460.585,
-        "y": 132.364
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-2-3-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 439.029,
-        "y": 148.091
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "FLORS"
-    },
-    {
-      "id": "poble-block-2-3-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 447.382,
-        "y": 150.135
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-2-3-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 455.736,
-        "y": 152.18
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-2-3-w",
-      "owner": "highlands",
-      "position": {
-        "x": 440.773,
-        "y": 138.017
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-3-e",
-      "owner": "highlands",
-      "position": {
-        "x": 458.84,
-        "y": 142.438
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-2-3-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 449.807,
-        "y": 140.228
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-3-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 438.574,
-        "y": 129.757
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-3-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 464.606,
-        "y": 136.128
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-2-3-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 459.97,
-        "y": 155.069
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-0-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 329.941,
-        "y": 139.515
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-3-0-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 338.294,
-        "y": 141.559
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "FLORS"
-    },
-    {
-      "id": "poble-block-3-0-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 346.648,
-        "y": 143.603
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-3-0-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 325.092,
-        "y": 159.33
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-3-0-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 333.445,
-        "y": 161.374
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CAFE BLAI"
-    },
-    {
-      "id": "poble-block-3-0-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 341.799,
-        "y": 163.418
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-3-0-w",
-      "owner": "highlands",
-      "position": {
-        "x": 326.836,
-        "y": 149.256
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-0-e",
-      "owner": "highlands",
-      "position": {
-        "x": 344.903,
-        "y": 153.677
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-3-0-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 335.87,
-        "y": 151.467
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-0-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 324.636,
-        "y": 140.996
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-0-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 350.668,
-        "y": 147.367
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-0-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 346.033,
-        "y": 166.308
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-1-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 364.909,
-        "y": 148.072
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-3-1-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 373.262,
-        "y": 150.116
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "CASA MATA"
-    },
-    {
-      "id": "poble-block-3-1-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 381.616,
-        "y": 152.16
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-3-1-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 360.06,
-        "y": 167.887
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-3-1-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 368.413,
-        "y": 169.932
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "BODEGA VIDAL"
-    },
-    {
-      "id": "poble-block-3-1-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 376.767,
-        "y": 171.976
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-3-1-w",
-      "owner": "highlands",
-      "position": {
-        "x": 361.804,
-        "y": 157.813
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-1-e",
-      "owner": "highlands",
-      "position": {
-        "x": 379.871,
-        "y": 162.235
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-3-1-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 370.838,
-        "y": 160.024
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-1-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 359.605,
-        "y": 149.554
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-1-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 385.636,
-        "y": 155.924
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-1-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 381.001,
-        "y": 174.865
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-2-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 399.877,
-        "y": 156.629
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "FORN DE PA"
-    },
-    {
-      "id": "poble-block-3-2-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 408.231,
-        "y": 158.674
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "BAR SECO"
-    },
-    {
-      "id": "poble-block-3-2-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 416.584,
-        "y": 160.718
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CASA PIQUER"
-    },
-    {
-      "id": "poble-block-3-2-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 395.028,
-        "y": 176.445
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "FLORS"
-    },
-    {
-      "id": "poble-block-3-2-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 403.381,
-        "y": 178.489
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b56c54",
-      "label": "LA PORCA"
-    },
-    {
-      "id": "poble-block-3-2-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 411.735,
-        "y": 180.533
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-3-2-w",
-      "owner": "highlands",
-      "position": {
-        "x": 396.773,
-        "y": 166.371
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-2-e",
-      "owner": "highlands",
-      "position": {
-        "x": 414.839,
-        "y": 170.792
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-3-2-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 405.806,
-        "y": 168.581
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-2-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 394.573,
-        "y": 158.111
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-2-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 420.605,
-        "y": 164.481
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-2-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 415.969,
-        "y": 183.422
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-3-n-0",
-      "owner": "highlands",
-      "position": {
-        "x": 434.845,
-        "y": 165.187
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d19376",
-      "label": "EL MOLINO"
-    },
-    {
-      "id": "poble-block-3-3-n-1",
-      "owner": "highlands",
-      "position": {
-        "x": 443.199,
-        "y": 167.231
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#b77a68",
-      "label": "CAFE BLAI"
-    },
-    {
-      "id": "poble-block-3-3-n-2",
-      "owner": "highlands",
-      "position": {
-        "x": 451.552,
-        "y": 169.275
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d4aa87",
-      "label": "LLIBRES"
-    },
-    {
-      "id": "poble-block-3-3-s-0",
-      "owner": "highlands",
-      "position": {
-        "x": 429.996,
-        "y": 185.002
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#ac6955",
-      "label": "CASA MATA"
-    },
-    {
-      "id": "poble-block-3-3-s-1",
-      "owner": "highlands",
-      "position": {
-        "x": 438.35,
-        "y": 187.046
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#c48b74",
-      "label": "VERMUT"
-    },
-    {
-      "id": "poble-block-3-3-s-2",
-      "owner": "highlands",
-      "position": {
-        "x": 446.703,
-        "y": 189.09
-      },
-      "kind": "building",
-      "width": 8.5,
-      "height": 7.4,
-      "angle": 0.24,
-      "color": "#d2b398",
-      "label": "CAN CABANES"
-    },
-    {
-      "id": "poble-block-3-3-w",
-      "owner": "highlands",
-      "position": {
-        "x": 431.741,
-        "y": 174.928
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-3-e",
-      "owner": "highlands",
-      "position": {
-        "x": 449.808,
-        "y": 179.349
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 13,
-      "angle": 0.24,
-      "color": "#c27d63",
-      "label": "PATI INTERIOR"
-    },
-    {
-      "id": "poble-block-3-3-garden",
-      "owner": "highlands",
-      "position": {
-        "x": 440.774,
-        "y": 177.138
-      },
-      "kind": "tree",
-      "width": 1.2,
-      "height": 1.2,
-      "angle": 0.24,
-      "color": "#5d8054",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-3-lamp-w",
-      "owner": "highlands",
-      "position": {
-        "x": 429.541,
-        "y": 166.668
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-3-lamp-e",
-      "owner": "highlands",
-      "position": {
-        "x": 455.573,
-        "y": 173.039
-      },
-      "kind": "lamp",
-      "width": 0.5,
-      "height": 0.5,
-      "angle": 0.24,
-      "color": "#dfc998",
-      "label": ""
-    },
-    {
-      "id": "poble-block-3-3-bin",
-      "owner": "highlands",
-      "position": {
-        "x": 450.938,
-        "y": 191.98
-      },
-      "kind": "bin",
-      "width": 0.7,
-      "height": 0.7,
-      "angle": 0.24,
-      "color": "#5c7e70",
-      "label": ""
-    },
-    {
-      "id": "poble-chimney-0",
-      "owner": "highlands",
-      "position": {
-        "x": 466.147,
-        "y": 60.836
-      },
-      "kind": "building",
-      "width": 2.2,
-      "height": 2.2,
-      "angle": 0.24,
-      "color": "#a96549",
-      "label": "LES TRES XEMENEIES"
-    },
-    {
-      "id": "poble-chimney-1",
-      "owner": "highlands",
-      "position": {
-        "x": 471.003,
-        "y": 62.025
-      },
-      "kind": "building",
-      "width": 2.2,
-      "height": 2.2,
-      "angle": 0.24,
-      "color": "#a96549",
-      "label": "LES TRES XEMENEIES"
-    },
-    {
-      "id": "poble-chimney-2",
-      "owner": "highlands",
-      "position": {
-        "x": 475.86,
-        "y": 63.213
-      },
-      "kind": "building",
-      "width": 2.2,
-      "height": 2.2,
-      "angle": 0.24,
-      "color": "#a96549",
-      "label": "LES TRES XEMENEIES"
-    },
-    {
       "id": "poble-mirador-kiosk",
       "owner": "highlands",
       "position": {
@@ -3000,76 +438,6 @@
       "label": ""
     },
     {
-      "id": "poble-park-tree-45",
-      "owner": "highlands",
-      "position": {
-        "x": 397.929,
-        "y": 242.837
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#53734e",
-      "label": ""
-    },
-    {
-      "id": "poble-park-tree-46",
-      "owner": "highlands",
-      "position": {
-        "x": 421.582,
-        "y": 268.186
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#6f8854",
-      "label": ""
-    },
-    {
-      "id": "poble-park-tree-52",
-      "owner": "highlands",
-      "position": {
-        "x": 409.327,
-        "y": 242.538
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#6f8854",
-      "label": ""
-    },
-    {
-      "id": "poble-park-tree-56",
-      "owner": "highlands",
-      "position": {
-        "x": 426.852,
-        "y": 255.063
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#456747",
-      "label": ""
-    },
-    {
-      "id": "poble-park-tree-66",
-      "owner": "highlands",
-      "position": {
-        "x": 432.123,
-        "y": 241.939
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#53734e",
-      "label": ""
-    },
-    {
       "id": "poble-park-tree-68",
       "owner": "highlands",
       "position": {
@@ -3081,34 +449,6 @@
       "height": 1.6,
       "angle": 0.24,
       "color": "#456747",
-      "label": ""
-    },
-    {
-      "id": "poble-park-tree-75",
-      "owner": "highlands",
-      "position": {
-        "x": 397.577,
-        "y": 269.518
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#53734e",
-      "label": ""
-    },
-    {
-      "id": "poble-park-tree-76",
-      "owner": "highlands",
-      "position": {
-        "x": 437.393,
-        "y": 228.816
-      },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
-      "angle": 0.24,
-      "color": "#6f8854",
       "label": ""
     },
     {
@@ -3126,45 +466,3923 @@
       "label": ""
     },
     {
-      "id": "poble-park-tree-82",
+      "id": "poble-lot-0-0-0-tile-p0",
       "owner": "highlands",
       "position": {
-        "x": 408.975,
-        "y": 269.219
+        "x": 365.093,
+        "y": 28.263
       },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
+      "kind": "building",
+      "width": 21.6,
+      "height": 1.563,
       "angle": 0.24,
-      "color": "#6f8854",
+      "color": "#a56e56",
       "label": ""
     },
     {
-      "id": "poble-park-tree-88",
+      "id": "poble-lot-0-0-0-tile-p1",
       "owner": "highlands",
       "position": {
-        "x": 396.72,
-        "y": 243.571
+        "x": 363.913,
+        "y": 31.192
       },
-      "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
+      "kind": "building",
+      "width": 20.7,
+      "height": 4.688,
       "angle": 0.24,
-      "color": "#6f8854",
+      "color": "#a56e56",
       "label": ""
     },
     {
-      "id": "poble-park-tree-89",
+      "id": "poble-lot-0-0-0-tile-p2",
       "owner": "highlands",
       "position": {
-        "x": 420.373,
-        "y": 268.92
+        "x": 362.733,
+        "y": 34.121
+      },
+      "kind": "building",
+      "width": 19.8,
+      "height": 1.563,
+      "angle": 0.24,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-1-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 358.819,
+        "y": 46.331
+      },
+      "kind": "building",
+      "width": 18,
+      "height": 5.273,
+      "angle": 0.24,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-1-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 354.923,
+        "y": 48.997
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.758,
+      "angle": 0.24,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-2-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 355.228,
+        "y": 36.394
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 6.42,
+      "angle": 0.24,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-3-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 367.848,
+        "y": 37.83
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 3.21,
+      "angle": 0.24,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-3-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 366.648,
+        "y": 40.841
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 3.21,
+      "angle": 0.24,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-4-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 354.988,
+        "y": 41.159
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 2.952,
+      "angle": 0.24,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-5-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 367.227,
+        "y": 44.154
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 2.952,
+      "angle": 0.24,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-0-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 360.734,
+        "y": 25.671
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-0-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 360.399,
+        "y": 51.992
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-6-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 399.847,
+        "y": 39.542
+      },
+      "kind": "building",
+      "width": 27.9,
+      "height": 3.173,
+      "angle": 0.339669,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-6-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 398.101,
+        "y": 43.132
+      },
+      "kind": "building",
+      "width": 27,
+      "height": 4.759,
+      "angle": 0.339669,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-7-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 391.492,
+        "y": 57.784
+      },
+      "kind": "building",
+      "width": 26.1,
+      "height": 1.771,
+      "angle": 0.339669,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-7-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 390.053,
+        "y": 59.154
+      },
+      "kind": "building",
+      "width": 26.1,
+      "height": 1.771,
+      "angle": 0.339669,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-7-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 393.706,
+        "y": 62.324
+      },
+      "kind": "building",
+      "width": 17.1,
+      "height": 1.771,
+      "angle": 0.339669,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-7-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 397.359,
+        "y": 65.493
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.771,
+      "angle": 0.339669,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-8-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 389.007,
+        "y": 43.205
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.438,
+      "angle": 0.339669,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-8-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 387.625,
+        "y": 45.766
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 4.313,
+      "angle": 0.339669,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-9-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 404.282,
+        "y": 48.602
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.438,
+      "angle": 0.339669,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-9-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 402.899,
+        "y": 51.164
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 4.313,
+      "angle": 0.339669,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-10-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 386.164,
+        "y": 51.25
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 7.001,
+      "angle": 0.339669,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-11-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 402.738,
+        "y": 54.322
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 1.75,
+      "angle": 0.339669,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-1-11-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 401.147,
+        "y": 57.473
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 5.251,
+      "angle": 0.339669,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-1-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 395.63,
+        "y": 35.627
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-1-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 393.621,
+        "y": 66.215
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 443.116,
+        "y": 48.525
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 443.826,
+        "y": 50.309
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 444.088,
+        "y": 52.045
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 444.351,
+        "y": 53.78
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p4",
+      "owner": "highlands",
+      "position": {
+        "x": 444.613,
+        "y": 55.515
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p5",
+      "owner": "highlands",
+      "position": {
+        "x": 445.323,
+        "y": 57.299
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p6",
+      "owner": "highlands",
+      "position": {
+        "x": 445.138,
+        "y": 58.985
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-12-tile-p7",
+      "owner": "highlands",
+      "position": {
+        "x": 445.401,
+        "y": 60.72
+      },
+      "kind": "building",
+      "width": 0.9,
+      "height": 1.696,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-2-wedge-0-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 434.7,
+        "y": 46.045
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-2-wedge-0-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 442.376,
+        "y": 59.614
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 429.074,
+        "y": 60.634
+      },
+      "kind": "building",
+      "width": 20.7,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 427.666,
+        "y": 61.655
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 425.731,
+        "y": 61.946
+      },
+      "kind": "building",
+      "width": 17.1,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 424.323,
+        "y": 62.966
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p4",
+      "owner": "highlands",
+      "position": {
+        "x": 422.916,
+        "y": 63.986
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p5",
+      "owner": "highlands",
+      "position": {
+        "x": 421.508,
+        "y": 65.006
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p6",
+      "owner": "highlands",
+      "position": {
+        "x": 419.837,
+        "y": 65.662
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p7",
+      "owner": "highlands",
+      "position": {
+        "x": 418.429,
+        "y": 66.682
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p8",
+      "owner": "highlands",
+      "position": {
+        "x": 417.022,
+        "y": 67.702
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p9",
+      "owner": "highlands",
+      "position": {
+        "x": 415.615,
+        "y": 68.722
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-2-13-tile-p10",
+      "owner": "highlands",
+      "position": {
+        "x": 413.943,
+        "y": 69.378
+      },
+      "kind": "building",
+      "width": 0.9,
+      "height": 1.738,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-2-wedge-1-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 426.822,
+        "y": 54.853
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-2-wedge-1-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 413.599,
+        "y": 66.314
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 472.532,
+        "y": 55.897
+      },
+      "kind": "building",
+      "width": 19.8,
+      "height": 5.191,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 470.47,
+        "y": 61.609
+      },
+      "kind": "building",
+      "width": 20.7,
+      "height": 6.921,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 468.408,
+        "y": 67.32
+      },
+      "kind": "building",
+      "width": 21.6,
+      "height": 5.191,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 467.678,
+        "y": 71.608
+      },
+      "kind": "building",
+      "width": 22.5,
+      "height": 3.46,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial-p4",
+      "owner": "highlands",
+      "position": {
+        "x": 466.547,
+        "y": 73.986
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 1.73,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial-p5",
+      "owner": "highlands",
+      "position": {
+        "x": 471.283,
+        "y": 77.105
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 1.73,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-3-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 469.137,
+        "y": 51.528
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-0-3-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 471.032,
+        "y": 79.602
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-15-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 354.108,
+        "y": 63.461
+      },
+      "kind": "building",
+      "width": 17.1,
+      "height": 3.109,
+      "angle": 0.102934,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-15-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 353.181,
+        "y": 68.054
+      },
+      "kind": "building",
+      "width": 18,
+      "height": 6.219,
+      "angle": 0.102934,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-16-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 349.415,
+        "y": 86.996
+      },
+      "kind": "building",
+      "width": 19.8,
+      "height": 3.412,
+      "angle": 0.102934,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-16-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 354.076,
+        "y": 90.05
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.706,
+      "angle": 0.102934,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-17-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 345.481,
+        "y": 72.532
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 4.273,
+      "angle": 0.102934,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-18-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 357.566,
+        "y": 73.781
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.273,
+      "angle": 0.102934,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-19-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 345.105,
+        "y": 76.165
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 3.032,
+      "angle": 0.102934,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-19-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 344.424,
+        "y": 78.381
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 1.516,
+      "angle": 0.102934,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-20-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 357.561,
+        "y": 78.214
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 4.549,
+      "angle": 0.102934,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-21-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 345.026,
+        "y": 81.314
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.194,
+      "angle": 0.102934,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-21-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 344.291,
+        "y": 84.049
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 1.398,
+      "angle": 0.102934,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-22-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 357.631,
+        "y": 81.913
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 2.796,
+      "angle": 0.102934,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-0-22-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 356.896,
+        "y": 84.648
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 2.796,
+      "angle": 0.102934,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-0-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 350.656,
+        "y": 60.838
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-0-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 353.929,
+        "y": 92.495
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-23-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 384.962,
+        "y": 75.164
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 3.236,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-23-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 384.495,
+        "y": 77.71
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 1.618,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-23-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 384.028,
+        "y": 80.256
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 3.236,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-24-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 373.347,
+        "y": 139.59
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 3.044,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-24-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 372.954,
+        "y": 142.012
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 1.522,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-25-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 380.106,
+        "y": 80.688
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-25-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 379.717,
+        "y": 82.223
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-25-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 378.94,
+        "y": 84.41
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 3.036,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-26-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 392.481,
+        "y": 88.932
+      },
+      "kind": "building",
+      "width": 1.8,
+      "height": 3.036,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": "MURAL DEL DRAC"
+    },
+    {
+      "id": "poble-lot-1-1-26-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 391.704,
+        "y": 91.118
+      },
+      "kind": "building",
+      "width": 2.7,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": "MURAL DEL DRAC"
+    },
+    {
+      "id": "poble-lot-1-1-26-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 391.315,
+        "y": 92.653
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": "MURAL DEL DRAC"
+    },
+    {
+      "id": "poble-lot-1-1-27-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 379.289,
+        "y": 87.344
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 1.651,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-27-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 378.832,
+        "y": 88.993
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 1.651,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-27-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 377.953,
+        "y": 91.351
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 3.302,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-28-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 390.892,
+        "y": 94.245
+      },
+      "kind": "building",
+      "width": 2.7,
+      "height": 1.651,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-28-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 390.013,
+        "y": 96.603
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 3.302,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-28-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 389.134,
+        "y": 98.961
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 1.651,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-29-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 376.352,
+        "y": 93.161
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 1.446,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-29-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 375.63,
+        "y": 95.256
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.892,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-29-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 374.908,
+        "y": 97.35
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 1.446,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-29-terrace-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 374.556,
+        "y": 98.823
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.446,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-30-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 387.973,
+        "y": 100.914
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 2.892,
+      "angle": 0.536546,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-30-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 386.881,
+        "y": 103.629
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 2.892,
+      "angle": 0.536546,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-30-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 386.159,
+        "y": 105.723
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.446,
+      "angle": 0.536546,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-31-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 373.035,
+        "y": 99.62
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 1.479,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-31-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 372.665,
+        "y": 101.121
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.479,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-31-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 371.918,
+        "y": 103.259
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 2.959,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-31-terrace-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 371.17,
+        "y": 105.396
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 1.479,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-32-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 385.411,
+        "y": 106.981
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.479,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-32-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 384.664,
+        "y": 109.118
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 2.959,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-32-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 383.538,
+        "y": 111.891
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.959,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-33-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 371.95,
+        "y": 108.487
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 3.036,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-33-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 371.173,
+        "y": 110.673
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-33-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 370.784,
+        "y": 112.208
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-34-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 383.166,
+        "y": 115.157
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 3.036,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-34-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 382.389,
+        "y": 117.344
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-34-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 382,
+        "y": 118.879
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 1.518,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-35-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 368.856,
+        "y": 112.809
+      },
+      "kind": "building",
+      "width": 1.8,
+      "height": 1.486,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-35-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 368.483,
+        "y": 114.316
+      },
+      "kind": "building",
+      "width": 0.9,
+      "height": 1.486,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-36-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 380.459,
+        "y": 119.71
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 1.486,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-36-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 379.706,
+        "y": 121.856
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 2.972,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-37-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 368.506,
+        "y": 117.799
+      },
+      "kind": "building",
+      "width": 2.7,
+      "height": 1.504,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-37-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 368.124,
+        "y": 119.321
+      },
+      "kind": "building",
+      "width": 1.8,
+      "height": 1.504,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-37-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 367.742,
+        "y": 120.843
+      },
+      "kind": "building",
+      "width": 0.9,
+      "height": 1.504,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-38-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 378.564,
+        "y": 124.655
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 3.007,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-38-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 377.414,
+        "y": 127.47
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 3.007,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-39-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 377.427,
+        "y": 130.089
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 1.479,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-39-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 376.68,
+        "y": 132.226
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 2.959,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-39-terrace-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 375.932,
+        "y": 134.363
+      },
+      "kind": "building",
+      "width": 16.2,
+      "height": 1.479,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-40-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 373.94,
+        "y": 135.072
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 1.776,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-40-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 373.806,
+        "y": 137.058
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 1.776,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-1-41-workshop-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 377.863,
+        "y": 109.109
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 6.749,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-1-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 378.906,
+        "y": 68.865
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-1-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 377.728,
+        "y": 147.069
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-2-cafe",
+      "owner": "highlands",
+      "position": {
+        "x": 424.889,
+        "y": 103.408
+      },
+      "kind": "kiosk",
+      "width": 4,
+      "height": 3,
+      "angle": 0.24,
+      "color": "#b26048",
+      "label": "QUIOSC DEL SOL"
+    },
+    {
+      "id": "poble-block-1-2-tree-0",
+      "owner": "highlands",
+      "position": {
+        "x": 414.381,
+        "y": 87.453
       },
       "kind": "tree",
-      "width": 1.6,
-      "height": 1.6,
+      "width": 1.5,
+      "height": 1.5,
       "angle": 0.24,
-      "color": "#456747",
+      "color": "#64815a",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-2-tree-1",
+      "owner": "highlands",
+      "position": {
+        "x": 427.979,
+        "y": 90.781
+      },
+      "kind": "tree",
+      "width": 1.5,
+      "height": 1.5,
+      "angle": 0.24,
+      "color": "#64815a",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-2-tree-2",
+      "owner": "highlands",
+      "position": {
+        "x": 411.053,
+        "y": 101.052
+      },
+      "kind": "tree",
+      "width": 1.5,
+      "height": 1.5,
+      "angle": 0.24,
+      "color": "#64815a",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-2-bench",
+      "owner": "highlands",
+      "position": {
+        "x": 417.614,
+        "y": 103.687
+      },
+      "kind": "bench",
+      "width": 3,
+      "height": 0.7,
+      "angle": 0.24,
+      "color": "#ab8158",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-42-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 461.946,
+        "y": 89.692
+      },
+      "kind": "building",
+      "width": 24.3,
+      "height": 4.709,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-42-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 460.813,
+        "y": 93.475
+      },
+      "kind": "building",
+      "width": 25.2,
+      "height": 3.139,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-42-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 460.299,
+        "y": 95.817
+      },
+      "kind": "building",
+      "width": 24.3,
+      "height": 1.57,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-43-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 444.392,
+        "y": 150.03
+      },
+      "kind": "building",
+      "width": 27,
+      "height": 1.457,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-43-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 440.51,
+        "y": 149.95
+      },
+      "kind": "building",
+      "width": 19.8,
+      "height": 1.457,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-43-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 437.041,
+        "y": 150.047
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 1.457,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-43-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 433.571,
+        "y": 150.145
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.457,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-44-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 453.785,
+        "y": 97.305
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 6.303,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-45-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 467.432,
+        "y": 103.159
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 6.303,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-46-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 451.383,
+        "y": 100.622
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.687,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-46-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 450.466,
+        "y": 103.901
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.062,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-47-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 465.606,
+        "y": 108.558
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 5.062,
+      "angle": 0.405149,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-47-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 464.69,
+        "y": 111.837
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 1.687,
+      "angle": 0.405149,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-48-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 450.098,
+        "y": 108.186
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 3.105,
+      "angle": 0.405149,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-48-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 449.287,
+        "y": 111.217
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 3.105,
+      "angle": 0.405149,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-49-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 464.159,
+        "y": 114.216
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 3.105,
+      "angle": 0.405149,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-49-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 463.349,
+        "y": 117.247
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 3.105,
+      "angle": 0.405149,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-50-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 446.775,
+        "y": 114.792
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.447,
+      "angle": 0.405149,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-51-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 462.2,
+        "y": 119.926
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 2.723,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-51-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 461.54,
+        "y": 122.606
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.723,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-52-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 445.507,
+        "y": 120.031
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.182,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-53-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 460.323,
+        "y": 125.445
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 3.454,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-53-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 459.715,
+        "y": 128.003
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 1.727,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-54-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 443.892,
+        "y": 123.797
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 3.015,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-54-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 443.414,
+        "y": 126.052
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.507,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-55-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 458.781,
+        "y": 130.182
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 3.015,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-55-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 458.303,
+        "y": 132.438
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.507,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-56-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 442.045,
+        "y": 129.244
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.438,
+      "angle": 0.405149,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-57-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 457.202,
+        "y": 135.005
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 4.079,
+      "angle": 0.405149,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-57-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 456.544,
+        "y": 137.681
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 1.36,
+      "angle": 0.405149,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-58-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 440.704,
+        "y": 132.372
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.368,
+      "angle": 0.405149,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-58-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 440.039,
+        "y": 135.064
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 4.104,
+      "angle": 0.405149,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-59-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 455.88,
+        "y": 140.369
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 4.104,
+      "angle": 0.405149,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-59-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 455.216,
+        "y": 143.061
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 1.368,
+      "angle": 0.405149,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-60-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 437.888,
+        "y": 138.938
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.711,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-61-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 453.913,
+        "y": 144.956
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 3.141,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-61-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 453.398,
+        "y": 147.298
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 1.57,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-62-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 436.891,
+        "y": 143.547
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.547,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-63-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 451.779,
+        "y": 149.932
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 4.547,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-1-3-64-workshop-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 453.508,
+        "y": 123.067
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 7.128,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-3-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 457.106,
+        "y": 84.293
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-1-3-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 449.601,
+        "y": 155.42
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 343.36,
+        "y": 101.506
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 342.042,
+        "y": 102.994
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 341.159,
+        "y": 104.597
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 339.84,
+        "y": 106.086
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p4",
+      "owner": "highlands",
+      "position": {
+        "x": 338.957,
+        "y": 107.688
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p5",
+      "owner": "highlands",
+      "position": {
+        "x": 337.639,
+        "y": 109.177
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p6",
+      "owner": "highlands",
+      "position": {
+        "x": 337.191,
+        "y": 110.893
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p7",
+      "owner": "highlands",
+      "position": {
+        "x": 335.873,
+        "y": 112.382
+      },
+      "kind": "building",
+      "width": 1.8,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-65-tile-p8",
+      "owner": "highlands",
+      "position": {
+        "x": 334.99,
+        "y": 113.984
+      },
+      "kind": "building",
+      "width": 0.9,
+      "height": 1.773,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-block-2-0-wedge-0-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 341.875,
+        "y": 99.478
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-2-0-wedge-0-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 332.794,
+        "y": 117.064
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 353.754,
+        "y": 124.589
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 352.01,
+        "y": 124.787
+      },
+      "kind": "building",
+      "width": 16.2,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 350.199,
+        "y": 125.43
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 348.454,
+        "y": 125.628
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p4",
+      "owner": "highlands",
+      "position": {
+        "x": 346.644,
+        "y": 126.271
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p5",
+      "owner": "highlands",
+      "position": {
+        "x": 344.899,
+        "y": 126.469
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p6",
+      "owner": "highlands",
+      "position": {
+        "x": 343.089,
+        "y": 127.112
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p7",
+      "owner": "highlands",
+      "position": {
+        "x": 341.41,
+        "y": 126.865
+      },
+      "kind": "building",
+      "width": 3.6,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-0-66-tile-p8",
+      "owner": "highlands",
+      "position": {
+        "x": 339.599,
+        "y": 127.508
+      },
+      "kind": "building",
+      "width": 1.8,
+      "height": 1.697,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-block-2-0-wedge-1-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 356.846,
+        "y": 114.219
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-2-0-wedge-1-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 342.124,
+        "y": 123.075
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-67-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 412.498,
+        "y": 122.403
+      },
+      "kind": "building",
+      "width": 27.9,
+      "height": 1.74,
+      "angle": -0.043308,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-67-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 412.123,
+        "y": 124.161
+      },
+      "kind": "building",
+      "width": 27,
+      "height": 1.74,
+      "angle": -0.043308,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-67-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 411.337,
+        "y": 126.809
+      },
+      "kind": "building",
+      "width": 27,
+      "height": 3.481,
+      "angle": -0.043308,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-67-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 410.551,
+        "y": 129.456
+      },
+      "kind": "building",
+      "width": 27,
+      "height": 1.74,
+      "angle": -0.043308,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-68-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 407.498,
+        "y": 142.166
+      },
+      "kind": "building",
+      "width": 25.2,
+      "height": 1.773,
+      "angle": -0.043308,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-68-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 406.714,
+        "y": 144.862
+      },
+      "kind": "building",
+      "width": 25.2,
+      "height": 3.547,
+      "angle": -0.043308,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-68-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 405.93,
+        "y": 147.559
+      },
+      "kind": "building",
+      "width": 25.2,
+      "height": 1.773,
+      "angle": -0.043308,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-69-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 402.078,
+        "y": 131.406
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.423,
+      "angle": -0.043308,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-69-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 401.72,
+        "y": 133.559
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 2.847,
+      "angle": -0.043308,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-69-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 401.363,
+        "y": 135.711
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.423,
+      "angle": -0.043308,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-70-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 417.394,
+        "y": 131.455
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 2.847,
+      "angle": -0.043308,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-70-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 417.068,
+        "y": 134.318
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 2.847,
+      "angle": -0.043308,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-71-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 401.917,
+        "y": 138.106
+      },
+      "kind": "building",
+      "width": 12.6,
+      "height": 3.41,
+      "angle": -0.043308,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-71-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 401.579,
+        "y": 140.681
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 1.705,
+      "angle": -0.043308,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-72-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 418.065,
+        "y": 136.553
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.705,
+      "angle": -0.043308,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-2-2-72-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 417.727,
+        "y": 139.128
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 3.41,
+      "angle": -0.043308,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-block-2-2-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 408.382,
+        "y": 121.01
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-2-2-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 409.252,
+        "y": 150.666
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-73-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 339.103,
+        "y": 143.364
+      },
+      "kind": "building",
+      "width": 22.5,
+      "height": 4.584,
+      "angle": 0.386012,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-73-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 338.37,
+        "y": 146.365
+      },
+      "kind": "building",
+      "width": 21.6,
+      "height": 1.528,
+      "angle": 0.386012,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-73-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 338.211,
+        "y": 147.95
+      },
+      "kind": "building",
+      "width": 22.5,
+      "height": 1.528,
+      "angle": 0.386012,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-74-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 333.938,
+        "y": 160.855
+      },
+      "kind": "building",
+      "width": 22.5,
+      "height": 1.592,
+      "angle": 0.386012,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-74-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 332.505,
+        "y": 161.99
+      },
+      "kind": "building",
+      "width": 20.7,
+      "height": 1.592,
+      "angle": 0.386012,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-74-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 326.903,
+        "y": 161.431
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.592,
+      "angle": 0.386012,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-75-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 329.493,
+        "y": 149.083
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 7.138,
+      "angle": 0.386012,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-76-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 342.416,
+        "y": 154.335
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 7.138,
+      "angle": 0.386012,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-77-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 328.445,
+        "y": 154.052
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 2.859,
+      "angle": 0.386012,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-77-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 328.055,
+        "y": 156.208
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.429,
+      "angle": 0.386012,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-78-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 341.638,
+        "y": 158.643
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 1.429,
+      "angle": 0.386012,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-78-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 341.247,
+        "y": 160.798
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 2.859,
+      "angle": 0.386012,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-79-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 326.843,
+        "y": 156.799
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 0.579,
+      "angle": 0.386012,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-0-80-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 340.183,
+        "y": 162.221
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 0.579,
+      "angle": 0.386012,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-0-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 335.114,
+        "y": 138.514
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-0-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 337.132,
+        "y": 166.292
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-81-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 369.978,
+        "y": 155.889
+      },
+      "kind": "building",
+      "width": 19.8,
+      "height": 1.743,
+      "angle": 0.469232,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-81-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 369.599,
+        "y": 158.627
+      },
+      "kind": "building",
+      "width": 19.8,
+      "height": 3.485,
+      "angle": 0.469232,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-81-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 368.818,
+        "y": 161.162
+      },
+      "kind": "building",
+      "width": 20.7,
+      "height": 1.743,
+      "angle": 0.469232,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-81-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 368.833,
+        "y": 163.123
+      },
+      "kind": "building",
+      "width": 20.7,
+      "height": 1.743,
+      "angle": 0.469232,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-82-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 367.88,
+        "y": 167.988
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 1.683,
+      "angle": 0.469232,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-82-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 367.119,
+        "y": 169.489
+      },
+      "kind": "building",
+      "width": 21.6,
+      "height": 1.683,
+      "angle": 0.469232,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-82-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 363.147,
+        "y": 169.363
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 1.683,
+      "angle": 0.469232,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-82-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 359.175,
+        "y": 169.236
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.683,
+      "angle": 0.469232,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-83-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 362.53,
+        "y": 162.618
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 3.057,
+      "angle": 0.469232,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-84-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 375.318,
+        "y": 168.245
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 1.529,
+      "angle": 0.469232,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-1-84-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 375.028,
+        "y": 169.812
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 1.529,
+      "angle": 0.469232,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-1-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 365.054,
+        "y": 151.63
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-1-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 372.391,
+        "y": 174.92
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-85-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 403.396,
+        "y": 164.669
+      },
+      "kind": "building",
+      "width": 25.2,
+      "height": 6.632,
+      "angle": -0.030947,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-86-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 404.717,
+        "y": 178.245
+      },
+      "kind": "building",
+      "width": 21.6,
+      "height": 1.516,
+      "angle": -0.030947,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-86-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 407.463,
+        "y": 179.676
+      },
+      "kind": "building",
+      "width": 16.2,
+      "height": 1.516,
+      "angle": -0.030947,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-86-tile-p2",
+      "owner": "highlands",
+      "position": {
+        "x": 409.758,
+        "y": 181.121
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.516,
+      "angle": -0.030947,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-86-tile-p3",
+      "owner": "highlands",
+      "position": {
+        "x": 412.504,
+        "y": 182.553
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 1.516,
+      "angle": -0.030947,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-87-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 395.429,
+        "y": 169.093
+      },
+      "kind": "building",
+      "width": 9,
+      "height": 1.718,
+      "angle": -0.030947,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-87-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 395.086,
+        "y": 172.54
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.153,
+      "angle": -0.030947,
+      "color": "#b58268",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-88-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 410.272,
+        "y": 168.633
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 1.718,
+      "angle": -0.030947,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-88-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 409.929,
+        "y": 172.081
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.153,
+      "angle": -0.030947,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-89-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 395.207,
+        "y": 176.448
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.666,
+      "angle": -0.030947,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-2-90-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 410.5,
+        "y": 175.974
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.666,
+      "angle": -0.030947,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-2-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 398.352,
+        "y": 160.808
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-2-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 408.962,
+        "y": 183.87
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-91-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 441.255,
+        "y": 167.056
+      },
+      "kind": "building",
+      "width": 27,
+      "height": 5.021,
+      "angle": 0.191258,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-91-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 440.902,
+        "y": 171.249
+      },
+      "kind": "building",
+      "width": 26.1,
+      "height": 3.347,
+      "angle": 0.191258,
+      "color": "#bd9478",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-92-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 438.463,
+        "y": 186.212
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 3.094,
+      "angle": 0.191258,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-92-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 438.463,
+        "y": 188.576
+      },
+      "kind": "building",
+      "width": 22.5,
+      "height": 1.547,
+      "angle": 0.191258,
+      "color": "#9e725e",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-93-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 432.794,
+        "y": 172.878
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 2.933,
+      "angle": 0.191258,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-93-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 432.678,
+        "y": 175.843
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.933,
+      "angle": 0.191258,
+      "color": "#c09a80",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-94-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 447.978,
+        "y": 177.312
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.867,
+      "angle": 0.191258,
+      "color": "#a97e68",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-95-terrace-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 430.804,
+        "y": 178.422
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 2.844,
+      "angle": 0.191258,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-95-terrace-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 430.705,
+        "y": 181.3
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 2.844,
+      "angle": 0.191258,
+      "color": "#b08c73",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-96-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 446.573,
+        "y": 182.2
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 4.266,
+      "angle": 0.191258,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-96-tile-p1",
+      "owner": "highlands",
+      "position": {
+        "x": 445.591,
+        "y": 184.906
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 1.422,
+      "angle": 0.191258,
+      "color": "#b69d82",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-97-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 430.399,
+        "y": 182.882
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 0.379,
+      "angle": 0.191258,
+      "color": "#a56e56",
+      "label": ""
+    },
+    {
+      "id": "poble-lot-3-3-98-tile-p0",
+      "owner": "highlands",
+      "position": {
+        "x": 445.42,
+        "y": 185.79
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 0.379,
+      "angle": 0.191258,
+      "color": "#ad775f",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-3-lamp-0",
+      "owner": "highlands",
+      "position": {
+        "x": 435.648,
+        "y": 162.7
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-block-3-3-lamp-2",
+      "owner": "highlands",
+      "position": {
+        "x": 443.348,
+        "y": 192.284
+      },
+      "kind": "lamp",
+      "width": 0.5,
+      "height": 0.5,
+      "angle": 0.24,
+      "color": "#c4b696",
+      "label": ""
+    },
+    {
+      "id": "poble-chimney-0",
+      "owner": "highlands",
+      "position": {
+        "x": 466.88,
+        "y": 62.045
+      },
+      "kind": "building",
+      "width": 2.2,
+      "height": 2.2,
+      "angle": 0.24,
+      "color": "#956148",
+      "label": "LES TRES XEMENEIES"
+    },
+    {
+      "id": "poble-chimney-1",
+      "owner": "highlands",
+      "position": {
+        "x": 470.766,
+        "y": 62.996
+      },
+      "kind": "building",
+      "width": 2.2,
+      "height": 2.2,
+      "angle": 0.24,
+      "color": "#956148",
+      "label": "LES TRES XEMENEIES"
+    },
+    {
+      "id": "poble-chimney-2",
+      "owner": "highlands",
+      "position": {
+        "x": 474.651,
+        "y": 63.947
+      },
+      "kind": "building",
+      "width": 2.2,
+      "height": 2.2,
+      "angle": 0.24,
+      "color": "#956148",
+      "label": "LES TRES XEMENEIES"
+    },
+    {
+      "id": "poble-promenade-tree-1",
+      "owner": "highlands",
+      "position": {
+        "x": 334.34940813154213,
+        "y": 187.12734543581934
+      },
+      "kind": "tree",
+      "width": 1.4,
+      "height": 1.4,
+      "angle": 0.24,
+      "color": "#59774d",
+      "label": ""
+    },
+    {
+      "id": "poble-promenade-tree-2",
+      "owner": "highlands",
+      "position": {
+        "x": 358.87056012927,
+        "y": 192.0985731216457
+      },
+      "kind": "tree",
+      "width": 1.4,
+      "height": 1.4,
+      "angle": 0.24,
+      "color": "#778b58",
+      "label": ""
+    },
+    {
+      "id": "poble-promenade-tree-3",
+      "owner": "highlands",
+      "position": {
+        "x": 393.83872722394307,
+        "y": 200.65586767302253
+      },
+      "kind": "tree",
+      "width": 1.4,
+      "height": 1.4,
+      "angle": 0.24,
+      "color": "#688453",
+      "label": ""
+    },
+    {
+      "id": "poble-promenade-tree-4",
+      "owner": "highlands",
+      "position": {
+        "x": 408.17109422029637,
+        "y": 205.19274504428157
+      },
+      "kind": "tree",
+      "width": 1.4,
+      "height": 1.4,
+      "angle": 0.24,
+      "color": "#59774d",
+      "label": ""
+    },
+    {
+      "id": "poble-promenade-tree-5",
+      "owner": "highlands",
+      "position": {
+        "x": 428.8068943186162,
+        "y": 209.21316222439938
+      },
+      "kind": "tree",
+      "width": 1.4,
+      "height": 1.4,
+      "angle": 0.24,
+      "color": "#778b58",
+      "label": ""
+    },
+    {
+      "id": "poble-promenade-tree-6",
+      "owner": "highlands",
+      "position": {
+        "x": 440.95888273883827,
+        "y": 214.24597231765617
+      },
+      "kind": "tree",
+      "width": 1.4,
+      "height": 1.4,
+      "angle": 0.24,
+      "color": "#688453",
       "label": ""
     }
   ],
@@ -4384,8 +5602,8 @@
       "id": "poble-parking-0",
       "owner": "highlands",
       "position": {
-        "x": 366.581,
-        "y": 25.97
+        "x": 366.214,
+        "y": 25.365
       },
       "angle": 0.24,
       "occupied": true,
@@ -4397,36 +5615,23 @@
       "id": "poble-parking-1",
       "owner": "highlands",
       "position": {
-        "x": 392.516,
-        "y": 71.438
+        "x": 384.577,
+        "y": 70.376
       },
-      "angle": 0.24,
+      "angle": 0.536546,
       "occupied": false,
       "lot": false,
       "model": "car",
       "color": "#708e85"
     },
     {
-      "id": "poble-parking-2",
-      "owner": "highlands",
-      "position": {
-        "x": 409.419,
-        "y": 153.817
-      },
-      "angle": 0.24,
-      "occupied": true,
-      "lot": false,
-      "model": "car",
-      "color": "#c3b998"
-    },
-    {
       "id": "poble-parking-3",
       "owner": "highlands",
       "position": {
-        "x": 435.355,
-        "y": 199.285
+        "x": 441.997,
+        "y": 162.3
       },
-      "angle": 0.24,
+      "angle": 0.191258,
       "occupied": false,
       "lot": false,
       "model": "car",
@@ -5088,8 +6293,8 @@
       "id": "poble-node-0-0",
       "owner": "highlands",
       "position": {
-        "x": 350.0,
-        "y": 18.0
+        "x": 350,
+        "y": 18
       },
       "weight": 0,
       "editable": true
@@ -5098,8 +6303,8 @@
       "id": "poble-node-0-1",
       "owner": "highlands",
       "position": {
-        "x": 384.968,
-        "y": 26.557
+        "x": 383.997,
+        "y": 26.32
       },
       "weight": 0,
       "editable": true
@@ -5108,8 +6313,8 @@
       "id": "poble-node-0-2",
       "owner": "highlands",
       "position": {
-        "x": 419.936,
-        "y": 35.115
+        "x": 421.9,
+        "y": 39.713
       },
       "weight": 0,
       "editable": true
@@ -5118,8 +6323,8 @@
       "id": "poble-node-0-3",
       "owner": "highlands",
       "position": {
-        "x": 454.905,
-        "y": 43.672
+        "x": 459.999,
+        "y": 43.889
       },
       "weight": 0,
       "editable": true
@@ -5138,8 +6343,8 @@
       "id": "poble-node-1-1",
       "owner": "highlands",
       "position": {
-        "x": 375.935,
-        "y": 63.468
+        "x": 370.087,
+        "y": 57.919
       },
       "weight": 0,
       "editable": true
@@ -5148,8 +6353,8 @@
       "id": "poble-node-1-2",
       "owner": "highlands",
       "position": {
-        "x": 410.904,
-        "y": 72.025
+        "x": 402.44,
+        "y": 77.161
       },
       "weight": 0,
       "editable": true
@@ -5158,8 +6363,8 @@
       "id": "poble-node-1-3",
       "owner": "highlands",
       "position": {
-        "x": 445.872,
-        "y": 80.583
+        "x": 447.298,
+        "y": 74.755
       },
       "weight": 0,
       "editable": true
@@ -5178,8 +6383,8 @@
       "id": "poble-node-2-1",
       "owner": "highlands",
       "position": {
-        "x": 366.903,
-        "y": 100.379
+        "x": 363.87,
+        "y": 100.152
       },
       "weight": 0,
       "editable": true
@@ -5188,8 +6393,8 @@
       "id": "poble-node-2-2",
       "owner": "highlands",
       "position": {
-        "x": 401.871,
-        "y": 108.936
+        "x": 393.785,
+        "y": 116.738
       },
       "weight": 0,
       "editable": true
@@ -5198,8 +6403,8 @@
       "id": "poble-node-2-3",
       "owner": "highlands",
       "position": {
-        "x": 436.839,
-        "y": 117.494
+        "x": 434.886,
+        "y": 114.957
       },
       "weight": 0,
       "editable": true
@@ -5218,8 +6423,8 @@
       "id": "poble-node-3-0",
       "owner": "highlands",
       "position": {
-        "x": 322.902,
-        "y": 128.733
+        "x": 325.816,
+        "y": 129.446
       },
       "weight": 0,
       "editable": true
@@ -5228,8 +6433,8 @@
       "id": "poble-node-3-1",
       "owner": "highlands",
       "position": {
-        "x": 357.87,
-        "y": 137.29
+        "x": 357.653,
+        "y": 142.384
       },
       "weight": 0,
       "editable": true
@@ -5238,8 +6443,8 @@
       "id": "poble-node-3-2",
       "owner": "highlands",
       "position": {
-        "x": 392.838,
-        "y": 145.847
+        "x": 385.129,
+        "y": 156.315
       },
       "weight": 0,
       "editable": true
@@ -5248,8 +6453,8 @@
       "id": "poble-node-3-3",
       "owner": "highlands",
       "position": {
-        "x": 427.806,
-        "y": 154.404
+        "x": 422.474,
+        "y": 155.159
       },
       "weight": 0,
       "editable": true
@@ -5278,8 +6483,8 @@
       "id": "poble-node-4-1",
       "owner": "highlands",
       "position": {
-        "x": 348.837,
-        "y": 174.201
+        "x": 347.866,
+        "y": 173.963
       },
       "weight": 0,
       "editable": true
@@ -5288,8 +6493,98 @@
       "id": "poble-node-4-3",
       "owner": "highlands",
       "position": {
-        "x": 418.774,
-        "y": 191.315
+        "x": 420.716,
+        "y": 191.791
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-fern-landing",
+      "owner": "highlands",
+      "position": {
+        "x": 326,
+        "y": 200
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-fern-bend",
+      "owner": "highlands",
+      "position": {
+        "x": 320,
+        "y": 187
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-fern-mouth",
+      "owner": "highlands",
+      "position": {
+        "x": 313,
+        "y": 180
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-descent-mouth",
+      "owner": "highlands",
+      "position": {
+        "x": 467.341,
+        "y": 203.201
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-descent-tangent",
+      "owner": "highlands",
+      "position": {
+        "x": 478.997,
+        "y": 206.053
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-descent-turn-in",
+      "owner": "highlands",
+      "position": {
+        "x": 487,
+        "y": 211
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-descent-turn-out",
+      "owner": "highlands",
+      "position": {
+        "x": 492,
+        "y": 220
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-descent-runout",
+      "owner": "highlands",
+      "position": {
+        "x": 496,
+        "y": 248
+      },
+      "weight": 0,
+      "editable": true
+    },
+    {
+      "id": "poble-descent-downhill",
+      "owner": "highlands",
+      "position": {
+        "x": 493,
+        "y": 268
       },
       "weight": 0,
       "editable": true
@@ -5408,7 +6703,13 @@
       "owner": "southern-estates",
       "to": "node-08",
       "via": [
+        "poble-descent-mouth",
+        "poble-descent-tangent",
+        "poble-descent-turn-in",
+        "poble-descent-turn-out",
         "descent-fixed",
+        "poble-descent-runout",
+        "poble-descent-downhill",
         "descent-a",
         "descent-b"
       ]
@@ -5579,29 +6880,11 @@
       "name": "Carrer de Blai"
     },
     {
-      "id": "poble-east-2-1",
-      "owner": "highlands",
-      "bridge": false,
-      "from": "poble-node-2-1",
-      "to": "poble-node-2-2",
-      "via": [],
-      "name": "Carrer de Blai"
-    },
-    {
       "id": "poble-east-2-2",
       "owner": "highlands",
       "bridge": false,
       "from": "poble-node-2-2",
       "to": "poble-node-2-3",
-      "via": [],
-      "name": "Carrer de Blai"
-    },
-    {
-      "id": "poble-east-2-3",
-      "owner": "highlands",
-      "bridge": false,
-      "from": "poble-node-2-3",
-      "to": "poble-node-2-4",
       "via": [],
       "name": "Carrer de Blai"
     },
@@ -5872,8 +7155,30 @@
       "bridge": false,
       "from": "node-06",
       "to": "poble-node-4-0",
-      "via": [],
+      "via": [
+        "poble-fern-landing",
+        "poble-fern-bend",
+        "poble-fern-mouth"
+      ],
       "name": "Fern / Mirador Approach"
+    },
+    {
+      "id": "poble-diagonal-hortes",
+      "owner": "highlands",
+      "from": "poble-node-3-0",
+      "to": "poble-node-2-1",
+      "via": [],
+      "name": "Passatge de les Hortes",
+      "bridge": false
+    },
+    {
+      "id": "poble-diagonal-piquer",
+      "owner": "highlands",
+      "from": "poble-node-0-2",
+      "to": "poble-node-1-3",
+      "via": [],
+      "name": "Passatge de Piquer",
+      "bridge": false
     }
   ],
   "schemaVersion": 2,

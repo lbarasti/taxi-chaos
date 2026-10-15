@@ -12,11 +12,11 @@ export type RoadAccess = { road: CountryRoad; point: Vec; segment: number; along
 export function pathLength(points: Vec[]) { return points.reduce((sum, p, i) => sum + (i ? dist(points[i - 1], p) : 0), 0); }
 
 /** Shared Catmull–Rom samples for artwork, routing and road sensing. */
-function curve(anchors: Vec[]): Vec[] {
+function curve(anchors: Vec[], spacing = 3): Vec[] {
   const points: Vec[] = [];
   for (let i = 0; i < anchors.length - 1; i++) {
     const a = anchors[Math.max(0, i - 1)], b = anchors[i], c = anchors[i + 1], d = anchors[Math.min(anchors.length - 1, i + 2)];
-    const steps = Math.max(1, Math.ceil(dist(b, c) / 3));
+    const steps = Math.max(1, Math.ceil(dist(b, c) / spacing));
     for (let j = 0; j < steps; j++) {
       const t = j / steps, t2 = t * t, t3 = t2 * t;
       const axis = (k: 'x' | 'y') => 0.5 * (2 * b[k] + (-a[k] + c[k]) * t + (2 * a[k] - 5 * b[k] + 4 * c[k] - d[k]) * t2 + (-a[k] + 3 * b[k] - 3 * c[k] + d[k]) * t3);
@@ -40,8 +40,10 @@ export function createCountryside(document: MapDocument) {
   const GOLF_CART_ROUTE = golf.route.map(golfPoint), GOLF_PATH = golf.path.map(golfPoint);
   const GOLF_HOLES = golf.holes.map(h => ({ tee: golfPoint(h.tee), green: golfPoint(h.green), bunker: golfPoint(h.bunker) }));
   const RIDGES = document.ridges.map(r => structuredClone(r.points)), LABELS = structuredClone(document.labels);
+  const urbanNodes = new Set(document.roads.filter(r => r.id.startsWith('poble-')).flatMap(r => [r.from, r.to]));
   const COUNTRY_ROADS: CountryRoad[] = document.roads.map(r => {
-    const points = curve([point(r.from), ...r.via.map(point), point(r.to)]);
+    const approach = !r.id.startsWith('poble-') && (urbanNodes.has(r.from) || urbanNodes.has(r.to));
+    const points = curve([point(r.from), ...r.via.map(point), point(r.to)], approach ? .75 : 3);
     const bounds = { min: vec(Math.min(...points.map(p => p.x)), Math.min(...points.map(p => p.y))), max: vec(Math.max(...points.map(p => p.x)), Math.max(...points.map(p => p.y))) };
     return { id: r.id, from: document.nodes.indexOf(r.from), to: document.nodes.indexOf(r.to), name: r.name, bridge: r.bridge, points, bounds, length: pathLength(points) };
   });

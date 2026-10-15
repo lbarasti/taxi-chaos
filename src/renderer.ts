@@ -13,7 +13,7 @@ import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { CITY_SHORE } from './coast';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
-import { drawPobleGround, drawPobleStreets, drawPobleProp } from './poble-sec-renderer';
+import { drawPobleGround, drawPobleStreets, drawPobleProp, drawPobleBuildings } from './poble-sec-renderer';
 import { drawBeachGround, drawBeachProp } from './beach-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
@@ -111,6 +111,7 @@ export class Renderer {
         zoom: this.zoom, project: point => this.screen(point),
       });
     }
+    drawPobleBuildings(this);
     for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
     this.campaignFrontages();
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
@@ -336,16 +337,17 @@ export class Renderer {
     this.countryEstates();
     drawPobleGround(this);
     c.lineJoin = 'round'; c.lineCap = 'round';
+    const bespokeRoad = (id: string) => id.startsWith('poble-') || this.game.map.pobleSec?.approaches.some(road => road.id === id);
     for (const road of COUNTRY_ROADS) {
-      if (road.id.startsWith('poble-')) continue;
+      if (bespokeRoad(road.id)) continue;
       trace(c, road.points); c.strokeStyle = road.bridge ? '#7d8985' : '#89917a'; c.lineWidth = road.bridge ? 15 : 15.5; c.stroke();
     }
     for (const road of COUNTRY_ROADS) {
-      if (road.id.startsWith('poble-')) continue;
+      if (bespokeRoad(road.id)) continue;
       trace(c, road.points); c.strokeStyle = '#354747'; c.lineWidth = 12; c.stroke();
     }
     for (const road of COUNTRY_ROADS) {
-      if (road.id.startsWith('poble-')) continue;
+      if (bespokeRoad(road.id)) continue;
       trace(c, road.points);
       c.strokeStyle = '#ddcb8880'; c.lineWidth = 0.16; c.setLineDash([2.4, 3]); c.stroke(); c.setLineDash([]);
     }
