@@ -6,17 +6,59 @@ const paths = {
   volume: '<path d="M11 5 6 9H3v6h3l5 4Zm4 3a5 5 0 0 1 0 8m3-11a9 9 0 0 1 0 14"/>',
   sirens: '<path d="M6 18v-7a6 6 0 0 1 12 0v7M4 18h16v3H4ZM12 1v1M3 4l2 2m16-2-2 2M1 11h2m18 0h2"/>',
 };
-export type SettingKey = keyof typeof paths;
-export function settingRow(key: SettingKey, label: string, value: string, hint = '') {
-  const toggle = key === 'gore' || key === 'muted';
-  const difficulty = key === 'difficulty';
-  const current = difficulty ? ['Cruise', 'Street', 'Chaos'].indexOf(value) : parseInt(value);
-  const control = toggle
-    ? `<input type="checkbox" role="switch" id="${key}-option" data-setting-input="${key}" ${value === 'On' ? 'checked' : ''}>`
-    : `<input type="range" id="${key}-option" data-setting-input="${key}" min="0" max="${difficulty ? 2 : 100}" step="1" value="${current}" ${difficulty ? `aria-valuetext="${value}" list="difficulty-stops"` : ''}><output for="${key}-option">${value}</output>${difficulty ? '<datalist id="difficulty-stops"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>' : ''}`;
-  return `<label class="setting-row" data-setting="${key}" for="${key}-option">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[key]}</svg>
-    <span class="setting-label">${label}${hint ? `<small>${hint}</small>` : ''}</span>
-    <span class="setting-value${toggle ? ' setting-toggle' : ''}">${control}</span>
+type SettingBase = { id: string; icon: keyof typeof paths; label: string; hint?: string };
+export type SwitchSetting = SettingBase & {
+  type: 'switch';
+  read: () => boolean;
+  write: (value: boolean) => void;
+};
+export type SliderSetting = SettingBase & {
+  type: 'slider';
+  min: number; max: number; step: number;
+  read: () => number;
+  write: (value: number) => void;
+  format: (value: number) => string;
+  stops?: readonly number[];
+};
+export type Setting = SwitchSetting | SliderSetting;
+
+function switchMarkup(setting: SwitchSetting) {
+  return `<input type="checkbox" role="switch" id="${setting.id}-option" ${setting.read() ? 'checked' : ''}>`;
+}
+function sliderMarkup(setting: SliderSetting) {
+  const { id, min, max, step, stops } = setting, value = setting.read(), text = setting.format(value);
+  return `<input type="range" id="${id}-option" min="${min}" max="${max}" step="${step}" value="${value}" aria-valuetext="${text}" ${stops ? `list="${id}-stops"` : ''}><output for="${id}-option">${text}</output>${stops ? `<datalist id="${id}-stops">${stops.map(stop => `<option value="${stop}"></option>`).join('')}</datalist>` : ''}`;
+}
+export function settingRow(setting: Setting) {
+  const control = setting.type === 'switch' ? switchMarkup(setting) : sliderMarkup(setting);
+  return `<label class="setting-row" data-setting="${setting.id}" for="${setting.id}-option">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[setting.icon]}</svg>
+    <span class="setting-label">${setting.label}${setting.hint ? `<small>${setting.hint}</small>` : ''}</span>
+    <span class="setting-value${setting.type === 'switch' ? ' setting-toggle' : ''}">${control}</span>
   </label>`;
+}
+
+function bindSwitch(input: HTMLInputElement, setting: SwitchSetting) {
+  const refresh = () => { input.checked = setting.read(); };
+  input.addEventListener('input', () => { setting.write(input.checked); refresh(); });
+  return refresh;
+}
+function bindSlider(input: HTMLInputElement, setting: SliderSetting) {
+  const output = input.parentElement!.querySelector('output')!;
+  const refresh = () => {
+    const value = setting.read(), text = setting.format(value);
+    input.value = String(value);
+    input.setAttribute('aria-valuetext', text);
+    if (output.textContent !== text) output.textContent = text;
+  };
+  input.addEventListener('input', () => { setting.write(input.valueAsNumber); refresh(); });
+  return refresh;
+}
+export function bindSettingControls(root: HTMLElement, settings: readonly Setting[]): () => void {
+  const refreshers: (() => void)[] = [];
+  for (const setting of settings) {
+    const input = root.querySelector<HTMLInputElement>(`#${setting.id}-option`);
+    if (input) refreshers.push(setting.type === 'switch' ? bindSwitch(input, setting) : bindSlider(input, setting));
+  }
+  return () => { for (const refresh of refreshers) refresh(); };
 }

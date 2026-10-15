@@ -1,9 +1,8 @@
 import type { Game } from './game';
 import type { AudioFX } from './audio';
-import { difficulties, type Difficulty } from './rules';
-import type { SettingKey } from './setting-controls';
+import { createSettings, type SettingsControls } from './settings';
+import { bindSettingControls } from './setting-controls';
 import type { Allegation } from './campaign/model';
-import { bindAudioControls } from './audio-controls';
 import { DrawerMenu } from './drawer-menu';
 import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
 import { splashPrompts, type InputDevice } from './splash';
@@ -11,12 +10,15 @@ import type { DrawerPage } from './drawer-markup';
 
 // Owns only the title/pause drawer. Gameplay, garage and recovery stay in main.
 export class GameDrawer {
+  private settings: SettingsControls;
+  private refreshSettings = () => {};
   private page: DrawerPage = 'home';
   private transition?: Animation;
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
   private device: InputDevice = 'keyboard';
   constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void }) {
+    this.settings = createSettings(options.game, options.audio);
     this.menu = new DrawerMenu(root, () => this.active && !this.transition && !root.closest('[inert]'));
     root.addEventListener('click', event => {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
@@ -35,15 +37,6 @@ export class GameDrawer {
       if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
     });
     root.addEventListener('input', event => {
-      const input = event.target as HTMLInputElement;
-      const key = input.dataset.settingInput as SettingKey | undefined;
-      if (key === 'gore') options.game().configure({ gore: input.checked });
-      else if (key === 'difficulty') options.game().configure({ difficulty: (Object.keys(difficulties) as Difficulty[])[Number(input.value)] });
-      else if (key) {
-        options.audio.configure(key === 'muted' ? { muted: input.checked } : { [key]: Number(input.value) / 100 });
-        void options.audio.unlock();
-      }
-      if (key) this.refreshSettings();
       if ((event.target as HTMLElement).id === 'notebook-search') this.filterNotebook();
     });
   }
@@ -58,22 +51,6 @@ export class GameDrawer {
     if (this.page === 'settings' && this.root.dataset.page === 'settings') this.refreshSettings();
     else this.paint();
   }
-  private refreshSettings() {
-    const { settings } = this.options.game(), p = this.options.audio.preferences;
-    const values: Record<SettingKey, string> = { gore: settings.gore ? 'On' : 'Off', difficulty: difficulties[settings.difficulty].name, muted: p.muted ? 'On' : 'Off', volume: `${Math.round(p.volume * 100)}%`, sirens: `${Math.round(p.sirens * 100)}%` };
-    this.root.querySelectorAll<HTMLElement>('[data-setting]').forEach(row => {
-      const value = values[row.dataset.setting as SettingKey];
-      const key = row.dataset.setting as SettingKey, input = row.querySelector<HTMLInputElement>('input')!;
-      if (key === 'gore' || key === 'muted') input.checked = value === 'On';
-      else {
-        input.value = String(key === 'difficulty' ? Object.keys(difficulties).indexOf(settings.difficulty) : Math.round(p[key] * 100));
-        if (key === 'difficulty') input.setAttribute('aria-valuetext', value);
-        const output = row.querySelector('output')!;
-        if (output.textContent !== value) output.textContent = value;
-      }
-    });
-  }
-
   async open(page: DrawerPage, { animate = true } = {}) {
     // Capture previews can choose a page before entering paused mode.
     if (!this.active) { this.page = page; return; }
@@ -124,9 +101,9 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), audio: this.options.audio, saved: this.options.saved })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
-    bindAudioControls(this.root, this.options.audio);
+    this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);
     this.menu.reset(selected);
     this.root.scrollTop = scroll;

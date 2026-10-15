@@ -1,6 +1,5 @@
 import type { Game } from './game';
-import type { AudioFX } from './audio';
-import { difficulties } from './rules';
+import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
 import { calendarLabel } from './campaign/clock';
 import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
@@ -20,15 +19,14 @@ const pages = {
 export const drawerParent = (page: DrawerPage) => pages[page].parent;
 export const isDrawerPage = (page: string): page is DrawerPage => Object.hasOwn(pages, page);
 
-function settingsMarkup(game: Game, audio: AudioFX) {
-  const p = audio.preferences;
+function settingsMarkup(settings: SettingsControls) {
   return `<fieldset class="settings-group"><legend>GAMEPLAY</legend>
-    ${settingRow('gore', 'Pulp gore', game.settings.gore ? 'On' : 'Off', 'Fatal impacts & blood')}
-    ${settingRow('difficulty', 'Difficulty', difficulties[game.settings.difficulty].name)}
+    ${settingRow(settings.gore)}
+    ${settingRow(settings.difficulty)}
   </fieldset><fieldset class="settings-group"><legend>AUDIO</legend>
-    ${settingRow('muted', 'Mute FX', p.muted ? 'On' : 'Off')}
-    ${settingRow('volume', 'FX volume', `${Math.round(p.volume * 100)}%`)}
-    ${settingRow('sirens', 'Sirens', `${Math.round(p.sirens * 100)}%`)}
+    ${settingRow(settings.muted)}
+    ${settingRow(settings.volume)}
+    ${settingRow(settings.sirens)}
   </fieldset>`;
 }
 function campaignMarkup(game: Game) {
@@ -41,12 +39,12 @@ function campaignMarkup(game: Game) {
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
 }
-export function drawerMarkup(page: DrawerPage, { game, audio, saved }: { game: Game; audio: AudioFX; saved: boolean }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved }: { game: Game; settings: SettingsControls; saved: boolean }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
     case 'notebook': return notebookMarkup(game);
-    case 'settings': body = settingsMarkup(game, audio); break;
+    case 'settings': body = settingsMarkup(settings); break;
     case 'rules': body = streetRulesMarkup(); break;
     case 'shift': body = shiftMarkup(game, campaignMarkup(game)); break;
     case 'credits': body = audioCreditsMarkup(); break;
