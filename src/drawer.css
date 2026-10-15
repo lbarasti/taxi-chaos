@@ -23,9 +23,9 @@
 .splash-modal .menu-field:has([data-selected]){background:#f7ce5510;border-color:#f7ce5555}
 .splash-modal .audio-settings{gap:12px;padding:16px 8px;font-size:13px}.splash-modal .audio-settings label{min-height:44px}.splash-modal .audio-settings label:not(.audio-toggle){grid-template-columns:65px minmax(0,1fr) 36px}.splash-modal .audio-settings input[type=range]{min-width:0}.splash-modal .audio-settings .menu-item{font-size:13px}
 .splash-modal .audio-credits{font-size:13px;line-height:1.8;margin:24px 0}.splash-modal .audio-credits p{font-size:12px;margin:16px 0}.splash-modal .audio-credits a{overflow-wrap:anywhere}.splash-modal a[data-selected]{outline:2px solid var(--gold);outline-offset:3px}
-/* Credits reuse the settings palette, grouped by craft like film and game credits. */
-.credits-section{margin:18px 0 0;padding-top:16px;border-top:1px solid var(--border)}
-.credits-title{font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--mint);margin:0 0 10px}
+/* Settings and credits share unboxed sections and the same heading hierarchy. */
+.credits-section,.settings-group{min-width:0;margin:22px 0 0;padding:0;border:0}
+.credits-title,.settings-group legend{margin:0 0 10px;padding:0;font-size:12px;font-weight:600;line-height:1.5;letter-spacing:1.5px;text-transform:uppercase;color:var(--mint)}
 .credits-list{display:grid;gap:0;margin:0}
 .credit-row{display:grid;grid-template-columns:minmax(88px,30%) minmax(0,1fr);gap:4px 16px;align-items:baseline;padding:9px 8px;border:1px solid transparent;border-left-width:3px;border-bottom-color:#a3ddc214;border-radius:4px;transition:background .16s ease,border-color .16s ease}
 .credit-row:last-child{border-bottom-color:transparent}
@@ -46,8 +46,6 @@
 @media(max-width:700px){.splash-modal{width:min(420px,calc(100vw - 24px));padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.splash-modal h2{font-size:clamp(34px,8vw,48px)}.splash-save{padding:14px}.splash-save-heading{flex-wrap:wrap}.splash-save-heading small{margin-left:0;width:100%}.splash-snapshot strong{font-size:22px}.splash-modal .intro-controls{gap:8px;font-size:9px}.splash-modal .intro-grid{grid-template-columns:1fr}.splash-modal .intro-grid>div>span{margin-bottom:5px}}
 @media(max-height:650px){.splash-modal{padding-top:20px;padding-bottom:20px}.splash-modal h2{font-size:40px;margin-top:14px}.drawer-page>.intro-copy{margin-bottom:14px}.splash-snapshot{padding:12px 0}}
 /* Settings share the drawer palette, with native controls and aligned values. */
-.settings-group{min-width:0;margin:22px 0 0;padding:4px 8px 8px;border:1px solid var(--border);border-radius:8px}
-.settings-group legend{padding:0 8px;font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--mint)}
 .setting-row{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px;border:1px solid transparent;border-left-width:3px;border-radius:4px;color:#d4ded4;cursor:pointer}
 .setting-row+.setting-row{border-top-color:#a3ddc215}
 .setting-row>svg{flex:0 0 22px;color:var(--mint)}
@@ -61,5 +59,5 @@
 .setting-value input[type=checkbox]::before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:#d4ded4;transition:transform .15s}
 .setting-value input[type=checkbox]:checked{background:var(--mint);border-color:var(--mint)}
 .setting-value input[type=checkbox]:checked::before{transform:translateX(20px);background:#17262d}
-@media(max-width:380px){.settings-group{padding-inline:2px}.setting-row{gap:8px;padding-inline:4px}.setting-label{font-size:11px}.setting-value{gap:6px}.setting-value output{flex-basis:36px;font-size:11px}.setting-row>svg{flex-basis:18px;width:18px}}
+@media(max-width:380px){.setting-row{gap:8px;padding-inline:4px}.setting-label{font-size:11px}.setting-value{gap:6px}.setting-value output{flex-basis:36px;font-size:11px}.setting-row>svg{flex-basis:18px;width:18px}}
 @media(prefers-reduced-motion:reduce){.setting-value input[type=checkbox],.setting-value input[type=checkbox]::before{transition:none}}
