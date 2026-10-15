@@ -34,24 +34,20 @@ import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
 import { isCountry, pathLength } from './countryside';
 import { RAIL_BREAK_SPEED } from './coast';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
+import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from './vehicle-upgrades';
+import { saveCar, parseGarage, legacyGarage, type GarageSave, type SavedCar } from './garage-save';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, inHarbour } from './harbour';
 
-export type Vehicle = { id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
+export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; everyday?: { family: string; line: string } };
-export type Save = { cash: number; deliveries: number; upgrades: { engine: number; grip: number; armor: number; boost: number }; best: number; story: MissionProgress; playerRecords: PlayerRecords; campaign: Campaign };
+export type Save = { cash: number; deliveries: number; garage: GarageSave | null; best: number; story: MissionProgress; playerRecords: PlayerRecords; campaign: Campaign };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
-export const upgradeInfo = {
-  engine: { name: 'Street engine', subtitle: 'More pull. More problems.', detail: '+22% acceleration per level', price: 160 },
-  grip: { name: 'Sticky tyres', subtitle: 'Own the next corner.', detail: '+18% tyre grip per level', price: 120 },
-  armor: { name: 'Reinforced chassis', subtitle: 'Built for the scenic route.', detail: '25% less impact damage per level', price: 140 },
-  boost: { name: 'Bigger boost tank', subtitle: 'A little extra getaway.', detail: '+35% boost capacity per level', price: 180 },
-};
-export type Upgrade = keyof typeof upgradeInfo;
-export const defaultSave = (definition = campaignDefinition): Save => ({ cash: 80, deliveries: 0, upgrades: { engine: 0, grip: 0, armor: 0, boost: 0 }, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords(), campaign: defaultCampaign(definition) });
-function loadSave(definition = campaignDefinition): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(definition); const d = defaultSave(definition); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign, definition, { progress: d.story, records: d.playerRecords }); for (const k of Object.keys(d.upgrades) as Upgrade[]) d.upgrades[k] = clamp(Math.floor(Number(s.upgrades?.[k]) || 0), 0, 3); return d; } catch { return defaultSave(definition); } }
+export { upgradeInfo, type Upgrade } from './vehicle-upgrades';
+export const defaultSave = (definition = campaignDefinition): Save => ({ cash: 80, deliveries: 0, garage: null, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords(), campaign: defaultCampaign(definition) });
+function loadSave(definition = campaignDefinition): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(definition); const d = defaultSave(definition); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign, definition, { progress: d.story, records: d.playerRecords }); d.garage = s.garage ? parseGarage(s.garage) : s.upgrades ? legacyGarage(s.upgrades) : null; return d; } catch { return defaultSave(definition); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Mia', 'Frankie', 'Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
 const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
@@ -104,11 +100,12 @@ export class Game {
     this.missions = new MissionDirector(story === true ? campaignMissions(map, campaignContent) : story === 'legacy' ? missionsFor(map) : neutralMissions(map), this.save.story, this.campaignEnabled ? () => this.campaignContext : undefined);
     this.resolveCampaignSites();
     this.populateVehicles();
+    this.restoreGarage();
     const ride = this.save.campaign.activeRide;
     if (this.campaignEnabled && ride && this.missions.resumeRide(ride.missionId)) {
       this.job = this.makeMissionJob(ride.missionId); this.job.type = ride.type; this.job.stage = 'dropoff'; this.job.elapsed = ride.elapsed; this.job.comfort = ride.comfort; this.rideBeat = ride.rideBeat;
       const rider = this.world.people.find(p => p.id === this.job.customerId); if (rider) { rider.alive = false; rider.aboard = true; }
-      this.player.body.position = { ...this.job.pickup }; this.lastRidePosition = { ...this.job.pickup }; this.syncMissionOffers();
+      if (!this.save.garage) this.player.body.position = { ...this.job.pickup }; this.lastRidePosition = { ...this.player.body.position }; this.syncMissionOffers();
     } else this.newJob(true);
     this.applyUpgrades(); this.syncCampaignWorld();
     if (this.campaignEnabled) this.dayNight.followCampaign(this.save.campaign.minute);
@@ -141,7 +138,9 @@ export class Game {
       v.path = [next, FREIGHT_ROUTE[(index + 2) % FREIGHT_ROUTE.length]];
     }
   }
-  resetRun() {
+  resetRun(model = this.player.model) {
+    // A laboratory reset rebuilds the scene around the selected chassis.
+    const previous = this.player;
     this.navToNewsroom = false;
     this.missionOffers.clear();
     this.sounds.reset(); this.touchMove = null;
@@ -150,7 +149,11 @@ export class Game {
     this.onFoot = false; this.wreckedAt = -1; this.driver = new Body(4, 32, 75, 0.7, 0.7);
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.pendingExit = null; this.tumble = null; this.wastedReason = 'explosion';
     this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
-    this.world = new World(this.map); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles(); this.feedback = []; this.skids = []; this.roadMarkVehicleId = -1; this.roadMarkStates = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
+    this.world = new World(this.map); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles();
+    const starter = this.player; this.vehicles = this.vehicles.filter(v => v !== starter);
+    this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, previous.color, model);
+    this.player.upgrades = previous.model !== model || previous.sinking || previous.damage.status === 'wreck' ? stockUpgrades() : { ...previous.upgrades };
+    this.feedback = []; this.skids = []; this.roadMarkVehicleId = -1; this.roadMarkStates = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
     this.resolveCampaignSites();
     this.time = 0; this.health = 100; this.boost = 100; this.heat = 0; this.escape = 0; this.arrest = 0; this.combo = 0; this.comboTimer = 0;
     this.smashed = 0; this.shiftEarnings = 0; this.jobsDone = 0; this.crashCooldown = 0; this.speedingTime = 0; this.driftMeter = 0; this.lastDrift = 0; this.nearMiss.clear(); this.navToGarage = false;
@@ -210,6 +213,7 @@ export class Game {
     if (!this.campaignEnabled) return;
     for (const spec of this.campaignContent.vehicles) {
       const existing = this.vehicles.find(v => v.sourceId === spec.id);
+      if (existing && !this.campaignVehiclesSpawned.has(spec.id)) this.campaignVehiclesSpawned.add(spec.id);
       if (this.campaignMatches(spec.present) && !this.campaignVehiclesSpawned.has(spec.id)) {
         const stop = this.missions.catalogue.stops.byId[spec.stop];
         if (stop) for (const offset of spec.offsets) {
@@ -271,7 +275,7 @@ export class Game {
   spawnVehicle({ model = 'car', kind = 'traffic', position, angle = 0, color, parked = false, driverExited = false }: VehicleSpawn): Vehicle {
     const definition = vehicleDefinition(model), body = createVehicleBody(definition, position, angle);
     const id = this.serial++;
-    const v: Vehicle = { id, body, definition, dynamics: createVehicleDynamics(definition), model, kind, color: color ?? definition.graphics.color, path: [], routeTimer: 0, alive: true, parked, ai: createAI(body.position, id), damage: createVehicleDamage(), baseEngine: definition.physics.engineForce, baseGrip: definition.physics.grip, wreckAt: -1, driverExited };
+    const v: Vehicle = { upgrades: stockUpgrades(), id, body, definition, dynamics: createVehicleDynamics(definition), model, kind, color: color ?? definition.graphics.color, path: [], routeTimer: 0, alive: true, parked, ai: createAI(body.position, id), damage: createVehicleDamage(), baseEngine: definition.physics.engineForce, baseGrip: definition.physics.grip, wreckAt: -1, driverExited };
     if (definition.ai.controller === 'golf') v.cart = { waypoint: 0, crush: 0, roll: 0, targetRoll: 0 };
     this.vehicles.push(v); return v;
   }
@@ -367,7 +371,7 @@ export class Game {
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
       if (next.model === 'motorcycle') next.body.mass = next.definition.chassis.mass;
-      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
+      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
     }
     const point = this.exitLocation(this.player, this.exitSide);
     if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger'); return false; }
@@ -422,7 +426,7 @@ export class Game {
       if (passenger && this.job.type === 'fare') { passenger.aboard = false; passenger.alive = true; passenger.position = { ...point }; passenger.home = add(point, rotate(vec(0, 18), b.angle)); passenger.panic = 3; }
       this.newJob(false, 'left-vehicle');
     }
-    this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing');
+    this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.persist();
     this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.');
   }
   walk(dt: number) {
@@ -541,11 +545,40 @@ export class Game {
     this.heat = 0; this.escape = 0; this.arrest = 0; this.speedingTime = 0; this.driftMeter = 0;
     this.policeIntel = { position: vec(), velocity: vec(), seenAt: -100 };
     for (const v of this.police) v.alive = false;
-    this.sounds.emit('escape', this.time); this.notify('FRESH CAR. CLEAN RECORD. All police warnings cleared. Follow cyan to the exit.', 'success'); this.onChange();
+    this.persist(); this.sounds.emit('escape', this.time); this.notify('FRESH STOCK CAR. Upgrades stayed with the old car. Police warnings cleared. Follow cyan to the exit.', 'success'); this.onChange();
+  }
+  private restoreGarage() {
+    const garage = this.save.garage;
+    if (!garage) return;
+    const starter = this.player, sources = new Set([garage.current, ...garage.parked].map(v => v.sourceId).filter(Boolean));
+    this.vehicles = this.vehicles.filter(v => v !== starter && !sources.has(v.sourceId));
+    const restore = (car: SavedCar, current: boolean) => {
+      const v = this.spawnVehicle({ model: car.model, color: car.color, position: car.position, angle: car.angle,
+        kind: current && !garage.onFoot ? 'taxi' : 'traffic', parked: !current || garage.onFoot, driverExited: !current || garage.onFoot });
+      v.sourceId = car.sourceId; v.upgrades = { ...car.upgrades }; v.damage = structuredClone(car.damage); v.alive = car.alive;
+      if (v.damage.status === 'wreck') v.wreckAt = this.time;
+      if (v.dynamics instanceof MotorcycleDynamics) {
+        if (!current || garage.onFoot) v.body.mass = Math.max(50, v.body.mass - this.driver.mass);
+        if (car.fallen) v.dynamics.crash(1, 0);
+      }
+      this.applyUpgrades(v);
+      // Ambient spawns must not overlap a saved car that has moved into their bay.
+      this.vehicles = this.vehicles.filter(other => other === v || sources.has(other.sourceId) || hasUpgrades(other.upgrades) || !bodiesNear(v.body, other.body, 0.1));
+      return v;
+    };
+    // Restore parked cars before the current one so the active actor always wins.
+    for (const car of garage.parked) restore(car, false);
+    this.player = restore(garage.current, true);
+    this.onFoot = garage.onFoot; this.driver.position = { ...garage.driver }; this.driverHealth = garage.driverHealth; this.boost = garage.boost;
+  }
+  private loseUpgrades(v: Vehicle) {
+    if (!hasUpgrades(v.upgrades)) return;
+    v.upgrades = stockUpgrades(); this.applyUpgrades(v); this.persist();
   }
   get persistenceEnabled() { return this.persistence; }
   get garageNear() { return !this.onFoot && dist(this.player.body.position, GARAGE) < 9; }
   persist() {
+    this.save.garage = { version: 1, current: saveCar(this.player), parked: this.vehicles.filter(v => v !== this.player && v.alive && !v.sinking && v.damage.status !== 'wreck' && hasUpgrades(v.upgrades)).map(saveCar), onFoot: this.onFoot, driver: { ...this.driver.position }, driverHealth: this.driverHealth, boost: this.boost };
     if (this.campaignEnabled && this.job) this.save.campaign.activeRide = this.job.missionId && this.job.stage === 'dropoff' ? { missionId: this.job.missionId, type: this.job.type, elapsed: this.job.elapsed, comfort: this.job.comfort, rideBeat: this.rideBeat } : null;
     if (!this.persistence) return; try { localStorage.setItem(storageKeys.save, JSON.stringify(this.save)); } catch { /* file:// and private browsers may deny storage */ } }
   configure(settings: Partial<Settings>) {
@@ -559,7 +592,7 @@ export class Game {
     this.onChange();
   }
   setMode(mode: Mode) { if (this.mode === 'playing' && mode !== 'playing') this.persist(); if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
-  start() { this.setMode('playing'); this.syncMissionOffers(); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
+  start() { if (!this.onFoot && (!this.player.alive || this.player.damage.status === 'wreck') || this.driverHealth <= 0) { this.setMode('wasted'); return; } this.setMode('playing'); this.syncMissionOffers(); this.notify('First fare is just ahead. Stop inside the yellow ring.'); }
   notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   private missionContext(): DirectorContext {
     return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds, minute: this.save.campaign.minute, shift: this.save.campaign.finished ? 15 : this.save.campaign.shift };
@@ -715,9 +748,9 @@ export class Game {
     }
     this.job.type = type; this.job.wait = 0;
   }
-  applyUpgrades() { const physics = this.player.definition.physics; this.player.baseEngine = this.player.dynamics.engineForce = physics.engineForce * (1 + this.save.upgrades.engine * 0.22); this.player.baseGrip = this.player.dynamics.grip = physics.grip * (1 + this.save.upgrades.grip * 0.18); }
-  price(key: Upgrade) { return upgradeInfo[key].price * (this.save.upgrades[key] + 1); }
-  buy(key: Upgrade) { const price = this.price(key); if (this.save.cash < price || this.save.upgrades[key] >= 3) return false; this.save.cash -= price; this.save.upgrades[key]++; this.applyUpgrades(); this.persist(); this.sounds.emit('purchase', this.time); this.onChange(); return true; }
+  applyUpgrades(v = this.player) { const physics = v.definition.physics; v.baseEngine = v.dynamics.engineForce = physics.engineForce * (1 + v.upgrades.engine * 0.22); v.baseGrip = v.dynamics.grip = physics.grip * (1 + v.upgrades.grip * 0.18); }
+  price(key: Upgrade) { return upgradeInfo[key].price * (this.player.upgrades[key] + 1); }
+  buy(key: Upgrade) { if (this.mode !== 'garage' || this.onFoot || this.player.sinking || !this.player.alive || this.player.damage.status === 'wreck') return false; const price = this.price(key); if (this.save.cash < price || this.player.upgrades[key] >= 3) return false; this.save.cash -= price; this.player.upgrades[key]++; this.applyUpgrades(); this.persist(); this.sounds.emit('purchase', this.time); this.onChange(); return true; }
   repair() { const price = this.repairPrice; if (this.save.cash < price || price === 0) return; this.save.cash -= price; this.player.damage = createVehicleDamage(); this.persist(); this.sounds.emit('repair', this.time); this.onChange(); }
   garage() { if (this.mode === 'garage') { this.setMode('playing'); return; } if (this.mode !== 'playing' || this.player.sinking) return; if (this.onFoot) { this.notify('Get into a car before visiting Pit Stop.'); return; } if (this.stars) { this.notify('Lose the cops before visiting the garage.', 'danger'); return; } this.navToNewsroom = false; if (!this.garageNear) { this.navToHarbour = false; this.navToGarage = !this.navToGarage; this.notify(this.navToGarage ? 'Route to Pit Stop set. Follow the blue line.' : 'Back to your fare. Follow the marked route.'); return; } if (this.speed > 3) { this.notify('Stop the cab to enter Pit Stop.'); return; } this.navToGarage = false; this.setMode('garage'); }
   recover() {
@@ -725,7 +758,7 @@ export class Game {
       this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
       this.sounds.reset();
       const bill = this.hospitalBill;
-      this.save.cash -= bill.total; this.persist();
+      this.save.cash -= bill.total;
       // Leave the destroyed vehicle behind. Acknowledgment brings the driver back on foot.
       this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true;
       // Hospital recovery does not lift or repair the abandoned motorcycle.
@@ -737,7 +770,7 @@ export class Game {
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = []; this.roadMarkVehicleId = -1;
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
       for (const v of this.police) v.alive = false;
-      this.newJob(false, 'hospital'); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
+      this.newJob(false, 'hospital'); this.setMode('playing'); this.persist(); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
       return;
     }
     if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking &&
@@ -746,7 +779,9 @@ export class Game {
     this.sounds.reset();
     this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
     const fee = this.mode === 'arrested' ? this.arrestBill.total : Math.min(this.save.cash, 60);
-    this.save.cash -= fee; this.persist(); this.player.body.position = vec(4, 32); this.player.body.velocity = vec(); this.player.body.angle = -Math.PI / 2; this.player.body.angularVelocity = 0;
+    this.save.cash -= fee;
+    if (this.player.damage.status === 'wreck') this.loseUpgrades(this.player);
+    this.player.body.position = vec(4, 32); this.player.body.velocity = vec(); this.player.body.angle = -Math.PI / 2; this.player.body.angularVelocity = 0;
     this.pendingExit = null; this.tumble = null; this.onFoot = false; this.wreckedAt = -1; this.player.kind = 'taxi'; this.player.parked = false; this.player.driverExited = false; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
     if (this.player.model === 'motorcycle') this.player.body.mass = this.player.definition.chassis.mass;
     this.player.door = undefined; this.player.coastUntil = undefined; this.player.exitSteer = undefined;
@@ -754,7 +789,7 @@ export class Game {
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.player.sinking = undefined;
     if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
     for (const v of this.police) v.alive = false;
-    this.newJob(true, 'arrested'); this.setMode('playing'); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`);
+    this.newJob(true, 'arrested'); this.setMode('playing'); this.persist(); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`);
     this.sounds.emit('repair', this.time);
   }
   crime(amount: number) { if (this.settings.noPolice) return; this.heat = clamp(this.heat + amount, 0, 100); this.escape = 0; }
@@ -770,7 +805,7 @@ export class Game {
       if (structural) this.buildingsSmashed++;
       this.crime(structural ? 25 : prop.kind === 'kiosk' ? 15 : prop.kind === 'tree' ? 12 : 7);
       this.floating(prop.body.position, this.combo > 1 ? `${this.combo}× SMASH` : 'SMASH!', '#f9ce60');
-      if (!this.settings.invincible) v.damage.health = Math.max(0, v.damage.health - Math.min(3, impact * 0.07) * (1 - this.save.upgrades.armor * 0.25));
+      if (!this.settings.invincible) v.damage.health = Math.max(0, v.damage.health - Math.min(3, impact * 0.07) * (1 - v.upgrades.armor * 0.25));
       if (this.smashed === 1) this.notify('Shortcut unlocked. Property damage attracts the police.', 'danger');
     }
   }
@@ -884,7 +919,7 @@ export class Game {
       return;
     }
     const local = rotate(sub(point, v.body.position), -v.body.angle), cargo = v.definition.cargo;
-    const result = impactDamage(v.damage, { impact, localPoint: vec(local.x * 4.2 / v.body.w, local.y * 2.1 / v.body.h), armor: v.kind === 'taxi' ? this.save.upgrades.armor : v.kind === 'police' ? 1 : 0, time: this.time, scale: this.rules.damageScale * v.definition.damage.impactScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
+    const result = impactDamage(v.damage, { impact, localPoint: vec(local.x * 4.2 / v.body.w, local.y * 2.1 / v.body.h), armor: v.upgrades.armor + (v.kind === 'police' ? 1 : 0), time: this.time, scale: this.rules.damageScale * v.definition.damage.impactScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
     if (cargo.flammable && result.damage > 0 && closingSpeed >= cargo.ignitionImpact && local.x < v.body.w / 2 - v.definition.graphics.cabLength) igniteVehicle(v.damage, cargo.fuse, blamed);
     if (result.ignited && v === this.player && !this.onFoot) this.notify(`${v.definition.graphics.sprite === 'motorcycle' ? 'BIKE' : 'CAB'} ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
   }
@@ -919,7 +954,7 @@ export class Game {
       const effect = radialEffect(blast.position, v.body.position, blast.radius, blast.power); if (!effect.falloff) continue;
       v.body.impulse(scale(effect.kick, Math.min(v.body.mass, 1000)), v.body.toWorld(vec(0, 0.4)));
       if (v.cart) { this.damageImpact(v, effect.damage / 3, blast.position, blast.blamed); continue; }
-      const result = blastDamage(v.damage, effect.damage, { armor: v.kind === 'taxi' ? this.save.upgrades.armor : 0, time: this.time, scale: this.rules.damageScale * v.definition.damage.blastScale, blamed: blast.blamed, fuse: Math.min(this.rules.fireFuse, 1.7), invincible: v.kind === 'taxi' && this.settings.invincible });
+      const result = blastDamage(v.damage, effect.damage, { armor: v.upgrades.armor, time: this.time, scale: this.rules.damageScale * v.definition.damage.blastScale, blamed: blast.blamed, fuse: Math.min(this.rules.fireFuse, 1.7), invincible: v.kind === 'taxi' && this.settings.invincible });
       const cargo = v.definition.cargo;
       if (cargo.flammable && result.damage > 0 && effect.damage >= cargo.ignitionBlast) igniteVehicle(v.damage, Math.min(cargo.fuse, 1.7), blast.blamed);
       if (result.ignited && v === this.player && !this.onFoot) this.notify('FUEL ON FIRE · Press E to bail out, then run clear!', 'danger');
@@ -957,7 +992,7 @@ export class Game {
       }
       if (v.damage.status !== 'burning') v.damage.bloodTime = Math.max(0, v.damage.bloodTime - dt);
       if (tickVehicleDamage(v.damage, dt) === 'explode') {
-        v.wreckAt = this.time; this.queueBlast(v.body.position, v.definition.damage.blastRadius, v.definition.damage.blastPower, v.damage.blamed, v.id);
+        v.wreckAt = this.time; this.loseUpgrades(v); this.queueBlast(v.body.position, v.definition.damage.blastRadius, v.definition.damage.blastPower, v.damage.blamed, v.id);
         if (v === this.player && !this.onFoot && this.job.stage === 'dropoff' && this.settings.gore) {
           const passenger = this.world.people.find(p => p.id === this.job.customerId);
           if (passenger) { passenger.alive = true; passenger.aboard = false; passenger.position = add(v.body.position, vec(0.4, 0.4)); if (killPedestrian(passenger, vec(7, 4), this.time)) this.death(passenger, vec(7, 4), 2, v.damage.blamed); }
@@ -991,6 +1026,7 @@ export class Game {
   }
   private enterWater(v: Vehicle, pool?: Body) {
     v.sinking = { elapsed: 0, pool, entrySpeed: length(v.body.velocity) };
+    this.loseUpgrades(v);
     v.damage.status = 'intact'; v.damage.fuse = 0; v.damage.fireTime = 0; v.dynamics.skidding = false;
     v.body.force = vec(); v.body.torque = 0;
     if (pool) { v.body.velocity = vec(); v.body.angularVelocity = 0; }
@@ -1028,7 +1064,7 @@ export class Game {
     const turn = this.touchMove ? touchSteering(this.touchMove.x) : Number(has('KeyD', 'ArrowRight', 'right')) - Number(has('KeyA', 'ArrowLeft', 'left'));
     const boosting = !this.onFoot && !this.pendingExit && has('ShiftLeft', 'ShiftRight', 'boost') && this.boost > 1 && throttle > 0;
     this.controls = this.onFoot || this.pendingExit ? { throttle: 0, turn: 0, handbrake: false, boost: false } : { throttle, turn, handbrake: has('Space', 'handbrake'), boost: boosting };
-    this.boost = this.settings.infiniteBoost ? 100 : clamp(this.boost + dt * (boosting ? -29 / (1 + this.save.upgrades.boost * 0.35) : 13), 0, 100);
+    this.boost = this.settings.infiniteBoost ? 100 : clamp(this.boost + dt * (boosting ? -29 / (1 + this.player.upgrades.boost * 0.35) : 13), 0, 100);
     this.previousTyres = this.player.dynamics.tyres.map(t => this.player.body.toWorld(t.position));
     this.recoveryBudget.used = 0; this.recoveryBudget.rejoin = 0;
     for (const v of this.vehicles) {
@@ -1038,6 +1074,7 @@ export class Game {
       const motion = length(v.body.velocity); if (motion > 70) v.body.velocity = scale(v.body.velocity, 70 / motion); v.body.angularVelocity = clamp(v.body.angularVelocity, -8, 8);
       const previousPosition = { ...v.body.position };
       if (v.damage.status === 'wreck') {
+        this.loseUpgrades(v);
         v.body.velocity = scale(v.body.velocity, Math.exp(-dt * 2.2)); v.body.angularVelocity *= Math.exp(-dt * 3); v.body.integrate(dt);
       } else {
         const performance = vehiclePerformance(v.damage);
@@ -1284,6 +1321,6 @@ export class Game {
       playerRecords: this.save.playerRecords,
       missionOffers: [...this.missionOffers.values()],
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
-      job: this.job, upgrades: this.save.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.navToNewsroom ? 'newsroom' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
+      job: this.job, upgrades: this.player.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.navToNewsroom ? 'newsroom' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }
 }

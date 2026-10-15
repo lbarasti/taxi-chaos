@@ -65,7 +65,7 @@ describe('gameplay FX hooks', () => {
     expect(game.sounds.drain(0).map(e => e.cue)).toEqual(['pickup']);
     game.player.body.position = { ...game.job.dropoff }; game.jobs(0.8);
     expect(game.sounds.drain(0).map(e => e.cue)).toEqual(['payment']);
-    game.save.cash = 0; expect(game.buy('engine')).toBe(false); expect(game.sounds.drain(0)).toEqual([]);
+    game.player.body.position = { x: 4, y: 32 }; game.garage(); game.save.cash = 0; expect(game.buy('engine')).toBe(false); expect(game.sounds.drain(0)).toEqual([]);
     game.save.cash = 1000; expect(game.buy('engine')).toBe(true); expect(game.sounds.drain(0).map(e => e.cue)).toEqual(['purchase']);
   });
 });

@@ -30,12 +30,12 @@ describe('nitro, parking and roadside recovery', () => {
   });
 
   it('leaves an abandoned fuse running and lets a physical walk reach a replacement', () => {
-    const g = make(), old = g.player, cash = g.save.cash; g.save.upgrades.engine = 2;
+    const g = make(), old = g.player, cash = g.save.cash; g.player.upgrades.engine = 2;
     expect(g.interact()).toBe(true); expect(g.onFoot).toBe(true);
     run(g, 1.3, ['KeyD']); run(g, 0.4, ['KeyS']);
     expect(g.enterableCar?.id).not.toBe(old.id); expect(g.interact()).toBe(true);
     expect(g.player).not.toBe(old); expect(g.onFoot).toBe(false); expect(g.player.kind).toBe('taxi'); expect(old.kind).toBe('traffic');
-    expect(g.player.baseEngine).toBeCloseTo(10500 * 1.44); expect(g.save.cash).toBe(cash);
+    expect(g.player.baseEngine).toBeCloseTo(10500); expect(g.save.cash).toBe(cash);
     run(g, 5.5); expect(old.damage.status).toBe('wreck'); expect(g.explosions).toBe(1); expect(g.mode).toBe('playing');
     expect(g.player.damage.status).not.toBe('wreck');
   });
@@ -43,7 +43,7 @@ describe('nitro, parking and roadside recovery', () => {
   it.each(['car', 'motorcycle'] as const)('ends play when the occupied %s explodes and waits for hospital acknowledgment', model => {
     const g = make(), cash = g.save.cash;
     if (model === 'motorcycle') { g.player.alive = false; g.player = g.vehicle('taxi', 4, 32, -Math.PI / 2, '#ed9b63', model); igniteVehicle(g.player.damage, 1); }
-    const old = g.player; g.save.upgrades.engine = 2;
+    const old = g.player; g.player.upgrades.engine = 2;
     g.heat = 90; g.arrest = g.rules.arrestTime; g.driftMeter = 12;
     // Detonate at a drop-off that would otherwise complete on this very tick.
     old.body.position = { ...g.job.dropoff }; g.job.stage = 'dropoff'; g.job.wait = 0.799;
@@ -63,7 +63,7 @@ describe('nitro, parking and roadside recovery', () => {
     expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
     expect(g.speed).toBe(0); expect(old.damage.status).toBe('wreck'); expect(old.body.position).toEqual(position);
     expect(old.kind).toBe('traffic'); expect(old.parked).toBe(true);
-    expect(g.save.cash).toBe(cash - Math.min(cash, 110)); expect(g.save.upgrades.engine).toBe(2); expect(g.heat).toBe(0); expect(g.arrest).toBe(0);
+    expect(g.save.cash).toBe(cash - Math.min(cash, 110)); expect(g.player.upgrades.engine).toBe(0); expect(g.heat).toBe(0); expect(g.arrest).toBe(0);
     expect(g.driftMeter).toBe(0); expect(g.navToGarage).toBe(false); expect(g.job.stage).toBe('pickup');
     g.recover(); expect(g.onFoot).toBe(true); expect(g.actor.position).toEqual(HOSPITAL);
     run(g, 0.3, ['KeyS']); expect(g.actor.position.y).toBeGreaterThan(HOSPITAL.y + 0.5);
@@ -105,7 +105,7 @@ describe('nitro, parking and roadside recovery', () => {
     { cash: 25, heat: 90, impound: 25, bail: 0, balance: 0 },
     { cash: 80, heat: 90, impound: 75, bail: 5, balance: 0 },
   ])('itemizes and charges arrest recovery once (cash=$cash, heat=$heat)', ({ cash, heat, impound, bail, balance }) => {
-    const g = new Game(); g.start(); g.save.cash = cash; g.save.upgrades.engine = 2;
+    const g = new Game(); g.start(); g.save.cash = cash; g.player.upgrades.engine = 2;
     g.heat = heat; g.boost = 20; g.player.damage.health = 40; g.setMode('arrested');
     const persist = vi.spyOn(g, 'persist');
     expect(g.arrestBill).toEqual({ impound, bail, total: impound + bail });
@@ -113,7 +113,7 @@ describe('nitro, parking and roadside recovery', () => {
     g.recover();
     expect(g.save.cash).toBe(balance); expect(persist).toHaveBeenCalledTimes(1);
     expect(g.mode).toBe('playing'); expect(g.onFoot).toBe(false); expect(g.actor.position).toEqual(vec(4, 32));
-    expect(g.health).toBe(100); expect(g.boost).toBe(100); expect(g.heat).toBe(0); expect(g.save.upgrades.engine).toBe(2);
+    expect(g.health).toBe(100); expect(g.boost).toBe(100); expect(g.heat).toBe(0); expect(g.player.upgrades.engine).toBe(2);
     g.recover(); expect(g.save.cash).toBe(balance); expect(persist).toHaveBeenCalledTimes(1);
   });
 

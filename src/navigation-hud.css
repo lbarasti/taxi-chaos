@@ -39,13 +39,22 @@
   .story-body{display:flow-root}
   .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
   .story-copy p{font-size:11px;min-height:90px}
+  .context-actions:has(#garage-action:not([hidden]))~.toast{bottom:calc(var(--edge-bottom) + var(--stick-size) + 116px)}
   .toast{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 64px);left:var(--edge-left);width:calc(100% - var(--edge-left) - var(--edge-right));max-width:360px}
+}
+@media(max-width:700px) and (min-height:501px), (pointer:coarse) and (max-width:1200px) and (min-height:501px){
+  body:has(#garage-action:not([hidden])) .story{max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 262px)}
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
   :root{--navigation-width:180px}
   .story,.story.collapsed,.roadside{left:calc(var(--edge-left) + var(--navigation-width) + 12px);right:auto;top:calc(var(--top-height) + 8px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - var(--dash-width) - 24px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 28px)}
-  .context-action{left:auto;right:var(--edge-right);max-width:150px}
+  .context-actions{left:auto;right:var(--edge-right);max-width:150px}
   .toast{left:calc(var(--edge-left) + var(--navigation-width) + 12px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 24px);max-width:360px}
+}
+/* A short landscape column cannot fit status, two actions and the joystick. */
+@media(max-height:360px) and (max-width:1000px), (max-height:360px) and (pointer:coarse) and (max-width:1200px){
+  .context-actions{right:calc(var(--edge-right) + var(--stick-size) + 12px);bottom:var(--edge-bottom)}
+  .context-actions:has(#garage-action:not([hidden]))~.toast{bottom:calc(var(--edge-bottom) + var(--stick-size) + 12px)}
 }
 /* Narrow layouts keep one row with 32 px targets (above the 24 px WCAG minimum). */
 @media(max-width:360px), (max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){

@@ -133,7 +133,7 @@ export type LabSnapshot = ReturnType<Game['snapshot']> & { lab: LabClock };
 export type VehiclePatch = { health?: number; engine?: number; fuel?: number; tyres?: number; ignite?: boolean; fuse?: number };
 
 export type VehicleSummary = {
-  id: number; sourceId?: string; kind: Vehicle['kind']; model: Vehicle['model']; lean: number; alive: boolean; parked: boolean;
+  id: number; sourceId?: string; upgrades: Vehicle['upgrades']; kind: Vehicle['kind']; model: Vehicle['model']; lean: number; alive: boolean; parked: boolean;
   position: Vec; velocity: Vec; angle: number;
   mass: number; inertia: number; size: { length: number; width: number }; playerDrivable: boolean;
   cargo: { kind: VehicleDefinition['cargo']['kind']; mass: number; flammable: boolean };
@@ -205,7 +205,7 @@ type DebugFlags = { debugColliders?: boolean; debugAI?: boolean };
 
 /** Reset the run, wipe run-only cheats, and clear traffic so a fixture is deterministic. */
 function prepare(game: Game, keepCarts = false) {
-  game.resetRun();
+  game.resetRun('car');
   game.settings.gore = false;
   game.settings.invincible = false;
   game.settings.infiniteBoost = false;
@@ -738,7 +738,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     }
     for (const input of Array.from(upgradeHost.querySelectorAll<HTMLInputElement>('input[data-upgrade]'))) {
       const key = input.dataset.upgrade as Upgrade;
-      const value = game.save.upgrades[key];
+      const value = game.player.upgrades[key];
       updateInput(input, String(value));
       const output = upgradeHost.querySelector<HTMLOutputElement>(`[data-upgrade-out="${key}"]`);
       if (output) output.textContent = String(value);
@@ -782,7 +782,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     scenarios: scenarioInfo,
     state: snapshot,
     vehicles: () => structuredClone(game.vehicles.filter(v => v.alive).map(v => ({
-      id: v.id, sourceId: v.sourceId, kind: v.kind, model: v.model, lean: v.dynamics instanceof MotorcycleDynamics ? v.dynamics.lean : 0, alive: v.alive, parked: v.parked,
+      id: v.id, sourceId: v.sourceId, upgrades: { ...v.upgrades }, kind: v.kind, model: v.model, lean: v.dynamics instanceof MotorcycleDynamics ? v.dynamics.lean : 0, alive: v.alive, parked: v.parked,
       position: { ...v.body.position }, velocity: { ...v.body.velocity }, angle: v.body.angle,
       mass: v.body.mass, inertia: v.body.inertia, size: { length: v.body.w, width: v.body.h }, playerDrivable: v.definition.access.playerDrivable,
       cargo: { kind: v.definition.cargo.kind, mass: v.definition.cargo.mass, flammable: v.definition.cargo.flammable },
@@ -848,7 +848,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     upgrades: (patch) => {
       for (const key of Object.keys(patch) as Upgrade[]) {
         if (!(key in upgradeInfo)) continue;
-        game.save.upgrades[key] = clamp(Math.floor(patch[key] ?? game.save.upgrades[key]), 0, 3);
+        game.player.upgrades[key] = clamp(Math.floor(patch[key] ?? game.player.upgrades[key]), 0, 3);
       }
       game.applyUpgrades(); game.persist();
       hooks.refresh(); refreshUI();
