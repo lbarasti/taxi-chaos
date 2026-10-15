@@ -8,15 +8,15 @@ const paths = {
 };
 export type SettingKey = keyof typeof paths;
 export function settingRow(key: SettingKey, label: string, value: string, hint = '') {
-  return `<div class="setting-row" id="${key}-option" data-setting="${key}" tabindex="0" role="group" aria-label="${label}">
+  const toggle = key === 'gore' || key === 'muted';
+  const difficulty = key === 'difficulty';
+  const current = difficulty ? ['Cruise', 'Street', 'Chaos'].indexOf(value) : parseInt(value);
+  const control = toggle
+    ? `<input type="checkbox" role="switch" id="${key}-option" data-setting-input="${key}" ${value === 'On' ? 'checked' : ''}>`
+    : `<input type="range" id="${key}-option" data-setting-input="${key}" min="0" max="${difficulty ? 2 : 100}" step="1" value="${current}" ${difficulty ? `aria-valuetext="${value}" list="difficulty-stops"` : ''}><output for="${key}-option">${value}</output>${difficulty ? '<datalist id="difficulty-stops"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>' : ''}`;
+  return `<label class="setting-row" data-setting="${key}" for="${key}-option">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[key]}</svg>
-    <div class="setting-label">${label}${key === 'difficulty' ? `<small data-difficulty-label>${value}</small>` : hint ? `<small>${hint}</small>` : ''}</div>
-    <div class="setting-value"><button type="button" data-step="-1" aria-label="Previous ${label}">‹</button>${key === 'difficulty' ? `<input type="range" id="difficulty-slider" min="0" max="2" step="1" value="${['Cruise', 'Street', 'Chaos'].indexOf(value)}" aria-label="Difficulty" aria-valuetext="${value}">` : `<output aria-live="polite">${value}</output>`}<button type="button" data-step="1" aria-label="Next ${label}">›</button></div>
-  </div>`;
-}
-export function stepChoice<T>(choices: readonly T[], current: T, delta: number): T {
-  return choices[(choices.indexOf(current) + delta + choices.length) % choices.length];
-}
-export function stepVolume(current: number, delta: number): number {
-  return Math.max(0, Math.min(100, Math.round(current * 100) + delta * 5)) / 100;
+    <span class="setting-label">${label}${hint ? `<small>${hint}</small>` : ''}</span>
+    <span class="setting-value${toggle ? ' setting-toggle' : ''}">${control}</span>
+  </label>`;
 }

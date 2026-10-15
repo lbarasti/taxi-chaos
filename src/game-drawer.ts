@@ -1,7 +1,7 @@
 import type { Game } from './game';
 import type { AudioFX } from './audio';
 import { difficulties, type Difficulty } from './rules';
-import { stepChoice, stepVolume, type SettingKey } from './setting-controls';
+import type { SettingKey } from './setting-controls';
 import type { Allegation } from './campaign/model';
 import { bindAudioControls } from './audio-controls';
 import { DrawerMenu } from './drawer-menu';
@@ -22,10 +22,6 @@ export class GameDrawer {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
       if (!this.active || this.transition || !button || button.disabled) return;
       const game = options.game(), page = button.dataset.page;
-      if (button.dataset.step) {
-        this.changeSetting(button.closest<HTMLElement>('[data-setting]')!.dataset.setting as SettingKey, Number(button.dataset.step));
-        return;
-      }
       if (page && isDrawerPage(page)) { void this.open(page); return; }
       switch (button.id) {
         case 'start': options.play(); break;
@@ -39,10 +35,15 @@ export class GameDrawer {
       if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
     });
     root.addEventListener('input', event => {
-      if ((event.target as HTMLElement).id === 'difficulty-slider') {
-        options.game().configure({ difficulty: (Object.keys(difficulties) as Difficulty[])[Number((event.target as HTMLInputElement).value)] });
-        this.refreshSettings();
+      const input = event.target as HTMLInputElement;
+      const key = input.dataset.settingInput as SettingKey | undefined;
+      if (key === 'gore') options.game().configure({ gore: input.checked });
+      else if (key === 'difficulty') options.game().configure({ difficulty: (Object.keys(difficulties) as Difficulty[])[Number(input.value)] });
+      else if (key) {
+        options.audio.configure(key === 'muted' ? { muted: input.checked } : { [key]: Number(input.value) / 100 });
+        void options.audio.unlock();
       }
+      if (key) this.refreshSettings();
       if ((event.target as HTMLElement).id === 'notebook-search') this.filterNotebook();
     });
   }
@@ -62,26 +63,15 @@ export class GameDrawer {
     const values: Record<SettingKey, string> = { gore: settings.gore ? 'On' : 'Off', difficulty: difficulties[settings.difficulty].name, muted: p.muted ? 'On' : 'Off', volume: `${Math.round(p.volume * 100)}%`, sirens: `${Math.round(p.sirens * 100)}%` };
     this.root.querySelectorAll<HTMLElement>('[data-setting]').forEach(row => {
       const value = values[row.dataset.setting as SettingKey];
-      if (row.dataset.setting === 'difficulty') {
-        row.querySelector('[data-difficulty-label]')!.textContent = value;
-        const slider = row.querySelector<HTMLInputElement>('input')!;
-        slider.value = String(Object.keys(difficulties).indexOf(settings.difficulty));
-        slider.setAttribute('aria-valuetext', value);
-        return;
+      const key = row.dataset.setting as SettingKey, input = row.querySelector<HTMLInputElement>('input')!;
+      if (key === 'gore' || key === 'muted') input.checked = value === 'On';
+      else {
+        input.value = String(key === 'difficulty' ? Object.keys(difficulties).indexOf(settings.difficulty) : Math.round(p[key] * 100));
+        if (key === 'difficulty') input.setAttribute('aria-valuetext', value);
+        const output = row.querySelector('output')!;
+        if (output.textContent !== value) output.textContent = value;
       }
-      const output = row.querySelector('output')!;
-      if (output.textContent !== value) output.textContent = value;
     });
-  }
-  private changeSetting(key: SettingKey, delta: number) {
-    const game = this.options.game(), audio = this.options.audio, p = audio.preferences;
-    if (key === 'gore') game.configure({ gore: !game.settings.gore });
-    else if (key === 'difficulty') game.configure({ difficulty: stepChoice(Object.keys(difficulties) as Difficulty[], game.settings.difficulty, delta) });
-    else {
-      audio.configure(key === 'muted' ? { muted: !p.muted } : { [key]: stepVolume(p[key], delta) });
-      void audio.unlock();
-    }
-    this.refreshSettings();
   }
 
   async open(page: DrawerPage, { animate = true } = {}) {

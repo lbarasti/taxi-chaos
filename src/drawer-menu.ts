@@ -40,11 +40,11 @@ export class DrawerMenu {
     }, true);
   }
   private items() {
-    return Array.from(this.root.querySelectorAll<HTMLElement>('[data-setting], button:not(:disabled):not([data-step]), input:not(:disabled), select:not(:disabled), a[href]'))
-      .filter(item => (!item.closest('[data-setting]') || item.matches('[data-setting]')) && !item.hidden && item.getClientRects().length > 0);
+    return Array.from(this.root.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]'))
+      .filter(item => !item.hidden && item.getClientRects().length > 0);
   }
   private item(target: EventTarget | null) {
-    const item = target instanceof Element ? (target.closest<HTMLElement>('[data-setting]') ?? target.closest<HTMLElement>('button, input, select, a[href]')) : null;
+    const item = target instanceof Element ? target.closest<HTMLElement>('button, input, select, a[href]') : null;
     return item && this.root.contains(item) && !item.matches(':disabled') && item.getClientRects().length ? item : null;
   }
   private select(item: HTMLElement) {
@@ -72,13 +72,16 @@ export class DrawerMenu {
     this.selected?.scrollIntoView({ block: 'nearest' });
   }
   adjust(delta: number) {
-    this.selected?.querySelector<HTMLButtonElement>(`[data-step="${delta}"]`)?.click();
-  }
-  activate() { if (this.selected?.matches('[data-setting]')) this.adjust(1); else this.selected?.click(); }
-  handleKey(event: KeyboardEvent) {
-    if (this.selected?.matches('[data-setting]') && ['ArrowLeft', 'ArrowRight'].includes(event.code)) {
-      event.preventDefault(); this.adjust(event.code === 'ArrowLeft' ? -1 : 1); return true;
+    const input = this.selected;
+    if (!(input instanceof HTMLInputElement)) return;
+    if (input.type === 'checkbox') input.click();
+    else if (input.type === 'range') {
+      if (delta > 0) input.stepUp(); else input.stepDown();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     }
+  }
+  activate() { this.selected?.click(); }
+  handleKey(event: KeyboardEvent) {
     const native = event.target instanceof Element ? event.target.closest('input, select') : null;
     // Native value editing uses left/right on ranges and all arrows on selects.
     if (native?.matches('select') && event.code !== 'Tab') return false;
