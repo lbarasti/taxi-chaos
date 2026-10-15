@@ -297,5 +297,7 @@ if (scenarioPreviewMode) {
     start: (options: ScenarioOptions) => { runner = new ScenarioRunner(options); show(); return { inputs: runner.inputs(), state: runner.snapshot() }; },
     execute: (command: unknown) => { const result = runner.execute(command); show(); return result; },
     render: (view: CaptureView, frame: CaptureFrame) => { show(view, frame); return runner.snapshot(); },
+    // QA: paint a world frame and report the on-board aura the renderer actually drew.
+    aura: () => { show('world'); return renderer.lastAura ? { ...renderer.lastAura } : null; },
   } });
 }

@@ -1,6 +1,6 @@
 import { Game, type Vehicle } from './game';
 import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from './physics';
-import { GARAGE, district, type Prop } from './world';
+import { GARAGE, type Prop } from './world';
 import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
 import { collectOccluders, type Occluder } from './lighting-occlusion';
@@ -8,7 +8,8 @@ import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from './motorcycle';
 import { doorOpenness, LANDING_TIME } from './vehicle-exit';
 import { isCountry } from './countryside';
-import { radarMarker, radarView } from './radar';
+import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
+import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { CITY_SHORE } from './coast';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
@@ -33,6 +34,9 @@ export class Renderer {
   ctx: CanvasRenderingContext2D; mapCtx: CanvasRenderingContext2D; width = 0; height = 0; dpr = 1; camera = vec(4, 25); zoom = 9; frames = 0; fps = 60; debugColliders = false; debugAI = false;
   lightLayer = new LightingLayer(0.5);
   navigationRouteVisible = true;
+  /** QA: the on-board cue the last world frame actually painted, with its screen disc. */
+  lastAura: { cue: OnBoardCue; x: number; y: number; radius: number } | null = null;
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private ambientTime = 0;
   private sun: Vec = vec(0, 0.5);
   private shadowT = 0;
@@ -161,7 +165,7 @@ export class Renderer {
     // hides the destination markers or the player's read-outs.
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
     if (this.visible(PORT_ENTRY, 10)) this.label('HARBOUR / $75', PORT_ENTRY.x, PORT_ENTRY.y + 3, 0.9, '#a3ddc2', '700');
-    this.marker(GARAGE, '#a7bcca', 'PIT STOP', true);
+    this.marker(GARAGE, navigationTargetColours.garage, 'PIT STOP', true);
     if (g.campaignEnabled) this.marker(g.newsroom, '#d5b6e4', 'NEWSROOM', true);
     const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
     if (g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
@@ -234,10 +238,16 @@ export class Renderer {
       vehicles: g.vehicles, props: g.world.props, blasts: g.fx.blasts,
     };
     const viewport = this.worldViewport();
-    const lights = cullLights(collectLights(scene), viewport);
+    // Use exactly the police-light compositor: a saturated core spilling softly onto the road,
+    // visible in daylight too, rather than an outlined circle over the vehicle.
+    const aura = onBoardLight(g, g.player, this.reducedMotion);
+    const sources = collectLights(scene);
+    if (aura) sources.push(aura);
+    const lights = cullLights(sources, viewport);
     const occluders = this.worldOccluders();
     const options: LightingRenderOptions = { width: this.width, height: this.height, dpr: this.dpr, state: lighting, lights, zoom: this.zoom, project: point => this.screen(point), occluders };
     this.lightLayer.render(this.ctx, options);
+    this.lastAura = aura && lights.includes(aura) ? { cue: aura.cue, ...this.screen(aura), radius: aura.radius * this.zoom } : null;
   }
   ground() {
     const c = this.ctx, g = this.game;
@@ -740,16 +750,50 @@ export class Renderer {
       c.restore();
     }
   }
+  /** Follow the same guidance priority as `Game.target`, so radar and routing never disagree. */
+  private targetKind() {
+    const g = this.game;
+    return navigationTargetKind({
+      onFoot: g.onFoot, stage: g.job.stage, navToGarage: g.navToGarage, navToHarbour: g.navToHarbour, navToNewsroom: g.navToNewsroom,
+      admitted: g.harbour.vehicleId === g.player.id, exchanged: g.harbour.exchanged,
+    });
+  }
+  /** Compact destination symbols: ringed pickup, diamond delivery, garage, newsroom, harbour, container swap and parked rides. */
+  private radarShape(c: CanvasRenderingContext2D, kind: NavigationTargetKind, x: number, y: number, size: number, colour: string) {
+    c.save(); c.translate(x, y); c.lineWidth = Math.max(1, size * 0.26); c.strokeStyle = '#08161d'; c.fillStyle = colour;
+    const shape = (path: () => void) => { c.beginPath(); path(); c.fill(); c.stroke(); };
+    switch (kind) {
+      case 'pickup': shape(() => c.arc(0, 0, size, 0, Math.PI * 2)); shape(() => c.arc(0, 0, size * 0.42, 0, Math.PI * 2)); break;
+      case 'delivery': shape(() => { c.moveTo(0, -size); c.lineTo(size, 0); c.lineTo(0, size); c.lineTo(-size, 0); c.closePath(); }); break;
+      case 'garage': shape(() => c.roundRect(-size, -size * 0.86, size * 2, size * 1.72, size * 0.3)); c.beginPath(); c.moveTo(-size * 0.42, -size * 0.12); c.lineTo(size * 0.42, -size * 0.12); c.stroke(); break;
+      case 'newsroom':
+        shape(() => c.roundRect(-size * 0.78, -size, size * 1.56, size * 2, size * 0.24));
+        c.beginPath(); for (const line of [-0.5, 0, 0.5]) { c.moveTo(-size * 0.4, size * line); c.lineTo(size * 0.4, size * line); } c.stroke(); break;
+      case 'harbour':
+      case 'exit':
+        if (kind === 'exit') c.fillStyle = GOLD;
+        shape(() => { c.moveTo(-size, size * 0.42); c.lineTo(size, size * 0.42); c.lineTo(size * 0.58, size); c.lineTo(-size * 0.58, size); c.closePath(); });
+        shape(() => { c.moveTo(0, -size); c.lineTo(size * 0.62, size * 0.28); c.lineTo(-size * 0.62, size * 0.28); c.closePath(); }); break;
+      case 'swap':
+        shape(() => c.roundRect(-size, -size * 0.72, size * 2, size * 1.44, size * 0.22));
+        c.beginPath(); c.moveTo(-size * 0.5, -size * 0.36); c.lineTo(size * 0.5, size * 0.36); c.moveTo(size * 0.5, -size * 0.36); c.lineTo(-size * 0.5, size * 0.36); c.stroke(); break;
+      case 'walk':
+        shape(() => c.roundRect(-size, -size * 0.6, size * 2, size * 1.2, size * 0.42));
+        c.beginPath(); c.moveTo(-size * 0.16, -size * 0.6); c.lineTo(-size * 0.16, size * 0.6); c.stroke(); break;
+    }
+    c.restore();
+  }
   edgePointer() {
     if (!this.navigationRouteVisible) return;
     const g = this.game, p = this.screen(g.target), compact = this.width <= 700 || this.width <= 1000 && this.height <= 500;
-    const left = compact ? 30 : 370, right = this.width - (compact ? 30 : 220);
+    // The enlarged radar owns the top-left column on touch layouts, so keep the pointer clear of it.
+    const left = compact ? this.map.clientWidth + 40 : 370, right = this.width - (compact ? 30 : 220);
     const top = compact ? this.height <= 500 ? 170 : 190 : 125;
     const bottom = Math.max(top + 30, this.height - (compact ? 170 : 160));
     if (p.x > left && p.x < right && p.y > top && p.y < bottom) return;
     const center = this.screen(g.actor.position), d = sub(p, center), theta = Math.atan2(d.y, d.x);
     const x = clamp(p.x, left, right), y = clamp(p.y, top, bottom), c = this.ctx;
-    c.save(); c.translate(x, y); c.rotate(theta); c.fillStyle = g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT; c.beginPath(); c.moveTo(12, 0); c.lineTo(-7, -8); c.lineTo(-3, 0); c.lineTo(-7, 8); c.fill(); c.restore();
+    c.save(); c.translate(x, y); c.rotate(theta); c.fillStyle = navigationTargetColours[this.targetKind()]; c.beginPath(); c.moveTo(12, 0); c.lineTo(-7, -8); c.lineTo(-3, 0); c.lineTo(-7, 8); c.fill(); c.restore();
     this.label(`${Math.round(dist(g.target, g.actor.position))} m`, x, y + 24, 11, '#e9e9da', '600');
   }
   minimap() {
@@ -762,6 +806,7 @@ export class Renderer {
     if (this.map.width !== pixelsW || this.map.height !== pixelsH) { this.map.width = pixelsW; this.map.height = pixelsH; }
     const c = this.mapCtx, g = this.game;
     const view = radarView(g.actor.position, width, height), s = view.scale;
+    const markerScale = clamp(view.radius / 85, 0.7, 1.15);
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.clearRect(0, 0, width, height);
     c.save(); c.beginPath(); c.arc(view.center.x, view.center.y, view.radius, 0, Math.PI * 2); c.clip();
     c.fillStyle = '#0b1b24'; c.fillRect(0, 0, width, height);
@@ -779,28 +824,48 @@ export class Renderer {
     c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
     for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
     for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
-    if (this.navigationRouteVisible) { c.strokeStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? '#c8ac5a' : '#8cc4a8'; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
-    const markerScale = 0.66 / s;
-    if (!g.onFoot && g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
-      c.strokeStyle = '#8edbe8'; c.lineWidth = 1 / s; c.beginPath(); c.arc(offer.pickup.x, offer.pickup.y, 4 * markerScale, 0, Math.PI * 2); c.stroke();
+    if (this.navigationRouteVisible) { c.strokeStyle = navigationTargetColours[this.targetKind()]; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
+    c.restore();
+    // Screen-space markers keep one size and one meaning at every radar size. The wheel
+    // carries no district label or distance counter: the markers and glyphs explain it.
+    if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage))) {
+      const point = radarPoint(v.body.position, view); this.radarShape(c, 'walk', point.x, point.y, 4.6 * markerScale, navigationTargetColours.walk);
     }
-    if (g.onFoot) for (const v of g.vehicles) if (v.definition.access.playerDrivable && v.parked && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && (v.model !== 'motorcycle' || motorcycleEngineWorks(v.damage))) { c.fillStyle = '#8edbe8'; c.fillRect(v.body.position.x - 2 * markerScale, v.body.position.y - 2 * markerScale, 4 * markerScale, 4 * markerScale); }
-    c.fillStyle = '#b1c5d4'; c.fillRect(GARAGE.x - 3 * markerScale, GARAGE.y - 3 * markerScale, 6 * markerScale, 6 * markerScale);
-    for (const v of g.police) { c.fillStyle = '#ef8579'; c.beginPath(); c.arc(v.body.position.x, v.body.position.y, 3 * markerScale, 0, Math.PI * 2); c.fill(); }
-    c.save(); c.translate(g.actor.position.x, g.actor.position.y); c.rotate(g.actor.angle); c.scale(markerScale, markerScale); c.fillStyle = GOLD; c.beginPath(); c.moveTo(6, 0); c.lineTo(-4, -3.5); c.lineTo(-2, 0); c.lineTo(-4, 3.5); c.closePath(); c.fill(); c.restore();
+    const garage = radarPoint(GARAGE, view); this.radarShape(c, 'garage', garage.x, garage.y, 4.6 * markerScale, navigationTargetColours.garage);
+    if (g.campaignEnabled) { const newsroom = radarPoint(g.newsroom, view); this.radarShape(c, 'newsroom', newsroom.x, newsroom.y, 4.6 * markerScale, navigationTargetColours.newsroom); }
+    if (!g.onFoot && g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
+      const point = radarPoint(offer.pickup, view);
+      c.beginPath(); c.arc(point.x, point.y, 4.4 * markerScale, 0, Math.PI * 2); c.strokeStyle = '#8edbe8'; c.lineWidth = 1.4; c.stroke();
+    }
+    for (const v of g.police) { const point = radarPoint(v.body.position, view); c.beginPath(); c.arc(point.x, point.y, 3.4 * markerScale, 0, Math.PI * 2); c.fillStyle = '#ef8579'; c.fill(); }
+    // The centre glyph tells walking and driving apart at a glance.
+    c.save(); c.translate(view.center.x, view.center.y); c.rotate(g.actor.angle); c.lineWidth = 1.1;
+    if (g.onFoot) {
+      c.beginPath(); c.arc(0, 0, 6.4 * markerScale, 0, Math.PI * 2); c.strokeStyle = '#8edbe866'; c.lineWidth = 1.4; c.stroke();
+      c.strokeStyle = '#08161d'; c.lineWidth = 1.1; c.fillStyle = '#8edbe8';
+      c.beginPath(); c.arc(0, 0, 3 * markerScale, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.beginPath(); c.roundRect(-4.8 * markerScale, -1.8 * markerScale, 3.8 * markerScale, 3.6 * markerScale, 1.2 * markerScale); c.fill(); c.stroke();
+    } else {
+      c.strokeStyle = '#08161d'; c.fillStyle = GOLD; c.beginPath(); c.moveTo(6.4 * markerScale, 0); c.lineTo(-4.4 * markerScale, -3.8 * markerScale); c.lineTo(-2 * markerScale, 0); c.lineTo(-4.4 * markerScale, 3.8 * markerScale); c.closePath(); c.fill(); c.stroke();
+    }
     c.restore();
-    const marker = radarMarker(g.target, view);
-    c.save(); c.translate(marker.position.x, marker.position.y);
-    c.strokeStyle = c.fillStyle = g.onFoot ? '#8edbe8' : (g.navToHarbour || g.harbour.vehicleId === g.player.id) ? '#8edbe8' : g.navToGarage ? '#a7bcca' : g.job.stage === 'pickup' ? GOLD : MINT;
-    c.lineWidth = 1.5; c.beginPath();
-    if (marker.offscreen) { c.rotate(marker.angle); c.moveTo(5, 0); c.lineTo(-4, -4); c.lineTo(-2, 0); c.lineTo(-4, 4); c.closePath(); c.fill(); }
-    else { c.arc(0, 0, 4, 0, Math.PI * 2); c.stroke(); }
-    c.restore();
-    const neighbourhood = district(g.actor.position, g.map);
-    c.font = '10px "Space Grotesk", sans-serif'; c.textAlign = 'center';
-    const labelWidth = Math.min(c.measureText(neighbourhood).width + 18, width * 0.64);
-    c.fillStyle = '#10222ded'; c.beginPath(); c.roundRect((width - labelWidth) / 2, height - 31, labelWidth, 18, 9); c.fill();
-    c.fillStyle = '#b4c5c2'; c.fillText(neighbourhood, width / 2, height - 18, labelWidth - 12);
+    // Guidance: a distinctive destination symbol and, when the destination sits off the
+    // wheel, a bearing chevron on the rim. Hiding guidance hides the marker too, matching
+    // the street pointer. No distance label is drawn on the map.
+    const colour = navigationTargetColours[this.targetKind()];
+    if (this.navigationRouteVisible) {
+      const marker = radarMarker(g.target, view);
+      if (marker.offscreen) {
+        c.save(); c.translate(marker.position.x, marker.position.y); c.rotate(marker.angle);
+        c.beginPath(); c.moveTo(6.6 * markerScale, 0); c.lineTo(-5 * markerScale, -5.6 * markerScale); c.lineTo(-1.6 * markerScale, 0); c.lineTo(-5 * markerScale, 5.6 * markerScale); c.closePath();
+        c.fillStyle = colour; c.strokeStyle = '#08161d'; c.lineWidth = 1.2; c.fill(); c.stroke(); c.restore();
+      } else {
+        c.save(); c.translate(view.center.x, view.center.y); c.rotate(marker.angle);
+        c.beginPath(); c.moveTo(view.radius - 9 * markerScale, -3.4 * markerScale); c.lineTo(view.radius - 2 * markerScale, 0); c.lineTo(view.radius - 9 * markerScale, 3.4 * markerScale); c.closePath();
+        c.globalAlpha = 0.7; c.fillStyle = colour; c.fill(); c.restore();
+        this.radarShape(c, this.targetKind(), marker.position.x, marker.position.y, 5.4 * markerScale, colour);
+      }
+    }
     c.restore();
   }
 }

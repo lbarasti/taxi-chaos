@@ -11,7 +11,38 @@ await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const errors = [], requests = [];
 try {
-  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['compact', 320, 568, true], ['landscape', 844, 390, true]]) {
+  // Renderer-level aura check: paint a world frame through the harness, then confirm the
+  // recorded glow lands as green pixels on the real canvas (not just the data-cue predicate).
+  const auraPixels = (page, api) => page.evaluate(api => {
+    const aura = window[api].aura();
+    if (!aura) return null;
+    const canvas = document.querySelector('#city'), ctx = canvas.getContext('2d');
+    const dpr = canvas.width / canvas.clientWidth, r = Math.ceil(aura.radius);
+    const x = Math.max(0, Math.floor((aura.x - r) * dpr)), y = Math.max(0, Math.floor((aura.y - r) * dpr));
+    const w = Math.min(canvas.width - x, Math.ceil(2 * r * dpr)), h = Math.min(canvas.height - y, Math.ceil(2 * r * dpr));
+    const data = ctx.getImageData(x, y, w, h).data;
+    let green = 0, spill = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i + 1] > data[i] + 25 && data[i + 1] > data[i + 2] + 25) {
+      green++;
+      const px = x + (i / 4) % w, py = y + Math.floor(i / 4 / w);
+      const distance = Math.hypot(px / dpr - aura.x, py / dpr - aura.y) / aura.radius;
+      // Outside the actual vehicle: reject the old tiny roof outline, even if it is green.
+      if (distance > 0.4 && distance < 0.65) spill++;
+    }
+    return { cue: aura.cue, green, spill };
+  }, api);
+  for (const { name, width, height, touch } of [
+    { name: 'desktop', width: 1440, height: 900, touch: false },
+    { name: 'desktop-short', width: 1440, height: 420, touch: false },
+    { name: 'desktop-short-1280', width: 1280, height: 400, touch: false },
+    { name: 'desktop-narrow', width: 1024, height: 768, touch: false },
+    { name: 'portrait', width: 390, height: 844, touch: true },
+    { name: 'compact', width: 320, height: 568, touch: true },
+    { name: 'landscape', width: 844, height: 390, touch: true },
+    { name: 'landscape-480', width: 480, height: 320, touch: true },
+    { name: 'landscape-500', width: 500, height: 400, touch: true },
+  ]) {
+    const landscape = touch && width > height, desktop = !touch;
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
     await context.setOffline(true);
     const page = await context.newPage();
@@ -20,13 +51,27 @@ try {
     page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
+    // The intro splash hides the whole HUD, including the new shortcut menu.
+    assert.equal(await page.locator('body').evaluate(b => b.classList.contains('splash-active')), true, `${name}: the intro splash must be active`);
+    for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#newsroom']) {
+      assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'hidden', `${name}: ${selector} must be hidden, not merely disabled, on the intro splash`);
+    }
     await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
+    assert.equal(await page.locator('.navigation-actions').evaluate(e => getComputedStyle(e).visibility), 'visible', `${name}: shortcuts return while playing`);
     const command = async command => {
       const result = await page.evaluate(command => window.__scenario.execute(command), command);
       assert.equal(result.status, 'passed', result.error);
       return result.state;
     };
     if (name === 'desktop') {
+      // HUD drawing must never perturb the fixed-step simulation.
+      const drive = async () => {
+        await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
+        await command({ op: 'place', at: { x: 4, y: 80 }, angle: Math.PI / 2 });
+        return (await command({ op: 'step', seconds: 1.5, keys: ['KeyW'] })).position;
+      };
+      assert.deepEqual(await drive(), await drive(), 'fixed-step simulation must stay deterministic');
+      await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
       // Drive the first straight pickup physically at 120 Hz. No place/pickup
       // command, upgrades, or actor-state mutations are used in this sequence.
       let state = await page.evaluate(() => window.__scenario.render('world'));
@@ -43,7 +88,16 @@ try {
       }
       assert.equal(state.job.stage, 'dropoff', 'Physical driving must collect the first passenger');
       assert.equal(state.driverHealth, 100);
-      assert.equal(await page.locator('#job-status').textContent(), 'ON BOARD');
+      assert.equal(await page.locator('.navigation-hud').getAttribute('data-state'), 'on-board');
+      assert.match(await page.locator('#map').getAttribute('aria-label'), /DELIVER · /);
+      // The on-board cue is a world aura, not a badge in the wheel.
+      assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), 'roof');
+      assert.equal(await page.locator('#map-badge, .navigation-badge').count(), 0);
+      // The renderer must actually paint the roof aura, not just set the predicate.
+      const roof = await auraPixels(page, '__scenario');
+      assert(roof?.cue === 'roof', 'the renderer must paint the cab roof aura');
+      assert(roof.green > 0, 'the roof aura must put green pixels on the canvas');
+      assert(roof.spill > 50, `the roof aura must visibly spill beyond the cab, got ${roof.spill} pixels`);
       state = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
       assert(state.speed > 0);
       await page.locator('#city').focus();
@@ -68,121 +122,235 @@ try {
       await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
     }
     const render = () => page.evaluate(() => window.__scenario.render('world'));
+    const panel = () => page.locator('.navigation-hud');
+    const state = () => panel().getAttribute('data-state');
+    const target = () => panel().getAttribute('data-target');
+    const mapLabel = () => page.locator('#map').getAttribute('aria-label');
+    const layout = () => page.evaluate(() => {
+      const box = selector => { const element = document.querySelector(selector); const b = element.getBoundingClientRect(); return { left: b.left, top: b.top, right: b.right, bottom: b.bottom, width: b.width, height: b.height }; };
+      const chart = document.querySelector('.navigation-chart'), map = document.querySelector('#map');
+      const actions = document.querySelector('.navigation-actions');
+      return {
+        panel: box('.navigation-hud'), chart: box('.navigation-chart'), map: box('#map'), actions: box('.navigation-actions'), player: box('.player-hud'),
+        chartRadius: getComputedStyle(chart).borderRadius, panelRadius: getComputedStyle(document.querySelector('.navigation-hud')).borderRadius,
+        canvasRole: map.getAttribute('role'), canvasTabIndex: map.getAttribute('tabindex'), canvasLabel: map.getAttribute('aria-label'),
+        header: document.querySelector('.navigation-header') !== null,
+        caption: document.querySelector('#map-caption') !== null,
+        overflow: document.querySelector('.navigation-hud').scrollWidth > document.querySelector('.navigation-hud').clientWidth,
+        buttons: [...actions.querySelectorAll('button')].map(button => ({ id: button.id, label: button.getAttribute('aria-label'), disabled: button.disabled, className: button.className, ...box(`#${button.id}`) })),
+        collisions: ['.player-hud', '.navigation-hud', '.controls', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '.context-actions']
+          .filter(selector => [...document.querySelectorAll(selector)].some(element => {
+            if (!element.getClientRects().length) return false;
+            const b = element.getBoundingClientRect();
+            return actions.getBoundingClientRect().left < b.right && actions.getBoundingClientRect().right > b.left && actions.getBoundingClientRect().top < b.bottom && actions.getBoundingClientRect().bottom > b.top;
+          })),
+      };
+    });
+    // The header above the minimap is gone and the circular map carries the guidance.
     const check = async () => {
-      const layout = await page.locator('.navigation-hud').evaluate(el => {
-        const bounds = el.getBoundingClientRect();
-        const overflow = [...el.querySelectorAll('h1, button')].filter(child => {
-          if (!child.getClientRects().length) return false;
-          const b = child.getBoundingClientRect();
-          return b.left < bounds.left - 1 || b.right > bounds.right + 1;
-        }).map(child => child.id || child.className);
-        const chart = el.querySelector('.navigation-chart').getBoundingClientRect();
-        const header = el.querySelector('.navigation-header').getBoundingClientRect();
-        const map = el.querySelector('#map').getBoundingClientRect();
-        const row = [...el.querySelectorAll('.navigation-header h1, .navigation-header p, .navigation-header button')].filter(child => child.getClientRects().length).map(child => {
-          const b = child.getBoundingClientRect(); return { id: child.id, centerY: b.y + b.height / 2 };
-        });
-        return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, right: bounds.right, bottom: bounds.bottom, chartCenter: chart.x + chart.width / 2, chartWidth: chart.width, chartHeight: chart.height, chartBorderRadius: getComputedStyle(el.querySelector('.navigation-chart')).borderRadius, chartTop: chart.top, headerBottom: header.bottom, chartBottom: chart.bottom, mapBottom: map.bottom, headerHeight: header.height, row, tallestButton: Math.max(...[...el.querySelectorAll('.navigation-header button')].filter(button => button.getClientRects().length).map(button => button.getBoundingClientRect().height)), horizontalOverflow: el.scrollWidth > el.clientWidth, overflow };
-      });
-      assert(layout.x >= 0 && layout.y >= 0 && layout.right <= width && layout.bottom <= height, JSON.stringify(layout));
-      assert.equal(layout.horizontalOverflow, false, `${name}: horizontal overflow`);
-      assert.deepEqual(layout.overflow, [], `${name}: overflowing children`);
-      assert(Math.abs(layout.chartWidth - layout.chartHeight) <= 1, `${name}: radar must stay circular`);
-      assert.equal(layout.chartBorderRadius, '50%');
-      assert(Math.abs(layout.chartWidth - layout.width * 3 / 5) <= 0.1, `${name}: radar diameter must be three fifths of the header width`);
-      assert(Math.abs(layout.chartCenter - (layout.x + layout.width / 2)) <= 0.1, `${name}: radar must stay centered`);
-      assert(Math.abs(layout.headerHeight - layout.tallestButton - 2) <= 0.1, `${name}: header must have no extra vertical spacing`);
-      assert(layout.headerBottom > layout.chartTop, `${name}: header must join the circle`);
-      assert(layout.width <= 240, `${name}: navigation box must stay small`);
-      assert(layout.headerHeight <= 26, `${name}: header must stay compact`);
-      assert(Math.abs(layout.mapBottom - layout.chartBottom) <= 3, `${name}: minimap must fit inside the rim`);
-      for (const item of layout.row) assert(Math.abs(item.centerY - layout.row[0].centerY) <= 1, `${name}: ${item.id} must stay on the same header line`);
-      assert(Math.abs(layout.bottom - layout.chartBottom) <= 1, `${name}: widget must end at the map`);
-      assert.equal(await page.locator('.navigation-footer, .navigation-instruction, .navigation-services, #job-progress, #speed, #boost-meter, #map-status, #map-toggle').count(), 0);
-      assert.equal(await page.locator('#map').isVisible(), true);
-      const nav = await page.locator('.navigation-hud').boundingBox();
-      const personal = await page.locator('.player-hud').boundingBox();
-      assert(personal.x >= nav.x + nav.width, `${name}: personal status must stay distinct on the right`);
-      assert.equal(await page.locator('.navigation-hud .player-hud').count(), 0);
-      const minimumTarget = name === 'portrait' ? 44 : 32;
-      const smallTargets = await page.locator('.navigation-hud button:visible').evaluateAll((buttons, minimum) => buttons.filter(button => {
-        const b = button.getBoundingClientRect(); const hitHeight = Math.max(b.height, parseFloat(getComputedStyle(button, '::after').height));
-        return b.width < minimum - 0.1 || hitHeight < minimum - 0.1;
-      }).map(button => button.id), minimumTarget);
-      assert.deepEqual(smallTargets, [], `${name}: targets must be at least ${minimumTarget}px`);
-      assert.equal(await page.locator('#player-time').count(), 1);
+      const l = await layout();
+      assert.equal(l.header, false, `${name}: the navigation header must be removed`);
+      assert(Math.abs(l.chart.width - l.chart.height) <= 1, `${name}: radar must stay circular`);
+      assert.equal(l.chartRadius, '50%');
+      assert(Math.abs(l.map.width - l.chart.width) <= 7 && Math.abs(l.map.height - l.chart.height) <= 7, `${name}: minimap must fill the circle`);
+      assert(Math.abs(l.panel.height - l.chart.height) <= 1, `${name}: the widget must end at the map with no reserved space`);
+      assert.equal(l.caption, false, `${name}: the map must keep no bottom caption or text panel`);
+      assert(Math.abs(l.panel.width - l.chart.width) <= 1, `${name}: the widget must stay as wide as the map`);
+      assert(!/\d+\s*m\b|to the target|metre/i.test(l.canvasLabel), `${name}: the minimap must carry no distance readout`);
+      assert.equal(l.overflow, false, `${name}: no horizontal overflow`);
+      assert(l.panel.left >= 0 && l.panel.top >= 0 && l.panel.right <= width && l.panel.bottom <= height, JSON.stringify(l.panel));
+      assert(l.chart.width <= 170.5 && l.chart.width >= 130, `${name}: radar size must stay in range`);
+      if (name === 'desktop') assert(Math.abs(l.chart.width - 170) <= 1.1, `${name}: desktop radar must be about 170 px`);
+      assert.equal(l.canvasRole, 'img');
+      assert.equal(l.canvasTabIndex, null, `${name}: the canvas must not be a hotspot`);
+      assert.equal(await page.locator('.navigation-hud button').count(), 0, `${name}: the map itself must hold no controls`);
+      // Every shortcut is a real, named, touch-sized button.
+      assert.deepEqual(l.buttons.map(button => button.id), ['dispatch', 'texts', 'newsroom']);
+      for (const button of l.buttons) {
+        assert(button.label && button.label.length > 4, `${name}: ${button.id} needs an accessible name`);
+        assert(button.width >= 44 && button.height >= 44, `${name}: ${button.id} needs a 44 px target, got ${button.width}x${button.height}`);
+        assert(button.left >= 0 && button.top >= 0 && button.right <= width && button.bottom <= height, `${name}: ${button.id} exceeds the viewport`);
+      }
+      const centresX = l.buttons.map(button => (button.left + button.right) / 2), centresY = l.buttons.map(button => (button.top + button.bottom) / 2);
+      if (landscape) {
+        // Landscape touch keeps the user-mandated horizontal row across the top centre.
+        for (const y of centresY) assert(Math.abs(y - centresY[0]) <= 1, `${name}: shortcuts must share one horizontal row`);
+        assert(centresX[0] < centresX[1] && centresX[1] < centresX[2], `${name}: shortcuts must read left to right`);
+        assert(Math.abs((centresX[0] + centresX[2]) / 2 - width / 2) <= 1.5, `${name}: the row must sit at the top centre`);
+        assert(Math.abs(l.actions.top - 8) <= 1.5, `${name}: the row must sit on the top edge`);
+        assert(l.actions.left >= l.panel.right, `${name}: the row must clear the radar`);
+        assert(l.actions.right <= l.player.left, `${name}: the row must clear the personal status corner`);
+      } else if (touch) {
+        for (const x of centresX) assert(Math.abs(x - centresX[0]) <= 1, `${name}: shortcuts must stack vertically`);
+        assert(centresY[0] < centresY[1] && centresY[1] < centresY[2], `${name}: shortcuts must read top to bottom`);
+        assert(Math.abs(l.actions.left - 10) <= 1.5, `${name}: portrait shortcuts must sit on the left edge`);
+        assert(l.actions.bottom <= height - 100, `${name}: shortcuts must clear the thumb buttons`);
+        assert(l.actions.left >= l.panel.left && l.actions.top >= l.panel.bottom, `${name}: shortcuts must stay clear of the map`);
+      } else {
+        for (const x of centresX) assert(Math.abs(x - centresX[0]) <= 1, `${name}: shortcuts must stack vertically`);
+        assert(centresY[0] < centresY[1] && centresY[1] < centresY[2], `${name}: shortcuts must read top to bottom`);
+        if (width >= 701 && width <= 1100 && height >= 501) {
+          // Narrow desktop fallback: beside the map instead of over the right-hand dialogue.
+          assert(Math.abs(l.actions.left - (l.panel.right + 8)) <= 1.5, `${name}: narrow-desktop shortcuts must sit beside the map`);
+          assert(Math.abs(l.actions.top - 28) <= 1.5, `${name}: narrow-desktop shortcuts must be top-aligned`);
+        } else {
+          assert(Math.abs(l.actions.right - (width - 28)) <= 1.5, `${name}: the column must sit on the right edge`);
+          if (height <= 500) {
+            // Short desktop: pinned below the personal HUD rather than centred into it.
+            assert(Math.abs(l.actions.top - 155) <= 1.5, `${name}: short-desktop shortcuts must sit below the status corner`);
+            assert(l.actions.top >= l.player.bottom + 4, `${name}: the column must clear the personal HUD`);
+          } else {
+            assert(Math.abs((l.actions.top + l.actions.bottom) / 2 - height / 2) <= 1.5, `${name}: the column must be vertically centred`);
+          }
+        }
+      }
+      assert.deepEqual(l.collisions, [], `${name}: shortcuts must not collide with other HUD controls`);
       assert.equal(await page.locator('#map').count(), 1);
+      assert.equal(await page.locator('.navigation-header, .taxi-state, #mission-title, #distance, #job-status, #navigation-destination, #navigation-contacts, #map-caption, #map-badge, .navigation-badge').count(), 0);
+      assert.equal(await page.locator('#map').isVisible(), true);
+      assert.equal(await page.locator('#player-time').count(), 1);
     };
     const shot = async state => {
       await page.locator('#city').focus();
+      // Park the pointer away from the shortcuts so hover styling never leaks into a capture.
+      await page.mouse.move(width / 2, height / 2);
       await page.evaluate(() => document.fonts.ready);
       await check();
       await page.screenshot({ path: resolve(output, `${name}-${state}.png`) });
     };
-    assert.equal(await page.locator('#job-status').textContent(), 'ENGAGED');
-    const longTitle = 'Meet Officer Lena Ortiz.';
-    const title = await page.locator('#mission-title').textContent();
-    await page.locator('#mission-title').evaluate((el, text) => { el.textContent = text; }, longTitle);
-    await shot('long-title'); await render();
-    assert.equal(await page.locator('#mission-title').getAttribute('title'), title);
+    // On touch the ride conversation can cover the cab, so minimise it before capturing
+    // the world aura (the pickup itself stays a real state change).
+    const closeStory = async () => { if (await page.locator('#story').isVisible()) { await page.locator('#story-close').click(); await render(); } };
+    assert.equal(await state(), 'engaged');
+    assert.match(await mapLabel(), /PICK UP · /);
+    assert.equal(await target(), 'pickup');
+    assert.equal(await page.locator('#dispatch').getAttribute('aria-pressed'), 'true');
+    // Collecting the first fare shows no on-board cue yet.
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), '');
+    assert.equal(await page.locator('#map-badge, .navigation-badge').count(), 0, `${name}: the wheel must carry no on-board badge`);
     await shot('engaged');
-    if (touch) {
-      const status = await page.locator('#job-status').boundingBox();
-      await page.touchscreen.tap(status.x + status.width / 2, status.y - 4);
-    } else await page.locator('#job-status').click();
-    await render();
-    assert.equal(await page.locator('#job-status').textContent(), 'VACANT', 'Expanded touch area above the visible button must work');
-    assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
-    assert.equal(await page.locator('#texts svg[aria-hidden="true"]').count(), 1);
-    assert.equal(await page.locator('#texts img').count(), 0);
-    assert.equal(await page.locator('#dispatch-portrait').isVisible(), true);
+    await page.locator('#dispatch').click(); await render();
+    assert.equal(await state(), 'vacant');
+    assert.match(await mapLabel(), /DISPATCH · /);
+    assert.equal(await page.locator('#dispatch').getAttribute('aria-pressed'), 'false');
     await shot('vacant');
+    // Keyboard activation routes the fare again, without any canvas hotspot.
+    await page.locator('#dispatch').focus();
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'dispatch');
+    await page.keyboard.press('Enter'); await render();
+    assert.equal(await state(), 'engaged');
+    assert.match(await mapLabel(), /PICK UP · /);
     await page.locator('#texts').click();
     assert.equal(await page.locator('#mission-inbox').isVisible(), true);
     await page.locator('#texts-close').click();
     await page.locator('#city').focus(); await page.keyboard.press('KeyP');
+    // The pause splash hides the whole HUD too, so no shortcut floats over the menu.
+    assert.equal(await page.locator('body').evaluate(b => b.classList.contains('splash-active')), true, `${name}: pause opens the shared splash`);
+    for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#newsroom']) {
+      assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'hidden', `${name}: ${selector} must be hidden, not merely disabled, while paused`);
+    }
     await page.locator('#open-notebook').click();
     await waitForDrawer(page, 'notebook');
     assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
-    const beforeNewsroom = await render();
+    // Booking newsroom guidance clears through the same toggle and keeps the booking.
+    const booking = (await render()).job;
     await page.locator('#newsroom').click(); await render();
-    assert.match(await page.locator('#mission-title').textContent(), /Newsroom/);
-    assert.equal(await page.locator('#job-status').isEnabled(), true);
-    await page.locator('#job-status').click();
-    const afterNewsroom = await render();
-    assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
-    assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
-    assert.deepEqual(afterNewsroom.job, beforeNewsroom.job, 'Cancelling newsroom guidance must preserve the booking');
+    assert.match(await mapLabel(), /NEWSROOM · /);
+    assert.equal(await target(), 'newsroom');
+    assert.equal(await page.locator('#dispatch').isEnabled(), true);
     await page.locator('#dispatch').click(); await render();
-    assert.doesNotMatch(await page.locator('#mission-title').textContent(), /Newsroom/);
-    await page.locator('#job-status').click(); await render();
+    assert.equal(await state(), 'vacant');
+    assert.match(await mapLabel(), /DISPATCH · /);
+    assert.deepEqual((await render()).job, booking, 'Cancelling newsroom guidance must preserve the booking');
+    await page.locator('#dispatch').click(); await render();
+    assert.equal(await state(), 'engaged');
+    assert.match(await mapLabel(), /PICK UP · /);
     await page.locator('#city').focus(); await page.keyboard.press('KeyG'); await render();
     assert.equal(await page.locator('.garage-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
     await page.locator('#city').focus(); await page.keyboard.press('KeyH'); await render();
-    assert.equal(await page.locator('#mission-title').textContent(), 'Northstar Harbour.');
-    // Cancel the detour via H, then use the vacant/dispatch affordance.
+    assert.match(await mapLabel(), /HARBOUR · /);
+    assert.equal(await target(), 'harbour');
+    // Cancel the detour via H, then route the fare from the vacant toggle.
     await page.keyboard.press('KeyH'); await render();
-    if (await page.locator('#job-status').textContent() !== 'VACANT') { await page.locator('#job-status').click(); await render(); }
+    if (await state() !== 'vacant') { await page.locator('#dispatch').click(); await render(); }
+    assert.equal(await state(), 'vacant');
     await page.locator('#dispatch').click(); await render();
-    assert.equal(await page.locator('#job-status').textContent(), 'ENGAGED');
+    assert.equal(await state(), 'engaged');
     await check();
     // Fixture capture only; physical integration driving is checked separately.
     await command({ op: 'pickup' });
-    assert.equal(await page.locator('#job-status').textContent(), 'ON BOARD');
-    assert.match(await page.locator('#distance').textContent(), /^\d+ m$/);
+    assert.equal(await state(), 'on-board');
+    assert.match(await mapLabel(), /DELIVER · /);
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), 'roof');
+    if (touch) await closeStory();
     await shot('on-board');
     const driving = await command({ op: 'step', seconds: 1, keys: ['KeyW', 'ShiftLeft'] });
     assert(driving.speed > 0);
     await command({ op: 'deliver' });
-    assert.equal(await page.locator('#job-status').textContent(), 'VACANT');
-    assert.equal(await page.locator('#navigation-contacts').isVisible(), true);
+    assert.equal(await state(), 'vacant');
+    assert.match(await mapLabel(), /DISPATCH · /);
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), '');
+    // Walking keeps the map free of a permanent status bar and shows parked rides.
     await page.locator('#city').focus(); await page.keyboard.press('KeyE'); await render();
-    assert.equal(await page.locator('#job-status').textContent(), 'ON FOOT');
+    assert.equal(await state(), 'on-foot');
+    assert.equal(await target(), 'walk');
+    assert(!/PICK UP|DELIVER|Find a ride/.test(await mapLabel()), 'no permanent Find a ride or ON FOOT bar');
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), '');
+    assert.equal(await page.locator('#dispatch').isDisabled(), true);
     await check();
+    if (touch) await closeStory();
+    await shot('on-foot');
     await context.close();
-    console.log(`${name}: state transitions, shortcuts, always-visible minimap and layout passed`);
+    console.log(`${name}: header-free radar, shortcut placement, state transitions and offline layout passed`);
+  }
+  // The courier bike's on-board cue is verified through real play, not a fixture: exit the
+  // cab, mount the parked bike and physically collect a parcel at 120 Hz in the debug lab.
+  {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    await context.setOffline(true);
+    const page = await context.newPage();
+    page.on('pageerror', error => errors.push(`bike: ${error.message}`));
+    page.on('console', message => { if (message.type() === 'error') errors.push(`bike: ${message.text()}`); });
+    page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
+    await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?debug=1`);
+    await page.waitForFunction(() => !!window.__taxi);
+    const step = (seconds, keys = []) => page.evaluate(({ seconds, keys }) => window.__taxi.step(seconds, keys), { seconds, keys });
+    await page.evaluate(() => window.__taxi.scenario('motorcycle'));
+    await page.locator('#city').focus();
+    await page.keyboard.press('KeyE'); // leave the cab
+    await step(0.35, ['KeyS']);
+    await page.keyboard.press('KeyE'); // mount the courier bike
+    let bike = await page.evaluate(() => window.__taxi.state());
+    assert.equal(bike.vehicleModel, 'motorcycle', 'the parked courier bike must be enterable');
+    assert.equal(bike.job.type, 'parcel');
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), '', 'no cue before the parcel is aboard');
+    assert.equal(await page.evaluate(() => window.__taxi.aura()), null, 'the renderer must paint no aura before the parcel is aboard');
+    for (let attempt = 0; attempt < 1600 && bike.job.stage === 'pickup'; attempt++) {
+      const dx = bike.job.pickup.x - bike.position.x, dy = bike.job.pickup.y - bike.position.y;
+      const distance = Math.hypot(dx, dy), heading = Math.atan2(dy, dx);
+      const turn = Math.atan2(Math.sin(heading - bike.angle), Math.cos(heading - bike.angle));
+      const keys = distance > 2.5
+        ? [...bike.speed < 2.2 ? ['KeyW'] : [], ...Math.abs(turn) > 0.12 ? [turn > 0 ? 'KeyD' : 'KeyA'] : []]
+        : bike.speed > 0.8 ? ['KeyS'] : [];
+      bike = await step(0.05, keys);
+    }
+    assert.equal(bike.job.stage, 'dropoff', 'physical riding must collect the parcel');
+    await page.evaluate(() => window.__taxi.toggle(false)); // collapse the lab panel for a clean capture
+    await step(2.4, []); // let the pickup feedback fade so the aura reads clearly
+    await page.locator('#city').focus();
+    await page.evaluate(() => document.fonts.ready);
+    await step(0.02, []);
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-cue'), 'body');
+    // The renderer must actually paint the body aura, not just set the predicate.
+    const body = await auraPixels(page, '__taxi');
+    assert(body?.cue === 'body', 'the renderer must paint the bike body aura');
+    assert(body.green > 0, 'the body aura must put green pixels on the canvas');
+    assert(body.spill > 50, `the bike aura must visibly spill beyond the body, got ${body.spill} pixels`);
+    await page.screenshot({ path: resolve(output, 'desktop-bike-on-board.png') });
+    await context.close();
+    console.log('Courier bike on-board aura through physical riding passed');
   }
   assert.deepEqual(errors, [], 'Browser errors');
   assert.deepEqual(requests, [], 'External runtime requests');

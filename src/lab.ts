@@ -12,6 +12,7 @@ import { dayMinute } from './campaign/clock';
 import './lab.css';
 import { Game, upgradeInfo, type Upgrade, type Vehicle } from './game';
 import type { Renderer } from './renderer';
+import type { OnBoardCue } from './onboard-cue';
 import type { Settings } from './rules';
 import { difficulties } from './rules';
 import { clamp, contact, vec, type Vec } from './physics';
@@ -188,6 +189,7 @@ export type LabAPI = {
   dayNight(options?: DayNightOptions): LabSnapshot;
   campaign(minute: number): LabSnapshot;
   refreshUI(): void;
+  aura(): { cue: OnBoardCue; x: number; y: number; radius: number } | null;
   audio(): ReturnType<AudioFX['state']> | null;
   sound(cue: SoundCue): Promise<boolean>;
   stopSound(): void;
@@ -919,6 +921,8 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       alive: p.alive, aboard: p.aboard, panic: p.panic, health: p.health,
     })),
     refreshUI,
+    // Paint one world frame (via the host's refresh) and report the on-board aura it drew.
+    aura: () => { hooks.refresh(); const aura = renderer.lastAura; return aura ? { ...aura } : null; },
     audio: () => hooks.audio?.state() ?? null,
     sound: cue => isSoundCue(cue) && hooks.audio ? hooks.audio.preview(cue) : Promise.resolve(false),
     stopSound: () => hooks.audio?.stopPreview(),

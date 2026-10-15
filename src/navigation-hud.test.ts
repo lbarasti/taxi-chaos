@@ -1,75 +1,125 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
+import { GARAGE } from './world';
+import { PORT_ENTRY } from './harbour';
+import { navigationTargetKind } from './radar';
 import { navigationHudMarkup, navigationHudState } from './navigation-hud';
 
-describe('consolidated navigation HUD', () => {
-  it('uses one map, leaving the personal-status HUD separate, with embedded original icons', () => {
+const routeOf = (game: Game) => navigationTargetKind({
+  onFoot: game.onFoot, stage: game.job.stage, navToGarage: game.navToGarage, navToHarbour: game.navToHarbour, navToNewsroom: game.navToNewsroom,
+  admitted: game.harbour.vehicleId === game.player.id, exchanged: game.harbour.exchanged,
+});
+
+describe('radar-first navigation HUD', () => {
+  it('keeps one map and no header above it, with embedded original icons', () => {
     expect(navigationHudMarkup.match(/id="map"/g)).toHaveLength(1);
     expect(navigationHudMarkup).not.toContain('class="player-hud"');
     expect(navigationHudMarkup).not.toMatch(/https?:|<image|target|lightning/i);
-    for (const id of ['dispatch', 'texts', 'newsroom', 'job-status', 'mission-title', 'distance']) expect(navigationHudMarkup).toContain(`id="${id}"`);
+    expect(navigationHudMarkup).not.toMatch(/navigation-header|mission-title|job-status|navigation-contacts/);
+    expect(navigationHudMarkup).toMatch(/<div class="navigation-chart">[\s\S]*<\/div>\s*<\/aside>/);
+    for (const id of ['dispatch', 'texts', 'newsroom']) expect(navigationHudMarkup).toContain(`id="${id}"`);
   });
 
-  it('ends at the minimap without instructions, readouts or service buttons below it', () => {
-    expect(navigationHudMarkup).toMatch(/<\/canvas><\/div>\s*<\/aside>$/);
+  it('ends at the minimap without instructions, readouts, captions or service buttons below it', () => {
+    const aside = navigationHudMarkup.match(/<aside[\s\S]*?<\/aside>/)![0];
+    expect(aside).toMatch(/<div class="navigation-chart">[\s\S]*<\/div>\s*<\/aside>$/);
+    expect(aside).not.toMatch(/<p[ >]|caption|readout/i);
+    expect(navigationHudMarkup).toMatch(/<\/aside>\s*<div class="navigation-actions"/);
     for (const id of ['mission-description', 'job-progress', 'fare', 'fast-tip', 'comfort', 'notebook', 'photo', 'garage', 'harbour', 'boost-meter', 'speed']) expect(navigationHudMarkup).not.toContain(`id="${id}"`);
   });
 
-  it('uses a text-message icon for bookings while retaining the dispatcher portrait', () => {
+  it('separates named quick actions from the map, without canvas hotspots', () => {
+    const actions = navigationHudMarkup.match(/<div class="navigation-actions"[\s\S]*<\/div>/)![0];
+    expect(actions).toContain('role="group"');
+    expect(actions).toContain('aria-label="Dispatch and campaign shortcuts"');
+    for (const id of ['dispatch', 'texts', 'newsroom']) expect(actions).toContain(`id="${id}"`);
+    expect(actions.match(/<button/g)).toHaveLength(3);
+    // Every action is a real, named button; the chart keeps no interactive markup.
+    for (const button of actions.match(/<button[^>]*>/g)!) expect(button).toMatch(/aria-label="[^"]+"/);
+    expect(navigationHudMarkup).toMatch(/<canvas id="map" role="img" aria-label="Local minimap:/);
+    expect(navigationHudMarkup).not.toMatch(/onclick|tabindex|<a /i);
+  });
+
+  it('uses a dispatcher icon and message icon rather than a portrait', () => {
     const bookings = navigationHudMarkup.match(/<button id="texts"[^>]*>(.*?)<\/button>/)![1];
     expect(bookings).toContain('<svg');
     expect(bookings).toContain('aria-hidden="true"');
     expect(bookings).not.toContain('<img');
-    expect(navigationHudMarkup).not.toContain('bookings-portrait');
-    expect(navigationHudMarkup).toContain('id="dispatch-portrait"');
     expect(navigationHudMarkup).toContain('aria-label="Bookings: read text messages"');
+    expect(navigationHudMarkup).not.toMatch(/dispatch-portrait|bookings-portrait|<img/);
+    expect(navigationHudMarkup).toMatch(/<button id="dispatch"[^>]*aria-label="Dispatch: [^"]+"/);
+    expect(navigationHudMarkup).toMatch(/<button id="dispatch"[^>]*aria-pressed="true"/);
   });
 
-  it('keeps an accessible map without a status label or collapse button', () => {
+  it('keeps an accessible map without a status label, caption, badge or collapse button', () => {
     expect(navigationHudMarkup).not.toMatch(/map-status|LIVE|PURSUIT|map-toggle|map-chevron|aria-expanded/);
     expect(navigationHudMarkup).toContain('aria-label="Local minimap:');
+    // The on-board cue is world-rendered; the wheel keeps no silhouette or package badge.
+    expect(navigationHudMarkup).not.toMatch(/map-badge|navigation-badge|badge-passenger|badge-parcel|<img/);
+    expect(navigationHudMarkup).not.toContain('map-caption');
   });
 
   it('distinguishes engaged, on-board and vacant without mutating the fare', () => {
     const game = new Game(undefined, false);
     const before = structuredClone(game.job);
-    expect(navigationHudState(game)).toMatchObject({ status: 'ENGAGED', vacant: false, routeVisible: true });
-    expect(navigationHudState(game, false)).toMatchObject({ status: 'VACANT', vacant: true, routeVisible: false });
+    expect(navigationHudState(game)).toMatchObject({ status: 'ENGAGED', vacant: false, routeVisible: true, label: 'PICK UP', kind: 'pickup', load: null });
+    expect(navigationHudState(game, false)).toMatchObject({ status: 'VACANT', vacant: true, routeVisible: false, label: 'DISPATCH', caption: 'DISPATCH · Route the next fare' });
     expect(game.job).toEqual(before);
     game.job.stage = 'dropoff';
-    expect(navigationHudState(game, false)).toMatchObject({ status: 'ON BOARD', title: `${game.job.destination}.`, vacant: false, routeVisible: true });
+    expect(navigationHudState(game, false)).toMatchObject({ status: 'ON BOARD', vacant: false, routeVisible: true, label: 'DELIVER', caption: `DELIVER · ${game.job.destination}`, kind: 'delivery', load: 'passenger' });
   });
 
-  it('keeps parcel terminology and distance accurate without arrival copy', () => {
+  it('keeps parcel terminology and accurate load state without a badge', () => {
     const game = new Game(undefined, false);
     game.job.type = 'parcel';
-    expect(navigationHudState(game).title).toContain('parcel');
+    const collecting = navigationHudState(game);
+    expect(collecting.label).toBe('PICK UP');
+    expect(collecting.caption).toContain('parcel');
+    expect(collecting.load).toBeNull();
     game.job.stage = 'dropoff';
     game.job.dropoff = { ...game.actor.position };
-    expect(navigationHudState(game)).toMatchObject({ status: 'LOADED', distance: 0 });
+    expect(navigationHudState(game)).toMatchObject({ status: 'LOADED', load: 'parcel', kind: 'delivery' });
     expect(navigationHudState(game)).not.toHaveProperty('arriving');
+    expect(navigationHudState(game)).not.toHaveProperty('distance');
   });
 
-  it('overrides vacant guidance for detours', () => {
+  it('draws no metres counter and no bottom caption on the map', () => {
+    const game = new Game(undefined, false);
+    expect(navigationHudMarkup).not.toContain('map-caption');
+    expect(navigationHudMarkup).not.toMatch(/\d+\s*m\b/);
+    for (const state of [navigationHudState(game), navigationHudState(game, false)]) {
+      expect(state).not.toHaveProperty('distance');
+      expect(state.caption).not.toMatch(/\d+\s*m\b|metre|distance/i);
+    }
+  });
+
+  it('overrides vacant guidance for detours and names each destination', () => {
     const game = new Game(undefined, false);
     game.navToGarage = true;
-    expect(navigationHudState(game, false)).toMatchObject({ title: 'Pit Stop.', vacant: false, routeVisible: true });
+    expect(navigationHudState(game, false)).toMatchObject({ label: 'GARAGE', caption: 'GARAGE · Pit Stop', vacant: false, routeVisible: true, kind: 'garage' });
+    expect(game.target).toEqual(GARAGE);
     game.navToGarage = false; game.navToNewsroom = true;
-    expect(navigationHudState(game, false).title).toContain('Newsroom');
+    expect(navigationHudState(game, false)).toMatchObject({ label: 'NEWSROOM', kind: 'newsroom' });
+    expect(navigationHudState(game, false).caption).toContain('Newsroom');
+    expect(game.target).toEqual(game.newsroom);
     game.navToNewsroom = false; game.navToHarbour = true;
-    expect(navigationHudState(game, false)).toMatchObject({ title: 'Northstar Harbour.', routeVisible: true });
+    expect(navigationHudState(game, false)).toMatchObject({ label: 'HARBOUR', caption: 'HARBOUR · Northstar Harbour', routeVisible: true, kind: 'harbour' });
+    expect(game.target).toEqual(PORT_ENTRY);
     game.harbour.vehicleId = game.player.id;
-    expect(navigationHudState(game, false).title).toBe('Container C-76.');
+    expect(navigationHudState(game, false)).toMatchObject({ caption: 'HARBOUR · Container C-76', kind: 'swap', load: null });
     game.harbour.exchanged = true;
-    expect(navigationHudState(game).title).toBe('Take the exit.');
+    expect(navigationHudState(game)).toMatchObject({ caption: 'HARBOUR · Take the exit', kind: 'exit' });
   });
 
-  it('follows the actor on foot and during bailout rather than showing fare details', () => {
+  it('follows the actor on foot with a walk glyph and no permanent status bar', () => {
     const game = new Game(undefined, false);
     game.onFoot = true;
-    expect(navigationHudState(game, false)).toMatchObject({ status: 'ON FOOT', title: 'Find a ride.', routeVisible: true, vacant: false });
+    const walking = navigationHudState(game, false);
+    expect(walking).toMatchObject({ status: 'ON FOOT', caption: '', routeVisible: true, vacant: false, kind: 'walk', load: null });
+    expect(walking.caption).not.toMatch(/Find a ride/);
     game.tumble = { elapsed: 0, duration: 1, speed: 10, side: -1, bike: false, grounded: false };
-    expect(navigationHudState(game).title).toBe('Brace for impact.');
+    const bracing = navigationHudState(game);
+    expect(bracing).toMatchObject({ label: 'BRACE', caption: 'BRACE · Brace for impact' });
   });
 
   it('returns to vacant after clearing newsroom guidance without cancelling the booking', () => {
@@ -77,10 +127,30 @@ describe('consolidated navigation HUD', () => {
     game.start();
     const booking = structuredClone(game.job);
     game.navigateNewsroom();
-    expect(navigationHudState(game, false)).toMatchObject({ vacant: false, routeVisible: true });
+    expect(navigationHudState(game, false)).toMatchObject({ vacant: false, routeVisible: true, kind: 'newsroom' });
     game.navigateNewsroom();
     expect(navigationHudState(game, false)).toMatchObject({ status: 'VACANT', vacant: true, routeVisible: false });
     expect(game.navToNewsroom).toBe(false);
     expect(game.job).toEqual(booking);
+    expect(routeOf(game)).toBe('pickup');
+  });
+
+  it('keeps the destination symbols in step with the routed target', () => {
+    const game = new Game(undefined, false);
+    expect(routeOf(game)).toBe('pickup');
+    game.job.stage = 'dropoff';
+    expect(routeOf(game)).toBe('delivery');
+    game.navToGarage = true;
+    expect(routeOf(game)).toBe('garage');
+    game.navToGarage = false; game.navToNewsroom = true;
+    expect(routeOf(game)).toBe('newsroom');
+    game.navToNewsroom = false; game.navToHarbour = true;
+    expect(routeOf(game)).toBe('harbour');
+    game.harbour.vehicleId = game.player.id;
+    expect(routeOf(game)).toBe('swap');
+    game.harbour.exchanged = true;
+    expect(routeOf(game)).toBe('exit');
+    game.onFoot = true;
+    expect(routeOf(game)).toBe('walk');
   });
 });

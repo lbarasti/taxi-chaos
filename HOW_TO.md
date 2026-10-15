@@ -56,20 +56,36 @@ remain in the notebook. The last edition is **Day 14 at 06:00**. See the
 
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
 
-The **top-left navigation card** combines your current job and local minimap in
-a compact, nearly square box. Destination, distance and status share one header
-line; long names are shortened visually, with the full name available on hover.
-**ENGAGED** means pickup guidance is selected; **ON BOARD** shows the destination.
-The card ends at the map, without lower readouts or service buttons. Clock, cash,
-personal health and police stars stay separate at the top right.
+The **circular minimap** in the top-left corner is the whole navigation panel:
+no header above it, no caption chip below it, no district banner or distance
+counter drawn on the wheel. It shows a 320 m neighbourhood with your taxi (a
+walker while on foot) at the centre, while the map's accessible label carries
+the current neighbourhood, load and destination. Clock, cash, personal health
+and police stars stay separate at the top right.
 
-After an ordinary delivery, **VACANT** shows dispatch, booking and newsroom
-shortcuts. Tap **ENGAGED** before pickup to hide fare guidance and browse these
-shortcuts; tap the dispatcher portrait or **VACANT** to route the next fare.
-The speech-bubble button opens your texts; the newspaper routes to the newsroom.
-Tap **ENGAGED** to clear newsroom guidance and return to the shortcuts.
-Hiding guidance does not cancel a booking or prevent a physical pickup. The minimap shows a wider
-320 m neighbourhood and stays visible, without a status label or collapse button.
+Destinations use one distinctive symbol each: a ringed circle for a pickup, a
+diamond for a delivery, and drawn garage, newsroom, harbour and container
+markers. A chevron on the rim points along the destination bearing, whether the
+destination still sits on the wheel or beyond it. Once a passenger or parcel is
+aboard, the cab's roof sign (or the courier bike's body) emits a bright green
+light with the same soft spill as police lights, not an outlined circle. The
+wheel itself stays free of cargo badges. While walking, parked
+rides, the garage and the newsroom stay marked and no permanent instruction bar
+covers the map.
+
+The **shortcut menu** is separate from the map. The dispatcher button routes the
+next fare or hides fare guidance, the speech bubble opens your texts, and the
+newspaper routes to the newsroom. On a desktop the shortcuts sit on the right
+edge; in a narrow desktop window (about 701–1100 px wide) they move just to the
+right of the map instead, clear of the right-hand conversation; on a portrait
+phone they stack on the left above BOOST and DRIFT; on a landscape phone they
+form a row across the top centre, shrinking the map so the two never overlap.
+
+Press the dispatcher button before pickup to hide fare guidance (and its route
+and destination symbol) while you browse your texts and the newsroom; press it
+again to route the fare. Hiding guidance does not cancel a booking or prevent a
+physical pickup. Pressing it while the newsroom is routed clears that guidance
+and returns to the fare.
 
 - **Eastern bridges and highlands:** take the northern crossing to Pine Woods or the southern crossing to Eagle Highlands. Curved roads connect Pine Junction, Fern Hollow, Highland Lodge, and Eagle Lookout. F2 → **Eastern bridges / highlands** starts at Pine Bridge with a delivery to Eagle Lookout. See [screenshots and map notes](docs/eastern-highlands.md).
 - **Woodland villas and Fairway Country Club:** explore the southern loop through Millionaires Row, Woodland Estates, and Cedar Woods, with private villa drives and a golf club. F2 → **Woodland villas / golf club** starts in Woodland Estates with a passenger for Fairway Club. See the [map overview](docs/woodland-estates.md).

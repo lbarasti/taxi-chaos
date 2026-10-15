@@ -1,63 +1,64 @@
-/* Consolidated job and radar instrument. Personal status stays separate. */
-.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));--navigation-width:240px;--radar-size:calc(var(--navigation-width) * .6);width:var(--navigation-width);display:flex;flex-direction:column;overflow:visible;background:none;border:0;box-shadow:none;backdrop-filter:none;touch-action:manipulation;--nav-accent:var(--gold)}
+/* Radar-first navigation: the enlarged circular map carries guidance on its own,
+   and the dispatch/booking/newsroom shortcuts live in their own real-DOM action menu. */
+:root{--radar-size:170px}
+.navigation-hud{position:fixed;z-index:1;top:max(28px,env(safe-area-inset-top,0px));left:max(28px,env(safe-area-inset-left,0px));width:var(--radar-size);background:none;border:0;box-shadow:none;backdrop-filter:none;touch-action:manipulation}
 .navigation-hud [hidden]{display:none!important}
-.navigation-hud[data-state="on-board"],.navigation-hud[data-state="loaded"]{--nav-accent:var(--mint)}
-.navigation-hud[data-state="vacant"]{--nav-accent:#b9c9cb}
-.navigation-header{position:relative;z-index:1;display:flex;flex-shrink:0;gap:6px;align-items:center;justify-content:space-between;padding:0 9px;border:1px solid #91adb04d;border-radius:12px;background:#10222df5;box-shadow:0 2px 8px #06121b30}
-#navigation-destination{display:flex;flex:1;gap:6px;align-items:center;min-width:0}
-#navigation-destination>div{display:flex;flex:1;gap:6px;align-items:center;min-width:0}
-.navigation-pin{display:flex;color:var(--nav-accent);flex-shrink:0}
-.navigation-pin svg{width:17px;height:17px}
-.navigation-hud h1{flex:1;min-width:0;font-size:13px;letter-spacing:-.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.navigation-hud #distance{flex-shrink:0;font-size:8px;line-height:1.4;color:#a9bfc5;margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
-.taxi-state{flex-shrink:0;font-size:7px;font-weight:700;letter-spacing:.4px;min-width:32px;min-height:24px;height:24px;padding:2px 5px;border:1px solid var(--nav-accent);border-radius:5px;color:var(--nav-accent);background:#081b2280}
-.taxi-state:disabled{opacity:1}
-#navigation-contacts{display:flex;gap:4px;align-items:center}
-#navigation-contacts button{display:grid;place-items:center;width:32px;height:24px;flex-shrink:0;padding:0;border:1px solid var(--border);border-radius:5px;background:#ffffff04;color:#b9ccd1}
-#navigation-contacts svg{width:16px;height:16px}
-#navigation-contacts .story-portrait{width:22px;height:22px;border:0;border-radius:4px;aspect-ratio:1}
-/* Keep generous hit areas without making the visible header taller. */
-.navigation-header button{position:relative;overflow:visible}
-.navigation-header button::after{content:"";position:absolute;left:-1px;right:-1px;top:50%;height:32px;transform:translateY(-50%)}
-.navigation-hud button:hover:not(:disabled){background:#ffffff0d;color:var(--gold)}
-.navigation-hud button:disabled:not(.taxi-state){opacity:.35}
-.navigation-chart{position:relative;flex:none;align-self:center;width:var(--radar-size);height:var(--radar-size);margin-top:-8px;border:3px solid #91adb04d;border-radius:50%;overflow:hidden;background:#0b1b24;box-shadow:0 0 0 1px #06121b80,inset 0 0 0 1px #06121b80,0 6px 18px #06121b30}
+.navigation-chart{position:relative;width:100%;aspect-ratio:1/1;border:3px solid #91adb04d;border-radius:50%;overflow:hidden;background:#0b1b24;box-shadow:0 0 0 1px #06121b80,inset 0 0 0 1px #06121b80,0 6px 18px #06121b30}
 .navigation-hud #map{display:block;width:100%;height:100%;margin:0;padding:0}
+.navigation-actions{position:fixed;z-index:1;display:flex;gap:8px;touch-action:manipulation}
+.navigation-actions button{display:grid;place-items:center;width:48px;height:48px;padding:0;border:1px solid #91adb03d;border-radius:12px;background:#10222de6;color:#b9ccd1;box-shadow:0 2px 10px #06121b40}
+.navigation-actions svg{display:block;width:22px;height:22px}
+.navigation-actions button:hover:not(:disabled){background:#182c38f5;color:var(--gold);border-color:#f7ce5566}
+.navigation-actions button:disabled{opacity:.4}
+.navigation-actions #dispatch[aria-pressed="true"]{color:var(--gold);border-color:#f7ce5566}
+/* Desktop: a vertical shortcut column on the right edge, clear of the status corner. */
+.navigation-actions{right:max(28px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column}
+/* Narrow desktop already stacks dialogue and warnings down the right edge, so the
+   shortcuts stay beside the map instead of covering them. */
+@media(min-width:701px) and (max-width:1100px) and (min-height:501px) and (pointer:fine){
+  .navigation-actions{right:auto;top:max(28px,env(safe-area-inset-top,0px));left:calc(max(28px,env(safe-area-inset-left,0px)) + var(--radar-size) + 8px);transform:none}
+}
+/* A short desktop window would centre the column up into the status corner; pin it
+   just below the personal HUD instead, keeping the right-hand vertical layout. */
+@media(min-width:701px) and (max-height:500px) and (pointer:fine){
+  .navigation-actions{top:max(155px,env(safe-area-inset-top,0px));transform:none}
+}
 /* Preserve the existing right-hand personal status and conversation layout. */
 .toast{max-width:calc(100% - 440px)}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
-  :root{--navigation-width:min(196px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px))}
-  .navigation-hud{--navigation-width:inherit;top:calc(var(--top-height) + 8px);left:var(--edge-left);right:auto;border-radius:10px}
-  .navigation-header{padding:0 5px;gap:4px;border-radius:10px}
-  .navigation-hud h1{font-size:12px}
-  .navigation-pin{display:none}
-  .taxi-state{min-width:44px;padding:2px 4px;letter-spacing:0;max-width:60px}
-  #navigation-contacts{gap:0}
-  #navigation-contacts button{width:44px}
-  .navigation-header button::after{height:44px}
-  .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 144px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 210px)}
+  :root{--navigation-width:min(196px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px));--radar-size:min(170px,var(--navigation-width),46vw)}
+  .navigation-hud{top:calc(var(--top-height) + 8px);left:var(--edge-left);right:auto}
+  /* Portrait touch: a vertical shortcut column on the left edge, above the 112 px
+     two-button thumb stack (64 × 52 with an 8 px gap). */
+  .navigation-actions{left:var(--edge-left);top:auto;right:auto;bottom:calc(var(--edge-bottom) + 122px);transform:none;flex-direction:column}
+  .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 8px + var(--radar-size) + 26px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--radar-size) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--radar-size) - var(--stick-size) - var(--edge-bottom) - 218px)}
   .story-body{display:flow-root}
   .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
   .story-copy p{font-size:11px;min-height:90px}
   .context-actions:has(#garage-action:not([hidden]))~.toast{bottom:calc(var(--edge-bottom) + var(--stick-size) + 116px)}
-  .toast{top:auto;bottom:calc(var(--edge-bottom) + var(--stick-size) + 64px);left:var(--edge-left);width:calc(100% - var(--edge-left) - var(--edge-right));max-width:360px}
+  /* Status toasts tuck under the map instead of covering it. */
+  .toast{top:calc(var(--top-height) + 8px + var(--radar-size) + 24px);bottom:auto;left:var(--edge-left);width:auto;max-width:min(240px,calc(46vw - 20px));transform:translateY(5px)}
+  .toast.visible{transform:translateY(0)}
 }
 @media(max-width:700px) and (min-height:501px), (pointer:coarse) and (max-width:1200px) and (min-height:501px){
-  body:has(#garage-action:not([hidden])) .story{max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 262px)}
+  body:has(#garage-action:not([hidden])) .story{max-height:calc(100dvh - var(--top-height) - var(--radar-size) - var(--stick-size) - var(--edge-bottom) - 270px)}
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
-  :root{--navigation-width:180px}
-  .story,.story.collapsed,.roadside{left:calc(var(--edge-left) + var(--navigation-width) + 12px);right:auto;top:calc(var(--top-height) + 8px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - var(--dash-width) - 24px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 28px)}
+  /* Landscape touch: a horizontal shortcut row across the free top centre. The radar
+     shrinks so it never reaches that row's left edge, and also clears the 112 px thumb
+     stack, including shallow screens and device cutouts. */
+  :root{--radar-size:min(170px,46vw,calc(50vw - var(--edge-left) - 96px),calc(100dvh - var(--top-height) - var(--edge-bottom) - 141px))}
+  .navigation-actions{left:50%;right:auto;top:calc(var(--top-height) + 8px);bottom:auto;transform:translateX(-50%);flex-direction:row}
+  .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 64px);left:auto;right:calc(var(--edge-right) + var(--dash-width) + 12px);width:calc(54vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 22px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 84px)}
   .context-actions{left:auto;right:var(--edge-right);max-width:150px}
-  .toast{left:calc(var(--edge-left) + var(--navigation-width) + 12px);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--navigation-width) - 24px);max-width:360px}
 }
 /* A short landscape column cannot fit status, two actions and the joystick. */
 @media(max-height:360px) and (max-width:1000px), (max-height:360px) and (pointer:coarse) and (max-width:1200px){
   .context-actions{right:calc(var(--edge-right) + var(--stick-size) + 12px);bottom:var(--edge-bottom)}
   .context-actions:has(#garage-action:not([hidden]))~.toast{bottom:calc(var(--edge-bottom) + var(--stick-size) + 12px)}
 }
-/* Narrow layouts keep one row with 32 px targets (above the 24 px WCAG minimum). */
-@media(max-width:360px), (max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
-  #navigation-contacts button{width:32px}
-  .taxi-state{min-width:32px;padding:2px 3px}
+/* Short touch rows keep the shortcut targets at the 44 px minimum without a wider row. */
+@media(max-width:360px){
+  :root{--radar-size:min(170px,var(--navigation-width),44vw)}
+  .navigation-actions button{width:44px;height:44px}
 }

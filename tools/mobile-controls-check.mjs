@@ -30,7 +30,7 @@ try {
     if (mobile) {
       const checkLayout = async (left = 10, right = 10, bottom = 12) => {
         const bounds = await page.evaluate(() => Object.fromEntries(
-          ['.navigation-hud', '.player-hud', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '#garage-action', '#interact']
+          ['.navigation-hud', '.navigation-actions', '.player-hud', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '#garage-action', '#interact']
             .map(selector => [selector, document.querySelector(selector).getBoundingClientRect().toJSON()])
         ));
         const boost = bounds['[data-key=boost]'], drift = bounds['[data-key=handbrake]'], stick = bounds['#joystick'];
