@@ -5,6 +5,7 @@ import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type 
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
 import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
+import { freshRubberMark, updateRubberMark, type RubberMarkState } from './skid-marks';
 import { SoundEvents } from './sound';
 import { DayNight } from './day-night';
 import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from './text-messages';
@@ -91,6 +92,8 @@ export class Game {
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
   private sandRuts: { anchor: Vec; segment?: Skid }[] = [];
   private rutVehicleId = -1;
+  private roadMarkVehicleId = -1;
+  private roadMarkStates: RubberMarkState[] = [];
   constructor(public readonly map: CompiledMap = defaultCompiledMap, private readonly persistence = true, story: boolean | 'legacy' = true, initialSave?: Save, readonly campaignContent: CampaignDefinition = campaignDefinition) {
     this.world = new World(map); this.fx = new Effects(map.document.envelope); this.save = initialSave ? structuredClone(initialSave) : persistence ? loadSave(campaignContent) : defaultSave(campaignContent);
     this.settings = persistence ? loadSettings() : defaultSettings();
@@ -147,7 +150,7 @@ export class Game {
     this.onFoot = false; this.wreckedAt = -1; this.driver = new Body(4, 32, 75, 0.7, 0.7);
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.pendingExit = null; this.tumble = null; this.wastedReason = 'explosion';
     this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
-    this.world = new World(this.map); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles(); this.feedback = []; this.skids = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
+    this.world = new World(this.map); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles(); this.feedback = []; this.skids = []; this.roadMarkVehicleId = -1; this.roadMarkStates = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
     this.resolveCampaignSites();
     this.time = 0; this.health = 100; this.boost = 100; this.heat = 0; this.escape = 0; this.arrest = 0; this.combo = 0; this.comboTimer = 0;
     this.smashed = 0; this.shiftEarnings = 0; this.jobsDone = 0; this.crashCooldown = 0; this.speedingTime = 0; this.driftMeter = 0; this.lastDrift = 0; this.nearMiss.clear(); this.navToGarage = false;
@@ -364,7 +367,7 @@ export class Game {
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
       if (next.model === 'motorcycle') next.body.mass = next.definition.chassis.mass;
-      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
+      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
     }
     const point = this.exitLocation(this.player, this.exitSide);
     if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger'); return false; }
@@ -533,7 +536,7 @@ export class Game {
     const color = colors.find(c => c !== old.color)!;
     old.alive = false; old.driverExited = true;
     this.player = this.spawnVehicle({ kind: 'taxi', position: { ...SWAP_EXIT }, angle: 0, color });
-    this.applyUpgrades(); this.setJobType(); this.boost = 100; this.previousTyres = []; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.keys.clear();
+    this.applyUpgrades(); this.setJobType(); this.boost = 100; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.keys.clear();
     h.vehicleId = this.player.id; h.exchanged = true; h.progress = 0;
     this.heat = 0; this.escape = 0; this.arrest = 0; this.speedingTime = 0; this.driftMeter = 0;
     this.policeIntel = { position: vec(), velocity: vec(), seenAt: -100 };
@@ -731,7 +734,7 @@ export class Game {
       if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
       this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...HOSPITAL }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
       this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear();
-      this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = [];
+      this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = []; this.roadMarkVehicleId = -1;
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
       for (const v of this.police) v.alive = false;
       this.newJob(false, 'hospital'); this.setMode('playing'); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
@@ -1066,8 +1069,24 @@ export class Game {
     }
     this.advanceExit();
     if (this.onFoot) this.walk(dt);
+    // Road rubber is visual-only: brief or mild lateral tyre slip should not stain asphalt.
+    // Keep the original skidding flag for drift rewards and handling.
+    if (this.roadMarkVehicleId !== this.player.id || this.roadMarkStates.length !== this.player.dynamics.tyres.length) {
+      this.roadMarkVehicleId = this.player.id;
+      this.roadMarkStates = this.player.dynamics.tyres.map(() => freshRubberMark());
+    }
+    this.player.dynamics.tyres.forEach((t, i) => {
+      const position = this.player.body.toWorld(t.position);
+      const active = !this.onFoot && !this.player.sinking && !inSand(position);
+      const direction = rotate(vec(1, 0), this.player.body.angle + t.angle);
+      const lateral = vec(-direction.y, direction.x);
+      const velocity = this.player.body.velocityAt(position);
+      const mark = updateRubberMark(this.roadMarkStates[i], active ? dot(velocity, lateral) : 0, dot(velocity, direction), dt);
+      if (mark && t.skidding && this.previousTyres[i] && dist(this.previousTyres[i], position) < 1.5) {
+        this.skids.push({ a: this.previousTyres[i], b: position, life: 18 });
+      }
+    });
     if (!this.onFoot && !this.player.sinking && this.player.dynamics.skidding) {
-      this.player.dynamics.tyres.forEach((t, i) => { if (t.skidding && !inSand(this.player.body.toWorld(t.position))) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 18 }); });
       if (this.speed > 8) this.driftMeter += this.speed * dt;
     } else if (this.driftMeter > 7) {
       if (this.time - this.lastDrift > 1) { const tip = Math.min(20, Math.round(this.driftMeter * 0.35)); this.save.cash += tip; this.shiftEarnings += tip; this.floating(this.player.body.position, `DRIFT +$${tip}`, '#a6dac0'); this.lastDrift = this.time; this.persist(); }
