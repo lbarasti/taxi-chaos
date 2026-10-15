@@ -1,3 +1,4 @@
+import { waitForDrawer } from './helpers/drawer.mjs';
 // Production-only, offline browser regression checks in disposable contexts.
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
@@ -140,8 +141,8 @@ try {
     assert.equal(await page.locator('#mission-inbox').isVisible(), true);
     await page.locator('#texts-close').click();
     await page.locator('#city').focus(); await page.keyboard.press('KeyP');
-    await page.locator('.splash-shift > summary').click();
     await page.locator('#open-notebook').click();
+    await waitForDrawer(page, 'notebook');
     assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
     const beforeNewsroom = await render();

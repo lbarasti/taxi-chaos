@@ -1,0 +1,49 @@
+import type { Game } from './game';
+import type { AudioFX } from './audio';
+import { difficulties } from './rules';
+import { calendarLabel } from './campaign/clock';
+import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
+import { audioMarkup, audioCreditsMarkup } from './audio-controls';
+import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
+import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
+
+const pages = {
+  home: { title: '', parent: null },
+  settings: { title: 'Settings.', parent: 'home' },
+  rules: { title: 'The street rules.', parent: 'home' },
+  shift: { title: 'This shift.', parent: 'home' },
+  credits: { title: 'Sound credits.', parent: 'settings' },
+  notebook: { title: '', parent: 'home' },
+  'notebook-guide': { title: 'Keeping records.', parent: 'notebook' },
+} as const satisfies Record<DrawerPage, { title: string; parent: DrawerPage | null }>;
+export const drawerParent = (page: DrawerPage) => pages[page].parent;
+export const isDrawerPage = (page: string): page is DrawerPage => Object.hasOwn(pages, page);
+
+function settingsMarkup(game: Game, audio: AudioFX) {
+  const choices = Object.entries(difficulties).map(([key, value]) => `<option value="${key}" ${game.settings.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('');
+  return `<div class="play-options"><label class="menu-field"><input id="gore-option" type="checkbox" ${game.settings.gore ? 'checked' : ''}> Pulp gore <span>Fatal impacts & blood</span></label><label class="menu-field">Difficulty <select id="difficulty-option" aria-label="Gameplay difficulty">${choices}</select></label></div>${audioMarkup(audio, { credits: 'page' })}`;
+}
+function campaignMarkup(game: Game) {
+  if (game.mode !== 'paused' || !game.campaignEnabled) return '';
+  const preview = game.sleepPreview;
+  return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p>
+    ${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}
+    ${menuItem(game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !!game.sleepReason })}
+    <p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>
+    ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
+    ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
+}
+export function drawerMarkup(page: DrawerPage, { game, audio, saved }: { game: Game; audio: AudioFX; saved: boolean }): string {
+  let body: string;
+  switch (page) {
+    case 'home': return splashMarkup(game, saved);
+    case 'notebook': return notebookMarkup(game);
+    case 'settings': body = settingsMarkup(game, audio); break;
+    case 'rules': body = streetRulesMarkup(); break;
+    case 'shift': body = shiftMarkup(game, campaignMarkup(game)); break;
+    case 'credits': body = audioCreditsMarkup(); break;
+    case 'notebook-guide': body = notebookGuideMarkup(game); break;
+  }
+  const { title, parent } = pages[page];
+  return drawerHeading(title, parent) + body;
+}

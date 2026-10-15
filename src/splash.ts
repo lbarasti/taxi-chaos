@@ -1,3 +1,4 @@
+import { menuItem } from './drawer-markup';
 import type { Game } from './game';
 import { calendarLabel } from './campaign/clock';
 import { readStorage, storageKeys } from './storage';
@@ -16,7 +17,13 @@ export function splashPrompts(device: InputDevice): string {
     : [['WASD / ↑↓←→', 'drive'], ['SPACE', 'handbrake'], ['SHIFT', 'boost']];
   return prompts.map(([key, action]) => `<span><kbd>${key}</kbd> ${action}</span>`).join('');
 }
-export function splashMarkup(game: Game, saved: boolean, settings: string, actions = ''): string {
+export function streetRulesMarkup() {
+  return `<div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back. Hold W + Shift for a nitro burst.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p><p><small>Physics foundation: Pat Kerr's Motion Lab v0.8.2.</small></p></div></div><div class="intro-controls" id="splash-prompts"></div>`;
+}
+export function shiftMarkup(game: Game, actions: string) {
+  return `<div class="shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div>${actions}`;
+}
+export function splashMarkup(game: Game, saved: boolean): string {
   const paused = game.mode === 'paused';
   const job = game.job;
   return `<div class="intro-eyebrow"><span class="live-dot"></span> WELCOME TO TAXI CHAOS</div>
@@ -27,9 +34,11 @@ export function splashMarkup(game: Game, saved: boolean, settings: string, actio
       <div class="splash-snapshot"><div><small>WALLET</small><strong>$${game.save.cash.toLocaleString()}</strong></div><div><small>DELIVERIES</small><strong>${game.save.deliveries}</strong></div><div><small>CAMPAIGN</small><strong>Day ${game.save.campaign.shift}<span> / 14</span></strong></div></div>
       <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
     </section>
-    <button class="primary" id="start"><span>${paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift'}</span><span class="splash-action-glyph" aria-hidden="true">↵</span></button>
-    <div class="intro-controls" id="splash-prompts"></div>
-    <details class="splash-guide"><summary>The street rules <span>＋</span></summary><div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back. Hold W + Shift for a nitro burst.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p><p><small>Physics foundation: Pat Kerr's Motion Lab v0.8.2.</small></p></div></div></details>
-    <details class="splash-settings"><summary>Shift settings <span>＋</span></summary>${settings}</details>
-    ${paused ? `<details class="splash-shift"><summary>This shift <span>＋</span></summary><div class="shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.shiftEarnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.jobsDone}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.kills}</strong></div></div>${actions}</details>` : ''}`;
+    <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
+      ${menuItem(paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift', { id: 'start' })}
+      ${menuItem('The street rules', { id: 'menu-rules', page: 'rules' })}
+      ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
+      ${paused ? `${game.campaignEnabled ? menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' }) : ''}${menuItem('This shift', { id: 'menu-shift', page: 'shift' })}` : ''}
+    </nav>
+    <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
 }
