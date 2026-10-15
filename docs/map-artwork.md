@@ -1,21 +1,25 @@
 # Top-down map artwork
 
 The first artwork pass replaces standard 10 × 10 m city shops and urban trees
-with original SVG illustrations, and adds a repeating asphalt grain beneath city
-blocks. Other buildings, the countryside, harbour and beach keep their procedural
+with textured PNG illustrations, and adds asphalt grain, cracks and scattered
+repairs beneath city blocks. Three distinct roof materials (patched tar, rusted
+corrugated metal and weathered concrete) replace the uniform prototype roof.
+An irregular urban tree is reused in four deterministic orientations. Other buildings, the countryside, harbour and beach keep their procedural
 art. Vehicle, pedestrian, map and collision data are unchanged.
 
 ## Where to work
 
-- `src/assets/map/`: self-contained image files (SVG now; transparent PNG works too).
+- `src/assets/map/`: self-contained image files (transparent PNG sprites and an SVG ground tile).
 - `src/artwork/catalogue.ts`: image identity, bounds in metres, collision-centred
-  alignment, sun-shadow silhouette and optional directed-light occluder.
+  alignment, stable visual variants, sun-shadow silhouette and optional directed-light occluder.
 - `src/artwork/images.ts`: explicit `?inline` imports, shared image decoding and
   cached world-anchored ground patterns.
 - `src/renderer.ts`: ground and structure passes, dynamic signs and fallback drawing.
 
 The existing default appearance rules choose city shops by kind, size and position,
-never by display name. No map schema change or saved-map migration is needed for
+never by display name. A separate hash of source ID (or generated prop ID) picks
+roof material and tree orientation, without consuming simulation randomness.
+Moving or renaming an identified prop keeps its appearance. No map schema change or saved-map migration is needed for
 this first pass. Add authored visual IDs when individual map objects need distinct
 styles; do not use their labels as asset identifiers.
 
@@ -23,7 +27,7 @@ styles; do not use their labels as asset identifiers.
 
 All artwork uses a straight overhead view, with north at the top. The anchor is the
 collision body's centre. Bounds describe the *entire image*, including transparent
-padding, relative to that anchor. A 212 × 212 shop image occupies 10.6 × 10.6 m:
+padding, relative to that anchor. A 256 × 256 shop image occupies 10.6 × 10.6 m:
 its bounds start at (-5.3, -5.3), while its physical body stays 10 × 10 m. Urban
 tree art occupies 5.2 × 5.2 m around its existing 1.8 × 1.8 m collision body.
 
@@ -45,10 +49,10 @@ Images decode before the first game frame and are shared with editor previews.
 A failed image falls back to procedural drawing and its original light occluder.
 Dead props go through the existing rubble/destruction drawing before live artwork
 is considered. Dedicated damaged or destroyed images can follow when a particular
-asset needs them; this pass does not add an unused state/variant system.
+asset needs them; this pass keeps the existing damage lifecycle.
 
-The asphalt tile repeats every 4 m, anchored at world origin. It is transparent
-grain over the existing road colour, so daytime colour changes still work. Road
+The asphalt tile repeats every 48 m, anchored at world origin. It is transparent
+grain and sparse repairs over the darker road colour, so daytime colour changes still work. Road
 markings and sidewalks are drawn above it. Surface physics continues to use map
 geometry, never pixel colours. The tile pattern is cached per canvas context.
 
@@ -61,16 +65,23 @@ floors and isometric depth sorting are outside this first top-down pass.
 `npm test` covers physical footprint independence, rotating light outlines,
 destruction and procedural defaults. `npm run build` checks TypeScript and enforces
 one standalone HTML with embedded assets. `node tools/artwork-check.mjs` exercises
-the offline production build, actual SVG decoding/drawing, missing-image fallback,
+the offline production build, actual PNG decoding/drawing and all three roof variants, missing-image fallback,
 night lighting, physical tree destruction, fixed-step driving and compact touch
 layouts. Screenshots are written to `scenario-runs/artwork` by default.
 
-Verification for this first pass: 710 tests in 56 files passed, strict TypeScript
+Verification for this pass: 711 tests in 56 files passed, strict TypeScript
 and the standalone build passed, and the offline Chromium check passed on
 1440 × 900 desktop, 390 × 844 portrait and 844 × 390 landscape. An additional
 context deliberately failed all map image loads and retained playable procedural
 fallbacks. No browser errors or external HTTP(S) requests were observed.
 
-![City shops and park in daylight](screenshots/map-artwork/desktop-day.png)
+![Initial uniform concept](screenshots/map-artwork/before-day.png)
+![Grittier, varied city shops and park in daylight](screenshots/map-artwork/desktop-day.png)
+![Closer view of the roof materials and trees](screenshots/map-artwork/desktop-detail.png)
 ![The same artwork under night lighting](screenshots/map-artwork/desktop-night.png)
 ![Compact portrait layout](screenshots/map-artwork/portrait-day.png)
+
+The PNGs were generated separately with the built-in image-generation tool using
+the user-provided city scene as a style reference. Their transparent export margins
+were trimmed and they were resized to normal gameplay resolution. Full generation
+prompts are in [map-artwork-prompts.md](map-artwork-prompts.md).

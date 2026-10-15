@@ -271,7 +271,7 @@ export class Renderer {
     }
     // The base palette was authored for a night city; lift it toward daylight so morning/afternoon
     // do not read as a darker night before the ambient lighting pass is applied.
-    this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#29383e', '#84938a', this.daylight * 0.45), '#bac2a5');
+    this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#253033', '#53615f', this.daylight * 0.45), '#bac2a5');
     artworkImages.ground(c, { x: CITY_SHORE.min, y: CITY_SHORE.min, width: CITY_SHORE.max - CITY_SHORE.min, height: CITY_SHORE.max - CITY_SHORE.min });
     this.countrysideGround();
     drawHarbourGround(this);
@@ -442,7 +442,8 @@ export class Renderer {
       c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
       trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
       artworkImages.draw(c, art);
-      if (art.image === 'shop') {
+      if (prop.kind === 'building') {
+        this.rect(-4.3, 3.55, 8.6, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
         this.label(prop.label, 0, 81, 20 * Math.min(0.72, 8.6 / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');

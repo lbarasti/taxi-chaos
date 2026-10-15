@@ -24,23 +24,25 @@ try {
     page.on('request', r => { if (/^https?:/.test(r.url())) external.push(r.url()); });
     await page.addInitScript(failImages => {
       window.artDraws = { shop: 0, tree: 0, asphalt: 0 };
+      window.artVariants = new Set();
       const draw = CanvasRenderingContext2D.prototype.drawImage;
       CanvasRenderingContext2D.prototype.drawImage = function(image, ...args) {
         if (this.canvas.id === 'city' && image instanceof HTMLImageElement) {
-          const key = { 212: 'shop', 208: 'tree' }[image.naturalWidth];
+          const key = { 256: 'shop', 192: 'tree' }[image.naturalWidth];
           if (key) window.artDraws[key]++;
+          if (key === 'shop') window.artVariants.add(image.src);
         }
         return draw.call(this, image, ...args);
       };
       const create = CanvasRenderingContext2D.prototype.createPattern;
       CanvasRenderingContext2D.prototype.createPattern = function(image, repeat) {
-        if (this.canvas.id === 'city' && image instanceof HTMLImageElement && image.naturalWidth === 128) window.artDraws.asphalt++;
+        if (this.canvas.id === 'city' && image instanceof HTMLImageElement && image.naturalWidth === 768) window.artDraws.asphalt++;
         return create.call(this, image, repeat);
       };
       if (failImages) {
         const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
         Object.defineProperty(HTMLImageElement.prototype, 'src', { ...descriptor, set(value) {
-          descriptor.set.call(this, value.startsWith('data:image/svg+xml') ? 'data:image/png;base64,invalid' : value);
+          descriptor.set.call(this, /^data:image\/(svg\+xml|png)/.test(value) ? 'data:image/png;base64,invalid' : value);
         } });
       }
     }, failImages);
@@ -55,11 +57,17 @@ try {
     await command({ op: 'advance', to: { day: 1, hour: 12 } });
     await command({ op: 'place', at: { x: 80, y: 100 }, angle: 0 });
     await page.screenshot({ path: resolve(output, `${name}-day.png`) });
+    if (name === 'desktop') {
+      await page.evaluate(() => window.__scenario.render('world', { zoom: 18 }));
+      await page.screenshot({ path: resolve(output, 'desktop-detail.png') });
+      await page.evaluate(() => window.__scenario.render('world'));
+    }
     const draws = await page.evaluate(() => window.artDraws);
     if (failImages) assert.deepEqual(draws, { shop: 0, tree: 0, asphalt: 0 });
     else {
-      assert(draws.shop > 0, `${name}: decoded shop SVG must be drawn`);
-      assert(draws.tree > 0, `${name}: decoded tree SVG must be drawn`);
+      assert(draws.shop > 0, `${name}: decoded shop PNG must be drawn`);
+      assert(draws.tree > 0, `${name}: decoded tree PNG must be drawn`);
+      if (name === 'desktop') assert.equal(await page.evaluate(() => window.artVariants.size), 3, 'all three roof designs must be visible');
       assert.equal(draws.asphalt, 1, `${name}: asphalt pattern is cached across frames`);
     }
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name}: horizontal overflow`);

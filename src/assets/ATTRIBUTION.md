@@ -19,5 +19,9 @@ accessible from the game's welcome/pause settings.
 
 ## Map artwork
 
-`map/shop.svg`, `map/tree.svg`, and `map/asphalt.svg` are original illustrations
-created for Taxi Chaos. They contain no external images, fonts or other assets.
+`map/shop-tar.png`, `map/shop-rust.png`, `map/shop-concrete.png`, and
+`map/tree-worn.png` were generated for Taxi Chaos with OpenAI's built-in image
+generation tool, using a user-supplied urban scene as a style reference. Prompt
+specifications are in `docs/map-artwork-prompts.md`. Transparent sprites are trimmed
+and resized for gameplay. `map/asphalt.svg` is original vector surface detail.
+These assets require no external fonts, images or runtime services.
