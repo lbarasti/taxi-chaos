@@ -5,7 +5,7 @@ https://fonts.google.com/specimen/Space+Grotesk
 Licensed under the SIL Open Font License 1.1.
 https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt
 
-All city art is drawn procedurally, not texture-based.
+City and Poble-sec architecture is drawn procedurally. `poble-dragon.svg` is original vector artwork created for the Barcelona-inspired highlands experiment; the supplied satellite reference is not embedded in the game.
 
 `src/assets/characters/` includes the user-supplied PNG portraits for Mia,
 Frankie, Rosa, Celia, Adrian Vale and Bea. The nine Open Shore SVG identity

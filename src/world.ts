@@ -1,4 +1,4 @@
-import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
+import { Body, SpatialHash, cross, dist, dot, sub, rotate, add, vec, type Vec } from './physics';
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
@@ -18,7 +18,7 @@ export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
 export const HOSPITAL = vec(147, 74.6);
 export function district(p: Vec, map = defaultCompiledMap) {
   const { inBeach, onPromenade, PROMENADE } = map.beach, { SOUTH_WOODS_Y } = map.country;
-  return inBeach(p) ? onPromenade(p) || p.x >= PROMENADE.left ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+  return inBeach(p) ? onPromenade(p) || p.x >= PROMENADE.left ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'MIRADOR HIGHLANDS' : p.x >= 296 ? 'POBLE-SEC' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
 }
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
@@ -105,6 +105,7 @@ export class World {
       const rock = i % 8 === 0, size = rock ? 3 + ruralRandom() * 4 : 1.6, angle = ruralRandom() * Math.PI;
       if (p.y >= 392) { p.x += shift.x; p.y += shift.y; }
       if (!inHighlands(p) || countryAccess(p).distance < 12 || inCountryClearing(p) || HIGHLAND_STOPS.some(s => dist(s.position, p) < 15)) continue;
+      if (map.pobleSec?.contains(p)) continue;
       this.add(rock ? 'rock' : 'tree', p.x, p.y, size, rock ? size * 0.8 : size, rock ? '#788278' : ['#3d654f', '#426e58', '#315747'][i % 3], '', angle);
     }
     const cityRandom = this.random; this.random = ruralRandom;
@@ -123,11 +124,21 @@ export class World {
     this.add('lamp', club.x - 7, club.y + 7, 0.6, 0.6, '#a7bfbb');
     for (const hole of GOLF_HOLES) this.addPerson(vec(hole.tee.x + 2, hole.tee.y - 2), 'civilian', '#f0e6c8');
     for (const stop of HIGHLAND_STOPS) {
+      if (map.pobleSec && stop.owner === 'highlands') continue;
       const p = stop.position;
       const clearing = (radius: number, clearance: number) => Array.from({ length: 16 }, (_, i) => vec(p.x + Math.cos(i * Math.PI / 8) * radius, p.y + Math.sin(i * Math.PI / 8) * radius)).find(point => inHighlands(point) && countryAccess(point).distance > clearance);
       const kiosk = clearing(14, 10), bench = clearing(11, 7);
       if (kiosk) this.add('kiosk', kiosk.x, kiosk.y, 3.8, 3, '#987c59', stop.name.toUpperCase()).sourceId = stop.id;
       if (bench) { this.add('bench', bench.x, bench.y, 2.4, 0.75, '#bf9870').sourceId = stop.id; this.addPerson(vec(bench.x + 2, bench.y + 2), 'civilian', '#b0cbaa'); }
+    }
+    if (map.pobleSec) {
+      const residentRandom = seeded(1882), savedRandom = this.random;
+      this.random = residentRandom;
+      for (const [i, cell] of map.pobleSec.cells.entries()) {
+        const home = add(cell.center, rotate(vec(-13.5, -7.5), map.pobleSec.angle));
+        this.addPerson(home, 'civilian', ['#d5a474', '#8ca99a', '#e4c780', '#c58d81'][i % 4]);
+      }
+      this.random = savedRandom;
     }
     this.random = cityRandom;
     for (const box of PORT_CONTAINERS) this.add('container', box.position.x, box.position.y, 14, 5.6, box.color, box.label);

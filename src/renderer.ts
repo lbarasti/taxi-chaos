@@ -13,6 +13,7 @@ import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { CITY_SHORE } from './coast';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
+import { drawPobleGround, drawPobleStreets, drawPobleProp } from './poble-sec-renderer';
 import { drawBeachGround, drawBeachProp } from './beach-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
@@ -333,24 +334,29 @@ export class Renderer {
       c.beginPath(); c.ellipse(stop.position.x, stop.position.y, 14, 12, 0, 0, Math.PI * 2); c.fillStyle = '#7c816049'; c.fill();
     }
     this.countryEstates();
+    drawPobleGround(this);
     c.lineJoin = 'round'; c.lineCap = 'round';
     for (const road of COUNTRY_ROADS) {
+      if (road.id.startsWith('poble-')) continue;
       trace(c, road.points); c.strokeStyle = road.bridge ? '#7d8985' : '#89917a'; c.lineWidth = road.bridge ? 15 : 15.5; c.stroke();
     }
     for (const road of COUNTRY_ROADS) {
+      if (road.id.startsWith('poble-')) continue;
       trace(c, road.points); c.strokeStyle = '#354747'; c.lineWidth = 12; c.stroke();
     }
     for (const road of COUNTRY_ROADS) {
+      if (road.id.startsWith('poble-')) continue;
       trace(c, road.points);
       c.strokeStyle = '#ddcb8880'; c.lineWidth = 0.16; c.setLineDash([2.4, 3]); c.stroke(); c.setLineDash([]);
     }
+    drawPobleStreets(this);
     for (const y of BRIDGE_Y) {
       for (let x = 256; x < 298; x += 4) {
         this.rect(x, y - 6, 0.13, 12, '#b6c1ac3b');
         this.rect(x, y - 8.1, 0.7, 1.1, '#c4c9b4'); this.rect(x, y + 7, 0.7, 1.1, '#c4c9b4');
       }
       this.label(y === 80 ? 'P I N E   B R I D G E' : 'F E R N   B R I D G E', 277, y - 11, 0.85, '#cfddcb', '600');
-      this.label('WOODS / RIDGE →', 233, y - 10, 0.8, '#b9d5bc', '600');
+      this.label('POBLE-SEC / MIRADOR →', 233, y - 10, 0.8, '#b9d5bc', '600');
     }
     for (const stop of HIGHLAND_STOPS) this.label(stop.name.toUpperCase(), stop.position.x, stop.position.y + 10, 0.9, '#c7d5ad', '700');
     for (const l of LABELS) this.label(l.text, l.position.x, l.position.y, l.size, l.color);
@@ -410,7 +416,7 @@ export class Renderer {
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
   prop(prop: Prop) {
-    if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
+    if (drawPobleProp(this, prop) || drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (!prop.alive) {
