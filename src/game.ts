@@ -138,7 +138,7 @@ export class Game {
       v.path = [next, FREIGHT_ROUTE[(index + 2) % FREIGHT_ROUTE.length]];
     }
   }
-  resetRun() {
+  resetRun(model = this.player.model) {
     // A laboratory reset rebuilds the scene around the selected chassis.
     const previous = this.player;
     this.navToNewsroom = false;
@@ -151,8 +151,8 @@ export class Game {
     this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
     this.world = new World(this.map); this.vehicles = []; this.serial = 0; this.trafficTarget = 23; this.populateVehicles();
     const starter = this.player; this.vehicles = this.vehicles.filter(v => v !== starter);
-    this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, previous.color, previous.model);
-    this.player.upgrades = previous.sinking || previous.damage.status === 'wreck' ? stockUpgrades() : { ...previous.upgrades };
+    this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, previous.color, model);
+    this.player.upgrades = previous.model !== model || previous.sinking || previous.damage.status === 'wreck' ? stockUpgrades() : { ...previous.upgrades };
     this.feedback = []; this.skids = []; this.roadMarkVehicleId = -1; this.roadMarkStates = []; this.keys.clear(); this.fx.reset(); this.blasts = [];
     this.resolveCampaignSites();
     this.time = 0; this.health = 100; this.boost = 100; this.heat = 0; this.escape = 0; this.arrest = 0; this.combo = 0; this.comboTimer = 0;

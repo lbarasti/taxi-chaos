@@ -30,7 +30,7 @@ try {
     if (mobile) {
       const checkLayout = async (left = 10, right = 10, bottom = 12) => {
         const bounds = await page.evaluate(() => Object.fromEntries(
-          ['.navigation-hud', '.player-hud', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '#interact']
+          ['.navigation-hud', '.player-hud', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '#garage-action', '#interact']
             .map(selector => [selector, document.querySelector(selector).getBoundingClientRect().toJSON()])
         ));
         const boost = bounds['[data-key=boost]'], drift = bounds['[data-key=handbrake]'], stick = bounds['#joystick'];
@@ -38,6 +38,10 @@ try {
         assert.equal(drift.bottom, height - bottom); assert.equal(boost.bottom + 8, drift.top);
         assert.equal(stick.right, width - right); assert.equal(stick.bottom, height - bottom);
         for (const button of [boost, drift]) assert(button.width >= 48 && button.height >= 48);
+        const garage = bounds['#garage-action'], interact = bounds['#interact'];
+        assert(garage.height >= 44 && interact.height >= 44, 'Context actions need touch-sized targets');
+        assert.equal(garage.bottom + 8, interact.top, 'Garage is stacked above entry/exit');
+        assert.equal(garage.right, interact.right);
         const entries = Object.entries(bounds);
         for (let i = 0; i < entries.length; i++) {
           const [selector, a] = entries[i];
@@ -48,11 +52,24 @@ try {
         }
       };
       await checkLayout();
-      if (['portrait', 'small', 'landscape'].includes(name)) await page.screenshot({ path: resolve(output, `${name}.png`) });
+      if (['portrait', 'small', 'landscape', 'compact-landscape'].includes(name)) await page.screenshot({ path: resolve(output, `${name}.png`) });
       // Simulate asymmetric device cutouts and a home-indicator inset.
       await page.addStyleTag({ content: ':root{--edge-left:34px;--edge-right:26px;--edge-bottom:34px;--top-height:32px}' });
       await checkLayout(34, 26, 34);
-    } else await page.screenshot({ path: resolve(output, 'desktop.png') });
+      await page.locator('#garage-action').tap();
+      assert(await page.locator('.garage-modal').isVisible(), 'A touch opens Pit Stop');
+      assert(await page.locator('#modal').evaluate(el => el.contains(document.activeElement)), 'Garage retains dialog focus');
+      assert(!(await page.locator('#garage-action').isVisible()));
+      assert(!(await page.locator('#interact').isVisible()));
+      await page.locator('#resume').tap();
+      await page.evaluate(() => __scenario.render('world'));
+      assert(await page.locator('#garage-action').isVisible());
+      await page.locator('#interact').tap();
+      assert(!(await page.locator('#garage-action').isVisible()), 'Garage hides when walking');
+    } else {
+      assert(!(await page.locator('#garage-action').isVisible()), 'Desktop keeps the G shortcut');
+      await page.screenshot({ path: resolve(output, 'desktop.png') });
+    }
     console.log(`${name}: layout and safe areas passed`);
     await context.close();
   }
@@ -75,6 +92,11 @@ try {
     const after = await step(0.25); await touch('touchEnd', []);
     assert(Math.abs(after.angle - before.angle) < 1e-8, 'Centre jitter must not turn the taxi');
     assert(after.speed > before.speed, 'Steering dead zone must preserve acceleration');
+    if (offset === 5) {
+      assert(await page.locator('#garage-action').isVisible(), 'Approaching Pit Stop keeps the garage prompt visible');
+      assert(await page.locator('#garage-action').isDisabled(), 'A moving vehicle must stop before entering');
+      assert.equal(await page.locator('#garage-action').textContent(), 'Stop for garage');
+    }
     before = after;
   }
   await touch('touchStart', [point(cx + 28, cy - 24, 1)]);
@@ -86,6 +108,7 @@ try {
   await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
   // Stage a fresh fixture on the long road heading inland before driving.
   await page.evaluate(() => __scenario.execute({ op: 'place', at: { x: 4, y: 80 }, angle: Math.PI / 2 }));
+  assert(!(await page.locator('#garage-action').isVisible()), 'Garage hides away from Pit Stop');
   const tank = page.locator('[data-key=boost]');
   const checkTank = async (state, name) => {
     assert.equal(await tank.evaluate(el => Number(el.style.getPropertyValue('--boost-level'))), state.boost / 100);

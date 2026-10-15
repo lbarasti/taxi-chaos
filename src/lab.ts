@@ -205,7 +205,7 @@ type DebugFlags = { debugColliders?: boolean; debugAI?: boolean };
 
 /** Reset the run, wipe run-only cheats, and clear traffic so a fixture is deterministic. */
 function prepare(game: Game, keepCarts = false) {
-  game.resetRun();
+  game.resetRun('car');
   game.settings.gore = false;
   game.settings.invincible = false;
   game.settings.infiniteBoost = false;

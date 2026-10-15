@@ -225,6 +225,17 @@ describe('LAB fixtures', () => {
 });
 
 describe('LAB isolation and preservation rules', () => {
+  it('selects the fixture model after a bike run without transferring its upgrades to a harbour car', () => {
+    const g = make(); loadScenario(g, 'rider-impact');
+    expect(g.player.model).toBe('motorcycle');
+    g.player.upgrades.engine = 2; g.applyUpgrades();
+    g.resetRun();
+    expect(g.player.model).toBe('motorcycle'); expect(g.player.upgrades.engine).toBe(2);
+    loadScenario(g, 'harbour');
+    expect(g.player.model).toBe('car'); expect(g.player.upgrades.engine).toBe(0);
+    expect(g.player.baseEngine).toBe(g.player.definition.physics.engineForce);
+    expect(g.enterHarbour()).toBe(true);
+  });
   it('clears run cheats but preserves difficulty, upgrades and cash', () => {
     const g = make();
     g.configure({ difficulty: 'chaos', gore: true, invincible: true, infiniteBoost: true, noPolice: true });

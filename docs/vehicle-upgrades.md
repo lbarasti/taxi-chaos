@@ -21,6 +21,11 @@ Existing career-wide upgrades migrate once onto the starting taxi; cash,
 deliveries and campaign progress remain intact. The Lab's explicit scene reset
 retains the selected vehicle's model and upgrades for repeatable experiments.
 
+On mobile, a Garage action appears above the vehicle entry/exit button when a
+vehicle is near Pit Stop and not wanted. Slow to 3 m/s or less to enable it; the
+button opens the same garage as the desktop G shortcut. It is hidden on foot,
+during an exit, in menus, and for sinking or wrecked vehicles.
+
 ## Future improvement: recover exchanged harbour vehicles
 
 A vehicle handed over at the harbour should eventually be recoverable, with its
