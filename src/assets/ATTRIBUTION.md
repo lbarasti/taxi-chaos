@@ -16,3 +16,8 @@ All portraits are bundled inline as data URLs with no external image service.
 Sound FX attribution, source links, licences and editing notes are in
 [`audio/CREDITS.md`](audio/CREDITS.md), embedded in the standalone HTML and
 accessible from the game's welcome/pause settings.
+
+## Map artwork
+
+`map/shop.svg`, `map/tree.svg`, and `map/asphalt.svg` are original illustrations
+created for Taxi Chaos. They contain no external images, fonts or other assets.

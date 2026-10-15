@@ -63,8 +63,8 @@ function rectCorners(position: OcclusionPoint, angle: number, x0: number, y0: nu
   }));
 }
 
-/** Build one occluder outline, including the renderer's facade lift for tall 'building' props. */
-export function occluderFor(prop: OccluderProp): Occluder | null {
+/** Transform a custom convex local silhouette, or use the procedural facade footprint. */
+export function occluderFor(prop: OccluderProp, outline?: readonly OcclusionPoint[]): Occluder | null {
   if (!prop.alive || !OCCLUDING_KINDS.has(prop.kind)) return null;
   const body = prop.body;
   const hw = Math.max(0.05, finite(body.w, 0.1) / 2);
@@ -72,7 +72,9 @@ export function occluderFor(prop: OccluderProp): Occluder | null {
   const lifted = prop.kind === 'building';
   const x0 = -hw + (lifted ? FACADE_OFFSET_X : 0);
   const y0 = -hh + (lifted ? FACADE_OFFSET_Y : 0);
-  const points = rectCorners(body.position, finite(body.angle, 0), x0, y0, hw, hh);
+  const angle = finite(body.angle, 0), cos = Math.cos(angle), sin = Math.sin(angle);
+  const points = outline ? outline.map(p => ({ x: body.position.x + p.x * cos - p.y * sin, y: body.position.y + p.x * sin + p.y * cos }))
+    : rectCorners(body.position, angle, x0, y0, hw, hh);
   let cx = 0, cy = 0;
   for (const p of points) { cx += p.x; cy += p.y; }
   cx /= points.length; cy /= points.length;
@@ -85,12 +87,12 @@ export function occluderFor(prop: OccluderProp): Occluder | null {
  * Collect alive raised structures that can affect the visible frame. Destroyed structures (rubble)
  * stop occluding. The margin keeps buildings just off-screen from popping shadows in at the edges.
  */
-export function collectOccluders(props: readonly OccluderProp[], view: OcclusionViewport, margin = 20): Occluder[] {
+export function collectOccluders(props: readonly OccluderProp[], view: OcclusionViewport, margin = 20, outlineFor?: (prop: OccluderProp) => readonly OcclusionPoint[] | undefined): Occluder[] {
   const minX = view.minX - margin, maxX = view.maxX + margin;
   const minY = view.minY - margin, maxY = view.maxY + margin;
   const out: Occluder[] = [];
   for (const prop of props) {
-    const occluder = occluderFor(prop);
+    const occluder = occluderFor(prop, outlineFor?.(prop));
     if (!occluder) continue;
     if (occluder.cx + occluder.radius < minX || occluder.cx - occluder.radius > maxX) continue;
     if (occluder.cy + occluder.radius < minY || occluder.cy - occluder.radius > maxY) continue;
