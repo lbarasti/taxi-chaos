@@ -16,3 +16,12 @@ All portraits are bundled inline as data URLs with no external image service.
 Sound FX attribution, source links, licences and editing notes are in
 [`audio/CREDITS.md`](audio/CREDITS.md), embedded in the standalone HTML and
 accessible from the game's welcome/pause settings.
+
+## Map artwork
+
+`map/shop-tar.png`, `map/shop-rust.png`, `map/shop-concrete.png`, and
+`map/tree-worn.png` were generated for Taxi Chaos with OpenAI's built-in image
+generation tool, using a user-supplied urban scene as a style reference. Prompt
+specifications are in `docs/map-artwork-prompts.md`. Transparent sprites are trimmed
+and resized for gameplay. `map/asphalt.svg` is original vector surface detail.
+These assets require no external fonts, images or runtime services.

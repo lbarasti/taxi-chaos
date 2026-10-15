@@ -6,6 +6,7 @@ import { bindTouchControls } from './touch-controls';
 import { Game, upgradeInfo, type Upgrade } from './game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
 import { Renderer } from './renderer';
+import { artworkImages } from './artwork/images';
 import { dist } from './physics';
 import { PORT_FEE } from './harbour';
 import { setupLab, type LabAPI } from './lab';
@@ -39,6 +40,8 @@ document.querySelector('#app')!.innerHTML = `
 `;
 const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
 const scenarioPreviewMode = new URLSearchParams(location.search).has('scenario-preview');
+// Decode embedded map art before the first playable frame; failures keep procedural fallbacks.
+await artworkImages.load();
 const hasSavedCampaign = !dialoguePreviewMode && !scenarioPreviewMode && savedCampaignAvailable();
 let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
 const audio = new AudioFX();

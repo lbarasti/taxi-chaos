@@ -11,6 +11,8 @@ import { isCountry } from './countryside';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { CITY_SHORE } from './coast';
+import { artworkImages } from './artwork/images';
+import { artworkFor, artRadius } from './artwork/catalogue';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
 import { drawBeachGround, drawBeachProp } from './beach-renderer';
@@ -110,7 +112,7 @@ export class Renderer {
         zoom: this.zoom, project: point => this.screen(point),
       });
     }
-    for (const prop of g.world.props) if (this.visible(prop.body.position, Math.max(prop.body.w, prop.body.h))) this.prop(prop);
+    for (const prop of g.world.props) if (this.visible(prop.body.position, artRadius(prop))) this.prop(prop);
     this.campaignFrontages();
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
       if (person.aboard) continue;
@@ -236,7 +238,10 @@ export class Renderer {
   }
   /** Alive raised structures visible (plus a small margin) that mask/clip street-level beams. */
   private worldOccluders(): Occluder[] {
-    return collectOccluders(this.game.world.props, this.worldViewport());
+    return collectOccluders(this.game.world.props, this.worldViewport(), 20, prop => {
+      const art = artworkFor(prop);
+      return art && artworkImages.has(art.image) ? art.occluder : undefined;
+    });
   }
   private lightingPass(lighting: LightingState) {
     const g = this.game;
@@ -266,7 +271,8 @@ export class Renderer {
     }
     // The base palette was authored for a night city; lift it toward daylight so morning/afternoon
     // do not read as a darker night before the ambient lighting pass is applied.
-    this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#29383e', '#84938a', this.daylight * 0.45), '#bac2a5');
+    this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#253033', '#53615f', this.daylight * 0.45), '#bac2a5');
+    artworkImages.ground(c, { x: CITY_SHORE.min, y: CITY_SHORE.min, width: CITY_SHORE.max - CITY_SHORE.min, height: CITY_SHORE.max - CITY_SHORE.min });
     this.countrysideGround();
     drawHarbourGround(this);
     for (const b of g.world.blocks) {
@@ -428,6 +434,21 @@ export class Renderer {
         if (large) this.label('RUBBLE / CLEAR', 0, 0, 0.7, '#d4cbb0');
       }
       if (prop.fire > 0) drawFire(c, vec(), prop.kind === 'station' ? 3 : 1.4, this.game.time, prop.id);
+      c.restore(); return;
+    }
+    const art = artworkFor(prop);
+    if (art && artworkImages.has(art.image)) {
+      // Structure artwork shares the old prop pass. Destruction above stays authoritative.
+      c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
+      trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
+      artworkImages.draw(c, art);
+      if (prop.kind === 'building') {
+        this.rect(-4.3, 3.55, 8.6, 1.0, '#182320dd');
+        // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
+        c.save(); c.scale(0.05, 0.05);
+        this.label(prop.label, 0, 81, 20 * Math.min(0.72, 8.6 / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
+        c.restore();
+      }
       c.restore(); return;
     }
     if (prop.kind === 'guardrail') {
