@@ -17,7 +17,7 @@ describe('radar-first navigation HUD', () => {
     expect(navigationHudMarkup).not.toMatch(/https?:|<image|target|lightning/i);
     expect(navigationHudMarkup).not.toMatch(/navigation-header|mission-title|job-status|navigation-contacts/);
     expect(navigationHudMarkup).toMatch(/<div class="navigation-chart">[\s\S]*<\/div>\s*<\/aside>/);
-    for (const id of ['dispatch', 'texts', 'newsroom']) expect(navigationHudMarkup).toContain(`id="${id}"`);
+    for (const id of ['dispatch', 'texts', 'newsroom', 'observe']) expect(navigationHudMarkup).toContain(`id="${id}"`);
   });
 
   it('ends at the minimap without instructions, readouts, captions or service buttons below it', () => {
@@ -32,8 +32,9 @@ describe('radar-first navigation HUD', () => {
     const actions = navigationHudMarkup.match(/<div class="navigation-actions"[\s\S]*<\/div>/)![0];
     expect(actions).toContain('role="group"');
     expect(actions).toContain('aria-label="Dispatch and campaign shortcuts"');
-    for (const id of ['dispatch', 'texts', 'newsroom']) expect(actions).toContain(`id="${id}"`);
-    expect(actions.match(/<button/g)).toHaveLength(3);
+    for (const id of ['dispatch', 'texts', 'newsroom', 'observe']) expect(actions).toContain(`id="${id}"`);
+    expect(actions.match(/<button/g)).toHaveLength(4);
+    expect(actions).toMatch(/<button id="observe"[^>]*hidden disabled/);
     // Every action is a real, named button; the chart keeps no interactive markup.
     for (const button of actions.match(/<button[^>]*>/g)!) expect(button).toMatch(/aria-label="[^"]+"/);
     expect(navigationHudMarkup).toMatch(/<canvas id="map" role="img" aria-label="Local minimap:/);

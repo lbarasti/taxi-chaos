@@ -246,11 +246,25 @@ export class Game {
   private note(entry: Omit<NotebookEntry, 'shift' | 'at'>) {
     recordNote(this.campaignContext, entry);
   }
-  /** Observations require the authored predicate and a deliberate physical visit. */
-  observeScene(id = this.campaignContent.observations[0]?.id): boolean {
+  /** Shared availability for physical collection and its quick-action affordance. */
+  observationStatus(id = this.campaignContent.observations[0]?.id) {
     const observation = this.campaignContent.observations.find(o => o.id === id);
     const stop = observation && this.missions.catalogue.stops.byId[observation.stop];
-    if (!this.campaignEnabled || this.mode !== 'playing' || !observation || !stop || !this.campaignMatches(observation.requires) || dist(this.actor.position, stop.position) > observation.radius || this.speed > 2.8) return false;
+    if (!observation || !stop) return null;
+    const distance = dist(this.actor.position, stop.position);
+    const nearby = distance <= observation.radius;
+    const sceneEligible = this.campaignEnabled && this.campaignMatches(observation.requires);
+    const recorded = this.save.playerRecords.notebook.some(entry => entry.id === observation.id);
+    const reason = !sceneEligible || !nearby ? observation.unavailable : this.mode !== 'playing' ? 'Resume your shift to record an observation.' : this.speed > 2.8 ? 'Slow down to record this observation.' : null;
+    return { observation, distance, nearby, sceneEligible, recorded, available: reason === null, reason };
+  }
+  /** Observations require the authored predicate and a deliberate physical visit. */
+  observeScene(id = this.campaignContent.observations[0]?.id): boolean {
+    const status = this.observationStatus(id);
+    if (!status?.available) return false;
+    // Preserve idempotent command success without replaying events or collection feedback.
+    if (status.recorded) return true;
+    const { observation } = status;
     if (!dispatchCampaignEvent(this.campaignContext, { type: 'observation', id: observation.id })) return false;
     this.persist(); this.notify(observation.success); return true;
   }
