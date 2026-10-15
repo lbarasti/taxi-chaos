@@ -18,7 +18,10 @@ export class DrawerMenu {
     root.addEventListener('pointermove', event => {
       if (!this.enabled()) return;
       if (event.pointerType !== 'mouse') return;
-      const item = this.item(event.target);
+      // Hovering a row's label or padding selects its control just like hovering
+      // anywhere inside a regular menu button. Click/touch targets stay native.
+      const row = event.target instanceof Element ? event.target.closest('.credit-row, .setting-row') : null;
+      const item = this.item(event.target) ?? this.item(row?.querySelector('a[href], input:not(:disabled), select:not(:disabled)') ?? null);
       if (item && item !== this.selected) this.select(item);
     });
     root.addEventListener('focusin', event => {
