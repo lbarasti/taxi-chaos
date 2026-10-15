@@ -155,7 +155,7 @@ document.addEventListener('pointerdown', event => {
 // finger is down can shift a scrolled menu row away from the release position.
 document.addEventListener('click', () => detectInput(inputDevice), { capture: true });
 function pause() { if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
-document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a')) event.preventDefault(); });
+document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a, .credits-section a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   detectInput('keyboard');
   if (mapEditor?.handleKey(e)) return;

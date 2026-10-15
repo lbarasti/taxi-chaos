@@ -82,7 +82,12 @@ async function checkDesktop() {
   await page.screenshot({path:`${output}/settings-desktop.png`});
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
   await page.locator('#menu-credits').click(); await waitForDrawer(page, 'credits');
-  assert(await page.locator('.audio-credits a').count() > 0);
+  assert.equal(await page.locator('.credits-section').count(), 4, 'credits are grouped by functional role');
+  assert(await page.locator('.credits-section a').count() >= 8, 'source links are preserved');
+  assert.equal(await page.locator('.credits-section a[href="https://opengameart.org/content/racing-car-engine-sound-loops"]').count(), 1);
+  assert(await page.locator('#modal').evaluate(el => el.scrollWidth <= el.clientWidth), 'credits has no horizontal overflow');
+  await page.locator('#drawer-back').focus(); await page.keyboard.press('Tab');
+  assert.equal(await selected(page).evaluate(el => el.tagName), 'A', 'keyboard reaches an attribution link');
   await page.screenshot({path:`${output}/credits-desktop.png`});
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
   assert.equal(await selected(page).getAttribute('id'), 'menu-credits');
@@ -202,6 +207,11 @@ async function checkTouchLayouts() {
     assert.equal(await mobile.locator('[data-setting="sirens"] output').innerText(), `${await mobile.locator('#sirens-option').inputValue()}%`);
     await tapToConfirm(mobile, '#drawer-back'); await waitForDrawer(mobile, 'home');
     await tapToConfirm(mobile, '#menu-credits'); await waitForDrawer(mobile, 'credits');
+    assert.equal(await mobile.locator('.credits-section').count(), 4);
+    assert(await mobile.evaluate(() => document.querySelector('#modal').scrollWidth <= document.querySelector('#modal').clientWidth), 'credits has no horizontal overflow');
+    assert(await mobile.evaluate(() => document.querySelector('#modal').scrollHeight > document.querySelector('#modal').clientHeight), 'credits scroll');
+    await mobile.locator('.credits-section:last-of-type').scrollIntoViewIfNeeded();
+    await mobile.screenshot({ path: `${output}/credits-touch-${name}.png` });
     await tapToConfirm(mobile, '#drawer-back'); await waitForDrawer(mobile, 'home');
     await mobile.locator('#start').tap(); assert(await mobile.locator('#overlay').isVisible());
     await mobile.locator('#start').tap(); await mobile.locator('#overlay').waitFor({ state: 'hidden' });

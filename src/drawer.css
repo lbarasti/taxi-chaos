@@ -23,6 +23,22 @@
 .splash-modal .menu-field:has([data-selected]){background:#f7ce5510;border-color:#f7ce5555}
 .splash-modal .audio-settings{gap:12px;padding:16px 8px;font-size:13px}.splash-modal .audio-settings label{min-height:44px}.splash-modal .audio-settings label:not(.audio-toggle){grid-template-columns:65px minmax(0,1fr) 36px}.splash-modal .audio-settings input[type=range]{min-width:0}.splash-modal .audio-settings .menu-item{font-size:13px}
 .splash-modal .audio-credits{font-size:13px;line-height:1.8;margin:24px 0}.splash-modal .audio-credits p{font-size:12px;margin:16px 0}.splash-modal .audio-credits a{overflow-wrap:anywhere}.splash-modal a[data-selected]{outline:2px solid var(--gold);outline-offset:3px}
+/* Credits reuse the settings palette, grouped by craft like film and game credits. */
+.credits-section{margin:18px 0 0;padding-top:16px;border-top:1px solid var(--border)}
+.credits-title{font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--mint);margin:0 0 10px}
+.credits-list{display:grid;gap:0;margin:0}
+.credit-row{display:grid;grid-template-columns:minmax(88px,30%) minmax(0,1fr);gap:4px 16px;align-items:baseline;padding:9px 8px;border-bottom:1px solid #a3ddc214;border-radius:4px;transition:background .16s ease,border-color .16s ease}
+.credit-row:last-child{border-bottom:0}
+.credit-row dt{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:#a7b7ac;line-height:1.6}
+.credit-row dd{min-width:0;margin:0;font-size:13px;line-height:1.6;color:#d4ded4;overflow-wrap:anywhere}
+.credit-row dd a{color:var(--mint);text-decoration:underline;text-underline-offset:2px}
+.credit-row:has(a[data-selected]){background:#f7ce5510;border-color:#f7ce5540;color:#fff3cb}
+.credit-row a[data-selected]{outline:2px solid var(--gold);outline-offset:3px}
+.credit-tag{margin-left:4px;padding:1px 5px;border:1px solid #a3b7b02e;border-radius:3px;font-size:8px;letter-spacing:.8px;color:#9caca8;white-space:nowrap}
+.credit-note{font-size:11px;line-height:1.7;color:#93a69b;margin:12px 0 0}
+.credit-note a{color:var(--mint);text-decoration:underline;overflow-wrap:anywhere}
+@media(max-width:420px){.credit-row{grid-template-columns:1fr;gap:2px}}
+@media(prefers-reduced-motion:reduce){.credit-row{transition:none}}
 .splash-modal .notebook-actions{flex-direction:column}.splash-modal .campaign-summary{margin-top:0}.drawer-page>p,.splash-modal .notebook-entries p{font-size:13px;line-height:1.7;color:#b8c7bd}.splash-modal .eyebrow{line-height:1.7}
 .drawer-entering{animation:drawer-in .24s cubic-bezier(.2,.75,.25,1) both}
 @keyframes drawer-in{from{opacity:0;transform:translateX(calc(18px * var(--drawer-direction,1)))}to{opacity:1;transform:translateX(0)}}

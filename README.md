@@ -132,7 +132,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 
 ## Credits and licences
 
-Driving and rigid-body fundamentals are adapted from **Pat Kerr's [Motion Lab v0.8.2](https://patkerr.co.uk/motion-lab/)**; attribution is included in the source and game welcome screen.
+Driving and rigid-body fundamentals are adapted from **Pat Kerr's [Motion Lab v0.8.2](https://patkerr.co.uk/motion-lab/)**; attribution is included in the source and game welcome screen. The in-game **Credits** screen groups every attribution by craft — driving physics, sound FX, typography and art — and keeps each source link and licence.
 
 The locally embedded **Space Grotesk** font is by Florian Karsten and distributed under the SIL Open Font License. Font attribution and licence are in [`src/assets/`](src/assets/).
 

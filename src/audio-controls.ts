@@ -1,4 +1,5 @@
 import { menuItem } from './drawer-markup';
+import { audioCreditsMarkup } from './credits';
 import type { AudioFX } from './audio';
 
 export function audioMarkup(audio: AudioFX, { credits = 'inline' }: { credits?: 'inline' | 'page' } = {}) {
@@ -10,9 +11,6 @@ export function audioMarkup(audio: AudioFX, { credits = 'inline' }: { credits?: 
     <small data-audio-status>Sound starts with your first click or driving key.</small>
     ${credits === 'page' ? menuItem('Sound credits & licences', { id: 'menu-credits', page: 'credits' }) : audioCreditsMarkup()}
   </fieldset>`;
-}
-export function audioCreditsMarkup() {
-  return `<div class="audio-credits"><p>Engine: <a href="https://opengameart.org/content/racing-car-engine-sound-loops" target="_blank" rel="noopener">domasx2</a> · Impacts/explosions: <a href="https://kenney.nl/assets" target="_blank" rel="noopener">Kenney</a> · Siren: <a href="https://opengameart.org/content/sirens-and-alarm-noise" target="_blank" rel="noopener">aquinn</a> (CC0).</p><p>Tyres: <a href="https://opengameart.org/content/car-tire-squeal-skid-loop" target="_blank" rel="noopener">audible-edge / Tom Haigh, loop by qubodup</a> · Boost: <a href="https://opengameart.org/content/racing-speed-boost-sound" target="_blank" rel="noopener">Iwan Gabovitch / qubodup</a> · Fire: <a href="https://opengameart.org/content/fire-loop" target="_blank" rel="noopener">qubodup</a> (<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>). Samples edited for mono, loudness, loop seams and size; pitch/filter changes in-game.</p></div>`;
 }
 export function bindAudioControls(root: HTMLElement, audio: AudioFX) {
   for (const input of Array.from(root.querySelectorAll<HTMLInputElement>('[data-audio]'))) {

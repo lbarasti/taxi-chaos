@@ -3,7 +3,7 @@ import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
 import { calendarLabel } from './campaign/clock';
 import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
-import { audioCreditsMarkup } from './audio-controls';
+import { creditsMarkup } from './credits';
 import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
 
@@ -47,7 +47,7 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved }: { game
     case 'settings': body = settingsMarkup(settings); break;
     case 'rules': body = streetRulesMarkup(); break;
     case 'shift': body = shiftMarkup(game, campaignMarkup(game)); break;
-    case 'credits': body = audioCreditsMarkup(); break;
+    case 'credits': body = creditsMarkup(); break;
     case 'notebook-guide': body = notebookGuideMarkup(game); break;
   }
   const { title, parent } = pages[page];
