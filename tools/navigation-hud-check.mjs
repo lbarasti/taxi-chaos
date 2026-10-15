@@ -137,7 +137,7 @@ try {
         header: document.querySelector('.navigation-header') !== null,
         caption: document.querySelector('#map-caption') !== null,
         overflow: document.querySelector('.navigation-hud').scrollWidth > document.querySelector('.navigation-hud').clientWidth,
-        buttons: [...actions.querySelectorAll('button')].map(button => ({ id: button.id, label: button.getAttribute('aria-label'), disabled: button.disabled, className: button.className, ...box(`#${button.id}`) })),
+        buttons: [...actions.querySelectorAll('button')].filter(button => button.getClientRects().length).map(button => ({ id: button.id, label: button.getAttribute('aria-label'), disabled: button.disabled, className: button.className, ...box(`#${button.id}`) })),
         collisions: ['.player-hud', '.navigation-hud', '.controls', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '.context-actions']
           .filter(selector => [...document.querySelectorAll(selector)].some(element => {
             if (!element.getClientRects().length) return false;
