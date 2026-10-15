@@ -3,7 +3,7 @@
 The woods continue down the eastern side and wrap west below the city grid in a
 mirrored L. The southern inlet separates the new forest from the city waterfront;
 Pine Bridge and Fern Bridge remain the entrances from town. The winding southern
-road loop connects to both Fern Hollow and Highland Lodge.
+road loop connects to Poble-sec and Parc del Mirador.
 
 ![Full map: the wooded eastern ridge wraps beneath the city in a mirrored L.](screenshots/woodland-map-overview.png)
 
@@ -13,7 +13,7 @@ with the simulation clock fixed for reproducible captures.
 
 ## Millionaires in the woods
 
-Twelve estates are spread across Pine Woods, the ridge and the southern forest.
+Seven estates remain in the southern forest, beyond the residential Poble-sec neighbourhood.
 Each has a solid villa and guest wing, a drivable access lane, a landscaped lawn,
 a pool, loungers, a stone terrace and two residents. Private roads and public roads
 remain clear of trees, rocks and structures. Estate lights use the existing nighttime

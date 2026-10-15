@@ -13,12 +13,12 @@ describe('authored stop registry', () => {
       defaultCompiledMap,
     );
     expect(Object.keys(compiled.byId)).toContain('old-town-rank');
-    expect(compiled.byId['pine-junction']).toMatchObject({ name: 'Pine Junction', kind: 'highland' });
+    expect(compiled.byId['poble-sec']).toMatchObject({ name: 'Poble-sec', kind: 'highland' });
     expect(compiled.city).toEqual([point(4, 14), point(44, 14)]);
     expect(compiled.routeStops.slice(0, 2)).toEqual([point(4, 14), point(44, 14)]);
     // Highland destinations come first, then the authored beach labels.
     expect(compiled.destinations.map(d => d.name)).toEqual([
-      'Pine Junction', 'Eagle Lookout', 'Highland Lodge', 'Fern Hollow', 'Woodland Estates', 'Fairway Club', 'Cedar Crescent', 'Sunset Beach',
+      'Poble-sec', 'Parc del Mirador', 'Les Tres Xemeneies', 'Plaça del Sol', 'Woodland Estates', 'Fairway Club', 'Cedar Crescent', 'Sunset Beach',
     ]);
   });
 

@@ -1,0 +1,34 @@
+{
+  "report": [
+    {
+      "name": "morning",
+      "cars": 10,
+      "people": 18,
+      "movingCars": 10,
+      "walkingResidents": 16
+    },
+    {
+      "name": "daytime",
+      "cars": 6,
+      "people": 11,
+      "movingCars": 6,
+      "walkingResidents": 10
+    },
+    {
+      "name": "evening",
+      "cars": 10,
+      "people": 18,
+      "movingCars": 10,
+      "walkingResidents": 16
+    },
+    {
+      "name": "night",
+      "cars": 2,
+      "people": 3,
+      "movingCars": 2,
+      "walkingResidents": 2
+    }
+  ],
+  "errors": [],
+  "requests": []
+}

@@ -5,25 +5,27 @@ export type Owned = { id: string; owner: string };
 export type MapPoint = Owned & { position: Vec; weight: number; editable: boolean };
 export type Placement = Owned & { position: Vec; name: string; color: string };
 export const countryPropKinds = ['building', 'tree', 'rock', 'hydrant', 'crate', 'bench', 'lamp', 'kiosk', 'bin', 'barrier', 'shed', 'pump', 'guardrail', 'palm'] as const;
-export type CountryProp = Owned & { position: Vec; kind: typeof countryPropKinds[number]; width: number; height: number; angle: number; color: string; label: string };
+export type Architecture = { style: 'tile' | 'terrace' | 'industrial' | 'workshop'; mural: boolean; outline: Vec[] };
+export type CountryProp = Owned & { position: Vec; kind: typeof countryPropKinds[number]; width: number; height: number; angle: number; color: string; label: string; architecture?: Architecture };
 export type Parking = Owned & { position: Vec; angle: number; occupied: boolean; lot: boolean; model: VehicleModel; color: string };
-export type TrafficSpawn = Owned & { position: Vec; angle: number; model: VehicleModel; color: string; path: Vec[] };
+export type TrafficSpawn = Owned & { position: Vec; angle: number; model: VehicleModel; color: string; path: Vec[]; activity?: 'residential' };
 export type AuthoredCollection = 'countryProps' | 'parking' | 'trafficSpawns';
 export type AuthoredDescriptor = CountryProp | Parking | TrafficSpawn;
 export type MapDocument = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   coordinates: 'metres-screen-south-positive-radians';
   envelope: { min: Vec; max: Vec };
   districts: { id: string; name: string; editable: boolean }[];
   points: MapPoint[];
   highlandOutline: string[];
-  roads: (Owned & { from: string; to: string; via: string[]; name: string; bridge: boolean })[];
+  neighbourhood: { origin: string; angle: number; blocks: (Owned & { corners: string[]; plaza: boolean })[] };
+  roads: (Owned & { from: string; to: string; via: string[]; name: string; bridge: boolean; surface?: 'residential' })[];
   nodes: string[];
   villas: Placement[];
   countryProps: CountryProp[];
   parking: Parking[];
   trafficSpawns: TrafficSpawn[];
-  stops: (Owned & { point: string; name: string })[];
+  stops: (Owned & { point: string; name: string; amenity?: string })[];
   golf: Owned & { center: Vec; width: number; height: number; clubhouse: Vec; route: Vec[]; path: Vec[]; holes: { tee: Vec; green: Vec; bunker: Vec }[] };
   ridges: (Owned & { points: Vec[] })[];
   labels: (Owned & { position: Vec; text: string; size: number; color: string })[];
@@ -42,10 +44,10 @@ export type MapDocument = {
 /** Strict shape checking also bounds imported workloads before any factory runs. */
 export function assertMap(value: unknown): asserts value is MapDocument {
   const fail = (path: string, why: string): never => { throw new Error(`${path}: ${why}`); };
-  const object = (v: unknown, keys: string[], path: string): Record<string, unknown> => {
+  const object = (v: unknown, keys: string[], path: string, optional: string[] = []): Record<string, unknown> => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) return fail(path, 'expected object');
     const obj = v as Record<string, unknown>;
-    if (Object.keys(obj).some(k => !keys.includes(k)) || keys.some(k => !Object.hasOwn(obj, k))) fail(path, `expected fields ${keys.join(', ')}`);
+    if (Object.keys(obj).some(k => !keys.includes(k) && !optional.includes(k)) || keys.some(k => !Object.hasOwn(obj, k))) fail(path, `expected fields ${keys.join(', ')}`);
     return obj;
   };
   const num = (v: unknown, path: string, min = -10000, max = 10000): number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fail(path, `expected finite number in [${min}, ${max}]`);
@@ -58,8 +60,8 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   const owned = (obj: Record<string, unknown>, path: string) => { id(obj.id, `${path}.id`); owners.push(text(obj.owner, `${path}.owner`)); };
   const ref = (v: unknown, path: string) => refs.push(text(v, path));
   const placement = (v: unknown, path: string, extras: string[] = []) => { const p = object(v, ['id', 'owner', 'position', 'name', 'color', ...extras], path); owned(p, path); point(p.position, `${path}.position`); text(p.name, path); if (!/^#[0-9a-f]{6}$/i.test(text(p.color, path))) fail(path, 'expected hex colour'); return p; };
-  const root = object(value, ['schemaVersion', 'coordinates', 'envelope', 'districts', 'points', 'highlandOutline', 'roads', 'nodes', 'villas', 'countryProps', 'parking', 'trafficSpawns', 'stops', 'golf', 'ridges', 'labels', 'beach', 'generation', 'constraints'], 'map');
-  if (root.schemaVersion !== 2 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
+  const root = object(value, ['schemaVersion', 'coordinates', 'envelope', 'districts', 'points', 'highlandOutline', 'neighbourhood', 'roads', 'nodes', 'villas', 'countryProps', 'parking', 'trafficSpawns', 'stops', 'golf', 'ridges', 'labels', 'beach', 'generation', 'constraints'], 'map');
+  if (root.schemaVersion !== 3 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
   const env = object(root.envelope, ['min', 'max'], 'envelope'); point(env.min, 'envelope.min'); point(env.max, 'envelope.max');
   const bounds = env as unknown as MapDocument['envelope'];
   for (const axis of ['x', 'y'] as const) if (bounds.max[axis] <= bounds.min[axis] || bounds.max[axis] - bounds.min[axis] > 2000) fail('envelope', 'must have positive extent at most 2000 m');
@@ -69,15 +71,42 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   for (const v of list(root.points, 'points', 3)) { const p = object(v, ['id', 'owner', 'position', 'weight', 'editable'], 'point'); owned(p, 'point'); point(p.position, 'point.position'); num(p.weight, 'point.weight', 0, 1); bool(p.editable, 'point.editable'); pointIds.add(p.id as string); if (!p.editable) locked.add(p.id as string); }
   for (const key of ['highlandOutline', 'nodes'] as const) for (const v of list(root[key], key, 3)) ref(v, key);
   if (new Set(root.nodes as string[]).size !== (root.nodes as string[]).length || new Set(root.highlandOutline as string[]).size !== (root.highlandOutline as string[]).length) fail('map', 'duplicate ring/node references');
+  const neighbourhood = object(root.neighbourhood, ['origin', 'angle', 'blocks'], 'neighbourhood');
+  ref(neighbourhood.origin, 'neighbourhood.origin'); num(neighbourhood.angle, 'neighbourhood.angle', -Math.PI * 2, Math.PI * 2);
+  for (const v of list(neighbourhood.blocks, 'neighbourhood.blocks', 1, 32)) {
+    const block = object(v, ['id', 'owner', 'corners', 'plaza'], 'block'); owned(block, 'block');
+    const corners = list(block.corners, 'block.corners', 3, 8); corners.forEach(p => ref(p, 'block.corner'));
+    if (new Set(corners).size !== corners.length) fail('block', 'duplicate corners'); bool(block.plaza, 'block.plaza');
+  }
   const nodes = new Set(root.nodes as string[]);
-  for (const v of list(root.roads, 'roads', 1, 100)) { const p = object(v, ['id', 'owner', 'from', 'to', 'via', 'name', 'bridge'], 'road'); owned(p, 'road'); ref(p.from, 'road.from'); ref(p.to, 'road.to'); if (!nodes.has(p.from as string) || !nodes.has(p.to as string) || p.from === p.to) fail('road', 'endpoints must be distinct nodes'); text(p.name, 'road.name'); bool(p.bridge, 'road.bridge'); const via = list(p.via, 'road.via', 0, 20); via.forEach(v => ref(v, 'road.via')); if (p.bridge && [p.from, ...via, p.to].some(v => !locked.has(v as string))) fail('road', 'bridge anchors must be pinned'); }
+  for (const v of list(root.roads, 'roads', 1, 100)) { const p = object(v, ['id', 'owner', 'from', 'to', 'via', 'name', 'bridge'], 'road', ['surface']); if (p.surface !== undefined && p.surface !== 'residential') fail('road.surface', 'unknown surface'); owned(p, 'road'); ref(p.from, 'road.from'); ref(p.to, 'road.to'); if (!nodes.has(p.from as string) || !nodes.has(p.to as string) || p.from === p.to) fail('road', 'endpoints must be distinct nodes'); text(p.name, 'road.name'); bool(p.bridge, 'road.bridge'); const via = list(p.via, 'road.via', 0, 20); via.forEach(v => ref(v, 'road.via')); if (p.bridge && [p.from, ...via, p.to].some(v => !locked.has(v as string))) fail('road', 'bridge anchors must be pinned'); }
   for (const v of list(root.villas, 'villas', 1, 100)) placement(v, 'villa');
   for (const key of ['countryProps', 'parking', 'trafficSpawns'] as const) for (const v of list(root[key], key, 0, key === 'countryProps' ? 500 : key === 'parking' ? 200 : 60)) {
     const extras = key === 'countryProps' ? ['kind', 'width', 'height', 'label'] : key === 'parking' ? ['occupied', 'lot', 'model'] : ['model', 'path'];
-    const p = object(v, ['id', 'owner', 'position', 'angle', 'color', ...extras], key);
+    const p = object(v, ['id', 'owner', 'position', 'angle', 'color', ...extras], key, key === 'countryProps' ? ['architecture'] : key === 'trafficSpawns' ? ['activity'] : []);
     owned(p, key); point(p.position, `${key}.position`); num(p.angle, `${key}.angle`, -Math.PI * 2, Math.PI * 2);
     if (!/^#[0-9a-f]{6}$/i.test(text(p.color, `${key}.color`))) fail(key, 'expected hex colour');
+    if (p.activity !== undefined && p.activity !== 'residential') fail(key, 'unknown activity');
     if (key === 'countryProps') {
+      if (p.architecture !== undefined) {
+        const a = object(p.architecture, ['style', 'mural', 'outline'], 'architecture');
+        if (p.kind !== 'building' || !['tile', 'terrace', 'industrial', 'workshop'].includes(a.style as string)) fail(key, 'invalid architecture style');
+        bool(a.mural, 'architecture.mural');
+        const outline = list(a.outline, 'architecture.outline', 3, 32);
+        outline.forEach(v => point(v, 'architecture.vertex'));
+        const vertices = outline as Vec[];
+        let area = 0;
+        for (let i = 0; i < vertices.length; i++) {
+          const a = vertices[i], b = vertices[(i + 1) % vertices.length], c = vertices[(i + 2) % vertices.length];
+          if (Math.abs(a.x) > (p.width as number) / 2 + .001 || Math.abs(a.y) > (p.height as number) / 2 + .001 || (b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x) <= 0) fail(key, 'footprint must be strictly convex, counterclockwise and inside its bounds');
+          area += a.x*b.y-a.y*b.x;
+        }
+        if (area < .02) fail(key, 'degenerate footprint');
+        for (let i = 0; i < vertices.length; i++) {
+          const a = vertices[i], b = vertices[(i + 1) % vertices.length];
+          if (vertices.some(p => (b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x) < -.000001)) fail(key, 'self-intersecting footprint');
+        }
+      }
       if (!countryPropKinds.includes(p.kind as CountryProp['kind'])) fail(key, 'unknown prop kind');
       num(p.width, 'prop.width', 0.2, 100); num(p.height, 'prop.height', 0.2, 100);
       if (typeof p.label !== 'string' || p.label.length > 160) fail(key, 'expected label (max 160)');
@@ -87,7 +116,7 @@ export function assertMap(value: unknown): asserts value is MapDocument {
       else list(p.path, 'traffic.path', 1, 40).forEach(q => point(q, 'traffic.path.point'));
     }
   }
-  for (const v of list(root.stops, 'stops', 1, 100)) { const p = object(v, ['id', 'owner', 'point', 'name'], 'stop'); owned(p, 'stop'); ref(p.point, 'stop.point'); text(p.name, 'stop.name'); }
+  for (const v of list(root.stops, 'stops', 1, 100)) { const p = object(v, ['id', 'owner', 'point', 'name'], 'stop', ['amenity']); owned(p, 'stop'); ref(p.point, 'stop.point'); text(p.name, 'stop.name'); if (p.amenity !== undefined) text(p.amenity, 'stop.amenity'); }
   const golf = object(root.golf, ['id', 'owner', 'center', 'width', 'height', 'clubhouse', 'route', 'path', 'holes'], 'golf'); owned(golf, 'golf'); point(golf.center, 'golf.center'); point(golf.clubhouse, 'golf.clubhouse'); num(golf.width, 'golf.width', 1, 500); num(golf.height, 'golf.height', 1, 500);
   for (const key of ['route', 'path'] as const) list(golf[key], `golf.${key}`, 3, 40).forEach(p => point(p, `golf.${key}`));
   for (const v of list(golf.holes, 'golf.holes', 1, 30)) { const h = object(v, ['tee', 'green', 'bunker'], 'hole'); Object.values(h).forEach(p => point(p, 'hole')); }
@@ -106,7 +135,9 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   for (const v of list(root.constraints, 'constraints', 1, 20)) { const p = object(v, ['id', 'type', 'minimum', 'resolution'], 'constraint'); id(p.id, 'constraint.id'); if (p.type !== 'beach-water-gap') fail('constraint', 'unknown type'); num(p.minimum, 'minimum', 1, 500); num(p.resolution, 'resolution', 0.5, 10); }
   if (owners.some(o => !districts.has(o))) fail('owner', 'unknown district');
   if (refs.some(r => !pointIds.has(r))) fail('reference', 'unknown geometry point');
-  const doc = value as MapDocument, lookup = new Map(doc.points.map(p => [p.id, p.position]));
+  const doc = value as MapDocument;
+  for (const stop of doc.stops) if (stop.amenity && !doc.countryProps.some(p => p.id === stop.amenity && p.kind === 'kiosk')) fail(stop.id, 'unknown kiosk amenity');
+  const lookup = new Map(doc.points.map(p => [p.id, p.position]));
   // These attachments are implemented by fixed city/bridge generators, so an
   // import cannot silently redefine their topology or turn them editable.
   for (const [id, x, y, index] of [['node-00', 240, 80, 0], ['node-01', 310, 80, 1], ['node-06', 310, 200, 6], ['node-07', 240, 200, 7]] as [string, number, number, number][]) {

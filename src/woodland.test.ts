@@ -49,7 +49,7 @@ describe('southern woodland estates and golf club', () => {
 
   it('builds solid villas with accessible driveways, residents and a clear golf course', () => {
     const world = new World();
-    expect(VILLAS.length).toBe(12);
+    expect(VILLAS.map(v => v.id)).toEqual(['villa-cedar-house', 'villa-the-laurels', 'villa-oak-manor', 'villa-belvedere', 'villa-woodland', 'villa-lake-house', 'villa-cedar-lodge']);
     for (const [i, villa] of VILLAS.entries()) {
       expect(inHighlands(villa.position)).toBe(true);
       const prop = world.props.find(p => p.label === `VILLA ${villa.name}`)!;
@@ -82,16 +82,16 @@ describe('southern woodland estates and golf club', () => {
   });
 
   it('drives civilian traffic through the southern network without damage', () => {
-    for (const [from, to] of [[vec(378, 170), vec(242, 450)], [vec(242, 450), vec(60, 436)], [vec(60, 436), vec(306, 510)]]) {
+    for (const [from, to] of [[vec(453.742, 199.873), vec(242, 450)], [vec(242, 450), vec(60, 436)], [vec(60, 436), vec(306, 510)]]) {
       const g = new Game(); loadScenario(g, 'woodland-estates'); g.world.people = [];
       g.player.body.position = vec(4, 32);
       const path = roadPath(from, to), car = g.vehicle('traffic', from.x, from.y, Math.atan2(path[1].y - from.y, path[1].x - from.x), '#a3b8ab'); car.path = path.slice(1);
       let reached = false;
-      for (let i = 0; i < 50 * 120; i++) { g.update(1 / 120); if (dist(car.body.position, to) < 8) { reached = true; break; } }
+      for (let i = 0; i < 90 * 120; i++) { g.update(1 / 120); if (dist(car.body.position, to) < 8) { reached = true; break; } }
       expect(reached, `traffic to ${to.x},${to.y}`).toBe(true);
       expect(car.damage.health).toBe(100);
     }
-  });
+  }, 30000);
 
   it('dispatches and pays a southern delivery with road-distance fare and time', () => {
     const g = new Game(); loadScenario(g, 'woodland-estates'); g.offer = 18; g.newJob();

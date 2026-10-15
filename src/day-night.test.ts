@@ -185,7 +185,7 @@ describe('day/night lighting', () => {
 });
 
 describe('game day/night integration', () => {
-  const make = () => { const g = new Game(); g.vehicles = [g.player]; g.setMode('playing'); return g; };
+  const make = () => { const g = new Game(); g.setTrafficCount(0); g.vehicles = [g.player]; g.setMode('playing'); return g; };
   const run = (g: Game, seconds: number) => { for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); };
   const runKeys = (g: Game, seconds: number, keys: string[]) => { g.keys = new Set(keys); run(g, seconds); g.keys.clear(); };
 
@@ -203,11 +203,10 @@ describe('game day/night integration', () => {
     run(g, 30);
     expect(g.snapshot().dayNight.minutes).toBe(introStart);
 
-    // resetRun restores a fresh 07:00 clock. Trim to the player afterwards: this assertion is
-    // about the world clock, and stepping the full 61-car city for 3,600 frames costs ~5 s on
-    // its own, which pushed the test over the default 5 s timeout under parallel suite load.
+    // Keep the full 30-second clock simulation, with ambient traffic explicitly disabled
+    // so maintenance cannot repopulate the city after this fixture trims the vehicles.
     g.resetRun();
-    g.vehicles = [g.player];
+    g.setTrafficCount(0); g.vehicles = [g.player];
     run(g, 30);
     const playing = g.snapshot().dayNight.minutes;
     expect(playing).toBeCloseTo(450, 4);

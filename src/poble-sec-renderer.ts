@@ -111,7 +111,7 @@ export function drawPobleStreets(r: Renderer) {
     const a=road.points[0],b=road.points.at(-1)!;
     if (!r.visible(a,40))continue;
     const angle=Math.atan2(b.y-a.y,b.x-a.x);
-    if(road.id.startsWith('poble-east-') && road.id.endsWith('-1')) {
+    if (Math.abs(Math.sin(angle - district.angle)) < .4) {
       const p=road.points[Math.floor(road.points.length/2)];
       c.save();c.translate(p.x,p.y);c.rotate(angle);r.label(road.name.toUpperCase(),0,-.2,.63,'#bcc0b2','500');c.restore();
     }
@@ -120,8 +120,9 @@ export function drawPobleStreets(r: Renderer) {
 }
 
 export function drawPobleProp(r: Renderer, prop: Prop): boolean {
-  if (!prop.sourceId?.startsWith('poble-')) return false;
-  if (prop.sourceId.startsWith('poble-lot-')) return true;
+  const descriptor = r.game.map.document.countryProps.find(p => p.id === prop.sourceId);
+  if (descriptor?.architecture) return true;
+  if (descriptor?.owner !== 'highlands') return false;
   if (prop.kind === 'tree' && prop.alive) {
     const p=prop.body.position;
     r.circle(vec(p.x+1,p.y+1.3),2.6,'#23392b4d');
@@ -130,15 +131,7 @@ export function drawPobleProp(r: Renderer, prop: Prop): boolean {
     r.circle(vec(p.x-.4,p.y-.5),1.3,'#8ca46a');
     return true;
   }
-  if (prop.kind!=='building')return false;
-  const c=r.ctx,b=prop.body,w=b.w,h=b.h,seed=prop.id;
-  c.save();c.translate(b.position.x,b.position.y);c.rotate(b.angle);
-  if(prop.sourceId.startsWith('poble-chimney-')) {
-    r.rect(-.4,.4,3.4,7.5,'#23372c60');r.rect(-w/2,-h/2,w,h,'#804b3a','#d7a47a');
-    for(let k=0;k<4;k++)r.rect(-w/2-.15,-h/2+k*.55,w+.3,.12,'#c09268');
-    r.circle(vec(),.72,'#e0b58b');r.circle(vec(),.43,'#403c35');c.restore();return true;
-  }
-  c.restore(); return false;
+  return false;
 }
 
 function roofPath(c: CanvasRenderingContext2D, roof: PobleRoof) {
@@ -190,6 +183,10 @@ function drawTenement(r: Renderer, roof: PobleRoof) {
     // Enclosed stair head and the occasional green waterproofed rear terrace.
     r.rect(-w/2+.4,-h/2+.4,Math.min(2.2,w*.4),Math.min(2,h*.4),'#c1b099','#6f6656');
     if(random()<.25)r.rect(w*.05,-h*.3,w*.38,h*.6,'#647969');
+  }
+  if (roof.style === 'industrial') for (const x of [-w * .28, 0, w * .28]) {
+    r.rect(x - .5, -1, 1.5, 7, '#23372c60');
+    r.circle(vec(x, -1), .9, '#804b3a'); r.circle(vec(x, -1), .5, '#403c35');
   }
   // Rooflights follow long structural bays rather than repeating one HVAC icon.
   if((random()<.42||roof.style==='industrial')&&w>3&&h>3) {

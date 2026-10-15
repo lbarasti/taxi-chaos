@@ -23,7 +23,8 @@ describe('Poble-sec hillside and junctions', () => {
 
   it('keeps promenade trees clear of through roads and existing physical props', () => {
     const map = compileMap(copyDefaultMap()), world = new World(map);
-    const trees = world.props.filter(prop => prop.sourceId?.startsWith('poble-promenade-tree-'));
+    const treeIds = new Set(Array.from({ length: 6 }, (_, i) => `poble-promenade-tree-${i + 1}`));
+    const trees = world.props.filter(prop => treeIds.has(prop.sourceId ?? ''));
     expect(trees.length).toBeGreaterThan(0);
     for (const tree of trees) {
       expect(map.country.countryAccess(tree.body.position).distance).toBeGreaterThan(9);

@@ -100,7 +100,11 @@ function nextTrafficRoad(v: Vehicle, c: AIContext) {
     const rejoin = roadRejoin(v, v.body, c);
     if (rejoin) { v.path = [rejoin.point]; v.ai.phase = 'rejoin'; v.ai.phaseTime = 7; return; }
   }
-  const node = roadNode(v.body.position), options = roadNeighbours(node).filter(p => onPortRoad(v.body.position) || p.y >= 0 || !onPortRoad(p));
+  const local = c.world.map.document.trafficSpawns.find(s => s.id === v.sourceId)?.activity === 'residential';
+  const node = roadNode(v.body.position), options = roadNeighbours(node).filter(p => {
+    if (local) return c.world.map.country.COUNTRY_ROADS.some(r => r.surface === 'residential' && ((dist(c.world.map.country.ROAD_NODES[r.from], node) < .01 && dist(c.world.map.country.ROAD_NODES[r.to], p) < .01) || (dist(c.world.map.country.ROAD_NODES[r.to], node) < .01 && dist(c.world.map.country.ROAD_NODES[r.from], p) < .01)));
+    return onPortRoad(v.body.position) || p.y >= 0 || !onPortRoad(p);
+  });
   const forward = options.filter(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > -0.3);
   const choices = forward.length ? forward : options;
   const straight = choices.find(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > 0.85);

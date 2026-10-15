@@ -82,7 +82,7 @@ position/angle, a colour and its own strict schema and workload budget.
 
 The bridge attachments and the read-only city/harbour `Props` remain generated.
 Unlike those, every authored descriptor is editable and can be created or removed.
-Only version-2 map documents are accepted for import. Every authored parking,
+Only version-3 map documents are accepted for import. Every authored parking,
 traffic and country prop must be explicit in that document; no prior schema is
 upgraded. Exports sort and fingerprint the current document, and stale
 revisions are rejected.
@@ -159,7 +159,7 @@ npm run map:check -- --input src/map/default-map.json \
 npm run map:check -- --input /tmp/taxi-map-moved.json --json
 ```
 
-The example batch is based on shipped revision `v2-eabda267`; take a new revision
+The example batch is based on shipped revision `v3-1a5ee438`; take a new revision
 from the checker/snapshot after changing the baseline. Output paths must be
 explicit for operation batches and **must not already exist**. This avoids
 accidentally overwriting an authored map. Copy the reviewed exported JSON into the
@@ -235,7 +235,7 @@ authored composites are checked against their intended land.
   trips, runtime `sourceId`/model/colour/path/parking links, descriptor
   replenishment, and every new geometric finding (pool overlap, water, static,
   vehicle-vehicle, route and envelope).
-- The default revision moved to `v2-eabda267`; the checker still reports zero
+- The default revision moved to `v3-1a5ee438`; the checker still reports zero
   errors/warnings and a 121.1 m water gap. The +20 m move example is zero errors,
   141.1 m gap and 9 regenerated connections; the invalid road example exits 1.
 - Offline production Chromium, 1440×900: added a country prop, parking bay and
@@ -277,3 +277,16 @@ authored composites are checked against their intended land.
 ![Country prop authoring](screenshots/map-content-country-prop.png)
 ![Authored parking bays and duplication](screenshots/map-content-parking.png)
 ![Authored traffic spawn and its initial route](screenshots/map-content-traffic-spawn.png)
+
+## Residential map content (version 3)
+
+The document now includes an explicit neighbourhood frame and bounded blocks referencing
+geometry points. Residential roads declare `surface: "residential"`. Building props may
+declare `architecture` with a roof style, mural flag and a strictly convex, counterclockwise
+outline in local metres. The same outline drives the editor, runtime body, walking collision,
+roof artwork and lighting. Resizing scales the outline; moving and duplication preserve
+local coordinates. Traffic may declare `activity: "residential"` for civil-time budgets.
+Stops may reference an existing kiosk using `amenity`; deleting a referenced kiosk requires
+updating the stop in the same atomic batch. Unknown metadata and previous schemas are rejected.
+
+See [Poble-sec and Mirador](eastern-highlands.md) for population budgets and destination QA.

@@ -27,6 +27,7 @@ import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent } f
 import { campaignCondition } from './missions/conditions';
 import { dispatchCampaignEvent } from './campaign/events';
 import { recordNote } from './campaign/effects';
+import { residentialActivity } from './residential-activity';
 import { CAMPAIGN_START, CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
 import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
 import { cityBulletin } from './campaign/bulletin';
@@ -110,14 +111,16 @@ export class Game {
     this.applyUpgrades(); this.syncCampaignWorld();
     if (this.campaignEnabled) this.dayNight.followCampaign(this.save.campaign.minute);
   }
+  private trafficSchedule = true;
   populateVehicles() {
+    this.trafficSchedule = true;
     const { GOLF_CART_ROUTE } = this.map.country;
     this.player = this.vehicle('taxi', 4, 32, -Math.PI / 2, '#f7ce55');
     // Preserve the historical city's post-population RNG stream; placements are
     // now explicit and are never silently relocated away from an invalid draft.
     for (let i = 0; i < 23; i++) this.world.random();
-    this.trafficTarget = this.map.document.trafficSpawns.length;
-    for (const spawn of this.map.document.trafficSpawns) {
+    this.trafficTarget = this.activeTrafficSpawns().length;
+    for (const spawn of this.activeTrafficSpawns()) {
       const v = this.spawnVehicle(spawn); v.sourceId = spawn.id; v.path = structuredClone(spawn.path);
     }
     for (const spot of this.world.parking) if (spot.occupied) {
@@ -288,6 +291,7 @@ export class Game {
     });
   }
   setTrafficCount(count: number) {
+    this.trafficSchedule = false;
     this.trafficTarget = clamp(Math.floor(Number.isFinite(count) ? count : 0), 0, 60);
     const cars = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && !v.freight && v.alive);
     for (const v of cars.slice(this.trafficTarget)) v.alive = false;
@@ -296,9 +300,16 @@ export class Game {
       this.replenishTraffic(attempt, 9);
     }
   }
+  private activeTrafficSpawns() {
+    const all = this.map.document.trafficSpawns;
+    if (!this.trafficSchedule) return all;
+    const residential = all.filter(s => s.activity === 'residential');
+    const active = new Set(residential.slice(0, Math.ceil(residential.length * residentialActivity(this.dayNight.snapshot().hour).traffic)));
+    return all.filter(s => s.activity !== 'residential' || active.has(s));
+  }
   private replenishTraffic(index: number, minimumDistance: number) {
-    const spawns = this.map.document.trafficSpawns, spawn = spawns[index % spawns.length];
-    if (!spawn) return false;
+    const spawns = this.activeTrafficSpawns(), spawn = spawns[index % spawns.length];
+    if (!spawn || this.trafficSchedule && spawn.activity === 'residential' && this.vehicles.some(v => v.sourceId === spawn.id && v.damage.status !== 'wreck')) return false;
     // Density changes may use clear points along the descriptor's first leg;
     // deleting every spawn disables replenishment rather than inventing city spawns.
     const t = (Math.floor(index / spawns.length) % 5) / 5;
@@ -1194,6 +1205,15 @@ export class Game {
     }
     for (const v of this.vehicles) if (v !== this.player && v.damage.status === 'wreck' && this.time - v.wreckAt > 30 && dist(v.body.position, this.actor.position) > 85) v.alive = false;
     this.vehicles = this.vehicles.filter(v => v.alive);
+    this.world.syncResidents(this.dayNight.snapshot().hour, this.actor.position, [this.job.customerId, ...[...this.missionOffers.values()].map(j => j.customerId)]);
+    if (this.trafficSchedule && this.trafficTarget > 0) {
+      const active = this.activeTrafficSpawns(), activeIds = new Set(active.map(s => s.id));
+      this.trafficTarget = active.length;
+      const residentialIds = new Set(this.map.document.trafficSpawns.filter(s => s.activity === 'residential').map(s => s.id));
+      this.vehicles = this.vehicles.filter(v => v === this.player || !residentialIds.has(v.sourceId ?? '') || activeIds.has(v.sourceId!) || v.parked || v.damage.status === 'burning' || v.damage.status === 'wreck' || dist(v.body.position, this.actor.position) < 85);
+      // Refill individual residential slots before the city-wide pool can consume their budget.
+      for (const [index, spawn] of active.entries()) if (spawn.activity === 'residential' && !this.vehicles.some(v => v.sourceId === spawn.id && v.damage.status !== 'wreck')) this.replenishTraffic(index, 85);
+    }
     // Removed off-screen wrecks are replaced by traffic, keeping the city alive.
     const count = this.vehicles.filter(v => v.kind === 'traffic' && v.definition.ai.controller === 'road' && !v.parked && !v.freight && v.damage.status !== 'wreck').length;
     if (count < this.trafficTarget) {
@@ -1312,6 +1332,10 @@ export class Game {
     const { inSand, onPromenade, sandHandling } = this.map.beach, { roadPath } = this.world.navigation;
     return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: inSand(this.actor.position) ? 'sand' : onPromenade(this.actor.position) ? 'promenade' : 'road', sandCoverage: sandHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain.sand).coverage, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
       health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, water: this.player.sinking ? this.player.sinking.pool ? 'pool' : 'ocean' : null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
+      residential: {
+        vehicles: this.vehicles.filter(v => v.alive && this.map.document.trafficSpawns.some(s => s.id === v.sourceId && s.activity === 'residential')).map(v => ({ id: v.id, sourceId: v.sourceId, position: v.body.position, health: v.damage.health, phase: v.ai.phase })),
+        pedestrians: this.world.people.filter(p => p.alive && p.residentialSlot !== undefined).map(p => ({ id: p.id, position: p.position })),
+      },
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,
       destroyed: this.world.props.filter(p => !p.alive).map(p => ({ id: p.id, kind: p.kind, position: p.body.position })),

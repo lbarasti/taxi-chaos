@@ -19,5 +19,5 @@ export function importMap(json: string): MapDocument {
 export function revision(document: MapDocument): string {
   const text = exportMap(document); let hash = 2166136261;
   for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
-  return `v2-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+  return `v${document.schemaVersion}-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }

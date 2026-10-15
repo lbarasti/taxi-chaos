@@ -337,7 +337,7 @@ export class Renderer {
     this.countryEstates();
     drawPobleGround(this);
     c.lineJoin = 'round'; c.lineCap = 'round';
-    const bespokeRoad = (id: string) => id.startsWith('poble-') || this.game.map.pobleSec?.approaches.some(road => road.id === id);
+    const bespokeRoad = (id: string) => this.game.map.pobleSec?.streets.some(road => road.id === id) || this.game.map.pobleSec?.approaches.some(road => road.id === id);
     for (const road of COUNTRY_ROADS) {
       if (bespokeRoad(road.id)) continue;
       trace(c, road.points); c.strokeStyle = road.bridge ? '#7d8985' : '#89917a'; c.lineWidth = road.bridge ? 15 : 15.5; c.stroke();

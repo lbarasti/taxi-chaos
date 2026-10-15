@@ -466,146 +466,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-0-0-0-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 365.093,
-        "y": 28.263
-      },
-      "kind": "building",
-      "width": 21.6,
-      "height": 1.563,
-      "angle": 0.24,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-0-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 363.913,
-        "y": 31.192
-      },
-      "kind": "building",
-      "width": 20.7,
-      "height": 4.688,
-      "angle": 0.24,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-0-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 362.733,
-        "y": 34.121
-      },
-      "kind": "building",
-      "width": 19.8,
-      "height": 1.563,
-      "angle": 0.24,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-1-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 358.819,
-        "y": 46.331
-      },
-      "kind": "building",
-      "width": 18,
-      "height": 5.273,
-      "angle": 0.24,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-1-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 354.923,
-        "y": 48.997
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.758,
-      "angle": 0.24,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-2-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 355.228,
-        "y": 36.394
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 6.42,
-      "angle": 0.24,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-3-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 367.848,
-        "y": 37.83
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 3.21,
-      "angle": 0.24,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-3-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 366.648,
-        "y": 40.841
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 3.21,
-      "angle": 0.24,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-4-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 354.988,
-        "y": 41.159
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 2.952,
-      "angle": 0.24,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-0-5-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 367.227,
-        "y": 44.154
-      },
-      "kind": "building",
-      "width": 4.5,
-      "height": 2.952,
-      "angle": 0.24,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
       "id": "poble-block-0-0-lamp-0",
       "owner": "highlands",
       "position": {
@@ -631,188 +491,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-6-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 399.847,
-        "y": 39.542
-      },
-      "kind": "building",
-      "width": 27.9,
-      "height": 3.173,
-      "angle": 0.339669,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-6-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 398.101,
-        "y": 43.132
-      },
-      "kind": "building",
-      "width": 27,
-      "height": 4.759,
-      "angle": 0.339669,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-7-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 391.492,
-        "y": 57.784
-      },
-      "kind": "building",
-      "width": 26.1,
-      "height": 1.771,
-      "angle": 0.339669,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-7-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 390.053,
-        "y": 59.154
-      },
-      "kind": "building",
-      "width": 26.1,
-      "height": 1.771,
-      "angle": 0.339669,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-7-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 393.706,
-        "y": 62.324
-      },
-      "kind": "building",
-      "width": 17.1,
-      "height": 1.771,
-      "angle": 0.339669,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-7-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 397.359,
-        "y": 65.493
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.771,
-      "angle": 0.339669,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-8-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 389.007,
-        "y": 43.205
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.438,
-      "angle": 0.339669,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-8-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 387.625,
-        "y": 45.766
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 4.313,
-      "angle": 0.339669,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-9-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 404.282,
-        "y": 48.602
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.438,
-      "angle": 0.339669,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-9-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 402.899,
-        "y": 51.164
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 4.313,
-      "angle": 0.339669,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-10-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 386.164,
-        "y": 51.25
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 7.001,
-      "angle": 0.339669,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-11-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 402.738,
-        "y": 54.322
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 1.75,
-      "angle": 0.339669,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-1-11-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 401.147,
-        "y": 57.473
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 5.251,
-      "angle": 0.339669,
-      "color": "#b69d82",
       "label": ""
     },
     {
@@ -844,118 +522,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-0-2-12-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 443.116,
-        "y": 48.525
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 443.826,
-        "y": 50.309
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 444.088,
-        "y": 52.045
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 444.351,
-        "y": 53.78
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p4",
-      "owner": "highlands",
-      "position": {
-        "x": 444.613,
-        "y": 55.515
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p5",
-      "owner": "highlands",
-      "position": {
-        "x": 445.323,
-        "y": 57.299
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p6",
-      "owner": "highlands",
-      "position": {
-        "x": 445.138,
-        "y": 58.985
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-12-tile-p7",
-      "owner": "highlands",
-      "position": {
-        "x": 445.401,
-        "y": 60.72
-      },
-      "kind": "building",
-      "width": 0.9,
-      "height": 1.696,
-      "angle": 0.109173,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
       "id": "poble-block-0-2-wedge-0-lamp-0",
       "owner": "highlands",
       "position": {
@@ -981,160 +547,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 429.074,
-        "y": 60.634
-      },
-      "kind": "building",
-      "width": 20.7,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 427.666,
-        "y": 61.655
-      },
-      "kind": "building",
-      "width": 18.9,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 425.731,
-        "y": 61.946
-      },
-      "kind": "building",
-      "width": 17.1,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 424.323,
-        "y": 62.966
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p4",
-      "owner": "highlands",
-      "position": {
-        "x": 422.916,
-        "y": 63.986
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p5",
-      "owner": "highlands",
-      "position": {
-        "x": 421.508,
-        "y": 65.006
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p6",
-      "owner": "highlands",
-      "position": {
-        "x": 419.837,
-        "y": 65.662
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p7",
-      "owner": "highlands",
-      "position": {
-        "x": 418.429,
-        "y": 66.682
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p8",
-      "owner": "highlands",
-      "position": {
-        "x": 417.022,
-        "y": 67.702
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p9",
-      "owner": "highlands",
-      "position": {
-        "x": 415.615,
-        "y": 68.722
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-2-13-tile-p10",
-      "owner": "highlands",
-      "position": {
-        "x": 413.943,
-        "y": 69.378
-      },
-      "kind": "building",
-      "width": 0.9,
-      "height": 1.738,
-      "angle": 0.943614,
-      "color": "#a97e68",
       "label": ""
     },
     {
@@ -1166,90 +578,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-0-3-14-industrial-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 472.532,
-        "y": 55.897
-      },
-      "kind": "building",
-      "width": 19.8,
-      "height": 5.191,
-      "angle": 0.272247,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-3-14-industrial-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 470.47,
-        "y": 61.609
-      },
-      "kind": "building",
-      "width": 20.7,
-      "height": 6.921,
-      "angle": 0.272247,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-3-14-industrial-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 468.408,
-        "y": 67.32
-      },
-      "kind": "building",
-      "width": 21.6,
-      "height": 5.191,
-      "angle": 0.272247,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-3-14-industrial-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 467.678,
-        "y": 71.608
-      },
-      "kind": "building",
-      "width": 22.5,
-      "height": 3.46,
-      "angle": 0.272247,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-3-14-industrial-p4",
-      "owner": "highlands",
-      "position": {
-        "x": 466.547,
-        "y": 73.986
-      },
-      "kind": "building",
-      "width": 23.4,
-      "height": 1.73,
-      "angle": 0.272247,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-0-3-14-industrial-p5",
-      "owner": "highlands",
-      "position": {
-        "x": 471.283,
-        "y": 77.105
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 1.73,
-      "angle": 0.272247,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
       "id": "poble-block-0-3-lamp-0",
       "owner": "highlands",
       "position": {
@@ -1278,188 +606,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-1-0-15-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 354.108,
-        "y": 63.461
-      },
-      "kind": "building",
-      "width": 17.1,
-      "height": 3.109,
-      "angle": 0.102934,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-15-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 353.181,
-        "y": 68.054
-      },
-      "kind": "building",
-      "width": 18,
-      "height": 6.219,
-      "angle": 0.102934,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-16-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 349.415,
-        "y": 86.996
-      },
-      "kind": "building",
-      "width": 19.8,
-      "height": 3.412,
-      "angle": 0.102934,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-16-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 354.076,
-        "y": 90.05
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.706,
-      "angle": 0.102934,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-17-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 345.481,
-        "y": 72.532
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 4.273,
-      "angle": 0.102934,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-18-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 357.566,
-        "y": 73.781
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 4.273,
-      "angle": 0.102934,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-19-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 345.105,
-        "y": 76.165
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 3.032,
-      "angle": 0.102934,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-19-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 344.424,
-        "y": 78.381
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 1.516,
-      "angle": 0.102934,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-20-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 357.561,
-        "y": 78.214
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 4.549,
-      "angle": 0.102934,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-21-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 345.026,
-        "y": 81.314
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 4.194,
-      "angle": 0.102934,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-21-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 344.291,
-        "y": 84.049
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 1.398,
-      "angle": 0.102934,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-22-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 357.631,
-        "y": 81.913
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 2.796,
-      "angle": 0.102934,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-0-22-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 356.896,
-        "y": 84.648
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 2.796,
-      "angle": 0.102934,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
       "id": "poble-block-1-0-lamp-0",
       "owner": "highlands",
       "position": {
@@ -1485,734 +631,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-23-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 384.962,
-        "y": 75.164
-      },
-      "kind": "building",
-      "width": 23.4,
-      "height": 3.236,
-      "angle": 0.536546,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-23-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 384.495,
-        "y": 77.71
-      },
-      "kind": "building",
-      "width": 23.4,
-      "height": 1.618,
-      "angle": 0.536546,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-23-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 384.028,
-        "y": 80.256
-      },
-      "kind": "building",
-      "width": 23.4,
-      "height": 3.236,
-      "angle": 0.536546,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-24-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 373.347,
-        "y": 139.59
-      },
-      "kind": "building",
-      "width": 18.9,
-      "height": 3.044,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-24-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 372.954,
-        "y": 142.012
-      },
-      "kind": "building",
-      "width": 18.9,
-      "height": 1.522,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-25-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 380.106,
-        "y": 80.688
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-25-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 379.717,
-        "y": 82.223
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-25-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 378.94,
-        "y": 84.41
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 3.036,
-      "angle": 0.536546,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-26-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 392.481,
-        "y": 88.932
-      },
-      "kind": "building",
-      "width": 1.8,
-      "height": 3.036,
-      "angle": 0.536546,
-      "color": "#9e725e",
-      "label": "MURAL DEL DRAC"
-    },
-    {
-      "id": "poble-lot-1-1-26-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 391.704,
-        "y": 91.118
-      },
-      "kind": "building",
-      "width": 2.7,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#9e725e",
-      "label": "MURAL DEL DRAC"
-    },
-    {
-      "id": "poble-lot-1-1-26-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 391.315,
-        "y": 92.653
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#9e725e",
-      "label": "MURAL DEL DRAC"
-    },
-    {
-      "id": "poble-lot-1-1-27-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 379.289,
-        "y": 87.344
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 1.651,
-      "angle": 0.536546,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-27-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 378.832,
-        "y": 88.993
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 1.651,
-      "angle": 0.536546,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-27-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 377.953,
-        "y": 91.351
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 3.302,
-      "angle": 0.536546,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-28-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 390.892,
-        "y": 94.245
-      },
-      "kind": "building",
-      "width": 2.7,
-      "height": 1.651,
-      "angle": 0.536546,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-28-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 390.013,
-        "y": 96.603
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 3.302,
-      "angle": 0.536546,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-28-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 389.134,
-        "y": 98.961
-      },
-      "kind": "building",
-      "width": 4.5,
-      "height": 1.651,
-      "angle": 0.536546,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-29-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 376.352,
-        "y": 93.161
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 1.446,
-      "angle": 0.536546,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-29-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 375.63,
-        "y": 95.256
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 2.892,
-      "angle": 0.536546,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-29-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 374.908,
-        "y": 97.35
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 1.446,
-      "angle": 0.536546,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-29-terrace-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 374.556,
-        "y": 98.823
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.446,
-      "angle": 0.536546,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-30-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 387.973,
-        "y": 100.914
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 2.892,
-      "angle": 0.536546,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-30-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 386.881,
-        "y": 103.629
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 2.892,
-      "angle": 0.536546,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-30-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 386.159,
-        "y": 105.723
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.446,
-      "angle": 0.536546,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-31-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 373.035,
-        "y": 99.62
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 1.479,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-31-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 372.665,
-        "y": 101.121
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.479,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-31-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 371.918,
-        "y": 103.259
-      },
-      "kind": "building",
-      "width": 4.5,
-      "height": 2.959,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-31-terrace-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 371.17,
-        "y": 105.396
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 1.479,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-32-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 385.411,
-        "y": 106.981
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.479,
-      "angle": 0.536546,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-32-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 384.664,
-        "y": 109.118
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 2.959,
-      "angle": 0.536546,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-32-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 383.538,
-        "y": 111.891
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 2.959,
-      "angle": 0.536546,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-33-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 371.95,
-        "y": 108.487
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 3.036,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-33-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 371.173,
-        "y": 110.673
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-33-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 370.784,
-        "y": 112.208
-      },
-      "kind": "building",
-      "width": 4.5,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-34-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 383.166,
-        "y": 115.157
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 3.036,
-      "angle": 0.536546,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-34-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 382.389,
-        "y": 117.344
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-34-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 382,
-        "y": 118.879
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 1.518,
-      "angle": 0.536546,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-35-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 368.856,
-        "y": 112.809
-      },
-      "kind": "building",
-      "width": 1.8,
-      "height": 1.486,
-      "angle": 0.536546,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-35-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 368.483,
-        "y": 114.316
-      },
-      "kind": "building",
-      "width": 0.9,
-      "height": 1.486,
-      "angle": 0.536546,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-36-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 380.459,
-        "y": 119.71
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 1.486,
-      "angle": 0.536546,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-36-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 379.706,
-        "y": 121.856
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 2.972,
-      "angle": 0.536546,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-37-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 368.506,
-        "y": 117.799
-      },
-      "kind": "building",
-      "width": 2.7,
-      "height": 1.504,
-      "angle": 0.536546,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-37-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 368.124,
-        "y": 119.321
-      },
-      "kind": "building",
-      "width": 1.8,
-      "height": 1.504,
-      "angle": 0.536546,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-37-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 367.742,
-        "y": 120.843
-      },
-      "kind": "building",
-      "width": 0.9,
-      "height": 1.504,
-      "angle": 0.536546,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-38-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 378.564,
-        "y": 124.655
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 3.007,
-      "angle": 0.536546,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-38-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 377.414,
-        "y": 127.47
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 3.007,
-      "angle": 0.536546,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-39-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 377.427,
-        "y": 130.089
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 1.479,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-39-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 376.68,
-        "y": 132.226
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 2.959,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-39-terrace-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 375.932,
-        "y": 134.363
-      },
-      "kind": "building",
-      "width": 16.2,
-      "height": 1.479,
-      "angle": 0.536546,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-40-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 373.94,
-        "y": 135.072
-      },
-      "kind": "building",
-      "width": 18.9,
-      "height": 1.776,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-40-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 373.806,
-        "y": 137.058
-      },
-      "kind": "building",
-      "width": 18.9,
-      "height": 1.776,
-      "angle": 0.536546,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-1-41-workshop-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 377.863,
-        "y": 109.109
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 6.749,
-      "angle": 0.536546,
-      "color": "#bd9478",
       "label": ""
     },
     {
@@ -2314,566 +732,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-1-3-42-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 461.946,
-        "y": 89.692
-      },
-      "kind": "building",
-      "width": 24.3,
-      "height": 4.709,
-      "angle": 0.405149,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-42-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 460.813,
-        "y": 93.475
-      },
-      "kind": "building",
-      "width": 25.2,
-      "height": 3.139,
-      "angle": 0.405149,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-42-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 460.299,
-        "y": 95.817
-      },
-      "kind": "building",
-      "width": 24.3,
-      "height": 1.57,
-      "angle": 0.405149,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-43-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 444.392,
-        "y": 150.03
-      },
-      "kind": "building",
-      "width": 27,
-      "height": 1.457,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-43-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 440.51,
-        "y": 149.95
-      },
-      "kind": "building",
-      "width": 19.8,
-      "height": 1.457,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-43-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 437.041,
-        "y": 150.047
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 1.457,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-43-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 433.571,
-        "y": 150.145
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.457,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-44-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 453.785,
-        "y": 97.305
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 6.303,
-      "angle": 0.405149,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-45-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 467.432,
-        "y": 103.159
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 6.303,
-      "angle": 0.405149,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-46-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 451.383,
-        "y": 100.622
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.687,
-      "angle": 0.405149,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-46-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 450.466,
-        "y": 103.901
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 5.062,
-      "angle": 0.405149,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-47-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 465.606,
-        "y": 108.558
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 5.062,
-      "angle": 0.405149,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-47-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 464.69,
-        "y": 111.837
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 1.687,
-      "angle": 0.405149,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-48-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 450.098,
-        "y": 108.186
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 3.105,
-      "angle": 0.405149,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-48-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 449.287,
-        "y": 111.217
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 3.105,
-      "angle": 0.405149,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-49-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 464.159,
-        "y": 114.216
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 3.105,
-      "angle": 0.405149,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-49-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 463.349,
-        "y": 117.247
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 3.105,
-      "angle": 0.405149,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-50-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 446.775,
-        "y": 114.792
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 5.447,
-      "angle": 0.405149,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-51-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 462.2,
-        "y": 119.926
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 2.723,
-      "angle": 0.405149,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-51-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 461.54,
-        "y": 122.606
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 2.723,
-      "angle": 0.405149,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-52-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 445.507,
-        "y": 120.031
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 5.182,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-53-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 460.323,
-        "y": 125.445
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 3.454,
-      "angle": 0.405149,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-53-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 459.715,
-        "y": 128.003
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 1.727,
-      "angle": 0.405149,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-54-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 443.892,
-        "y": 123.797
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 3.015,
-      "angle": 0.405149,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-54-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 443.414,
-        "y": 126.052
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.507,
-      "angle": 0.405149,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-55-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 458.781,
-        "y": 130.182
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 3.015,
-      "angle": 0.405149,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-55-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 458.303,
-        "y": 132.438
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.507,
-      "angle": 0.405149,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-56-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 442.045,
-        "y": 129.244
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 5.438,
-      "angle": 0.405149,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-57-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 457.202,
-        "y": 135.005
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 4.079,
-      "angle": 0.405149,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-57-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 456.544,
-        "y": 137.681
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 1.36,
-      "angle": 0.405149,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-58-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 440.704,
-        "y": 132.372
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.368,
-      "angle": 0.405149,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-58-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 440.039,
-        "y": 135.064
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 4.104,
-      "angle": 0.405149,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-59-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 455.88,
-        "y": 140.369
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 4.104,
-      "angle": 0.405149,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-59-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 455.216,
-        "y": 143.061
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 1.368,
-      "angle": 0.405149,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-60-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 437.888,
-        "y": 138.938
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 4.711,
-      "angle": 0.405149,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-61-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 453.913,
-        "y": 144.956
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 3.141,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-61-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 453.398,
-        "y": 147.298
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 1.57,
-      "angle": 0.405149,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-62-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 436.891,
-        "y": 143.547
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 4.547,
-      "angle": 0.405149,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-63-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 451.779,
-        "y": 149.932
-      },
-      "kind": "building",
-      "width": 15.3,
-      "height": 4.547,
-      "angle": 0.405149,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-1-3-64-workshop-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 453.508,
-        "y": 123.067
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 7.128,
-      "angle": 0.405149,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
       "id": "poble-block-1-3-lamp-0",
       "owner": "highlands",
       "position": {
@@ -2899,132 +757,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 343.36,
-        "y": 101.506
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 342.042,
-        "y": 102.994
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 341.159,
-        "y": 104.597
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 339.84,
-        "y": 106.086
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p4",
-      "owner": "highlands",
-      "position": {
-        "x": 338.957,
-        "y": 107.688
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p5",
-      "owner": "highlands",
-      "position": {
-        "x": 337.639,
-        "y": 109.177
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p6",
-      "owner": "highlands",
-      "position": {
-        "x": 337.191,
-        "y": 110.893
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p7",
-      "owner": "highlands",
-      "position": {
-        "x": 335.873,
-        "y": 112.382
-      },
-      "kind": "building",
-      "width": 1.8,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-65-tile-p8",
-      "owner": "highlands",
-      "position": {
-        "x": 334.99,
-        "y": 113.984
-      },
-      "kind": "building",
-      "width": 0.9,
-      "height": 1.773,
-      "angle": 0.25515,
-      "color": "#c09a80",
       "label": ""
     },
     {
@@ -3056,132 +788,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-2-0-66-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 353.754,
-        "y": 124.589
-      },
-      "kind": "building",
-      "width": 18.9,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 352.01,
-        "y": 124.787
-      },
-      "kind": "building",
-      "width": 16.2,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 350.199,
-        "y": 125.43
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 348.454,
-        "y": 125.628
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p4",
-      "owner": "highlands",
-      "position": {
-        "x": 346.644,
-        "y": 126.271
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p5",
-      "owner": "highlands",
-      "position": {
-        "x": 344.899,
-        "y": 126.469
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p6",
-      "owner": "highlands",
-      "position": {
-        "x": 343.089,
-        "y": 127.112
-      },
-      "kind": "building",
-      "width": 5.4,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p7",
-      "owner": "highlands",
-      "position": {
-        "x": 341.41,
-        "y": 126.865
-      },
-      "kind": "building",
-      "width": 3.6,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-0-66-tile-p8",
-      "owner": "highlands",
-      "position": {
-        "x": 339.599,
-        "y": 127.508
-      },
-      "kind": "building",
-      "width": 1.8,
-      "height": 1.697,
-      "angle": 1.716955,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
       "id": "poble-block-2-0-wedge-1-lamp-0",
       "owner": "highlands",
       "position": {
@@ -3207,230 +813,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-67-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 412.498,
-        "y": 122.403
-      },
-      "kind": "building",
-      "width": 27.9,
-      "height": 1.74,
-      "angle": -0.043308,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-67-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 412.123,
-        "y": 124.161
-      },
-      "kind": "building",
-      "width": 27,
-      "height": 1.74,
-      "angle": -0.043308,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-67-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 411.337,
-        "y": 126.809
-      },
-      "kind": "building",
-      "width": 27,
-      "height": 3.481,
-      "angle": -0.043308,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-67-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 410.551,
-        "y": 129.456
-      },
-      "kind": "building",
-      "width": 27,
-      "height": 1.74,
-      "angle": -0.043308,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-68-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 407.498,
-        "y": 142.166
-      },
-      "kind": "building",
-      "width": 25.2,
-      "height": 1.773,
-      "angle": -0.043308,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-68-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 406.714,
-        "y": 144.862
-      },
-      "kind": "building",
-      "width": 25.2,
-      "height": 3.547,
-      "angle": -0.043308,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-68-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 405.93,
-        "y": 147.559
-      },
-      "kind": "building",
-      "width": 25.2,
-      "height": 1.773,
-      "angle": -0.043308,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-69-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 402.078,
-        "y": 131.406
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.423,
-      "angle": -0.043308,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-69-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 401.72,
-        "y": 133.559
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 2.847,
-      "angle": -0.043308,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-69-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 401.363,
-        "y": 135.711
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.423,
-      "angle": -0.043308,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-70-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 417.394,
-        "y": 131.455
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 2.847,
-      "angle": -0.043308,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-70-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 417.068,
-        "y": 134.318
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 2.847,
-      "angle": -0.043308,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-71-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 401.917,
-        "y": 138.106
-      },
-      "kind": "building",
-      "width": 12.6,
-      "height": 3.41,
-      "angle": -0.043308,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-71-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 401.579,
-        "y": 140.681
-      },
-      "kind": "building",
-      "width": 13.5,
-      "height": 1.705,
-      "angle": -0.043308,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-72-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 418.065,
-        "y": 136.553
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.705,
-      "angle": -0.043308,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-2-2-72-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 417.727,
-        "y": 139.128
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 3.41,
-      "angle": -0.043308,
-      "color": "#b08c73",
       "label": ""
     },
     {
@@ -3462,202 +844,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-3-0-73-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 339.103,
-        "y": 143.364
-      },
-      "kind": "building",
-      "width": 22.5,
-      "height": 4.584,
-      "angle": 0.386012,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-73-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 338.37,
-        "y": 146.365
-      },
-      "kind": "building",
-      "width": 21.6,
-      "height": 1.528,
-      "angle": 0.386012,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-73-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 338.211,
-        "y": 147.95
-      },
-      "kind": "building",
-      "width": 22.5,
-      "height": 1.528,
-      "angle": 0.386012,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-74-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 333.938,
-        "y": 160.855
-      },
-      "kind": "building",
-      "width": 22.5,
-      "height": 1.592,
-      "angle": 0.386012,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-74-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 332.505,
-        "y": 161.99
-      },
-      "kind": "building",
-      "width": 20.7,
-      "height": 1.592,
-      "angle": 0.386012,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-74-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 326.903,
-        "y": 161.431
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.592,
-      "angle": 0.386012,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-75-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 329.493,
-        "y": 149.083
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 7.138,
-      "angle": 0.386012,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-76-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 342.416,
-        "y": 154.335
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 7.138,
-      "angle": 0.386012,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-77-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 328.445,
-        "y": 154.052
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 2.859,
-      "angle": 0.386012,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-77-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 328.055,
-        "y": 156.208
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.429,
-      "angle": 0.386012,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-78-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 341.638,
-        "y": 158.643
-      },
-      "kind": "building",
-      "width": 8.1,
-      "height": 1.429,
-      "angle": 0.386012,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-78-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 341.247,
-        "y": 160.798
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 2.859,
-      "angle": 0.386012,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-79-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 326.843,
-        "y": 156.799
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 0.579,
-      "angle": 0.386012,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-0-80-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 340.183,
-        "y": 162.221
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 0.579,
-      "angle": 0.386012,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
       "id": "poble-block-3-0-lamp-0",
       "owner": "highlands",
       "position": {
@@ -3683,160 +869,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-81-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 369.978,
-        "y": 155.889
-      },
-      "kind": "building",
-      "width": 19.8,
-      "height": 1.743,
-      "angle": 0.469232,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-81-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 369.599,
-        "y": 158.627
-      },
-      "kind": "building",
-      "width": 19.8,
-      "height": 3.485,
-      "angle": 0.469232,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-81-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 368.818,
-        "y": 161.162
-      },
-      "kind": "building",
-      "width": 20.7,
-      "height": 1.743,
-      "angle": 0.469232,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-81-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 368.833,
-        "y": 163.123
-      },
-      "kind": "building",
-      "width": 20.7,
-      "height": 1.743,
-      "angle": 0.469232,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-82-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 367.88,
-        "y": 167.988
-      },
-      "kind": "building",
-      "width": 23.4,
-      "height": 1.683,
-      "angle": 0.469232,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-82-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 367.119,
-        "y": 169.489
-      },
-      "kind": "building",
-      "width": 21.6,
-      "height": 1.683,
-      "angle": 0.469232,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-82-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 363.147,
-        "y": 169.363
-      },
-      "kind": "building",
-      "width": 14.4,
-      "height": 1.683,
-      "angle": 0.469232,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-82-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 359.175,
-        "y": 169.236
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.683,
-      "angle": 0.469232,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-83-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 362.53,
-        "y": 162.618
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 3.057,
-      "angle": 0.469232,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-84-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 375.318,
-        "y": 168.245
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 1.529,
-      "angle": 0.469232,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-1-84-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 375.028,
-        "y": 169.812
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 1.529,
-      "angle": 0.469232,
-      "color": "#a56e56",
       "label": ""
     },
     {
@@ -3868,160 +900,6 @@
       "label": ""
     },
     {
-      "id": "poble-lot-3-2-85-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 403.396,
-        "y": 164.669
-      },
-      "kind": "building",
-      "width": 25.2,
-      "height": 6.632,
-      "angle": -0.030947,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-86-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 404.717,
-        "y": 178.245
-      },
-      "kind": "building",
-      "width": 21.6,
-      "height": 1.516,
-      "angle": -0.030947,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-86-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 407.463,
-        "y": 179.676
-      },
-      "kind": "building",
-      "width": 16.2,
-      "height": 1.516,
-      "angle": -0.030947,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-86-tile-p2",
-      "owner": "highlands",
-      "position": {
-        "x": 409.758,
-        "y": 181.121
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.516,
-      "angle": -0.030947,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-86-tile-p3",
-      "owner": "highlands",
-      "position": {
-        "x": 412.504,
-        "y": 182.553
-      },
-      "kind": "building",
-      "width": 4.5,
-      "height": 1.516,
-      "angle": -0.030947,
-      "color": "#ad775f",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-87-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 395.429,
-        "y": 169.093
-      },
-      "kind": "building",
-      "width": 9,
-      "height": 1.718,
-      "angle": -0.030947,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-87-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 395.086,
-        "y": 172.54
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 5.153,
-      "angle": -0.030947,
-      "color": "#b58268",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-88-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 410.272,
-        "y": 168.633
-      },
-      "kind": "building",
-      "width": 11.7,
-      "height": 1.718,
-      "angle": -0.030947,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-88-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 409.929,
-        "y": 172.081
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 5.153,
-      "angle": -0.030947,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-89-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 395.207,
-        "y": 176.448
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 2.666,
-      "angle": -0.030947,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-2-90-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 410.5,
-        "y": 175.974
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 2.666,
-      "angle": -0.030947,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
       "id": "poble-block-3-2-lamp-0",
       "owner": "highlands",
       "position": {
@@ -4047,188 +925,6 @@
       "height": 0.5,
       "angle": 0.24,
       "color": "#c4b696",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-91-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 441.255,
-        "y": 167.056
-      },
-      "kind": "building",
-      "width": 27,
-      "height": 5.021,
-      "angle": 0.191258,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-91-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 440.902,
-        "y": 171.249
-      },
-      "kind": "building",
-      "width": 26.1,
-      "height": 3.347,
-      "angle": 0.191258,
-      "color": "#bd9478",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-92-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 438.463,
-        "y": 186.212
-      },
-      "kind": "building",
-      "width": 23.4,
-      "height": 3.094,
-      "angle": 0.191258,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-92-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 438.463,
-        "y": 188.576
-      },
-      "kind": "building",
-      "width": 22.5,
-      "height": 1.547,
-      "angle": 0.191258,
-      "color": "#9e725e",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-93-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 432.794,
-        "y": 172.878
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 2.933,
-      "angle": 0.191258,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-93-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 432.678,
-        "y": 175.843
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 2.933,
-      "angle": 0.191258,
-      "color": "#c09a80",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-94-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 447.978,
-        "y": 177.312
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 5.867,
-      "angle": 0.191258,
-      "color": "#a97e68",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-95-terrace-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 430.804,
-        "y": 178.422
-      },
-      "kind": "building",
-      "width": 7.2,
-      "height": 2.844,
-      "angle": 0.191258,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-95-terrace-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 430.705,
-        "y": 181.3
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 2.844,
-      "angle": 0.191258,
-      "color": "#b08c73",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-96-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 446.573,
-        "y": 182.2
-      },
-      "kind": "building",
-      "width": 10.8,
-      "height": 4.266,
-      "angle": 0.191258,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-96-tile-p1",
-      "owner": "highlands",
-      "position": {
-        "x": 445.591,
-        "y": 184.906
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 1.422,
-      "angle": 0.191258,
-      "color": "#b69d82",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-97-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 430.399,
-        "y": 182.882
-      },
-      "kind": "building",
-      "width": 6.3,
-      "height": 0.379,
-      "angle": 0.191258,
-      "color": "#a56e56",
-      "label": ""
-    },
-    {
-      "id": "poble-lot-3-3-98-tile-p0",
-      "owner": "highlands",
-      "position": {
-        "x": 445.42,
-        "y": 185.79
-      },
-      "kind": "building",
-      "width": 9.9,
-      "height": 0.379,
-      "angle": 0.191258,
-      "color": "#ad775f",
       "label": ""
     },
     {
@@ -4258,48 +954,6 @@
       "angle": 0.24,
       "color": "#c4b696",
       "label": ""
-    },
-    {
-      "id": "poble-chimney-0",
-      "owner": "highlands",
-      "position": {
-        "x": 466.88,
-        "y": 62.045
-      },
-      "kind": "building",
-      "width": 2.2,
-      "height": 2.2,
-      "angle": 0.24,
-      "color": "#956148",
-      "label": "LES TRES XEMENEIES"
-    },
-    {
-      "id": "poble-chimney-1",
-      "owner": "highlands",
-      "position": {
-        "x": 470.766,
-        "y": 62.996
-      },
-      "kind": "building",
-      "width": 2.2,
-      "height": 2.2,
-      "angle": 0.24,
-      "color": "#956148",
-      "label": "LES TRES XEMENEIES"
-    },
-    {
-      "id": "poble-chimney-2",
-      "owner": "highlands",
-      "position": {
-        "x": 474.651,
-        "y": 63.947
-      },
-      "kind": "building",
-      "width": 2.2,
-      "height": 2.2,
-      "angle": 0.24,
-      "color": "#956148",
-      "label": "LES TRES XEMENEIES"
     },
     {
       "id": "poble-promenade-tree-1",
@@ -4384,6 +1038,4122 @@
       "angle": 0.24,
       "color": "#688453",
       "label": ""
+    },
+    {
+      "id": "poble-lot-0-0-0-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 364.3500514018593,
+        "y": 31.29895377797974
+      },
+      "kind": "building",
+      "width": 21.6,
+      "height": 7.814076055051231,
+      "angle": 0.24,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -10.8,
+            "y": -3.907038027525615
+          },
+          {
+            "x": 10.8,
+            "y": -3.907038027525615
+          },
+          {
+            "x": 10.8,
+            "y": -2.3440380275256154
+          },
+          {
+            "x": 9.900052182479675,
+            "y": 2.3439999999999985
+          },
+          {
+            "x": 9.000104364959352,
+            "y": 3.9070380275256156
+          },
+          {
+            "x": -10.799895635040649,
+            "y": 3.9070380275256156
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-0-1-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 358.6097384933648,
+        "y": 47.18481839122152
+      },
+      "kind": "building",
+      "width": 18.00061754796878,
+      "height": 7.031176473515627,
+      "angle": 0.24,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -9.00030877398439,
+            "y": 1.757588236757814
+          },
+          {
+            "x": -8.99969122601561,
+            "y": -3.5155882367578135
+          },
+          {
+            "x": 9.00030877398439,
+            "y": -3.5155882367578135
+          },
+          {
+            "x": 9.00030877398439,
+            "y": 1.7574117632421862
+          },
+          {
+            "x": 2.699691226015609,
+            "y": 3.5155882367578135
+          },
+          {
+            "x": -9.00030877398439,
+            "y": 3.5155882367578135
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-0-2-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 355.228,
+        "y": 36.394
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 6.42,
+      "angle": 0.24,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.15,
+            "y": -3.21
+          },
+          {
+            "x": 3.15,
+            "y": -3.21
+          },
+          {
+            "x": 3.15,
+            "y": 3.21
+          },
+          {
+            "x": -3.15,
+            "y": 3.21
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-0-3-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 367.46649420244495,
+        "y": 39.38896918078455
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 6.419941793992022,
+      "angle": 0.24,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.05,
+            "y": -3.209970896996011
+          },
+          {
+            "x": 4.05,
+            "y": -3.209970896996011
+          },
+          {
+            "x": 4.05,
+            "y": 2.910300398872856e-05
+          },
+          {
+            "x": 3.150117038349679,
+            "y": 3.209970896996011
+          },
+          {
+            "x": -4.049882961650321,
+            "y": 3.209970896996011
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-0-4-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 354.988,
+        "y": 41.159
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 2.952,
+      "angle": 0.24,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.05,
+            "y": -1.476
+          },
+          {
+            "x": 4.05,
+            "y": -1.476
+          },
+          {
+            "x": 4.05,
+            "y": 1.476
+          },
+          {
+            "x": -4.05,
+            "y": 1.476
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-0-5-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 367.227,
+        "y": 44.154
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 2.952,
+      "angle": 0.24,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -2.25,
+            "y": -1.476
+          },
+          {
+            "x": 2.25,
+            "y": -1.476
+          },
+          {
+            "x": 2.25,
+            "y": 1.476
+          },
+          {
+            "x": -2.25,
+            "y": 1.476
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-1-6-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 399.05404072831845,
+        "y": 41.78581035171914
+      },
+      "kind": "building",
+      "width": 27.900143957418504,
+      "height": 7.9326089317702495,
+      "angle": 0.339669,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -13.950071978709252,
+            "y": -0.792695534114876
+          },
+          {
+            "x": -13.949928021290747,
+            "y": -0.7933044658851247
+          },
+          {
+            "x": 13.950071978709252,
+            "y": -3.9663044658851248
+          },
+          {
+            "x": 13.950071978709252,
+            "y": -0.7933044658851247
+          },
+          {
+            "x": 13.049928021290748,
+            "y": 3.9663044658851248
+          },
+          {
+            "x": -13.950071978709252,
+            "y": 3.9663044658851248
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-1-7-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 390.1823396682947,
+        "y": 60.13911775539949
+      },
+      "kind": "building",
+      "width": 27.000332952024664,
+      "height": 7.084808415859602,
+      "angle": 0.339669,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -13.500166476012332,
+            "y": -1.771240303741758
+          },
+          {
+            "x": -12.59983352398767,
+            "y": -3.5424042079298004
+          },
+          {
+            "x": 13.500166476012332,
+            "y": -3.5424042079298004
+          },
+          {
+            "x": 13.500166476012332,
+            "y": -1.7714042079298005
+          },
+          {
+            "x": 12.600401665162035,
+            "y": 3.542404207929801
+          },
+          {
+            "x": 4.500401665162037,
+            "y": 3.542404207929801
+          },
+          {
+            "x": -4.49971581791408,
+            "y": 1.7715533845930658
+          },
+          {
+            "x": -13.500166476012332,
+            "y": -0.0002403037417577636
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-1-8-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 387.86449039399656,
+        "y": 45.0882567872267
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.750625140677392,
+      "angle": 0.339669,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": -1.4376874296613038
+          },
+          {
+            "x": -4.500221804169185,
+            "y": -2.8753125703386955
+          },
+          {
+            "x": 5.399778195830815,
+            "y": -2.8753125703386955
+          },
+          {
+            "x": 5.4,
+            "y": 2.875312570338696
+          },
+          {
+            "x": -5.4,
+            "y": 2.875312570338696
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-1-9-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 403.56317507745194,
+        "y": 50.63564859735985
+      },
+      "kind": "building",
+      "width": 11.700387885806816,
+      "height": 5.751901180697581,
+      "angle": 0.339669,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.850193942903408,
+            "y": -1.437049409651209
+          },
+          {
+            "x": -5.8498060570965915,
+            "y": -1.4379505903487901
+          },
+          {
+            "x": 5.850193942903408,
+            "y": -2.87595059034879
+          },
+          {
+            "x": 5.850193942903408,
+            "y": -1.4379505903487901
+          },
+          {
+            "x": 4.949806057096593,
+            "y": 2.8759505903487903
+          },
+          {
+            "x": -5.850193942903408,
+            "y": 2.8759505903487903
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-1-10-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 386.164,
+        "y": 51.25
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 7.001,
+      "angle": 0.339669,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.85,
+            "y": -3.5005
+          },
+          {
+            "x": 5.85,
+            "y": -3.5005
+          },
+          {
+            "x": 5.85,
+            "y": 3.5005
+          },
+          {
+            "x": -5.85,
+            "y": 3.5005
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-1-11-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 401.8630331864959,
+        "y": 56.79770696956395
+      },
+      "kind": "building",
+      "width": 9.000263717406309,
+      "height": 7.001549069177331,
+      "angle": 0.339669,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.5001318587031545,
+            "y": -1.7502254654113352
+          },
+          {
+            "x": -4.4998681412968455,
+            "y": -1.7507745345886656
+          },
+          {
+            "x": 4.5001318587031545,
+            "y": -3.5007745345886656
+          },
+          {
+            "x": 4.5001318587031545,
+            "y": -1.7507745345886656
+          },
+          {
+            "x": 3.5998681412968447,
+            "y": 3.5007745345886656
+          },
+          {
+            "x": -4.5001318587031545,
+            "y": 3.5007745345886656
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-2-12-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 442.4692326469276,
+        "y": 54.42638052953148
+      },
+      "kind": "building",
+      "width": 15.300151017607982,
+      "height": 13.569432554679713,
+      "angle": 0.109173,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -7.650075508803991,
+            "y": -6.7847162773398555
+          },
+          {
+            "x": 7.64992449119601,
+            "y": -6.7847162773398555
+          },
+          {
+            "x": 7.650075508803991,
+            "y": -3.3926961873941726
+          },
+          {
+            "x": 6.750137129125597,
+            "y": 0.00043733188031147563
+          },
+          {
+            "x": 5.849767455491137,
+            "y": 3.3925816363217356
+          },
+          {
+            "x": 4.05004245724547,
+            "y": 6.784716277339856
+          },
+          {
+            "x": 3.1500424572454704,
+            "y": 6.784716277339856
+          },
+          {
+            "x": 1.3495691019431193,
+            "y": 5.088701019105824
+          },
+          {
+            "x": -7.650075508803991,
+            "y": -5.088716277339856
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-2-13-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 422.0366746133782,
+        "y": 65.7347096965728
+      },
+      "kind": "building",
+      "width": 20.7,
+      "height": 19.120886757486947,
+      "angle": 0.943614,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -10.35,
+            "y": -9.560443378743473
+          },
+          {
+            "x": 10.35,
+            "y": -9.560443378743473
+          },
+          {
+            "x": 10.35,
+            "y": -7.822443378743474
+          },
+          {
+            "x": 9.450380830527456,
+            "y": -6.083218018139462
+          },
+          {
+            "x": 0.4501017646999268,
+            "y": 7.8216673263855885
+          },
+          {
+            "x": -1.3499847155978328,
+            "y": 9.560443378743473
+          },
+          {
+            "x": -2.249984715597833,
+            "y": 9.560443378743473
+          },
+          {
+            "x": -4.95021425905275,
+            "y": 4.346009705139105
+          },
+          {
+            "x": -8.550014948719188,
+            "y": -2.6070624634044695
+          },
+          {
+            "x": -9.449586094930709,
+            "y": -4.345700958343678
+          },
+          {
+            "x": -10.35,
+            "y": -7.822443378743474
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-0-3-14-industrial",
+      "owner": "highlands",
+      "position": {
+        "x": 469.1059385683285,
+        "y": 64.82052704283427
+      },
+      "kind": "building",
+      "width": 23.400256674545574,
+      "height": 24.2232422077024,
+      "angle": 0.272247,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "industrial",
+        "mural": false,
+        "outline": [
+          {
+            "x": -11.700128337272787,
+            "y": 8.650989759796126
+          },
+          {
+            "x": -10.800133708608302,
+            "y": -0.00041169882696934224
+          },
+          {
+            "x": -9.899746068423282,
+            "y": -6.920534816779941
+          },
+          {
+            "x": -8.999627324593025,
+            "y": -12.111621103851197
+          },
+          {
+            "x": 10.800372675406976,
+            "y": -12.111621103851197
+          },
+          {
+            "x": 11.6997804040208,
+            "y": 5.191451819332052
+          },
+          {
+            "x": 11.700128337272787,
+            "y": 12.1116211038512
+          },
+          {
+            "x": -0.8998716627272128,
+            "y": 12.1116211038512
+          },
+          {
+            "x": -11.700128337272787,
+            "y": 10.380989759796122
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-15-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 353.34080099867805,
+        "y": 66.50776539744017
+      },
+      "kind": "building",
+      "width": 18.000151934214124,
+      "height": 9.32794052664947,
+      "angle": 0.102934,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -9.000075967107062,
+            "y": -1.5550297366752641
+          },
+          {
+            "x": -8.09992403289294,
+            "y": -4.663970263324735
+          },
+          {
+            "x": 9.000075967107062,
+            "y": -4.663970263324735
+          },
+          {
+            "x": 9.000075967107062,
+            "y": -1.5549702633247358
+          },
+          {
+            "x": -9.000075967107062,
+            "y": 4.663970263324735
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-16-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 349.32742411144335,
+        "y": 87.84444547221247
+      },
+      "kind": "building",
+      "width": 19.800134795960567,
+      "height": 5.117906505095576,
+      "angle": 0.102934,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -9.900067397980283,
+            "y": -2.558953252547788
+          },
+          {
+            "x": 9.899932602019717,
+            "y": -2.558953252547788
+          },
+          {
+            "x": 9.900067397980283,
+            "y": 2.558953252547788
+          },
+          {
+            "x": 6.739798028476685e-05,
+            "y": 2.558953252547788
+          },
+          {
+            "x": -9.900067397980283,
+            "y": 0.8530467474522123
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-17-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 345.481,
+        "y": 72.532
+      },
+      "kind": "building",
+      "width": 5.4,
+      "height": 4.273,
+      "angle": 0.102934,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -2.7,
+            "y": -2.1365
+          },
+          {
+            "x": 2.7,
+            "y": -2.1365
+          },
+          {
+            "x": 2.7,
+            "y": 2.1365
+          },
+          {
+            "x": -2.7,
+            "y": 2.1365
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-18-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 357.566,
+        "y": 73.781
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.273,
+      "angle": 0.102934,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.05,
+            "y": -2.1365
+          },
+          {
+            "x": 4.05,
+            "y": -2.1365
+          },
+          {
+            "x": 4.05,
+            "y": 2.1365
+          },
+          {
+            "x": -4.05,
+            "y": 2.1365
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-19-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 344.5797851109429,
+        "y": 76.87290238773949
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 4.548244982779183,
+      "angle": 0.102934,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.15,
+            "y": 0.7581224913895914
+          },
+          {
+            "x": -2.250303704369557,
+            "y": -2.2741224913895914
+          },
+          {
+            "x": 3.1496962956304433,
+            "y": -2.2741224913895914
+          },
+          {
+            "x": 3.15,
+            "y": 2.2741224913895914
+          },
+          {
+            "x": -3.15,
+            "y": 2.2741224913895914
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-20-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 357.561,
+        "y": 78.214
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 4.549,
+      "angle": 0.102934,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.6,
+            "y": -2.2745
+          },
+          {
+            "x": 3.6,
+            "y": -2.2745
+          },
+          {
+            "x": 3.6,
+            "y": 2.2745
+          },
+          {
+            "x": -3.6,
+            "y": 2.2745
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-21-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 344.5065148065093,
+        "y": 81.96308055360424
+      },
+      "kind": "building",
+      "width": 9.000082015442633,
+      "height": 5.592046526682843,
+      "angle": 0.102934,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.500041007721316,
+            "y": 1.3980232633414218
+          },
+          {
+            "x": -3.5999589922786837,
+            "y": -2.7960232633414215
+          },
+          {
+            "x": 4.500041007721316,
+            "y": -2.7960232633414215
+          },
+          {
+            "x": 4.500041007721316,
+            "y": 1.3979767366585785
+          },
+          {
+            "x": -4.500041007721316,
+            "y": 2.7960232633414215
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-0-22-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 357.4873090686509,
+        "y": 83.30361927312023
+      },
+      "kind": "building",
+      "width": 6.300082015442577,
+      "height": 5.592046526682823,
+      "angle": 0.102934,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.1500410077212884,
+            "y": 2.32633414116723e-05
+          },
+          {
+            "x": 3.1500410077212884,
+            "y": -2.7960232633414117
+          },
+          {
+            "x": 3.1500410077212884,
+            "y": -2.326334141211639e-05
+          },
+          {
+            "x": 2.249958992278712,
+            "y": 2.7960232633414117
+          },
+          {
+            "x": -3.1500410077212884,
+            "y": 2.7960232633414117
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-23-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 384.495,
+        "y": 77.71000000000001
+      },
+      "kind": "building",
+      "width": 25.200125954091895,
+      "height": 8.089902198170526,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -12.600062977045948,
+            "y": -4.044951099085263
+          },
+          {
+            "x": 10.799937022954051,
+            "y": -4.044951099085263
+          },
+          {
+            "x": 12.600062977045948,
+            "y": 0.8089510990852626
+          },
+          {
+            "x": 12.600062977045948,
+            "y": 4.044951099085264
+          },
+          {
+            "x": -10.799937022954051,
+            "y": 4.044951099085264
+          },
+          {
+            "x": -12.600062977045948,
+            "y": -0.8089510990852629
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-24-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 373.34500033906835,
+        "y": 140.47396809314333
+      },
+      "kind": "building",
+      "width": 19.800279321495147,
+      "height": 4.565549045100282,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -9.900139660747573,
+            "y": -2.282774522550141
+          },
+          {
+            "x": 8.999860339252425,
+            "y": -2.282774522550141
+          },
+          {
+            "x": 9.900139660747573,
+            "y": 0.7607745225501404
+          },
+          {
+            "x": 9.900139660747573,
+            "y": 2.282774522550141
+          },
+          {
+            "x": -8.999860339252425,
+            "y": 2.282774522550141
+          },
+          {
+            "x": -9.900139660747573,
+            "y": 0.7612254774498594
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-25-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 378.9422451070646,
+        "y": 82.64514574525975
+      },
+      "kind": "building",
+      "width": 15.300423281517919,
+      "height": 6.072006971548333,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -7.650211640758959,
+            "y": -3.0360034857741662
+          },
+          {
+            "x": 7.649788359241041,
+            "y": -3.0360034857741662
+          },
+          {
+            "x": 7.650211640758959,
+            "y": 3.485774167089062e-06
+          },
+          {
+            "x": 7.650211640758959,
+            "y": 3.0360034857741667
+          },
+          {
+            "x": -5.849788359241041,
+            "y": 3.0360034857741667
+          },
+          {
+            "x": -7.650211640758959,
+            "y": -1.5180034857741664
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-26-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 392.478584295398,
+        "y": 90.69625279283946
+      },
+      "kind": "building",
+      "width": 3.6003090898888006,
+      "height": 6.071147492161071,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": "MURAL DEL DRAC",
+      "architecture": {
+        "style": "tile",
+        "mural": true,
+        "outline": [
+          {
+            "x": -1.8001545449444003,
+            "y": -0.0005724008906851097
+          },
+          {
+            "x": -1.799757566168613,
+            "y": -3.0355737460805354
+          },
+          {
+            "x": 0.00024243383138700114,
+            "y": -3.0355737460805354
+          },
+          {
+            "x": 1.8001545449444003,
+            "y": 1.5175737460805352
+          },
+          {
+            "x": 1.8001545449444003,
+            "y": 3.0355737460805354
+          },
+          {
+            "x": -1.7998454550555998,
+            "y": 3.0355737460805354
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-27-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 378.0233099576424,
+        "y": 89.47225987280825
+      },
+      "kind": "building",
+      "width": 15.300137917714146,
+      "height": 6.6033575657553545,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -7.650068958857073,
+            "y": -3.3016787828776772
+          },
+          {
+            "x": 7.649931041142928,
+            "y": -3.3016787828776772
+          },
+          {
+            "x": 7.650068958857073,
+            "y": 0.00020760177632750398
+          },
+          {
+            "x": -5.850073607775821,
+            "y": 3.3016787828776772
+          },
+          {
+            "x": -7.650068958857073,
+            "y": -1.6506787828776774
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-28-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 390.39964319118974,
+        "y": 96.83295380636618
+      },
+      "kind": "building",
+      "width": 4.5,
+      "height": 6.602942362202658,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -2.25,
+            "y": 1.650471181101329
+          },
+          {
+            "x": -2.249714866734253,
+            "y": -1.650471181101329
+          },
+          {
+            "x": 0.4502851332657474,
+            "y": -3.301471181101329
+          },
+          {
+            "x": 1.3501425666328455,
+            "y": -1.6509999999999916
+          },
+          {
+            "x": 2.25,
+            "y": 1.650471181101329
+          },
+          {
+            "x": 2.25,
+            "y": 3.301471181101329
+          },
+          {
+            "x": -2.25,
+            "y": 3.301471181101329
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-29-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 374.87385141359204,
+        "y": 95.64695997668557
+      },
+      "kind": "building",
+      "width": 10.800621853063051,
+      "height": 7.230434337947697,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4003109265315254,
+            "y": -3.6152171689738486
+          },
+          {
+            "x": 5.399689073468475,
+            "y": -3.6152171689738486
+          },
+          {
+            "x": 5.400046954145773,
+            "y": -2.1685428202957295
+          },
+          {
+            "x": 5.4003109265315254,
+            "y": 3.6152171689738486
+          },
+          {
+            "x": -2.699689073468474,
+            "y": 3.6152171689738486
+          },
+          {
+            "x": -4.499953045854228,
+            "y": 0.7234571797042699
+          },
+          {
+            "x": -5.4003109265315254,
+            "y": -2.169217168973849
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-30-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 387.6371768875125,
+        "y": 103.23760070193117
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 7.229499487893867,
+      "angle": 0.536546,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.05,
+            "y": 2.168749743946934
+          },
+          {
+            "x": -4.049122868703694,
+            "y": -3.614749743946934
+          },
+          {
+            "x": 2.250877131296306,
+            "y": -3.614749743946934
+          },
+          {
+            "x": 4.05,
+            "y": 2.168749743946934
+          },
+          {
+            "x": 4.05,
+            "y": 3.6147497439469336
+          },
+          {
+            "x": -4.05,
+            "y": 3.6147497439469336
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-31-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 371.5225746317278,
+        "y": 102.16309273438348
+      },
+      "kind": "building",
+      "width": 6.300110627886632,
+      "height": 7.396685746035422,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.150055313943316,
+            "y": -3.6983428730177113
+          },
+          {
+            "x": 3.149944686056684,
+            "y": -3.6983428730177113
+          },
+          {
+            "x": 3.150055313943316,
+            "y": 2.2192799595465322
+          },
+          {
+            "x": -0.4504641124422122,
+            "y": 3.698342873017711
+          },
+          {
+            "x": -1.3499446860566842,
+            "y": 2.2192799595465322
+          },
+          {
+            "x": -3.150055313943316,
+            "y": -2.219342873017711
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-32-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 384.6721326744552,
+        "y": 109.98403405549992
+      },
+      "kind": "building",
+      "width": 9.90004179575067,
+      "height": 7.396465959897949,
+      "angle": 0.536546,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.950020897875335,
+            "y": -3.698232979948974
+          },
+          {
+            "x": 3.149979102124665,
+            "y": -3.698232979948974
+          },
+          {
+            "x": 4.050319155126388,
+            "y": -2.2196812368826935
+          },
+          {
+            "x": 4.950020897875335,
+            "y": 0.7392329799489747
+          },
+          {
+            "x": 4.950020897875335,
+            "y": 3.6982329799489744
+          },
+          {
+            "x": -4.949979102124665,
+            "y": 3.6982329799489744
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-33-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 371.17426121373484,
+        "y": 109.79132335341998
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 6.071147492161071,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.15,
+            "y": -3.0355737460805354
+          },
+          {
+            "x": 3.15,
+            "y": -3.0355737460805354
+          },
+          {
+            "x": 3.15,
+            "y": 0.00042625391946438107
+          },
+          {
+            "x": -1.3500878888869867,
+            "y": 3.0355737460805354
+          },
+          {
+            "x": -3.15,
+            "y": 0.00042625391946438107
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-34-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 383.16375489293546,
+        "y": 116.92185425474024
+      },
+      "kind": "building",
+      "width": 10.800423281517926,
+      "height": 6.072006971548346,
+      "angle": 0.536546,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.400211640758963,
+            "y": -3.036003485774173
+          },
+          {
+            "x": 3.5997883592410367,
+            "y": -3.036003485774173
+          },
+          {
+            "x": 5.400211640758963,
+            "y": 1.5180034857741727
+          },
+          {
+            "x": 5.400211640758963,
+            "y": 3.036003485774173
+          },
+          {
+            "x": -5.399788359241038,
+            "y": 3.036003485774173
+          },
+          {
+            "x": -5.400211640758963,
+            "y": -3.485774173084266e-06
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-35-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 368.47622543710236,
+        "y": 113.44755106924214
+      },
+      "kind": "building",
+      "width": 1.8,
+      "height": 2.9719019976490504,
+      "angle": 0.536546,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -0.9,
+            "y": -1.4859509988245252
+          },
+          {
+            "x": 0.9,
+            "y": -1.4859509988245252
+          },
+          {
+            "x": 0.9,
+            "y": 4.90011754746833e-05
+          },
+          {
+            "x": -0.0002520112523356488,
+            "y": 1.4859509988245252
+          },
+          {
+            "x": -0.9,
+            "y": 4.90011754746833e-05
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-36-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 380.085890108452,
+        "y": 121.21725465303494
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 4.458354079981167,
+      "angle": 0.536546,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.75,
+            "y": -0.7428229600094163
+          },
+          {
+            "x": -6.749783710322313,
+            "y": -0.7431770399905836
+          },
+          {
+            "x": 5.850216289677687,
+            "y": -2.2291770399905837
+          },
+          {
+            "x": 6.75,
+            "y": -0.7428229600094163
+          },
+          {
+            "x": 6.75,
+            "y": 2.2291770399905833
+          },
+          {
+            "x": -6.75,
+            "y": 2.2291770399905833
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-37-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 367.737509111163,
+        "y": 119.09113677457907
+      },
+      "kind": "building",
+      "width": 2.7,
+      "height": 4.510789444204593,
+      "angle": 0.536546,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -1.35,
+            "y": -2.255394722102297
+          },
+          {
+            "x": 1.35,
+            "y": -2.255394722102297
+          },
+          {
+            "x": 1.35,
+            "y": -0.7513947221022967
+          },
+          {
+            "x": 1.3493604606717742,
+            "y": 0.7513947221022961
+          },
+          {
+            "x": 0.4493604606717741,
+            "y": 2.2553947221022965
+          },
+          {
+            "x": -1.35,
+            "y": -0.7513947221022967
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-38-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 378.18238286213597,
+        "y": 126.17751334110481
+      },
+      "kind": "building",
+      "width": 15.300543394460618,
+      "height": 6.014280440814919,
+      "angle": 0.536546,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -7.650271697230309,
+            "y": -3.00714022040746
+          },
+          {
+            "x": 6.749728302769691,
+            "y": -3.00714022040746
+          },
+          {
+            "x": 7.650271697230309,
+            "y": 0.00014022040745920172
+          },
+          {
+            "x": 7.650271697230309,
+            "y": 3.0071402204074595
+          },
+          {
+            "x": -7.649728302769692,
+            "y": 3.0071402204074595
+          },
+          {
+            "x": -7.650271697230309,
+            "y": -0.0001402204074596458
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-39-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 377.066188640409,
+        "y": 132.455980837027
+      },
+      "kind": "building",
+      "width": 16.2,
+      "height": 5.916614656537458,
+      "angle": 0.536546,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -8.1,
+            "y": 1.4793073282687286
+          },
+          {
+            "x": -8.099820626616197,
+            "y": -1.4793073282687295
+          },
+          {
+            "x": -8.099480573614473,
+            "y": -1.4797555852024493
+          },
+          {
+            "x": 6.300179373383805,
+            "y": -2.9583073282687296
+          },
+          {
+            "x": 7.200519426385528,
+            "y": -1.4797555852024493
+          },
+          {
+            "x": 8.1,
+            "y": 1.4793073282687286
+          },
+          {
+            "x": 8.1,
+            "y": 2.958307328268729
+          },
+          {
+            "x": -8.1,
+            "y": 2.958307328268729
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-1-40-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 373.873,
+        "y": 136.065
+      },
+      "kind": "building",
+      "width": 19.800014186257442,
+      "height": 3.551422897378346,
+      "angle": 0.536546,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -9.900007093128721,
+            "y": -1.7757114486891732
+          },
+          {
+            "x": 8.999992906871277,
+            "y": -1.7757114486891732
+          },
+          {
+            "x": 9.900007093128721,
+            "y": -0.00028855131082716756
+          },
+          {
+            "x": 9.900007093128721,
+            "y": 1.775711448689173
+          },
+          {
+            "x": -8.999992906871277,
+            "y": 1.775711448689173
+          },
+          {
+            "x": -9.900007093128721,
+            "y": 0.0002885513108269455
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-42-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 461.431728461786,
+        "y": 92.03324392236817
+      },
+      "kind": "building",
+      "width": 25.200724204099572,
+      "height": 9.417816970392003,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -12.600362102049786,
+            "y": -0.0005878400323013899
+          },
+          {
+            "x": 11.699823363689276,
+            "y": -4.708908485196002
+          },
+          {
+            "x": 12.599637897950213,
+            "y": -0.0005878400323013899
+          },
+          {
+            "x": 12.600362102049786,
+            "y": 3.138908485196001
+          },
+          {
+            "x": 12.600362102049786,
+            "y": 4.708908485196002
+          },
+          {
+            "x": -11.699637897950215,
+            "y": 4.708908485196002
+          },
+          {
+            "x": -12.600362102049786,
+            "y": 3.138412159967699
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-43-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 443.53060249570575,
+        "y": 152.03850051435265
+      },
+      "kind": "building",
+      "width": 27.0,
+      "height": 5.827848877076046,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -13.5,
+            "y": -2.9139244385380225
+          },
+          {
+            "x": 13.5,
+            "y": -2.9139244385380225
+          },
+          {
+            "x": 13.5,
+            "y": -1.4569244385380227
+          },
+          {
+            "x": 0.0008105687238693093,
+            "y": 1.4561378712573854
+          },
+          {
+            "x": -7.1996437356988965,
+            "y": 2.913924438538023
+          },
+          {
+            "x": -12.599643735698898,
+            "y": 2.913924438538023
+          },
+          {
+            "x": -13.49918943127613,
+            "y": 1.4561378712573854
+          },
+          {
+            "x": -13.5,
+            "y": -1.4569244385380227
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-44-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 453.785,
+        "y": 97.305
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 6.303,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.75,
+            "y": -3.1515
+          },
+          {
+            "x": 6.75,
+            "y": -3.1515
+          },
+          {
+            "x": 6.75,
+            "y": 3.1515
+          },
+          {
+            "x": -6.75,
+            "y": 3.1515
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-45-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 467.432,
+        "y": 103.159
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 6.303,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.6,
+            "y": -3.1515
+          },
+          {
+            "x": 3.6,
+            "y": -3.1515
+          },
+          {
+            "x": 3.6,
+            "y": 3.1515
+          },
+          {
+            "x": -3.6,
+            "y": 3.1515
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-46-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 450.3852963349012,
+        "y": 102.94832241738868
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 6.749484999680109,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.85,
+            "y": -3.374742499840055
+          },
+          {
+            "x": 5.85,
+            "y": -3.374742499840055
+          },
+          {
+            "x": 5.85,
+            "y": -1.6877424998400548
+          },
+          {
+            "x": 5.8496734948094895,
+            "y": 3.3747424998400546
+          },
+          {
+            "x": -4.950326505190511,
+            "y": 3.3747424998400546
+          },
+          {
+            "x": -5.85,
+            "y": -1.6877424998400548
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-47-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 465.6873537013644,
+        "y": 109.51074192955265
+      },
+      "kind": "building",
+      "width": 9.000592538487634,
+      "height": 6.749090843977864,
+      "angle": 0.405149,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.500296269243817,
+            "y": -3.374545421988932
+          },
+          {
+            "x": 3.599703730756182,
+            "y": -3.374545421988932
+          },
+          {
+            "x": 4.500296269243817,
+            "y": 1.6875454219889325
+          },
+          {
+            "x": 4.500296269243817,
+            "y": 3.374545421988932
+          },
+          {
+            "x": -4.499703730756183,
+            "y": 3.374545421988932
+          },
+          {
+            "x": -4.500296269243817,
+            "y": 1.687454578011068
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-48-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 449.4860177627015,
+        "y": 109.61294474068141
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 6.210281663055529,
+      "angle": 0.405149,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.75,
+            "y": -3.1051408315277644
+          },
+          {
+            "x": 6.75,
+            "y": -3.1051408315277644
+          },
+          {
+            "x": 6.75,
+            "y": -0.00014083152776422914
+          },
+          {
+            "x": 6.749341510536355,
+            "y": 3.1051408315277644
+          },
+          {
+            "x": -5.850658489463645,
+            "y": 3.1051408315277644
+          },
+          {
+            "x": -6.75,
+            "y": -0.00014083152776422914
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-49-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 463.9607848275879,
+        "y": 115.82018503300706
+      },
+      "kind": "building",
+      "width": 9.00026055421456,
+      "height": 6.209887507353276,
+      "angle": 0.405149,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.50013027710728,
+            "y": -3.104943753676638
+          },
+          {
+            "x": 3.5998697228927203,
+            "y": -3.104943753676638
+          },
+          {
+            "x": 4.50013027710728,
+            "y": -5.624632336220792e-05
+          },
+          {
+            "x": 4.50013027710728,
+            "y": 3.104943753676638
+          },
+          {
+            "x": -4.49986972289272,
+            "y": 3.104943753676638
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-50-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 446.775,
+        "y": 114.792
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.447,
+      "angle": 0.405149,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": -2.7235
+          },
+          {
+            "x": 5.4,
+            "y": -2.7235
+          },
+          {
+            "x": 5.4,
+            "y": 2.7235
+          },
+          {
+            "x": -5.4,
+            "y": 2.7235
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-51-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 462.0766784273503,
+        "y": 121.3546394005074
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.446179820978164,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": 8.99104890821345e-05
+          },
+          {
+            "x": 4.050231545551214,
+            "y": -2.723089910489082
+          },
+          {
+            "x": 4.95,
+            "y": 8.99104890821345e-05
+          },
+          {
+            "x": 4.95,
+            "y": 2.723089910489082
+          },
+          {
+            "x": -4.95,
+            "y": 2.723089910489082
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-52-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 445.507,
+        "y": 120.031
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.182,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": -2.591
+          },
+          {
+            "x": 5.4,
+            "y": -2.591
+          },
+          {
+            "x": 5.4,
+            "y": 2.591
+          },
+          {
+            "x": -5.4,
+            "y": 2.591
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-53-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 460.39571880045156,
+        "y": 126.41578381464913
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.181060395724469,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": 0.8635301978622342
+          },
+          {
+            "x": -5.399471730038554,
+            "y": -2.5905301978622344
+          },
+          {
+            "x": 4.500528269961446,
+            "y": -2.5905301978622344
+          },
+          {
+            "x": 5.4,
+            "y": 0.8635301978622342
+          },
+          {
+            "x": 5.4,
+            "y": 2.5905301978622344
+          },
+          {
+            "x": -5.4,
+            "y": 2.5905301978622344
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-54-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 443.5950332558063,
+        "y": 124.48943044643757
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 4.521849919946548,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": -2.260924959973274
+          },
+          {
+            "x": 5.4,
+            "y": -2.260924959973274
+          },
+          {
+            "x": 5.4,
+            "y": 0.7540750400267263
+          },
+          {
+            "x": -4.500481769582432,
+            "y": 2.260924959973274
+          },
+          {
+            "x": -5.4,
+            "y": 0.7540750400267263
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-55-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 458.8973412668461,
+        "y": 131.0521882995824
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 4.522768963624707,
+      "angle": 0.405149,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.85,
+            "y": 0.7543844818123538
+          },
+          {
+            "x": -5.849912386119819,
+            "y": 0.7536155181876466
+          },
+          {
+            "x": 4.950087613880182,
+            "y": -2.2613844818123536
+          },
+          {
+            "x": 5.85,
+            "y": 0.7543844818123538
+          },
+          {
+            "x": 5.85,
+            "y": 2.2613844818123536
+          },
+          {
+            "x": -5.85,
+            "y": 2.2613844818123536
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-56-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 442.045,
+        "y": 129.244
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.438,
+      "angle": 0.405149,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -2.719
+          },
+          {
+            "x": 4.95,
+            "y": -2.719
+          },
+          {
+            "x": 4.95,
+            "y": 2.719
+          },
+          {
+            "x": -4.95,
+            "y": 2.719
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-57-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 457.34771216619475,
+        "y": 135.80696509277223
+      },
+      "kind": "building",
+      "width": 12.600029918996073,
+      "height": 5.438215334861025,
+      "angle": 0.405149,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.300014959498037,
+            "y": -2.7191076674305124
+          },
+          {
+            "x": 5.399985040501963,
+            "y": -2.7191076674305124
+          },
+          {
+            "x": 6.300014959498037,
+            "y": 1.359107667430512
+          },
+          {
+            "x": 6.300014959498037,
+            "y": 2.7191076674305124
+          },
+          {
+            "x": -6.299985040501963,
+            "y": 2.7191076674305124
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-58-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 439.8951571976759,
+        "y": 134.25795993881988
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.472179123627459,
+      "angle": 0.405149,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -2.7360895618137295
+          },
+          {
+            "x": 4.95,
+            "y": -2.7360895618137295
+          },
+          {
+            "x": 4.95,
+            "y": -1.3680895618137292
+          },
+          {
+            "x": 4.949903104484935,
+            "y": -1.3679104381862706
+          },
+          {
+            "x": -4.050096895515065,
+            "y": 2.7360895618137295
+          },
+          {
+            "x": -4.95,
+            "y": -1.3680895618137292
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-59-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 456.02438732792933,
+        "y": 141.17505915714003
+      },
+      "kind": "building",
+      "width": 12.600822148163143,
+      "height": 5.471784967925219,
+      "angle": 0.405149,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.3004110740815715,
+            "y": -2.7358924839626093
+          },
+          {
+            "x": 5.399588925918428,
+            "y": -2.7358924839626093
+          },
+          {
+            "x": 6.3004110740815715,
+            "y": 1.367892483962609
+          },
+          {
+            "x": 6.3004110740815715,
+            "y": 2.7358924839626093
+          },
+          {
+            "x": -6.299588925918428,
+            "y": 2.7358924839626093
+          },
+          {
+            "x": -6.3004110740815715,
+            "y": 1.3681075160373908
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-60-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 437.888,
+        "y": 138.938
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.711,
+      "angle": 0.405149,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.05,
+            "y": -2.3555
+          },
+          {
+            "x": 4.05,
+            "y": -2.3555
+          },
+          {
+            "x": 4.05,
+            "y": 2.3555
+          },
+          {
+            "x": -4.05,
+            "y": 2.3555
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-61-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 454.0169999466065,
+        "y": 145.85469222984105
+      },
+      "kind": "building",
+      "width": 14.4,
+      "height": 4.71089048093056,
+      "angle": 0.405149,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -7.2,
+            "y": 0.7854452404652796
+          },
+          {
+            "x": 6.300194839578566,
+            "y": -2.35544524046528
+          },
+          {
+            "x": 7.2,
+            "y": 0.7854452404652796
+          },
+          {
+            "x": 7.2,
+            "y": 2.35544524046528
+          },
+          {
+            "x": -7.2,
+            "y": 2.35544524046528
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-62-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 436.891,
+        "y": 143.547
+      },
+      "kind": "building",
+      "width": 8.1,
+      "height": 4.547,
+      "angle": 0.405149,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.05,
+            "y": -2.2735
+          },
+          {
+            "x": 4.05,
+            "y": -2.2735
+          },
+          {
+            "x": 4.05,
+            "y": 2.2735
+          },
+          {
+            "x": -4.05,
+            "y": 2.2735
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-1-3-63-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 451.779,
+        "y": 149.932
+      },
+      "kind": "building",
+      "width": 15.3,
+      "height": 4.547,
+      "angle": 0.405149,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -7.65,
+            "y": -2.2735
+          },
+          {
+            "x": 7.65,
+            "y": -2.2735
+          },
+          {
+            "x": 7.65,
+            "y": 2.2735
+          },
+          {
+            "x": -7.65,
+            "y": 2.2735
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-0-65-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 341.56964037439667,
+        "y": 108.3696059516826
+      },
+      "kind": "building",
+      "width": 12.600176434699904,
+      "height": 15.959539287815184,
+      "angle": 0.25515,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.300088217349952,
+            "y": -0.8866335094821771
+          },
+          {
+            "x": -6.299911782650048,
+            "y": -6.206769643907593
+          },
+          {
+            "x": 6.300088217349952,
+            "y": -7.979769643907592
+          },
+          {
+            "x": 6.300088217349952,
+            "y": -6.206769643907593
+          },
+          {
+            "x": 3.600483812723983,
+            "y": -2.6603277719725336
+          },
+          {
+            "x": -4.499607433422545,
+            "y": 7.979769643907592
+          },
+          {
+            "x": -5.3996074334225455,
+            "y": 7.979769643907592
+          },
+          {
+            "x": -6.299609020974904,
+            "y": 2.659811534449516
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-0-66-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 347.036912087322,
+        "y": 123.60018817747704
+      },
+      "kind": "building",
+      "width": 18.9,
+      "height": 15.27595708027781,
+      "angle": 1.716955,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -9.45,
+            "y": -7.637978540138905
+          },
+          {
+            "x": 9.45,
+            "y": -7.637978540138905
+          },
+          {
+            "x": 9.45,
+            "y": -5.9409785401389055
+          },
+          {
+            "x": 5.84939497433514,
+            "y": 7.637978540138905
+          },
+          {
+            "x": 4.049394974335139,
+            "y": 7.637978540138905
+          },
+          {
+            "x": 2.24949880376471,
+            "y": 5.939933522422118
+          },
+          {
+            "x": -9.45,
+            "y": -5.9409785401389055
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-2-67-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 411.7492890299052,
+        "y": 125.9197587457547
+      },
+      "kind": "building",
+      "width": 29.7005302551889,
+      "height": 8.702092470692927,
+      "angle": -0.043308,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -14.85026512759445,
+            "y": 2.6110462353464636
+          },
+          {
+            "x": -13.950401672070946,
+            "y": -0.869942370530461
+          },
+          {
+            "x": -13.049734872405548,
+            "y": -4.351046235346463
+          },
+          {
+            "x": 14.85026512759445,
+            "y": -4.351046235346463
+          },
+          {
+            "x": 14.85026512759445,
+            "y": -2.6110462353464636
+          },
+          {
+            "x": 13.049598327929054,
+            "y": 2.611057629469539
+          },
+          {
+            "x": 12.14973487240555,
+            "y": 4.351046235346464
+          },
+          {
+            "x": -14.85026512759445,
+            "y": 4.351046235346464
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-2-68-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 406.714,
+        "y": 144.86249999999998
+      },
+      "kind": "building",
+      "width": 27.000016813494383,
+      "height": 7.093057562765414,
+      "angle": -0.043308,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -13.500008406747192,
+            "y": 1.7735287813827072
+          },
+          {
+            "x": -12.599978352768344,
+            "y": -1.7739995311775696
+          },
+          {
+            "x": -11.699991593252808,
+            "y": -3.546528781382707
+          },
+          {
+            "x": 13.500008406747192,
+            "y": -3.546528781382707
+          },
+          {
+            "x": 13.500008406747192,
+            "y": -1.7735287813827072
+          },
+          {
+            "x": 12.600021647231655,
+            "y": 1.7730004688224308
+          },
+          {
+            "x": 11.699991593252808,
+            "y": 3.546528781382707
+          },
+          {
+            "x": -13.500008406747192,
+            "y": 3.546528781382707
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-2-69-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 401.27092194018957,
+        "y": 133.57798250849058
+      },
+      "kind": "building",
+      "width": 11.700712248480919,
+      "height": 5.693007897584789,
+      "angle": -0.043308,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.850356124240459,
+            "y": 1.4235039487923946
+          },
+          {
+            "x": -4.950521178409184,
+            "y": -1.4230221160540995
+          },
+          {
+            "x": -4.049643875759541,
+            "y": -2.8465039487923947
+          },
+          {
+            "x": 5.850356124240459,
+            "y": -2.8465039487923947
+          },
+          {
+            "x": 5.850356124240459,
+            "y": -1.4235039487923946
+          },
+          {
+            "x": 5.84964387575954,
+            "y": 2.8465039487923947
+          },
+          {
+            "x": -5.850356124240459,
+            "y": 2.8465039487923947
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-2-70-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 417.4556123838106,
+        "y": 132.87676640073022
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 5.693201527709649,
+      "angle": -0.043308,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.85,
+            "y": -2.8466007638548243
+          },
+          {
+            "x": 5.85,
+            "y": -2.8466007638548243
+          },
+          {
+            "x": 5.85,
+            "y": 0.00039923614517545225
+          },
+          {
+            "x": 4.95035362376277,
+            "y": 2.8466007638548243
+          },
+          {
+            "x": -5.849646376237231,
+            "y": 2.8466007638548243
+          },
+          {
+            "x": -5.85,
+            "y": 0.00039923614517545225
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-2-71-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 401.5051731547271,
+        "y": 138.97737287848497
+      },
+      "kind": "building",
+      "width": 13.5,
+      "height": 5.115452035871242,
+      "angle": -0.043308,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -6.75,
+            "y": 0.8527260179356211
+          },
+          {
+            "x": -5.850833680935188,
+            "y": -2.557726017935621
+          },
+          {
+            "x": 6.749166319064812,
+            "y": -2.557726017935621
+          },
+          {
+            "x": 6.75,
+            "y": 0.8527260179356211
+          },
+          {
+            "x": 6.75,
+            "y": 2.557726017935621
+          },
+          {
+            "x": -6.75,
+            "y": 2.557726017935621
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-2-2-72-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 418.1388268452729,
+        "y": 138.25662712151504
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 5.115452035871212,
+      "angle": -0.043308,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.6,
+            "y": -2.557726017935606
+          },
+          {
+            "x": 3.6,
+            "y": -2.557726017935606
+          },
+          {
+            "x": 3.6,
+            "y": -0.852726017935606
+          },
+          {
+            "x": 2.700833680935132,
+            "y": 2.557726017935606
+          },
+          {
+            "x": -3.5991663190648677,
+            "y": 2.557726017935606
+          },
+          {
+            "x": -3.6,
+            "y": -0.852726017935606
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-73-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 338.944643604316,
+        "y": 144.9492167302796
+      },
+      "kind": "building",
+      "width": 23.400249859689296,
+      "height": 7.640387657051839,
+      "angle": 0.386012,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -11.700124929844648,
+            "y": -3.8201938285259196
+          },
+          {
+            "x": 10.799875070155352,
+            "y": -3.8201938285259196
+          },
+          {
+            "x": 11.700124929844648,
+            "y": 2.292193828525919
+          },
+          {
+            "x": 11.700124929844648,
+            "y": 3.8201938285259196
+          },
+          {
+            "x": -10.799875070155352,
+            "y": 3.8201938285259196
+          },
+          {
+            "x": -11.700124929844648,
+            "y": 0.76380617147408
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-74-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 333.3387163607582,
+        "y": 162.3289651225071
+      },
+      "kind": "building",
+      "width": 22.50048767853002,
+      "height": 4.77427214623309,
+      "angle": 0.386012,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -11.25024383926501,
+            "y": 0.7951360731165455
+          },
+          {
+            "x": -11.24975616073499,
+            "y": -0.7951360731165449
+          },
+          {
+            "x": 11.25024383926501,
+            "y": -2.3871360731165447
+          },
+          {
+            "x": 11.25024383926501,
+            "y": -0.7951360731165449
+          },
+          {
+            "x": 9.450010940559975,
+            "y": 0.79586824117338
+          },
+          {
+            "x": -1.3502438392650102,
+            "y": 2.387136073116545
+          },
+          {
+            "x": -11.25024383926501,
+            "y": 2.387136073116545
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-75-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 329.493,
+        "y": 149.083
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 7.138,
+      "angle": 0.386012,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.6,
+            "y": -3.569
+          },
+          {
+            "x": 3.6,
+            "y": -3.569
+          },
+          {
+            "x": 3.6,
+            "y": 3.569
+          },
+          {
+            "x": -3.6,
+            "y": 3.569
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-76-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 342.416,
+        "y": 154.335
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 7.138,
+      "angle": 0.386012,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -3.569
+          },
+          {
+            "x": 4.95,
+            "y": -3.569
+          },
+          {
+            "x": 4.95,
+            "y": 3.569
+          },
+          {
+            "x": -4.95,
+            "y": 3.569
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-77-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 328.1761536032145,
+        "y": 154.71409380903646
+      },
+      "kind": "building",
+      "width": 9.000424261406248,
+      "height": 4.288190752880128,
+      "angle": 0.386012,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.500212130703124,
+            "y": -2.144095376440064
+          },
+          {
+            "x": 4.499787869296876,
+            "y": -2.144095376440064
+          },
+          {
+            "x": 4.500212130703124,
+            "y": 2.144095376440064
+          },
+          {
+            "x": -3.599787869296876,
+            "y": 2.144095376440064
+          },
+          {
+            "x": -4.500212130703124,
+            "y": 0.7149046235599359
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-78-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 341.515939396693,
+        "y": 160.13624078584795
+      },
+      "kind": "building",
+      "width": 9.0,
+      "height": 4.287640831852099,
+      "angle": 0.386012,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.5,
+            "y": -0.7151795840739505
+          },
+          {
+            "x": -4.499121346649676,
+            "y": -2.1438204159260494
+          },
+          {
+            "x": 3.600878653350324,
+            "y": -2.1438204159260494
+          },
+          {
+            "x": 4.5,
+            "y": -0.7151795840739505
+          },
+          {
+            "x": 4.5,
+            "y": 2.1438204159260494
+          },
+          {
+            "x": -4.5,
+            "y": 2.1438204159260494
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-79-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 326.843,
+        "y": 156.799
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 0.579,
+      "angle": 0.386012,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.15,
+            "y": -0.2895
+          },
+          {
+            "x": 3.15,
+            "y": -0.2895
+          },
+          {
+            "x": 3.15,
+            "y": 0.2895
+          },
+          {
+            "x": -3.15,
+            "y": 0.2895
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-0-80-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 340.183,
+        "y": 162.221
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 0.579,
+      "angle": 0.386012,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -0.2895
+          },
+          {
+            "x": 4.95,
+            "y": -0.2895
+          },
+          {
+            "x": 4.95,
+            "y": 0.2895
+          },
+          {
+            "x": -4.95,
+            "y": 0.2895
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-1-81-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 369.6061810644262,
+        "y": 159.60774532117387
+      },
+      "kind": "building",
+      "width": 22.499981487128217,
+      "height": 8.712889834680313,
+      "angle": 0.469232,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -11.249990743564108,
+            "y": -4.3564449173401565
+          },
+          {
+            "x": 8.550009256435892,
+            "y": -4.3564449173401565
+          },
+          {
+            "x": 9.450100660687216,
+            "y": -2.613995001234457
+          },
+          {
+            "x": 11.249990743564108,
+            "y": 2.6134449173401566
+          },
+          {
+            "x": 11.249990743564108,
+            "y": 4.356444917340157
+          },
+          {
+            "x": -9.45000925643589,
+            "y": 4.356444917340157
+          },
+          {
+            "x": -10.350154993273101,
+            "y": 2.6141809727973846
+          },
+          {
+            "x": -11.249990743564108,
+            "y": -2.6134449173401566
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-1-82-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 366.7382989299962,
+        "y": 170.2398754016544
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 6.732524396544291,
+      "angle": 0.469232,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -11.7,
+            "y": -3.3662621982721457
+          },
+          {
+            "x": 11.7,
+            "y": -3.3662621982721457
+          },
+          {
+            "x": 11.7,
+            "y": -1.6832621982721458
+          },
+          {
+            "x": 10.800006386905213,
+            "y": -0.000371233307637997
+          },
+          {
+            "x": 3.6003392830443053,
+            "y": 1.683391440403216
+          },
+          {
+            "x": -3.599780022243993,
+            "y": 3.3662621982721457
+          },
+          {
+            "x": -10.799780022243993,
+            "y": 3.3662621982721457
+          },
+          {
+            "x": -11.7,
+            "y": -1.6832621982721458
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-1-83-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 362.53,
+        "y": 162.618
+      },
+      "kind": "building",
+      "width": 9.0,
+      "height": 3.057,
+      "angle": 0.469232,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.5,
+            "y": -1.5285
+          },
+          {
+            "x": 4.5,
+            "y": -1.5285
+          },
+          {
+            "x": 4.5,
+            "y": 1.5285
+          },
+          {
+            "x": -4.5,
+            "y": 1.5285
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-1-84-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 375.37365610980197,
+        "y": 169.13023266917673
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 3.0577705382055393,
+      "angle": 0.469232,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.6,
+            "y": -0.00011473089723046392
+          },
+          {
+            "x": 2.7000559573516423,
+            "y": -1.5288852691027697
+          },
+          {
+            "x": 3.6,
+            "y": -0.00011473089723046392
+          },
+          {
+            "x": 3.6,
+            "y": 1.5288852691027697
+          },
+          {
+            "x": -3.6,
+            "y": 1.5288852691027697
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-2-85-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 403.396,
+        "y": 164.669
+      },
+      "kind": "building",
+      "width": 25.2,
+      "height": 6.632,
+      "angle": -0.030947,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -12.6,
+            "y": -3.316
+          },
+          {
+            "x": 12.6,
+            "y": -3.316
+          },
+          {
+            "x": 12.6,
+            "y": 3.316
+          },
+          {
+            "x": -12.6,
+            "y": 3.316
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-2-86-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 404.7875484036092,
+        "y": 180.51734666632984
+      },
+      "kind": "building",
+      "width": 21.600407071198077,
+      "height": 6.062883067687286,
+      "angle": -0.030947,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -10.800203535599039,
+            "y": -3.031441533843643
+          },
+          {
+            "x": 10.799796464400963,
+            "y": -3.031441533843643
+          },
+          {
+            "x": 10.800203535599039,
+            "y": -0.00015982741952758062
+          },
+          {
+            "x": 9.899769494992581,
+            "y": 3.031441533843643
+          },
+          {
+            "x": 5.399769494992581,
+            "y": 3.031441533843643
+          },
+          {
+            "x": -10.800203535599039,
+            "y": -1.515441533843643
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-2-87-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 395.0594325840238,
+        "y": 171.68179293369212
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 6.870236380062373,
+      "angle": -0.030947,
+      "color": "#b58268",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -1.7178818099688136
+          },
+          {
+            "x": -4.050506952805699,
+            "y": -3.4351181900311865
+          },
+          {
+            "x": 4.949493047194301,
+            "y": -3.4351181900311865
+          },
+          {
+            "x": 4.95,
+            "y": -1.7178818099688136
+          },
+          {
+            "x": 4.95,
+            "y": 3.4351181900311865
+          },
+          {
+            "x": -4.95,
+            "y": 3.4351181900311865
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-2-88-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 410.35172586849507,
+        "y": 171.20838421392915
+      },
+      "kind": "building",
+      "width": 11.7,
+      "height": 6.871235901242159,
+      "angle": -0.030947,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.85,
+            "y": -3.4356179506210793
+          },
+          {
+            "x": 5.85,
+            "y": -3.4356179506210793
+          },
+          {
+            "x": 5.85,
+            "y": -1.7176179506210794
+          },
+          {
+            "x": 4.950476010745151,
+            "y": 3.4356179506210793
+          },
+          {
+            "x": -5.84952398925485,
+            "y": 3.4356179506210793
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-2-89-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 395.207,
+        "y": 176.448
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.666,
+      "angle": -0.030947,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -1.333
+          },
+          {
+            "x": 4.95,
+            "y": -1.333
+          },
+          {
+            "x": 4.95,
+            "y": 1.333
+          },
+          {
+            "x": -4.95,
+            "y": 1.333
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-2-90-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 410.5,
+        "y": 175.974
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 2.666,
+      "angle": -0.030947,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -1.333
+          },
+          {
+            "x": 4.95,
+            "y": -1.333
+          },
+          {
+            "x": 4.95,
+            "y": 1.333
+          },
+          {
+            "x": -4.95,
+            "y": 1.333
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-91-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 440.9371570620153,
+        "y": 168.69885980790735
+      },
+      "kind": "building",
+      "width": 27.00050123531534,
+      "height": 8.367647527813405,
+      "angle": 0.191258,
+      "color": "#bd9478",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -13.50025061765767,
+            "y": -4.183823763906703
+          },
+          {
+            "x": 13.49974938234233,
+            "y": -4.183823763906703
+          },
+          {
+            "x": 13.50025061765767,
+            "y": 0.8368237639067029
+          },
+          {
+            "x": 13.50025061765767,
+            "y": 4.183823763906703
+          },
+          {
+            "x": -12.599749382342331,
+            "y": 4.183823763906703
+          },
+          {
+            "x": -13.50025061765767,
+            "y": 0.8371762360932975
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-92-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 438.3159247101255,
+        "y": 186.9715895690063
+      },
+      "kind": "building",
+      "width": 23.4,
+      "height": 4.641394525303599,
+      "angle": 0.191258,
+      "color": "#9e725e",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -11.7,
+            "y": -2.3206972626517994
+          },
+          {
+            "x": 11.7,
+            "y": -2.3206972626517994
+          },
+          {
+            "x": 11.7,
+            "y": 0.7733027373482005
+          },
+          {
+            "x": 11.699382467855393,
+            "y": 0.7736972626517996
+          },
+          {
+            "x": -10.800617532144607,
+            "y": 2.3206972626517994
+          },
+          {
+            "x": -11.7,
+            "y": 0.7733027373482005
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-93-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 432.5152282538728,
+        "y": 174.3177531405345
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.865986731724359,
+      "angle": 0.191258,
+      "color": "#c09a80",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": -2.9329933658621794
+          },
+          {
+            "x": 5.4,
+            "y": -2.9329933658621794
+          },
+          {
+            "x": 5.4,
+            "y": 6.6341378204270995e-06
+          },
+          {
+            "x": -4.500255815458521,
+            "y": 2.9329933658621794
+          },
+          {
+            "x": -5.4,
+            "y": 6.6341378204270995e-06
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-94-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 447.978,
+        "y": 177.312
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 5.867,
+      "angle": 0.191258,
+      "color": "#a97e68",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -2.9335
+          },
+          {
+            "x": 4.95,
+            "y": -2.9335
+          },
+          {
+            "x": 4.95,
+            "y": 2.9335
+          },
+          {
+            "x": -4.95,
+            "y": 2.9335
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-95-terrace",
+      "owner": "highlands",
+      "position": {
+        "x": 430.5336537218484,
+        "y": 179.8182387092949
+      },
+      "kind": "building",
+      "width": 7.2,
+      "height": 5.688341500905861,
+      "angle": 0.191258,
+      "color": "#b08c73",
+      "label": "",
+      "architecture": {
+        "style": "terrace",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.6,
+            "y": -2.844170750452931
+          },
+          {
+            "x": 3.6,
+            "y": -2.844170750452931
+          },
+          {
+            "x": 3.6,
+            "y": -0.0001707504529309123
+          },
+          {
+            "x": 3.599896017124701,
+            "y": 0.0001707504529309123
+          },
+          {
+            "x": -2.700103982875299,
+            "y": 2.8441707504529306
+          },
+          {
+            "x": -3.6,
+            "y": -0.0001707504529309123
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-96-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 446.4379066893989,
+        "y": 182.89770707004976
+      },
+      "kind": "building",
+      "width": 10.8,
+      "height": 5.687330866711315,
+      "angle": 0.191258,
+      "color": "#b69d82",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -5.4,
+            "y": -2.8436654333556577
+          },
+          {
+            "x": 5.4,
+            "y": -2.8436654333556577
+          },
+          {
+            "x": 5.4,
+            "y": 1.4223345666443425
+          },
+          {
+            "x": 4.500300564369136,
+            "y": 2.8436654333556577
+          },
+          {
+            "x": -5.399699435630865,
+            "y": 2.8436654333556577
+          },
+          {
+            "x": -5.4,
+            "y": 1.4223345666443425
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-97-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 430.399,
+        "y": 182.882
+      },
+      "kind": "building",
+      "width": 6.3,
+      "height": 0.379,
+      "angle": 0.191258,
+      "color": "#a56e56",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -3.15,
+            "y": -0.1895
+          },
+          {
+            "x": 3.15,
+            "y": -0.1895
+          },
+          {
+            "x": 3.15,
+            "y": 0.1895
+          },
+          {
+            "x": -3.15,
+            "y": 0.1895
+          }
+        ]
+      }
+    },
+    {
+      "id": "poble-lot-3-3-98-tile",
+      "owner": "highlands",
+      "position": {
+        "x": 445.42,
+        "y": 185.79
+      },
+      "kind": "building",
+      "width": 9.9,
+      "height": 0.379,
+      "angle": 0.191258,
+      "color": "#ad775f",
+      "label": "",
+      "architecture": {
+        "style": "tile",
+        "mural": false,
+        "outline": [
+          {
+            "x": -4.95,
+            "y": -0.1895
+          },
+          {
+            "x": 4.95,
+            "y": -0.1895
+          },
+          {
+            "x": 4.95,
+            "y": 0.1895
+          },
+          {
+            "x": -4.95,
+            "y": 0.1895
+          }
+        ]
+      }
     }
   ],
   "districts": [
@@ -4400,7 +5170,7 @@
     {
       "editable": true,
       "id": "highlands",
-      "name": "Eastern Highlands"
+      "name": "Poble-sec / Mirador"
     },
     {
       "editable": true,
@@ -4575,7 +5345,7 @@
       "text": "M I L L I O N A I R E S   R O W"
     },
     {
-      "id": "label-pine",
+      "id": "label-poble-sec",
       "owner": "highlands",
       "position": {
         "x": 418.428,
@@ -4586,7 +5356,7 @@
       "color": "#e4d3ae"
     },
     {
-      "id": "label-eagle",
+      "id": "label-mirador",
       "owner": "highlands",
       "position": {
         "x": 404.274,
@@ -6805,7 +7575,8 @@
       "from": "poble-node-0-0",
       "to": "poble-node-0-1",
       "via": [],
-      "name": "Carrer de Vila i Vila"
+      "name": "Carrer de Vila i Vila",
+      "surface": "residential"
     },
     {
       "id": "poble-east-0-1",
@@ -6814,7 +7585,8 @@
       "from": "poble-node-0-1",
       "to": "poble-node-0-2",
       "via": [],
-      "name": "Carrer de Vila i Vila"
+      "name": "Carrer de Vila i Vila",
+      "surface": "residential"
     },
     {
       "id": "poble-east-0-2",
@@ -6823,7 +7595,8 @@
       "from": "poble-node-0-2",
       "to": "poble-node-0-3",
       "via": [],
-      "name": "Carrer de Vila i Vila"
+      "name": "Carrer de Vila i Vila",
+      "surface": "residential"
     },
     {
       "id": "poble-east-0-3",
@@ -6832,7 +7605,8 @@
       "from": "poble-node-0-3",
       "to": "node-03",
       "via": [],
-      "name": "Carrer de Vila i Vila"
+      "name": "Carrer de Vila i Vila",
+      "surface": "residential"
     },
     {
       "id": "poble-east-1-0",
@@ -6841,7 +7615,8 @@
       "from": "poble-node-1-0",
       "to": "poble-node-1-1",
       "via": [],
-      "name": "Carrer de Piquer"
+      "name": "Carrer de Piquer",
+      "surface": "residential"
     },
     {
       "id": "poble-east-1-1",
@@ -6850,7 +7625,8 @@
       "from": "poble-node-1-1",
       "to": "poble-node-1-2",
       "via": [],
-      "name": "Carrer de Piquer"
+      "name": "Carrer de Piquer",
+      "surface": "residential"
     },
     {
       "id": "poble-east-1-2",
@@ -6859,7 +7635,8 @@
       "from": "poble-node-1-2",
       "to": "poble-node-1-3",
       "via": [],
-      "name": "Carrer de Piquer"
+      "name": "Carrer de Piquer",
+      "surface": "residential"
     },
     {
       "id": "poble-east-1-3",
@@ -6868,7 +7645,8 @@
       "from": "poble-node-1-3",
       "to": "poble-node-1-4",
       "via": [],
-      "name": "Carrer de Piquer"
+      "name": "Carrer de Piquer",
+      "surface": "residential"
     },
     {
       "id": "poble-east-2-0",
@@ -6877,7 +7655,8 @@
       "from": "node-02",
       "to": "poble-node-2-1",
       "via": [],
-      "name": "Carrer de Blai"
+      "name": "Carrer de Blai",
+      "surface": "residential"
     },
     {
       "id": "poble-east-2-2",
@@ -6886,7 +7665,8 @@
       "from": "poble-node-2-2",
       "to": "poble-node-2-3",
       "via": [],
-      "name": "Carrer de Blai"
+      "name": "Carrer de Blai",
+      "surface": "residential"
     },
     {
       "id": "poble-east-3-0",
@@ -6895,7 +7675,8 @@
       "from": "poble-node-3-0",
       "to": "poble-node-3-1",
       "via": [],
-      "name": "Carrer de Blesa"
+      "name": "Carrer de Blesa",
+      "surface": "residential"
     },
     {
       "id": "poble-east-3-1",
@@ -6904,7 +7685,8 @@
       "from": "poble-node-3-1",
       "to": "poble-node-3-2",
       "via": [],
-      "name": "Carrer de Blesa"
+      "name": "Carrer de Blesa",
+      "surface": "residential"
     },
     {
       "id": "poble-east-3-2",
@@ -6913,7 +7695,8 @@
       "from": "poble-node-3-2",
       "to": "poble-node-3-3",
       "via": [],
-      "name": "Carrer de Blesa"
+      "name": "Carrer de Blesa",
+      "surface": "residential"
     },
     {
       "id": "poble-east-3-3",
@@ -6922,7 +7705,8 @@
       "from": "poble-node-3-3",
       "to": "poble-node-3-4",
       "via": [],
-      "name": "Carrer de Blesa"
+      "name": "Carrer de Blesa",
+      "surface": "residential"
     },
     {
       "id": "poble-east-4-0",
@@ -6931,7 +7715,8 @@
       "from": "poble-node-4-0",
       "to": "poble-node-4-1",
       "via": [],
-      "name": "Passeig del Mirador"
+      "name": "Passeig del Mirador",
+      "surface": "residential"
     },
     {
       "id": "poble-east-4-1",
@@ -6940,7 +7725,8 @@
       "from": "poble-node-4-1",
       "to": "node-05",
       "via": [],
-      "name": "Passeig del Mirador"
+      "name": "Passeig del Mirador",
+      "surface": "residential"
     },
     {
       "id": "poble-east-4-2",
@@ -6949,7 +7735,8 @@
       "from": "node-05",
       "to": "poble-node-4-3",
       "via": [],
-      "name": "Passeig del Mirador"
+      "name": "Passeig del Mirador",
+      "surface": "residential"
     },
     {
       "id": "poble-east-4-3",
@@ -6958,7 +7745,8 @@
       "from": "poble-node-4-3",
       "to": "node-04",
       "via": [],
-      "name": "Passeig del Mirador"
+      "name": "Passeig del Mirador",
+      "surface": "residential"
     },
     {
       "id": "poble-south-0-0",
@@ -6967,7 +7755,8 @@
       "from": "poble-node-0-0",
       "to": "poble-node-1-0",
       "via": [],
-      "name": "Carrer de les Hortes"
+      "name": "Carrer de les Hortes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-1-0",
@@ -6976,7 +7765,8 @@
       "from": "poble-node-1-0",
       "to": "node-02",
       "via": [],
-      "name": "Carrer de les Hortes"
+      "name": "Carrer de les Hortes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-2-0",
@@ -6985,7 +7775,8 @@
       "from": "node-02",
       "to": "poble-node-3-0",
       "via": [],
-      "name": "Carrer de les Hortes"
+      "name": "Carrer de les Hortes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-3-0",
@@ -6994,7 +7785,8 @@
       "from": "poble-node-3-0",
       "to": "poble-node-4-0",
       "via": [],
-      "name": "Carrer de les Hortes"
+      "name": "Carrer de les Hortes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-0-1",
@@ -7003,7 +7795,8 @@
       "from": "poble-node-0-1",
       "to": "poble-node-1-1",
       "via": [],
-      "name": "Carrer de Lafont"
+      "name": "Carrer de Lafont",
+      "surface": "residential"
     },
     {
       "id": "poble-south-1-1",
@@ -7012,7 +7805,8 @@
       "from": "poble-node-1-1",
       "to": "poble-node-2-1",
       "via": [],
-      "name": "Carrer de Lafont"
+      "name": "Carrer de Lafont",
+      "surface": "residential"
     },
     {
       "id": "poble-south-2-1",
@@ -7021,7 +7815,8 @@
       "from": "poble-node-2-1",
       "to": "poble-node-3-1",
       "via": [],
-      "name": "Carrer de Lafont"
+      "name": "Carrer de Lafont",
+      "surface": "residential"
     },
     {
       "id": "poble-south-3-1",
@@ -7030,7 +7825,8 @@
       "from": "poble-node-3-1",
       "to": "poble-node-4-1",
       "via": [],
-      "name": "Carrer de Lafont"
+      "name": "Carrer de Lafont",
+      "surface": "residential"
     },
     {
       "id": "poble-south-0-2",
@@ -7039,7 +7835,8 @@
       "from": "poble-node-0-2",
       "to": "poble-node-1-2",
       "via": [],
-      "name": "Carrer de Cabanes"
+      "name": "Carrer de Cabanes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-1-2",
@@ -7048,7 +7845,8 @@
       "from": "poble-node-1-2",
       "to": "poble-node-2-2",
       "via": [],
-      "name": "Carrer de Cabanes"
+      "name": "Carrer de Cabanes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-2-2",
@@ -7057,7 +7855,8 @@
       "from": "poble-node-2-2",
       "to": "poble-node-3-2",
       "via": [],
-      "name": "Carrer de Cabanes"
+      "name": "Carrer de Cabanes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-3-2",
@@ -7066,7 +7865,8 @@
       "from": "poble-node-3-2",
       "to": "node-05",
       "via": [],
-      "name": "Carrer de Cabanes"
+      "name": "Carrer de Cabanes",
+      "surface": "residential"
     },
     {
       "id": "poble-south-0-3",
@@ -7075,7 +7875,8 @@
       "from": "poble-node-0-3",
       "to": "poble-node-1-3",
       "via": [],
-      "name": "Carrer de Mata"
+      "name": "Carrer de Mata",
+      "surface": "residential"
     },
     {
       "id": "poble-south-1-3",
@@ -7084,7 +7885,8 @@
       "from": "poble-node-1-3",
       "to": "poble-node-2-3",
       "via": [],
-      "name": "Carrer de Mata"
+      "name": "Carrer de Mata",
+      "surface": "residential"
     },
     {
       "id": "poble-south-2-3",
@@ -7093,7 +7895,8 @@
       "from": "poble-node-2-3",
       "to": "poble-node-3-3",
       "via": [],
-      "name": "Carrer de Mata"
+      "name": "Carrer de Mata",
+      "surface": "residential"
     },
     {
       "id": "poble-south-3-3",
@@ -7102,7 +7905,8 @@
       "from": "poble-node-3-3",
       "to": "poble-node-4-3",
       "via": [],
-      "name": "Carrer de Mata"
+      "name": "Carrer de Mata",
+      "surface": "residential"
     },
     {
       "id": "poble-south-0-4",
@@ -7111,7 +7915,8 @@
       "from": "node-03",
       "to": "poble-node-1-4",
       "via": [],
-      "name": "Carrer de les Tres Xemeneies"
+      "name": "Carrer de les Tres Xemeneies",
+      "surface": "residential"
     },
     {
       "id": "poble-south-1-4",
@@ -7120,7 +7925,8 @@
       "from": "poble-node-1-4",
       "to": "poble-node-2-4",
       "via": [],
-      "name": "Carrer de les Tres Xemeneies"
+      "name": "Carrer de les Tres Xemeneies",
+      "surface": "residential"
     },
     {
       "id": "poble-south-2-4",
@@ -7129,7 +7935,8 @@
       "from": "poble-node-2-4",
       "to": "poble-node-3-4",
       "via": [],
-      "name": "Carrer de les Tres Xemeneies"
+      "name": "Carrer de les Tres Xemeneies",
+      "surface": "residential"
     },
     {
       "id": "poble-south-3-4",
@@ -7138,7 +7945,8 @@
       "from": "poble-node-3-4",
       "to": "node-04",
       "via": [],
-      "name": "Carrer de les Tres Xemeneies"
+      "name": "Carrer de les Tres Xemeneies",
+      "surface": "residential"
     },
     {
       "id": "pine-road",
@@ -7169,7 +7977,8 @@
       "to": "poble-node-2-1",
       "via": [],
       "name": "Passatge de les Hortes",
-      "bridge": false
+      "bridge": false,
+      "surface": "residential"
     },
     {
       "id": "poble-diagonal-piquer",
@@ -7178,34 +7987,36 @@
       "to": "poble-node-1-3",
       "via": [],
       "name": "Passatge de Piquer",
-      "bridge": false
+      "bridge": false,
+      "surface": "residential"
     }
   ],
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "stops": [
     {
-      "id": "pine-junction",
-      "name": "Pine Junction",
+      "id": "poble-sec",
+      "name": "Poble-sec",
       "owner": "highlands",
       "point": "node-02"
     },
     {
-      "id": "eagle-lookout",
-      "name": "Eagle Lookout",
-      "owner": "highlands",
-      "point": "node-03"
-    },
-    {
-      "id": "highland-lodge",
-      "name": "Highland Lodge",
+      "id": "mirador-park",
+      "name": "Parc del Mirador",
       "owner": "highlands",
       "point": "node-04"
     },
     {
-      "id": "fern-hollow",
-      "name": "Fern Hollow",
+      "id": "tres-xemeneies",
+      "name": "Les Tres Xemeneies",
       "owner": "highlands",
-      "point": "node-05"
+      "point": "node-03"
+    },
+    {
+      "id": "placa-del-sol",
+      "name": "Plaça del Sol",
+      "owner": "highlands",
+      "point": "poble-node-1-2",
+      "amenity": "poble-block-1-2-cafe"
     },
     {
       "id": "woodland-estates",
@@ -7617,6 +8428,186 @@
         "x": 161.16363245993853,
         "y": 43
       }
+    },
+    {
+      "id": "traffic-resident-00",
+      "owner": "highlands",
+      "position": {
+        "x": 371.28265500084325,
+        "y": 25.267471117347657
+      },
+      "angle": 0.2400101644986425,
+      "model": "car",
+      "color": "#c9d8ce",
+      "path": [
+        {
+          "x": 376.72217500084327,
+          "y": 26.598671117347656
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-01",
+      "owner": "highlands",
+      "position": {
+        "x": 352.4095000480085,
+        "y": 58.103614428853746
+      },
+      "angle": 0.1029316385178256,
+      "model": "car",
+      "color": "#d77f72",
+      "path": [
+        {
+          "x": 364.0575000480085,
+          "y": 59.30681442885375
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-02",
+      "owner": "highlands",
+      "position": {
+        "x": 344.2042055435768,
+        "y": 97.08924741487087
+      },
+      "angle": 0.25515689618817056,
+      "model": "car",
+      "color": "#91b5b0",
+      "path": [
+        {
+          "x": 356.9782055435768,
+          "y": 100.42124741487088
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-03",
+      "owner": "highlands",
+      "position": {
+        "x": 400.12887958575493,
+        "y": 157.85164250001515
+      },
+      "angle": -0.03094473129838291,
+      "model": "car",
+      "color": "#c9d8ce",
+      "path": [
+        {
+          "x": 415.0668795857549,
+          "y": 157.38924250001514
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-04",
+      "owner": "highlands",
+      "position": {
+        "x": 398.0945695948953,
+        "y": 188.3138697943557
+      },
+      "angle": 0.24001294723924127,
+      "model": "car",
+      "color": "#d77f72",
+      "path": [
+        {
+          "x": 412.8585695948953,
+          "y": 191.92706979435567
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-05",
+      "owner": "highlands",
+      "position": {
+        "x": 327.51333691229394,
+        "y": 106.55054716049136
+      },
+      "angle": 1.7320202929462216,
+      "model": "van",
+      "color": "#91b5b0",
+      "path": [
+        {
+          "x": 325.0657369122939,
+          "y": 121.60014716049136
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-06",
+      "owner": "highlands",
+      "position": {
+        "x": 359.40452499348197,
+        "y": 116.75351797415414
+      },
+      "angle": 1.7169571898304654,
+      "model": "car",
+      "color": "#c9d8ce",
+      "path": [
+        {
+          "x": 356.917724993482,
+          "y": 133.6463179741541
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-07",
+      "owner": "highlands",
+      "position": {
+        "x": 388.3687848295384,
+        "y": 132.14147543988895
+      },
+      "angle": 1.786118609750628,
+      "model": "motorcycle",
+      "color": "#d77f72",
+      "path": [
+        {
+          "x": 384.9063848295384,
+          "y": 147.97227543988893
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-08",
+      "owner": "highlands",
+      "position": {
+        "x": 428.0102060820829,
+        "y": 130.4477980968811
+      },
+      "angle": 1.8702528413439599,
+      "model": "car",
+      "color": "#91b5b0",
+      "path": [
+        {
+          "x": 423.0454060820829,
+          "y": 146.52859809688107
+        }
+      ],
+      "activity": "residential"
+    },
+    {
+      "id": "traffic-resident-09",
+      "owner": "highlands",
+      "position": {
+        "x": 466.2515150798016,
+        "y": 140.34003140529296
+      },
+      "angle": 1.8107774569146236,
+      "model": "car",
+      "color": "#c9d8ce",
+      "path": [
+        {
+          "x": 462.63871507980156,
+          "y": 155.10443140529293
+        }
+      ],
+      "activity": "residential"
     }
   ],
   "villas": [
@@ -7690,5 +8681,183 @@
         "y": 487
       }
     }
-  ]
+  ],
+  "neighbourhood": {
+    "origin": "poble-node-0-0",
+    "angle": 0.24,
+    "blocks": [
+      {
+        "id": "residential-block-0-0-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-0-0",
+          "poble-node-0-1",
+          "poble-node-1-1",
+          "poble-node-1-0"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-0-1-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-0-1",
+          "poble-node-0-2",
+          "poble-node-1-2",
+          "poble-node-1-1"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-0-2-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-0-2",
+          "poble-node-0-3",
+          "poble-node-1-3"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-0-2-1",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-0-2",
+          "poble-node-1-3",
+          "poble-node-1-2"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-0-3-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-0-3",
+          "node-03",
+          "poble-node-1-4",
+          "poble-node-1-3"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-1-0-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-1-0",
+          "poble-node-1-1",
+          "poble-node-2-1",
+          "node-02"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-1-1-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-1-1",
+          "poble-node-1-2",
+          "poble-node-3-2",
+          "poble-node-3-1"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-1-2-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-1-2",
+          "poble-node-1-3",
+          "poble-node-2-3",
+          "poble-node-2-2"
+        ],
+        "plaza": true
+      },
+      {
+        "id": "residential-block-1-3-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-1-3",
+          "poble-node-1-4",
+          "poble-node-3-4",
+          "poble-node-3-3"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-2-0-0",
+        "owner": "highlands",
+        "corners": [
+          "node-02",
+          "poble-node-2-1",
+          "poble-node-3-0"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-2-0-1",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-2-1",
+          "poble-node-3-1",
+          "poble-node-3-0"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-2-2-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-2-2",
+          "poble-node-2-3",
+          "poble-node-3-3",
+          "poble-node-3-2"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-3-0-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-3-0",
+          "poble-node-3-1",
+          "poble-node-4-1",
+          "poble-node-4-0"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-3-1-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-3-1",
+          "poble-node-3-2",
+          "node-05",
+          "poble-node-4-1"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-3-2-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-3-2",
+          "poble-node-3-3",
+          "poble-node-4-3",
+          "node-05"
+        ],
+        "plaza": false
+      },
+      {
+        "id": "residential-block-3-3-0",
+        "owner": "highlands",
+        "corners": [
+          "poble-node-3-3",
+          "poble-node-3-4",
+          "node-04",
+          "poble-node-4-3"
+        ],
+        "plaza": false
+      }
+    ]
+  }
 }

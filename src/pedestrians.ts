@@ -53,6 +53,20 @@ type CircleHit = { normal: Vec; depth: number; point: Vec };
  */
 function circleBody(body: Body, center: Vec, radius: number): CircleHit | null {
   const local = rotate(sub(center, body.position), -body.angle);
+  if (body.vertices) {
+    let inside = true, nearest = vec(), outward = vec(), best = Infinity;
+    const vertices = body.vertices;
+    for (let i = 0; i < vertices.length; i++) {
+      const a = vertices[i], b = vertices[(i + 1) % vertices.length], edge = sub(b, a);
+      const size2 = dot(edge, edge), t = clamp(dot(sub(local, a), edge) / size2, 0, 1);
+      const point = add(a, scale(edge, t)), d = dist(local, point);
+      if (edge.x * (local.y - a.y) - edge.y * (local.x - a.x) < 0) inside = false;
+      if (d < best) { best = d; nearest = point; outward = scale(vec(edge.y, -edge.x), 1 / Math.sqrt(size2)); }
+    }
+    if (!inside && best > radius) return null;
+    const normal = inside || best < 1e-6 ? outward : scale(sub(local, nearest), 1 / best);
+    return { normal: rotate(normal, body.angle), depth: inside ? radius + best : radius - best, point: body.toWorld(nearest) };
+  }
   const hw = body.w / 2, hh = body.h / 2;
   const cx = clamp(local.x, -hw, hw), cy = clamp(local.y, -hh, hh);
   const dx = local.x - cx, dy = local.y - cy;
@@ -148,6 +162,11 @@ function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: nu
 function wanderTarget(world: World, person: Person, time: number): Vec {
   const { onPromenade } = world.map.beach;
   if (person.role === 'customer') return person.home;
+  if (person.walk) {
+    const walk = person.walk;
+    if (dist(person.position, walk.route[walk.waypoint]) < .2) walk.waypoint = (walk.waypoint + 1) % walk.route.length;
+    return walk.route[walk.waypoint];
+  }
   return add(person.home, onPromenade(person.home) ? vec(Math.sin(time * 0.3 + person.phase) * 5, 0) : vec(0, Math.sin(time * 0.3 + person.phase) * 4));
 }
 

@@ -26,7 +26,7 @@ describe('coastal geography', () => {
     const rails = world.props.filter(p => p.kind === 'guardrail' && !p.sourceId);
     expect(rails.length).toBe(COAST_RAILS.length);
     expect(rails.every(p => p.hp === 24 && p.body.w <= 8)).toBe(true);
-    expect(world.props.filter(p => p.kind === 'building').every(p => !!p.label)).toBe(true);
+    expect(world.props.filter(p => p.kind === 'building').every(p => !!p.label || !!p.body.vertices)).toBe(true);
     // No solid contact in the middle of the first open section on each edge.
     for (const [a, b] of [[vec(-14, -14), vec(254, -14)], [vec(254, -14), vec(254, 254)], [vec(254, 254), vec(-14, 254)], [vec(-14, 254), vec(-14, -14)], [HIGHLAND_OUTLINE[1], HIGHLAND_OUTLINE[2]]]) {
       const n = Math.ceil(dist(a, b) / 8), t = 4 / n;

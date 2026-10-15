@@ -22,11 +22,11 @@ export function authoredCollection(d: MapDocument, id: string): AuthoredCollecti
   return (['countryProps', 'parking', 'trafficSpawns'] as const).find(key => d[key].some(e => e.id === id));
 }
 export function nextEntityId(d: MapDocument, prefix: string) {
-  const used = new Set([...entities(d), ...d.districts, ...d.roads, ...d.constraints].map(e => e.id));
+  const used = new Set([...entities(d), ...d.districts, ...d.roads, ...d.neighbourhood.blocks, ...d.constraints].map(e => e.id));
   for (let i = 1; ; i++) if (!used.has(`${prefix}-${i}`)) return `${prefix}-${i}`;
 }
 export function descriptorBody(e: AuthoredDescriptor): Body {
-  if ('width' in e) { const b = new Body(e.position.x, e.position.y, 1, e.width, e.height); b.angle = e.angle; return b; }
+  if ('width' in e) { const b = new Body(e.position.x, e.position.y, 1, e.width, e.height); b.angle = e.angle; b.vertices = e.architecture?.outline; return b; }
   return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
 }
 export function entityPosition(d: MapDocument, id: string): Vec | undefined {
@@ -146,7 +146,11 @@ export function applyOperations(input: MapDocument, batch: MapBatch) {
       if (!Number.isFinite(op.width) || !Number.isFinite(op.height) || op.width <= 0 || op.height <= 0) throw new Error('Dimensions must be positive finite metres');
       const e = entities(d).find(e => e.id === op.targetId);
       if (!e || !authoredCollection(d, e.id) && !d.districts.find(o => o.id === e.owner)!.editable) throw new Error('Unknown/read-only object');
-      if ('width' in e) { e.width = op.width; e.height = op.height; }
+      if ('width' in e) {
+        const prop = d.countryProps.find(p => p.id === e.id);
+        if (prop?.architecture) prop.architecture.outline = prop.architecture.outline.map(p => vec(p.x * op.width / e.width, p.y * op.height / e.height));
+        e.width = op.width; e.height = op.height;
+      }
       else if ('left' in e) { const center = entityPosition(d, e.id)!; e.left = center.x - op.width / 2; e.right = center.x + op.width / 2; e.top = center.y - op.height / 2; e.bottom = center.y + op.height / 2; }
       else throw new Error('Dimensions are editable only for country props, golf, hotels and promenade');
       changed.add(e.id);
@@ -160,7 +164,7 @@ export class MapHistory {
   private document: MapDocument;
   private past: MapDocument[] = []; private future: MapDocument[] = [];
   constructor(document = copyDefaultMap()) { assertMap(document); this.document = structuredClone(document); }
-  snapshot() { return { schemaVersion: 2, revision: revision(this.document), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
+  snapshot() { return { schemaVersion: 3, revision: revision(this.document), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
   describe(id: string) { return describe(this.document, id); }
   apply(batch: MapBatch) {
     const result = applyOperations(this.document, batch);

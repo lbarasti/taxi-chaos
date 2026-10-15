@@ -1,5 +1,6 @@
-import { vec, type Vec } from '../physics';
+import { Body, contact, vec, type Vec } from '../physics';
 import type { CompiledMap } from '../map/compile';
+import { descriptorBody } from '../map/operations';
 import { createNavigation } from '../world';
 
 export type StopKind = 'city' | 'beach' | 'highland';
@@ -43,9 +44,6 @@ function assertStops(value: unknown): asserts value is RawStops {
   }
 }
 
-const inside = (p: Vec, center: Vec, width: number, height: number, margin: number) =>
-  Math.abs(p.x - center.x) <= width / 2 + margin && Math.abs(p.y - center.y) <= height / 2 + margin;
-
 /**
  * Compiles the authored stops against the map. With `strict` (the default),
  * authored points are checked for envelope bounds, open water, document-prop
@@ -70,16 +68,16 @@ export function compileStops(raw: unknown, map: CompiledMap, strict = true): Com
     byId[stop.id] = stop;
   }
 
-  const props = map.document.countryProps.map(p => ({ position: p.position, width: p.width, height: p.height }));
-  const parking = map.document.parking.map(p => ({ position: p.position, width: 5, height: 2.6 }));
-  const hotels = map.document.beach.hotels.map(h => ({ position: h.position, width: h.width, height: h.height }));
+  const props = map.document.countryProps.map(descriptorBody);
+  const parking = map.document.parking.map(descriptorBody);
+  const hotels = map.document.beach.hotels.map(h => new Body(h.position.x, h.position.y, Infinity, h.width, h.height));
 
   for (const stop of all) {
     const p = stop.position;
     if (!strict) continue;
     if (p.x < min.x || p.x > max.x || p.y < min.y || p.y > max.y) fail(stop.id, 'outside the map envelope');
     if (inOcean(p)) fail(stop.id, 'is in open water');
-    for (const prop of [...props, ...parking, ...hotels]) if (inside(p, prop.position, prop.width, prop.height, 0.8)) fail(stop.id, `overlaps a static prop at ${prop.position.x},${prop.position.y}`);
+    for (const prop of [...props, ...parking, ...hotels]) if (contact(new Body(p.x, p.y, 1, 1.6, 1.6), prop)) fail(stop.id, `overlaps a static prop at ${prop.position.x},${prop.position.y}`);
     if (navigation.roadDistance(p) > 6) fail(stop.id, 'is more than 6 m from a drivable road');
   }
   const city = authored.filter(s => s.kind === 'city').map(s => s.position);

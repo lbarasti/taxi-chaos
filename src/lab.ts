@@ -85,8 +85,8 @@ export const scenarioInfo: ScenarioInfo[] = [
   { name: 'moving-bike-exit', label: 'Moving motorbike / hop off', description: 'A courier bike rolls east at 5 m/s. Press E to jump right; the lighter empty bike recoils and steers left while the rider tumbles. Hold A + E to reverse the recoil; at rest E dismounts safely.' },
   { name: 'motorcycle-impact', label: 'Motorbike / collision ejection', description: 'A cab drives east at 18 m/s into a 5 m/s oncoming motorcyclist. Watch the rider tumble separately while the motorcycle falls on its side, skids, spins and settles. Low-damage bikes can be lifted again.' },
   { name: 'rider-impact', label: 'Motorbike / rider knocked off', description: 'You ride east at 12 m/s toward an incoming 12 m/s car. Watch your rider get thrown, tumble and lose HP on landing; the bike skids on its side. Recover and find another ride.' },
-  { name: 'eastern-bridges', label: 'Eastern Highlands / Barcelona experiment', description: 'Cross Pine Bridge into a Poble-sec-inspired quarter: terracotta courtyard blocks, café squares, three chimneys and a wooded Mirador. Fern Bridge loops back to the city. No police for this scenic run.' },
-  { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the original highlands. No police for this scenic run.' },
+  { name: 'eastern-bridges', label: 'Poble-sec / Mirador', description: 'Cross Pine Bridge into a Poble-sec-inspired quarter: terracotta courtyard blocks, café squares, three chimneys and a wooded Mirador. Fern Bridge loops back to the city. No police for this scenic run.' },
+  { name: 'woodland-estates', label: 'Woodland villas / golf club', description: 'Explore Millionaires Row, the Cedar Woods villa loop and Fairway Country Club below the city. Follow the route west to the club, or head north to the Poble-sec and Mirador. No police for this scenic run.' },
   { name: 'beach', label: 'Sunset Beach / soft sand', description: 'Drive south from the city onto sand. Road tyres slide, bog down and leave ruts. Smash pastel lifeguard towers, parasols, deck chairs and sand castles. E to leave your cab and take the parked beach pickup.' },
   { name: 'beach-pickup', label: 'Beach / off-road pickup', description: 'The same soft-sand run in the beach patrol pickup. Off-road tyres retain drive and cornering grip. The surf still sinks vehicles; head east for the pedestrian promenade and hotels.' },
   { name: 'promenade', label: 'Ocean Walk / hotel promenade', description: 'On foot on the eastern tiled promenade. Walk past hotels, palms, surf rentals, cafés and beachgoers. Physical bollards admit pedestrians and keep cars and road bikes out.' },
@@ -295,7 +295,7 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
     case 'eastern-bridges': {
       pose(game, renderer, player, 236, 80, EAST, 0);
       game.settings.noPolice = true;
-      game.job.pickup = vec(236, 80); game.job.dropoff = { ...HIGHLAND_STOPS[1].position }; game.job.destination = 'Eagle Lookout'; game.job.stage = 'dropoff'; game.job.time = 140;
+      game.job.pickup = vec(236, 80); game.job.dropoff = { ...HIGHLAND_STOPS[1].position }; game.job.destination = HIGHLAND_STOPS[1].name; game.job.stage = 'dropoff'; game.job.time = 140;
       game.releaseMission('shift');
       const customer = game.world.people.find(p => p.id === game.job.customerId);
       if (customer) { customer.aboard = true; customer.alive = false; }

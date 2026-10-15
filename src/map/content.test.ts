@@ -55,23 +55,24 @@ describe('authored content transactions', () => {
     if (kind === 'extra') Object.assign(d.parking[0], { surprise: true });
     expect(() => assertMap(d)).toThrow();
   });
-  it('rejects version 1 exports without upgrading them and retains canonical version 2 imports', () => {
+  it('rejects previous exports without upgrading them and retains canonical version 3 imports', () => {
     const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...previous } = d;
     const old = { ...previous, schemaVersion: 1, beach: { ...previous.beach, pickup: vec(30, 249.5) } };
     expect(() => importMap(JSON.stringify(old))).toThrow();
+    expect(() => importMap(JSON.stringify({ ...d, schemaVersion: 2 }))).toThrow();
     expect(() => importMap(JSON.stringify({ ...old, parking: [] }))).toThrow();
     expect(exportMap(importMap(exportMap(d)))).toBe(exportMap(d));
   });
 });
 
 describe('content runtime integration and geometric findings', () => {
-  it('instantiates the Eagle Ridge activity pack with stable sources and clear rural vehicles', () => {
+  it('instantiates the residential activity pack with stable sources and clear vehicles', () => {
     const d = copyDefaultMap(), game = new Game(compileMap(d), false);
-    const props = d.countryProps.filter(p => p.owner === 'highlands' && !p.id.startsWith('bridge-lamp-'));
+    const props = d.countryProps.filter(p => p.owner === 'highlands');
     const parking = d.parking.filter(p => p.owner === 'highlands');
     const traffic = d.trafficSpawns.filter(p => p.owner === 'highlands');
-    expect(props).toHaveLength(47); expect(parking).toHaveLength(8);
-    expect(traffic.map(p => p.id)).toEqual(['traffic-eagle-tour', 'traffic-pine-service', 'traffic-lodge-pickup', 'traffic-ridge-motorcycle']);
+    expect(props.length).toBeGreaterThan(100); expect(parking).toHaveLength(3);
+    expect(traffic).toHaveLength(10); expect(traffic.every(p => p.activity === 'residential')).toBe(true);
     for (const prop of props) expect(game.world.props.find(p => p.sourceId === prop.id)).toMatchObject({ kind: prop.kind, label: prop.label });
     expect(game.world.parking.filter(p => p.owner === 'highlands').map(p => p.sourceId)).toEqual(parking.map(p => p.id));
     for (const spawn of traffic) {

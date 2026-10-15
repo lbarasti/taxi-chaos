@@ -65,8 +65,10 @@ export class EditorRenderer {
       const authored = !!prop.sourceId, fixed = !authored && (prop.body.position.x < 254 && prop.body.position.y < 246);
       if (!(authored ? this.layers.objects : fixed ? this.layers.objects : this.layers.scenery) && !this.layers.colliders) continue;
       c.save(); c.translate(prop.body.position.x, prop.body.position.y); c.rotate(prop.body.angle);
-      if (authored || fixed || this.layers.scenery) { c.fillStyle = prop.color; c.globalAlpha = authored ? 1 : 0.7; c.fillRect(-prop.body.w / 2, -prop.body.h / 2, prop.body.w, prop.body.h); c.globalAlpha = 1; }
-      if (this.layers.colliders) { c.strokeStyle = '#ee958a'; c.lineWidth = 0.8 / this.zoom; c.strokeRect(-prop.body.w / 2, -prop.body.h / 2, prop.body.w, prop.body.h); } c.restore();
+      const outline = prop.body.vertices ?? [vec(-prop.body.w / 2, -prop.body.h / 2), vec(prop.body.w / 2, -prop.body.h / 2), vec(prop.body.w / 2, prop.body.h / 2), vec(-prop.body.w / 2, prop.body.h / 2)];
+      c.beginPath(); outline.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.closePath();
+      if (authored || fixed || this.layers.scenery) { c.fillStyle = prop.color; c.globalAlpha = authored ? 1 : 0.7; c.fill(); c.globalAlpha = 1; }
+      if (this.layers.colliders) { c.strokeStyle = '#ee958a'; c.lineWidth = 0.8 / this.zoom; c.stroke(); } c.restore();
     }
     for (const pool of world.pools) { c.fillStyle = '#76c9d0'; c.fillRect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); }
     if (this.layers.objects) for (const e of [...map.document.parking, ...map.document.trafficSpawns]) {

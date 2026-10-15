@@ -48,14 +48,14 @@ describe('map document and transactional editing', () => {
     const description = h.describe('southern-estates'); description.members.length = 0;
     const result = translate(h); result.document.villas[0].position.x = 0;
     expect(h.snapshot().document.golf.center).toEqual(vec(174, 507));
-    expect(h.snapshot().document.villas[0].position.x).toBe(334);
+    expect(h.snapshot().document.villas[0].position.x).toBe(54);
     expect(h.describe('southern-estates').members.length).toBeGreaterThan(20);
   });
   it('carries composites once, pins north attachments, weights seams and restores exactly', () => {
     const h = new MapHistory(), before = h.export(); const result = translate(h);
     const map = compileMap(result.document);
     expect(map.country.VILLAS.find(v => v.id === 'villa-the-laurels')!.position).toEqual(vec(105, 434));
-    expect(map.country.VILLA_POOLS[6].position).toEqual(vec(119.25, 437));
+    expect(map.country.VILLA_POOLS[map.country.VILLAS.findIndex(v => v.id === 'villa-the-laurels')].position).toEqual(vec(119.25, 437));
     expect(map.country.GOLF_COURSE.clubhouse).toEqual(vec(127, 501));
     expect(map.country.GOLF_HOLES[0].tee).toEqual(vec(146, 500));
     expect(map.country.GOLF_CART_ROUTE[0]).toEqual(vec(144, 490));
@@ -63,7 +63,7 @@ describe('map document and transactional editing', () => {
     expect(result.document.points.find(p => p.id === 'southwoods-fixed')!.position).toEqual(vec(368, 219));
     expect(result.document.points.find(p => p.id === 'node-01')!.position).toEqual(vec(310, 80));
     expect(result.affectedConnections).toContain('southwoods-drive');
-    expect(result.document.ridges[3].points[0]).toEqual(vec(16, 431));
+    expect(result.document.ridges.find(r => r.id === 'ridge-cedar')!.points[0]).toEqual(vec(16, 431));
     const after = h.export(); h.undo(); expect(h.export()).toBe(before); h.redo(); expect(h.export()).toBe(after);
   });
   it('moves shared destination nodes once and derives hotel/promenade geometry', () => {
@@ -90,7 +90,7 @@ describe('map compilation, gameplay and validation', () => {
   it('two worlds coexist with relocated hashes, pools, residents, carts and routes', () => {
     const h = new MapHistory(); translate(h);
     const original = new Game(undefined, false), preview = new Game(compileMap(h.snapshot().document), false);
-    expect(original.world.pools[6].position).toEqual(vec(119.25, 417)); expect(preview.world.pools[6].position).toEqual(vec(119.25, 437));
+    expect(original.world.pools[original.map.country.VILLAS.findIndex(v => v.id === 'villa-the-laurels')].position).toEqual(vec(119.25, 417)); expect(preview.world.pools[preview.map.country.VILLAS.findIndex(v => v.id === 'villa-the-laurels')].position).toEqual(vec(119.25, 437));
     expect(preview.vehicles.find(v => v.cart)!.body.position).toEqual(vec(144, 490));
     expect(preview.world.people.some(p => p.home.x === 117 && p.home.y === 426)).toBe(true);
     const probe = new Body(105, 434, 1, 16, 10);
@@ -144,13 +144,13 @@ describe('map compilation, gameplay and validation', () => {
       expect(game.job.stage).toBe('dropoff');
       expect(game.health).toBe(100); expect(game.player.sinking).toBeUndefined();
       expect(dist(game.actor.position, vec(132, 478))).toBeLessThan(2);
-      game.resetRun(); expect(game.world.pools[6].position).toEqual(vec(119.25, 437));
+      game.resetRun(); expect(game.world.pools[game.map.country.VILLAS.findIndex(v => v.id === 'villa-the-laurels')].position).toEqual(vec(119.25, 437));
     } finally { vi.unstubAllGlobals(); }
   });
   it('uses relocated pool water and the authored beach surf in actual gameplay', () => {
     const h = new MapHistory(); translate(h); const game = new Game(compileMap(h.snapshot().document), false);
     game.start(); game.settings.noPolice = true;
-    const pool = game.world.pools[6]; game.player.body.position = { ...pool.position };
+    const pool = game.world.pools[game.map.country.VILLAS.findIndex(v => v.id === 'villa-the-laurels')]; game.player.body.position = { ...pool.position };
     game.update(1 / 120); expect(game.player.sinking?.pool).toBe(pool);
     game.resetRun(); game.settings.noPolice = true;
     game.player.body.position = vec(64, game.map.beach.beachShoreY(64) + 2);

@@ -1,20 +1,8 @@
-import { add, dot, rotate, scale, sub, vec, type Vec } from '../physics';
+import { add, rotate, scale, sub, vec, type Vec } from '../physics';
 import type { MapDocument } from './schema';
 import type { Countryside } from '../countryside';
 
 const cross = (a: Vec, b: Vec) => a.x * b.y - a.y * b.x;
-function hull(points: Vec[]): Vec[] {
-  const sorted = points.slice().sort((a,b) => a.x-b.x || a.y-b.y);
-  const half = (points: Vec[]) => {
-    const result: Vec[] = [];
-    for (const p of points) {
-      while (result.length > 1 && cross(sub(result.at(-1)!, result.at(-2)!), sub(p, result.at(-1)!)) <= .001) result.pop();
-      result.push(p);
-    }
-    return result;
-  };
-  return [...half(sorted).slice(0,-1), ...half(sorted.reverse()).slice(0,-1)];
-}
 const center = (polygon: Vec[]) => scale(polygon.reduce((sum, p) => add(sum, p), vec()), 1 / polygon.length);
 /** Bounded quadratic corner cuts, sampled once with the rest of the map. */
 function rounded(polygon: Vec[], setback: number): Vec[] {
@@ -31,6 +19,7 @@ function rounded(polygon: Vec[], setback: number): Vec[] {
 }
 /** Intersect parallel, inward-offset edges to preserve trapezoids and wedge tips. */
 function inset(polygon: Vec[], distance: number): Vec[] {
+  if (polygon.some((a, i) => { const b = polygon[(i + 1) % polygon.length], c = polygon[(i + 2) % polygon.length]; return Math.hypot(b.x-a.x, b.y-a.y) < .001 || Math.abs(cross(sub(b,a), sub(c,b))) < .000001; })) return [];
   const lines = polygon.map((a, i) => {
     const direction = sub(polygon[(i + 1) % polygon.length], a), length = Math.hypot(direction.x, direction.y);
     return { origin: add(a, scale(vec(-direction.y, direction.x), distance / length)), direction };
@@ -49,33 +38,19 @@ function inset(polygon: Vec[], distance: number): Vec[] {
 /** Ground artwork consumes the same authored junctions as road routing and buildings. */
 export function createPobleSec(document: MapDocument, country: Countryside) {
   const points = new Map(document.points.map(p => [p.id, p.position]));
-  const origin = points.get('poble-node-0-0');
-  if (!origin || !points.has('poble-node-0-1') || !points.has('poble-node-1-0')) return null;
-  // The park keeps its own fixed frame while the neighbourhood junctions vary independently.
-  const angle = .24, east = vec(Math.cos(angle), Math.sin(angle)), south = vec(-east.y, east.x);
+  const { neighbourhood } = document, origin = points.get(neighbourhood.origin)!;
+  // Park coordinates use their authored frame; street corners remain independent anchors.
+  const angle = neighbourhood.angle, east = vec(Math.cos(angle), Math.sin(angle)), south = vec(-east.y, east.x);
   const point = (u: number, v: number): Vec => add(origin, add(scale(east, u), scale(south, v)));
   const localPolygon = (coordinates: number[][], setback = 3) => rounded(coordinates.map(([u, v]) => point(u, v)), setback);
-  const aliases: Record<string, string> = { '0-2': 'node-02', '4-0': 'node-03', '4-4': 'node-04', '2-4': 'node-05' };
-  const node = (col: number, row: number) => points.get(aliases[`${col}-${row}`] ?? `poble-node-${row}-${col}`);
-  const cells = [];
-  for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) {
-    const merged = (col === 1 || col === 3) && !document.roads.some(r => r.id === `poble-east-2-${col}`);
-    if (merged && row === 2) continue;
-    const bottom = merged && row === 1 ? 3 : row + 1;
-    const a = node(col, row), b = node(col + 1, row), d = node(col + 1, bottom), e = node(col, bottom);
-    if (!a || !b || !d || !e) continue;
-    let boundaries = [[a, b, d, e]];
-    if (row === 2 && col === 0 && document.roads.some(r => r.id === 'poble-diagonal-hortes')) boundaries = [[a, b, e], [b, d, e]];
-    if (row === 0 && col === 2 && document.roads.some(r => r.id === 'poble-diagonal-piquer')) boundaries = [[a, b, d], [a, d, e]];
-    for (const boundary of boundaries) {
-      const edge = sub(boundary[1], boundary[0]), length = Math.hypot(edge.x, edge.y);
-      const midpoint = center(boundary);
-      cells.push({ center: midpoint, radius: Math.max(...boundary.map(p => Math.hypot(p.x - midpoint.x, p.y - midpoint.y))),
-        boundary, pavement: rounded(inset(boundary, 4.8), 2.8), courtyard: inset(boundary, 5.6),
-        home: add(add(boundary[0], scale(edge, .35)), scale(vec(-edge.y, edge.x), 4.8 / length)),
-        angle: Math.atan2(edge.y, edge.x), plaza: row === 1 && col === 2 });
-    }
-  }
+  const cells = neighbourhood.blocks.map(block => {
+    const boundary = block.corners.map(id => points.get(id)!);
+    const edge = sub(boundary[1], boundary[0]), length = Math.hypot(edge.x, edge.y), midpoint = center(boundary);
+    return { id: block.id, center: midpoint, radius: Math.max(...boundary.map(p => Math.hypot(p.x - midpoint.x, p.y - midpoint.y))),
+      boundary, pavement: rounded(inset(boundary, 4.8), 2.8), courtyard: inset(boundary, 5.6),
+      home: add(add(boundary[0], scale(edge, .35)), scale(vec(-edge.y, edge.x), 4.8 / Math.max(length, .001))),
+      angle: Math.atan2(edge.y, edge.x), plaza: block.plaza };
+  });
   const paths = [
     [[36,159],[45,163],[50,171],[128,177],[130,189],[56,200],[64,215],[120,220]],
     [[139,159],[138,170],[78,182],[72,191],[124,202],[118,220],[90,233]],
@@ -91,7 +66,7 @@ export function createPobleSec(document: MapDocument, country: Countryside) {
     [[80,162],[99,161],[112,164],[109,173],[91,175],[82,170]],
     [[118,162],[137,162],[144,173],[135,178],[122,171]],
   ].map(outline => localPolygon(outline, 2));
-  const streets = country.COUNTRY_ROADS.filter(road => road.id.startsWith('poble-'));
+  const streets = country.COUNTRY_ROADS.filter(road => road.surface === 'residential');
   const streetNodes = new Set(streets.flatMap(road => [road.from, road.to]));
   // Taper the wider country approaches into the narrower neighbourhood streets.
   // These ribbons follow the same sampled road curves as routing and sensing.
@@ -150,25 +125,19 @@ export function createPobleSec(document: MapDocument, country: Countryside) {
   });
   // Compile each cadastral parcel to one convex outline shared by its roof,
   // static collision body and light occlusion.
-  const groups = new Map<string, typeof document.countryProps>();
-  for (const prop of document.countryProps) {
-    if (!prop.id.startsWith('poble-lot-')) continue;
-    const key = prop.id.replace(/-p\d+$/, '');
-    const group = groups.get(key) ?? []; group.push(prop); groups.set(key, group);
-  }
-  const roofs = [...groups].map(([id, props]) => {
-    const first = props[0], angle = first.angle;
-    const pieces = props.map(p => ({ center: rotate(sub(p.position, first.position), -angle), w: p.width, h: p.height }));
-    const left = Math.min(...pieces.map(p => p.center.x - p.w / 2)), right = Math.max(...pieces.map(p => p.center.x + p.w / 2));
-    const top = Math.min(...pieces.map(p => p.center.y - p.h / 2)), bottom = Math.max(...pieces.map(p => p.center.y + p.h / 2));
-    const midpoint = vec((left + right) / 2, (top + bottom) / 2);
-    return { id, position: add(first.position, rotate(midpoint, angle)), angle, w: right - left, h: bottom - top,
-      color: first.color, mural: first.label === 'MURAL DEL DRAC', style: id.split('-').at(-1)!,
-      outline: hull(pieces.flatMap(p => [-1,1].flatMap(x => [-1,1].map(y => sub(add(p.center,vec(x*p.w/2,y*p.h/2)),midpoint))))),
-      sourceId: first.id };
-  });
+  const roofs = document.countryProps.filter(prop => prop.architecture).map(prop => ({
+    id: prop.id, sourceId: prop.id, position: prop.position, angle: prop.angle,
+    w: prop.width, h: prop.height, color: prop.color, ...prop.architecture!,
+  }));
   return { point, cells, paths, roofs, park, promenade, gardens, streets, approaches, crossings, junctions, angle,
-    contains: (p: Vec) => { const delta = sub(p, origin), u = dot(delta, east), v = dot(delta, south); return u > -10 && u < 155 && v > -9 && v < 240; },
+    contains: (p: Vec) => [...cells.map(cell => cell.boundary), park].some(polygon => {
+      let inside = false;
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const a = polygon[i], b = polygon[j];
+        if ((a.y > p.y) !== (b.y > p.y) && p.x < (b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x) inside = !inside;
+      }
+      return inside;
+    }),
   };
 }
 

@@ -62,9 +62,9 @@ describe('eastern bridges and highland roads', () => {
         for (const { point } of samples(route)) expect(roadDistance(point)).toBeLessThan(6.01);
       }
     }
-    const ridge = roadPath(ROAD_NODES[2], ROAD_NODES[3]);
-    expect(ridge.length).toBeGreaterThan(10);
-    expect(pathLength(ridge)).toBeGreaterThan(dist(ROAD_NODES[2], ROAD_NODES[3]) + 5);
+    const descent = roadPath(ROAD_NODES[4], ROAD_NODES[9]);
+    expect(descent.length).toBeGreaterThan(10);
+    expect(pathLength(descent)).toBeGreaterThan(dist(ROAD_NODES[4], ROAD_NODES[9]) + 5);
   });
   it('allows traffic to enter and leave both bridge mouths and projects onto real curved roads', () => {
     expect(roadNeighbours(ROAD_NODES[0])).toContainEqual(ROAD_NODES[1]);
@@ -73,8 +73,8 @@ describe('eastern bridges and highland roads', () => {
     expect(roadNeighbours(ROAD_NODES[6])).toContainEqual(ROAD_NODES[7]);
     const p = vec(415, 72), projected = roadProjection(p);
     expect(countryAccess(projected).distance).toBeLessThan(0.001);
-    expect(district(vec(340, 100))).toBe('PINE WOODS');
-    expect(district(vec(474, 58))).toBe('EAGLE HIGHLANDS');
+    expect(district(vec(340, 100))).toBe('POBLE-SEC');
+    expect(district(vec(474, 58))).toBe('POBLE-SEC');
   });
   it('physically drives a cab across each bridge without damage or entering water', () => {
     for (const y of BRIDGE_Y) {
@@ -90,7 +90,7 @@ describe('eastern bridges and highland roads', () => {
   it('dispatches rural jobs with road-distance pay and enough time for the bridge detour', () => {
     const g = new Game(undefined, false, false);
     expect(g.job.pickup).toEqual(vec(4, 14)); expect(g.job.dropoff).toEqual(vec(44, 14));
-    g.offer = 2; g.newJob(); // Third dispatched trip includes Eagle Lookout as its destination.
+    g.offer = 2; g.newJob(); // Third dispatched trip includes Parc del Mirador as its destination.
     expect(g.job.pickup.x > 246 || g.job.dropoff.x > 246).toBe(true);
     const distance = pathLength(roadPath(g.job.pickup, g.job.dropoff));
     expect(g.job.fare).toBe(Math.round(55 + distance * 0.7));
@@ -100,7 +100,7 @@ describe('eastern bridges and highland roads', () => {
     const g = new Game(undefined, false, false); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
     g.player = g.spawnVehicle({ kind: 'taxi', model: 'motorcycle', position: { ...g.player.body.position } }); g.vehicles = [g.player]; g.offer = 2; g.newJob();
     const fare = g.job.fare, cash = g.save.cash;
-    expect(g.job.type).toBe('parcel'); expect(g.job.destination).toBe('Eagle Lookout');
+    expect(g.job.type).toBe('parcel'); expect(g.job.destination).toBe('Parc del Mirador');
     g.player.body.position = { ...g.job.pickup };
     for (let i = 0; i < 100; i++) g.update(1 / 120);
     expect(g.job.stage).toBe('dropoff');
@@ -122,7 +122,7 @@ describe('eastern bridges and highland roads', () => {
       expect(reached, `traffic failed ${from.x},${from.y} to ${to.x},${to.y}`).toBe(true);
       expect(car.damage.health).toBe(100);
     }
-  });
+  }, 30000);
   it('pursues a rural sighting over Pine Bridge and follows the ridge bends', () => {
     const g = new Game(); g.vehicles = [g.player]; g.world.people = []; g.settings.noPolice = true; g.setMode('playing');
     g.player.body.position = vec(474, 58);

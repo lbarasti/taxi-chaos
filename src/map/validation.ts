@@ -10,7 +10,7 @@ export type Validation = { revision: string; findings: Finding[]; errors: number
 
 function footprint(body: Body): Vec[] {
   const corners = body.corners(), points = [body.position, ...corners];
-  for (let i = 0; i < 4; i++) { const a = corners[i], b = corners[(i + 1) % 4], steps = Math.ceil(dist(a, b) / 0.5); for (let j = 1; j < steps; j++) points.push(add(a, scale(sub(b, a), j / steps))); }
+  for (let i = 0; i < corners.length; i++) { const a = corners[i], b = corners[(i + 1) % corners.length], steps = Math.ceil(dist(a, b) / 0.5); for (let j = 1; j < steps; j++) points.push(add(a, scale(sub(b, a), j / steps))); }
   return points;
 }
 function intersects(a: Vec, b: Vec, c: Vec, d: Vec) {
@@ -31,6 +31,9 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
         if (intersects(ring[i], ring[(i + 1) % ring.length], ring[j], ring[(j + 1) % ring.length])) push('self-intersecting-land', [id, ...refs], 'Non-adjacent shore segments intersect', ring[i]);
       }
     }
+  }
+  for (const cell of compiled.pobleSec?.cells ?? []) {
+    if (cell.boundary.some((a, i, polygon) => cross(sub(polygon[(i + 1) % polygon.length], a), sub(polygon[(i + 2) % polygon.length], polygon[(i + 1) % polygon.length])) <= .001)) push('invalid-residential-block', [cell.id], 'Residential block corners must form a nondegenerate convex boundary', cell.center);
   }
   const seen = new Set([0, 7]);
   for (let pass = 0; pass < document.nodes.length; pass++) for (const road of country.COUNTRY_ROADS) if (seen.has(road.from) || seen.has(road.to)) { seen.add(road.from); seen.add(road.to); }
@@ -121,7 +124,8 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   for (const stop of country.HIGHLAND_STOPS) {
     const body = createVehicleBody(vehicleDefinition('car'), stop.position, 0), access = country.countryAccess(stop.position);
     if (access.distance > 6 || footprint(body).some(coast.inOcean) || !seen.has(access.road.from)) push('unreachable-stop', [stop.id, stop.point], 'Fare destination lacks a dry reachable driving lane', stop.position, { roadDistance: access.distance });
-    if (!world.props.some(p => p.sourceId === stop.id && p.kind === 'kiosk')) push('stop-clearing-unavailable', [stop.id], 'No dry kiosk clearing can be generated beside this stop', stop.position);
+    checkVehicleClearance(stop.id, body, 'stop-blocked');
+    if (!world.props.some(p => p.sourceId === (stop.amenity ?? stop.id) && p.kind === 'kiosk')) push('stop-clearing-unavailable', [stop.id], 'No dry kiosk clearing can be generated beside this stop', stop.position);
   }
   // Preserve 0.75 m real pedestrian gaps; vehicle-only envelopes intentionally do not block walkers.
   const prom = beach.PROMENADE;
