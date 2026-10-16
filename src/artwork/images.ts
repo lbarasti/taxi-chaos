@@ -8,6 +8,7 @@ import { asphaltArtwork, type ArtBounds, type PropArtwork } from './catalogue';
 /** One decoded image per asset, shared by normal games and editor previews. */
 export class ArtworkImages {
   private images = new Map<string, HTMLImageElement>();
+  private groundTile?: HTMLCanvasElement;
   private loading?: Promise<void>;
   private patterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
   load(): Promise<void> {
@@ -17,7 +18,18 @@ export class ArtworkImages {
       // Individual failures retain procedural fallback artwork, including in offline builds.
       image.onerror = () => resolve();
       image.src = src;
-    }))).then(() => {});
+    }))).then(() => {
+      const image = this.images.get(asphaltArtwork.image);
+      if (!image) return;
+      // A live SVG repeat pattern can demote Chrome's world canvas to software rendering,
+      // making even the lighting canvas uploads stall. Rasterize once, never in a frame.
+      const tile = document.createElement('canvas');
+      tile.width = image.naturalWidth; tile.height = image.naturalHeight;
+      const c = tile.getContext('2d');
+      if (!c) return; // Keep the procedural ground if rasterization is unavailable.
+      c.drawImage(image, 0, 0);
+      this.groundTile = tile;
+    });
   }
   has(id: string): boolean { return this.images.has(id); }
   draw(c: CanvasRenderingContext2D, art: PropArtwork): boolean {
@@ -29,14 +41,14 @@ export class ArtworkImages {
     return true;
   }
   ground(c: CanvasRenderingContext2D, bounds: ArtBounds): void {
-    const image = this.images.get(asphaltArtwork.image);
-    if (!image) return;
+    const tile = this.groundTile;
+    if (!tile) return;
     let pattern = this.patterns.get(c);
     if (!pattern) {
-      pattern = c.createPattern(image, 'repeat') ?? undefined;
+      pattern = c.createPattern(tile, 'repeat') ?? undefined;
       if (!pattern) return;
       const size = asphaltArtwork.tileMetres;
-      pattern.setTransform(new DOMMatrix().scale(size / image.naturalWidth, size / image.naturalHeight));
+      pattern.setTransform(new DOMMatrix().scale(size / tile.width, size / tile.height));
       this.patterns.set(c, pattern);
     }
     c.save(); c.globalAlpha = 0.7; c.fillStyle = pattern;
