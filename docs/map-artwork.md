@@ -1,5 +1,10 @@
 # Top-down map artwork
 
+The [city neighbourhood pass](city-neighbourhoods.md) extends this pipeline with
+six L, T and U shaped roof designs and contiguous wealth clusters across the city.
+That guide documents the shared physical wings, open courtyards and light masks.
+The notes below describe the original shop/tree pipeline and its performance contract.
+
 The first artwork pass replaces standard 10 × 10 m city shops and urban trees
 with textured PNG illustrations, and adds asphalt grain, cracks and scattered
 repairs beneath city blocks. Three distinct roof materials (patched tar, rusted

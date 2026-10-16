@@ -1,3 +1,9 @@
+import workshop from '../assets/map/workshop.png?inline';
+import tenement from '../assets/map/tenement.png?inline';
+import courtyard from '../assets/map/courtyard.png?inline';
+import copper from '../assets/map/copper.png?inline';
+import limestone from '../assets/map/limestone.png?inline';
+import pavilion from '../assets/map/pavilion.png?inline';
 import shopTar from '../assets/map/shop-tar.png?inline';
 import shopRust from '../assets/map/shop-rust.png?inline';
 import shopConcrete from '../assets/map/shop-concrete.png?inline';
@@ -12,7 +18,7 @@ export class ArtworkImages {
   private loading?: Promise<void>;
   private patterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
   load(): Promise<void> {
-    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt }).map(([id, src]) => new Promise<void>(resolve => {
+    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt, workshop, tenement, courtyard, copper, limestone, pavilion }).map(([id, src]) => new Promise<void>(resolve => {
       const image = new Image();
       image.onload = () => { this.images.set(id, image); resolve(); };
       // Individual failures retain procedural fallback artwork, including in offline builds.
@@ -37,6 +43,11 @@ export class ArtworkImages {
     if (!image) return false;
     const b = art.bounds;
     c.save(); c.rotate(art.rotation ?? 0);
+    if (art.clip) {
+      c.beginPath(); art.silhouette.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.closePath(); c.clip();
+      // A solid roof undercoat keeps image edge alpha inside the exact physical footprint.
+      c.fillStyle = '#716e60'; c.fill();
+    }
     c.drawImage(image, b.x, b.y, b.width, b.height); c.restore();
     return true;
   }

@@ -45,7 +45,7 @@ export function creditsMarkup() {
       row('Typeface', `${link('Space Grotesk', 'https://fonts.google.com/specimen/Space+Grotesk')} by Florian Karsten`),
       `<p class="credit-note">Distributed under the ${link('SIL Open Font License 1.1', 'https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt')} and embedded in the standalone build.</p>`)}
     ${section('credits-art', 'Art & characters',
-      row('City art', 'Drawn procedurally, not texture-based.') +
+      row('City art', 'Original procedural scenery with generated overhead roof and tree illustrations, embedded for offline play.') +
       row('Portraits', 'User-supplied PNG portraits for Mia, Frankie, Rosa, Celia, Adrian Vale and Bea.') +
       row('Identity cards', 'Nine Open Shore SVG identity cards (Mara, Eli, Victor, Leila, Harker, Lena, Iris, Tom and Ruth) are original provisional vector art created for Taxi Chaos.'),
       '<p class="credit-note">Every portrait is bundled inline as a data URL, with no external image service.</p>')}`;

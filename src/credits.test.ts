@@ -23,7 +23,7 @@ describe('credits page', () => {
     expect(html).toContain('Florian Karsten');
     expect(html).toContain('SIL Open Font License 1.1');
     expect(html).toContain('https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt');
-    expect(html).toContain('Drawn procedurally, not texture-based.');
+    expect(html).toContain('Original procedural scenery with generated overhead roof and tree illustrations, embedded for offline play.');
     expect(html).toContain('User-supplied PNG portraits for Mia, Frankie, Rosa, Celia, Adrian Vale and Bea.');
     expect(html).toContain('original provisional vector art created for Taxi Chaos.');
   });
