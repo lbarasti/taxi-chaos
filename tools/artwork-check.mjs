@@ -23,7 +23,7 @@ try {
     page.on('console', m => { if (m.type() === 'error') errors.push(`${name}: ${m.text()}`); });
     page.on('request', r => { if (/^https?:/.test(r.url())) external.push(r.url()); });
     await page.addInitScript(failImages => {
-      window.artDraws = { shop: 0, tree: 0, asphalt: 0, asphaltRasterizations: 0 };
+      window.artDraws = { shop: 0, tree: 0, structures: 0, asphalt: 0, asphaltRasterizations: 0 };
       window.artVariants = new Set();
       const draw = CanvasRenderingContext2D.prototype.drawImage;
       CanvasRenderingContext2D.prototype.drawImage = function(image, ...args) {
@@ -31,7 +31,7 @@ try {
         if (this.canvas.id === 'city' && image instanceof HTMLImageElement) {
           const key = { 256: 'shop', 192: 'tree' }[image.naturalWidth];
           if (key) window.artDraws[key]++;
-          if (key === 'shop') window.artVariants.add(image.src);
+          if (key !== 'tree') { window.artDraws.structures++; window.artVariants.add(image.src); }
         }
         return draw.call(this, image, ...args);
       };
@@ -69,9 +69,9 @@ try {
     const draws = await page.evaluate(() => window.artDraws);
     if (failImages) assert.deepEqual(draws, { shop: 0, tree: 0, asphalt: 0, asphaltRasterizations: 0 });
     else {
-      assert(draws.shop > 0, `${name}: decoded shop PNG must be drawn`);
+      assert(draws.structures > 0, `${name}: decoded building artwork must be drawn`);
       assert(draws.tree > 0, `${name}: decoded tree PNG must be drawn`);
-      if (name === 'desktop') assert.equal(await page.evaluate(() => window.artVariants.size), 3, 'all three roof designs must be visible');
+      if (name === 'desktop') assert((await page.evaluate(() => window.artVariants.size)) >= 4, 'mixed new and existing roof materials must appear together');
       assert.equal(draws.asphalt, 1, `${name}: asphalt pattern is cached across frames`);
       assert.equal(draws.asphaltRasterizations, 1, `${name}: SVG is rasterized once at load, never per frame`);
     }

@@ -14,7 +14,7 @@ export type PropArtwork = Readonly<{
   silhouette: readonly Vec[];
   occluder?: readonly Vec[];
 }>;
-export type ArtProp = { id?: number; sourceId?: string; artDistrict?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number } };
+export type ArtProp = { id?: number; sourceId?: string; artDistrict?: string; label?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number } };
 
 function roof(image: ArtImageId, w: number, h: number, sign?: PropArtwork['sign']): PropArtwork {
   // A 0.3 m rim on each edge gives roofs a slight overhang without altering physics.
@@ -73,19 +73,19 @@ function appearanceSeed(prop: ArtProp): number {
 
 export function artworkFor(prop: ArtProp): PropArtwork | undefined {
   const { position: p, w, h } = prop.body;
-  const seed = appearanceSeed(prop);
+  // The vast majority of map props have no sprite: keep their culling path cheap.
   const city = p.x >= 0 && p.x <= 240 && p.y >= 0 && p.y <= 240;
-  if (city && prop.kind === 'building' && w === 10 && h === 10) {
+  if ((city || prop.artDistrict) && prop.kind === 'building' && w === 10 && h === 10) {
     const palette = districtShops[prop.artDistrict ?? ''] ?? legacyShops;
-    return palette[seed % palette.length];
+    return palette[appearanceSeed(prop) % palette.length];
   }
-  if (city && prop.kind === 'tree') return trees[seed % trees.length];
+  if (city && prop.kind === 'tree') return trees[appearanceSeed(prop) % trees.length];
   if (prop.kind === 'barracks' && w === 23 && h === 10) return propArtwork.civicBarracks;
   if (prop.kind === 'shed' && w === 23 && h === 10) return propArtwork.freightDepot;
   if (prop.kind === 'station' && w === 10 && h === 10) return propArtwork.fuelStation;
   // Villa and annex share an authored source ID, but differ in physical size.
   if (prop.kind === 'building' && prop.sourceId?.startsWith('villa-')) {
-    if (w === 16 && h === 10) return seed % 2 ? propArtwork.villaTile : propArtwork.villaGlass;
+    if (w === 16 && h === 10) return appearanceSeed(prop) % 2 ? propArtwork.villaTile : propArtwork.villaGlass;
     if (w === 6 && h === 3) return propArtwork.villaAnnex;
   }
   if (prop.kind !== 'building') return;

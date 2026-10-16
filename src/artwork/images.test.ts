@@ -84,6 +84,16 @@ describe('artwork image caching', () => {
     expect(main.calls.rotate).toHaveBeenCalledExactlyOnceWith(0);
   });
 
+  it('draws the actual hotel and large industrial assets at metre-scale bounds', async () => {
+    const { images } = browser();
+    const art = new ArtworkImages(), main = canvasContext();
+    await art.load();
+    expect(art.has('hotel-sandpiper')).toBe(true);
+    expect(art.draw(main.ctx, propArtwork.hotelSandpiper)).toBe(true);
+    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[images.length - 4], -16.8, -5.3, 33.6, 10.6);
+    expect(art.has('bonded-warehouse')).toBe(true);
+  });
+
   it('does not cache a failed pattern creation or fall back to the live SVG', async () => {
     const { tile } = browser();
     const art = new ArtworkImages(), main = canvasContext();
