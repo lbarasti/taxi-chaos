@@ -1,3 +1,5 @@
+import { artworkFor } from './artwork/catalogue';
+import { artworkImages } from './artwork/images';
 import type { Renderer } from './renderer';
 import type { Prop } from './world';
 import { vec, type Vec } from './physics';
@@ -116,7 +118,11 @@ function drawHotel(r: Renderer, prop: Prop) {
 
 export function drawBeachProp(r: Renderer, prop: Prop): boolean {
   const { BEACH_HOTELS } = r.game.map.beach;
-  if (prop.kind === 'building' && BEACH_HOTELS.some(h => h.name === prop.label)) { drawHotel(r, prop); return true; }
+  if (prop.kind === 'building' && BEACH_HOTELS.some(h => h.name === prop.label)) {
+    const art = artworkFor(prop);
+    if (art && artworkImages.has(art.image)) return false; // Main structure renderer handles new hotel art.
+    drawHotel(r, prop); return true; // Preserve the detailed procedural hotel on image failure.
+  }
   if (!['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(prop.kind)) return false;
   const c = r.ctx, b = prop.body;
   c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);

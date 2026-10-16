@@ -38,10 +38,10 @@ describe('artwork image caching', () => {
     const loading = art.load();
     expect(art.load()).toBe(loading);
     await loading;
-    expect(images).toHaveLength(5);
+    expect(images).toHaveLength(26);
     expect(createElement).toHaveBeenCalledExactlyOnceWith('canvas');
     expect(tile).toMatchObject({ width: 768, height: 384 });
-    expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[4], 0, 0);
+    expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[images.length - 1], 0, 0);
     for (let frame = 0; frame < 30; frame++) art.ground(main.ctx, bounds);
     // Passing the live SVG image here regresses the entire GPU world/lighting compositor.
     expect(main.calls.createPattern).toHaveBeenCalledExactlyOnceWith(tile, 'repeat');

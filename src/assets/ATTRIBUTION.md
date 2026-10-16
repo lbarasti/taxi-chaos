@@ -25,3 +25,7 @@ generation tool, using a user-supplied urban scene as a style reference. Prompt
 specifications are in `docs/map-artwork-prompts.md`. Transparent sprites are trimmed
 and resized for gameplay. `map/asphalt.svg` is original vector surface detail.
 These assets require no external fonts, images or runtime services.
+
+The 21 supplementary city and estate rooftop sprites in `src/assets/map/*.svg`
+are original procedural/vector designs authored for Taxi Chaos, with palette choices
+reflecting individual districts. They are self-contained and use no external assets.

@@ -141,3 +141,33 @@ The PNGs were generated separately with the built-in image-generation tool using
 the user-provided city scene as a style reference. Their transparent export margins
 were trimmed and they were resized to normal gameplay resolution. Full generation
 prompts are in [map-artwork-prompts.md](map-artwork-prompts.md).
+
+## Miami neighbourhood art expansion
+
+A second pass adds **21 textured, orthographic SVG rooftops** alongside PR #40's
+three PNG shops and worn tree. Buildings now draw assets in every district without
+changing their physical dimensions, road layout, existing names, or gameplay RNG.
+The nine new shop roofs have different shapes and upkeep levels, not just tints.
+
+| Existing district | Visual mix |
+| --- | --- |
+| Old Town | Worn terracotta stucco, ageing walk-ups and the occasional renovated Deco roof |
+| Market Quarter | Patched market roofs, corroded metal, makeshift ventilation and faded awnings |
+| Midtown | Restored Art Deco, rooftop gardens, glass condos and brick loft conversions |
+| Garden District | Stucco courtyards, planted roofs and mixed-age residential buildings |
+| The Docks | Rusting shipyard sheds, tar roofs, service hatches and brick conversions |
+| East Village | Modest walk-ups, renovation scaffolding, new condos among older shops |
+
+Larger sprites use their **actual collision footprints**: station 10 × 10 m;
+civic barracks and freight depot 23 × 10 m; villas 16 × 10 m and annexes 6 × 3 m;
+golf clubhouse 10 × 14 m; port security 6 × 6 m; bonded warehouse 28 × 12 m;
+beach hotels 33 × 10 m, 33 × 11 m and 31 × 12 m. Roof bounds include a
+0.3 m decorative overhang per side. Hotel source art replaces the old procedural
+roof when decoded, and falls back to that existing hotel drawing when unavailable.
+
+Asset selection is stable by identity (source ID or prop ID). Shops record their
+generated neighbourhood once; renaming or moving an existing prop doesn't change
+its visual theme. Sun shadows, headlight occlusion, physical damage and labels
+remain independent of the images. All SVGs are rasterized by the browser as images
+once at startup, **never used as live repeating patterns**. See
+[the building atlas](map-building-atlas.md) for previews and exact filenames.

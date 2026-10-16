@@ -442,11 +442,17 @@ export class Renderer {
       c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
       trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
       artworkImages.draw(c, art);
-      if (prop.kind === 'building') {
+      if (art.sign === 'shop') {
         this.rect(-4.3, 3.55, 8.6, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
         this.label(prop.label, 0, 81, 20 * Math.min(0.72, 8.6 / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
+        c.restore();
+      } else if (art.sign === 'hotel' || art.sign === 'facility') {
+        const width = Math.min(b.w - 1, art.sign === 'hotel' ? 20 : b.w * 0.72);
+        this.rect(-width / 2, b.h / 2 - 1.55, width, 1.15, '#1c3638ce');
+        c.save(); c.scale(0.05, 0.05);
+        this.label(prop.label, 0, (b.h / 2 - 0.98) * 20, 20 * Math.min(0.7, width / Math.max(1, prop.label.length * 0.62)), '#f4e7c5', '700');
         c.restore();
       }
       c.restore(); return;

@@ -9,7 +9,7 @@ export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'la
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
-export type Prop = { id: number; sourceId?: string; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
+export type Prop = { id: number; sourceId?: string; artDistrict?: string; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
 export type ParkingSpot = Parking & { sourceId: string };
@@ -61,7 +61,7 @@ export class World {
         // Four buildings, separated by two genuine drivable/destructible alleys.
         for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) {
           if (special && iy === 0) continue;
-          this.add('building', x + 14 + ix * 13, y + 14 + iy * 13, 10, 10, colors[(bx * 2 + by + ix + iy) % colors.length], bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length]);
+          this.add('building', x + 14 + ix * 13, y + 14 + iy * 13, 10, 10, colors[(bx * 2 + by + ix + iy) % colors.length], bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length]).artDistrict = district(vec(x + 14 + ix * 13, y + 14 + iy * 13));
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
         if (special === 'depot') this.add('shed', x + 20.5, y + 14, 23, 10, '#776255', 'FREIGHT DEPOT');
