@@ -5,7 +5,7 @@ https://fonts.google.com/specimen/Space+Grotesk
 Licensed under the SIL Open Font License 1.1.
 https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt
 
-All city art is drawn procedurally, not texture-based.
+City art combines procedural drawing with embedded PNG/SVG assets; see Map artwork below.
 
 `src/assets/characters/` includes the user-supplied PNG portraits for Mia,
 Frankie, Rosa, Celia, Adrian Vale and Bea. The nine Open Shore SVG identity
@@ -25,3 +25,12 @@ generation tool, using a user-supplied urban scene as a style reference. Prompt
 specifications are in `docs/map-artwork-prompts.md`. Transparent sprites are trimmed
 and resized for gameplay. `map/asphalt.svg` is original vector surface detail.
 These assets require no external fonts, images or runtime services.
+
+### Landmark concepts
+
+`map/landmarks/construction-site.png`, `parking-garage.png`, `office-building.png`
+and `hospital.png` were generated with OpenAI's built-in image-generation tool,
+using the user's landmark concept sheet and gritty city scene as visual references.
+They are separate transparent static assets, prepared at 512 × 512 pixels for
+future map authoring. Prompts are in `docs/landmark-artwork-prompts.md` and usage
+notes are in `docs/landmark-artwork.md`.
