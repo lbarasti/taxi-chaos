@@ -57,14 +57,27 @@ const sources: Record<ArtImageId | typeof asphaltArtwork.image, string> = {
 
 /** Decodes assets before play and shares images with editor previews. */
 export class ArtworkImages {
-  private images = new Map<string, HTMLImageElement>();
+  private images = new Map<string, HTMLImageElement | HTMLCanvasElement>();
   private groundTile?: HTMLCanvasElement;
   private loading?: Promise<void>;
   private patterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
   load(): Promise<void> {
     return this.loading ??= Promise.all(Object.entries(sources).map(([id, src]) => new Promise<void>(resolve => {
       const image = new Image();
-      image.onload = () => { this.images.set(id, image); resolve(); };
+      image.onload = () => {
+        if (id !== asphaltArtwork.image && src.startsWith('data:image/svg+xml')) {
+          // One raster per distinct vector roof, before any playable frame.
+          // Avoid passing live, filtered SVG images to the accelerated world canvas.
+          const raster = document.createElement('canvas');
+          raster.width = image.naturalWidth; raster.height = image.naturalHeight;
+          const c = raster.getContext('2d');
+          if (c && raster.width > 0 && raster.height > 0) {
+            try { c.drawImage(image, 0, 0); this.images.set(id, raster); }
+            catch { /* Unsupported SVG filters retain the old procedural roof. */ }
+          }
+        } else this.images.set(id, image);
+        resolve();
+      };
       // Bad or unsupported sprites fail independently; the renderer retains its procedural art.
       image.onerror = () => resolve();
       image.src = src;

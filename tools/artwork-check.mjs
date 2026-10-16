@@ -31,7 +31,11 @@ try {
         if (this.canvas.id === 'city' && image instanceof HTMLImageElement) {
           const key = { 256: 'shop', 192: 'tree' }[image.naturalWidth];
           if (key) window.artDraws[key]++;
-          if (key !== 'tree') { window.artDraws.structures++; window.artVariants.add(image.src); }
+          if (key === 'shop') { window.artDraws.structures++; window.artVariants.add(image); }
+        }
+        if (this.canvas.id === 'city' && image instanceof HTMLCanvasElement && image.width === 240) {
+          // New 10m SVG rooftops must draw as one-time-rasterized bitmaps.
+          window.artDraws.structures++; window.artVariants.add(image);
         }
         return draw.call(this, image, ...args);
       };

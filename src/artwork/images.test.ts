@@ -20,18 +20,25 @@ function browser({ failImages = false, noContext = false } = {}) {
   }
   const raster = canvasContext();
   const tile = { width: 0, height: 0, getContext: vi.fn(() => noContext ? null : raster.ctx) };
-  const createElement = vi.fn(() => tile);
+  const spriteRasters: { tile: { width: number; height: number; getContext: ReturnType<typeof vi.fn> }; calls: ReturnType<typeof canvasContext>['calls'] }[] = [];
+  const createElement = vi.fn(() => {
+    if (spriteRasters.length === 21) return tile; // Ground tile comes after SVG sprite decoding.
+    const sprite = canvasContext();
+    const spriteTile = { width: 0, height: 0, getContext: vi.fn(() => noContext ? null : sprite.ctx) };
+    spriteRasters.push({ tile: spriteTile, calls: sprite.calls });
+    return spriteTile;
+  });
   const scale = vi.fn((x: number, y: number) => ({ x, y }));
   vi.stubGlobal('Image', Image);
   vi.stubGlobal('document', { createElement });
   vi.stubGlobal('DOMMatrix', class { scale = scale; });
-  return { images, tile, raster, createElement, scale };
+  return { images, tile, raster, spriteRasters, createElement, scale };
 }
 afterEach(() => vi.unstubAllGlobals());
 
 describe('artwork image caching', () => {
   it('loads once and rasterizes the SVG before any playable ground pattern is created', async () => {
-    const { images, tile, raster, createElement, scale } = browser();
+    const { images, tile, raster, spriteRasters, createElement, scale } = browser();
     const art = new ArtworkImages(), main = canvasContext();
     art.ground(main.ctx, bounds);
     expect(main.calls.createPattern).not.toHaveBeenCalled();
@@ -39,7 +46,9 @@ describe('artwork image caching', () => {
     expect(art.load()).toBe(loading);
     await loading;
     expect(images).toHaveLength(26);
-    expect(createElement).toHaveBeenCalledExactlyOnceWith('canvas');
+    expect(createElement).toHaveBeenCalledTimes(22);
+    expect(spriteRasters).toHaveLength(21);
+    expect(spriteRasters.every(r => r.calls.drawImage.mock.calls.length === 1)).toBe(true);
     expect(tile).toMatchObject({ width: 768, height: 384 });
     expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[images.length - 1], 0, 0);
     for (let frame = 0; frame < 30; frame++) art.ground(main.ctx, bounds);
@@ -51,7 +60,7 @@ describe('artwork image caching', () => {
     expect(main.calls.fillRect).toHaveBeenLastCalledWith(-12, -12, 264, 264);
     expect(raster.calls.drawImage).toHaveBeenCalledTimes(1);
     await art.load();
-    expect(createElement).toHaveBeenCalledTimes(1);
+    expect(createElement).toHaveBeenCalledTimes(22);
   });
 
   it('shares the raster tile, but not context-owned patterns, with editor/preview canvases', async () => {
@@ -61,7 +70,7 @@ describe('artwork image caching', () => {
     for (const ctx of [game.ctx, preview.ctx, game.ctx, preview.ctx]) art.ground(ctx, bounds);
     expect(game.calls.createPattern).toHaveBeenCalledExactlyOnceWith(tile, 'repeat');
     expect(preview.calls.createPattern).toHaveBeenCalledExactlyOnceWith(tile, 'repeat');
-    expect(createElement).toHaveBeenCalledTimes(1);
+    expect(createElement).toHaveBeenCalledTimes(22);
   });
 
   it.each([{ failImages: true }, { noContext: true }])('keeps procedural ground on load/raster failure: %j', async options => {
@@ -85,12 +94,13 @@ describe('artwork image caching', () => {
   });
 
   it('draws the actual hotel and large industrial assets at metre-scale bounds', async () => {
-    const { images } = browser();
+    const { images, spriteRasters } = browser();
     const art = new ArtworkImages(), main = canvasContext();
     await art.load();
     expect(art.has('hotel-sandpiper')).toBe(true);
     expect(art.draw(main.ctx, propArtwork.hotelSandpiper)).toBe(true);
-    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[images.length - 4], -16.8, -5.3, 33.6, 10.6);
+    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(spriteRasters[18].tile, -16.8, -5.3, 33.6, 10.6);
+    expect(spriteRasters[18].calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[images.length - 4], 0, 0);
     expect(art.has('bonded-warehouse')).toBe(true);
   });
 

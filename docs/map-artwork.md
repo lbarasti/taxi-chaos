@@ -168,6 +168,6 @@ roof when decoded, and falls back to that existing hotel drawing when unavailabl
 Asset selection is stable by identity (source ID or prop ID). Shops record their
 generated neighbourhood once; renaming or moving an existing prop doesn't change
 its visual theme. Sun shadows, headlight occlusion, physical damage and labels
-remain independent of the images. All SVGs are rasterized by the browser as images
-once at startup, **never used as live repeating patterns**. See
+remain independent of the images. All 21 new SVGs are explicitly rasterized to cached canvases before the first
+frame, **never passed to gameplay as live SVG images or repeating patterns**. See
 [the building atlas](map-building-atlas.md) for previews and exact filenames.
