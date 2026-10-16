@@ -3,17 +3,18 @@ import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
 import type { Parking } from './map/schema';
+import { CITY_GRID, CITY_SIZE, type CityBlock, type CityBuilding } from './city';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
 export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
-export type Prop = { id: number; sourceId?: string; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
+export type Prop = { id: number; sourceId?: string; building?: CityBuilding; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
-export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
+export type Block = CityBlock;
 export type ParkingSpot = Parking & { sourceId: string };
-export const GRID = 40, SIZE = 240, GARAGE = vec(4, 28);
+export const GRID = CITY_GRID, SIZE = CITY_SIZE, GARAGE = vec(4, 28);
 // Clear sidewalk outside Midtown Hospital; the adjacent curb bay is unoccupied.
 export const HOSPITAL = vec(147, 74.6);
 export function district(p: Vec, map = defaultCompiledMap) {
@@ -24,7 +25,7 @@ export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0
 export class World {
   pools: Body[];
   navigation: ReturnType<typeof createNavigation>;
-  props: Prop[] = []; people: Person[] = []; blocks: Block[] = []; hash = new SpatialHash<Prop>(); random = seeded(1976);
+  props: Prop[] = []; people: Person[] = []; blocks: readonly Block[] = []; hash = new SpatialHash<Prop>(); random = seeded(1976);
   private personSerial = 0;
   parking: ParkingSpot[] = [];
   add(kind: PropKind, x: number, y: number, w: number, h: number, color: string, label = '', angle = 0) {
@@ -44,12 +45,9 @@ export class World {
     this.navigation = createNavigation(map);
     this.parking = map.document.parking.map(p => ({ ...structuredClone(p), sourceId: p.id }));
     this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
-    const colors = ['#334850', '#3c485b', '#4d4b59', '#3d5554', '#535045', '#394a5a'];
-    const shops = ['NOODLE CLUB', 'VINYL & CO.', '24/7 DELI', 'LAUNDROMAT', 'COFFEE', 'BODEGA', 'FLOWERS', 'HOTEL', 'ARCADE', 'PIZZA', 'BOOK SHOP', 'NIGHT OWL'];
-    for (let bx = 0; bx < 6; bx++) for (let by = 0; by < 6; by++) {
-      const x = bx * GRID, y = by * GRID, park = (bx === 2 && by === 2) || (bx === 4 && by === 4) || (bx === 0 && by === 3);
-      const special = bx === 4 && by === 1 ? 'fuel' : bx === 1 && by === 1 ? 'barracks' : bx === 2 && by === 0 ? 'depot' : (bx === 1 && by === 3) || (bx === 3 && by === 2) ? 'parking' : undefined;
-      this.blocks.push({ x, y, park, special, color: colors[(bx + by * 3) % colors.length] });
+    this.blocks = map.city.blocks;
+    for (const block of this.blocks) {
+      const { x, y, park, special } = block;
       if (park) {
         for (let i = 0; i < 10; i++) this.add('tree', x + 11 + this.random() * 18, y + 11 + this.random() * 18, 1.8, 1.8, '#426e5c');
         this.add('kiosk', x + 24, y + 8.5, 3.4, 2, '#d88d64', 'ICE CREAM');
@@ -58,17 +56,19 @@ export class World {
         for (let i = 0; i < 3; i++) this.add('pump', x + 13 + i * 8, y + 13, 1.2, 2.4, '#d39060', 'FUEL');
         this.add('bin', x + 26, y + 28, 0.85, 0.85, '#76a79b');
       } else if (special !== 'parking') {
-        // Four buildings, separated by two genuine drivable/destructible alleys.
-        for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) {
-          if (special && iy === 0) continue;
-          this.add('building', x + 14 + ix * 13, y + 14 + iy * 13, 10, 10, colors[(bx * 2 + by + ix + iy) % colors.length], bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length]);
+        for (const building of block.buildings) {
+          const p = this.add('building', building.position.x, building.position.y, building.width, building.height, building.color, building.label);
+          p.sourceId = building.id; p.building = building;
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
         if (special === 'depot') this.add('shed', x + 20.5, y + 14, 23, 10, '#776255', 'FREIGHT DEPOT');
-        this.add('crate', x + 20.5, y + 13, 1.4, 1.4, '#bc9465');
-        this.add('crate', x + 20.5, y + 14.6, 1.4, 1.4, '#bc9465');
-        this.add('barrier', x + 20.5, y + 8.8, 3.1, 0.6, '#e9aa5c');
-        this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
+        // Alley clutter only occupies retained passages, never a merged footprint.
+        if (block.alleys === 'cross' || block.alleys === 'vertical' || block.alleys === 'west') {
+          this.add('crate', x + 20.5, y + 13, 1.4, 1.4, '#bc9465');
+          this.add('crate', x + 20.5, y + 14.6, 1.4, 1.4, '#bc9465');
+          this.add('barrier', x + 20.5, y + 8.8, block.alleys === 'cross' ? 3.1 : 2.6, 0.6, '#e9aa5c');
+        }
+        if (block.alleys === 'cross' || block.alleys === 'horizontal') this.add('kiosk', x + 31, y + 20.5, 2.5, 3, '#ad6d68', 'NEWS');
       }
       for (let i = 0; i < 2; i++) {
         this.add('hydrant', x + 7.5, y + 11 + i * 18, 0.65, 0.65, '#eb735f');
@@ -77,7 +77,7 @@ export class World {
         this.add('bench', x + 12 + i * 16, y + 7.8, 2.4, 0.75, '#bf9870');
         const home = vec(x + 8, y + 12 + i * 14);
         this.addPerson(home, 'civilian', ['#e9a69b', '#a7bce0', '#e4ca79', '#b0cbaa'][Math.floor(this.random() * 4)]);
-        const home2 = vec(x + 15 + i * 12, y + 32);
+        const home2 = vec(x + 15 + i * 12, y + (block.buildings.some(b => b.width > 10 || b.height > 10) ? 33 : 32));
         this.addPerson(home2, 'civilian', '#c3b7d7');
       }
     }

@@ -1,3 +1,4 @@
+import { drawCityBuilding } from './city-renderer';
 import { Game, type Vehicle } from './game';
 import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from './physics';
 import { GARAGE, type Prop } from './world';
@@ -240,7 +241,7 @@ export class Renderer {
   private worldOccluders(): Occluder[] {
     return collectOccluders(this.game.world.props, this.worldViewport(), 20, prop => {
       const art = artworkFor(prop);
-      return art && artworkImages.has(art.image) ? art.occluder : undefined;
+      return art && artworkImages.has(art.image) ? art.occluder : prop.building?.silhouette;
     });
   }
   private lightingPass(lighting: LightingState) {
@@ -293,7 +294,11 @@ export class Renderer {
         this.rect(b.x + 7, b.y + 7, 26, 26, '#303e43');
         this.rect(b.x + 6, b.y + 17, 28, 6, '#29383e');
         this.label('P / PUBLIC PARKING', b.x + 20, b.y + 20, 0.9, '#a8c6cd', '700');
-      } else { this.rect(b.x + 19, b.y + 8, 3, 24, '#333d40'); this.rect(b.x + 8, b.y + 19, 24, 3, '#333d40'); }
+      } else {
+        if (['cross', 'vertical', 'west'].includes(b.alleys)) this.rect(b.x + 19, b.y + 8, 3, 24, '#333d40');
+        if (['cross', 'horizontal'].includes(b.alleys)) this.rect(b.x + 8, b.y + 19, 24, 3, '#333d40');
+        if (b.alleys === 'west') this.rect(b.x + 8, b.y + 19, 11, 3, '#333d40');
+      }
       // Curb paint and small planted corners.
       this.rect(b.x + 6, b.y + 6, 4, 0.25, '#e3c36c'); this.rect(b.x + 30, b.y + 33.8, 4, 0.25, '#e3c36c');
     }
@@ -436,6 +441,7 @@ export class Renderer {
       if (prop.fire > 0) drawFire(c, vec(), prop.kind === 'station' ? 3 : 1.4, this.game.time, prop.id);
       c.restore(); return;
     }
+    if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
     const art = artworkFor(prop);
     if (art && artworkImages.has(art.image)) {
       // Structure artwork shares the old prop pass. Destruction above stays authoritative.
@@ -850,7 +856,12 @@ export class Renderer {
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
     trace(c, BEACH_OUTLINE, true); c.fillStyle = '#d9bd88'; c.fill();
     c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
-    for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
+    for (const b of g.world.blocks) {
+      c.fillStyle = b.park ? '#456955' : '#293b40'; c.fillRect(b.x + 7, b.y + 7, 26, 26);
+      for (const building of b.buildings) {
+        c.fillStyle = '#64726d'; c.fillRect(building.position.x - building.width / 2, building.position.y - building.height / 2, building.width, building.height);
+      }
+    }
     for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
     if (this.navigationRouteVisible) { c.strokeStyle = navigationTargetColours[this.targetKind()]; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
     c.restore();

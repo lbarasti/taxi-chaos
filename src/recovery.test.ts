@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
-import { Body, CarDynamics, contact, dist, length, vec } from './physics';
+import { Body, CarDynamics, contact, dist, length, rotate, sub, vec } from './physics';
 import { igniteVehicle } from './damage';
 import { loadScenario } from './lab';
 import { HOSPITAL } from './world';
@@ -129,7 +129,10 @@ describe('nitro, parking and roadside recovery', () => {
     const g = new Game(); g.start(); g.vehicles = g.vehicles.filter(v => v === g.player || v.parked);
     const old = g.player;
     igniteVehicle(old.damage, 0.01); run(g, 0.02); expect(g.mode).toBe('wasted'); g.recover();
-    expect(g.world.props.some(p => p.label === 'HOSPITAL' && dist(p.body.position, HOSPITAL) < 10)).toBe(true);
+    const hospital = g.world.props.find(p => p.label === 'HOSPITAL')!.body;
+    const local = rotate(sub(HOSPITAL, hospital.position), -hospital.angle);
+    // Proximity is measured from the real wall, including the larger hospital footprint.
+    expect(Math.hypot(Math.max(0, Math.abs(local.x) - hospital.w / 2), Math.max(0, Math.abs(local.y) - hospital.h / 2))).toBeLessThan(3);
     expect([...g.world.hash.query(g.driver)].some(p => contact(g.driver, p.body))).toBe(false);
     expect(g.vehicles.some(v => v.alive && contact(g.driver, v.body))).toBe(false);
     const next = g.nearestCar!; g.driver.position = next.body.toWorld(vec(0, 2));
