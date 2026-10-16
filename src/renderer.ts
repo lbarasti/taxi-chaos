@@ -11,6 +11,7 @@ import { isCountry } from './countryside';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { CITY_SHORE } from './coast';
+import { cityWealth, neighbourhoods } from './city-neighbourhoods';
 import { artworkImages } from './artwork/images';
 import { artworkFor, artRadius } from './artwork/catalogue';
 
@@ -240,7 +241,7 @@ export class Renderer {
   private worldOccluders(): Occluder[] {
     return collectOccluders(this.game.world.props, this.worldViewport(), 20, prop => {
       const art = artworkFor(prop);
-      return art && artworkImages.has(art.image) ? art.occluder : undefined;
+      return art && (art.clip || artworkImages.has(art.image)) ? art.occluder : undefined;
     });
   }
   private lightingPass(lighting: LightingState) {
@@ -277,11 +278,12 @@ export class Renderer {
     drawHarbourGround(this);
     for (const b of g.world.blocks) {
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
-      this.rect(b.x + 6, b.y + 6, 28, 28, '#596361'); this.rect(b.x + 6.5, b.y + 6.5, 27, 27, b.park ? '#345b4a' : '#444c4b');
-      c.strokeStyle = '#68726b'; c.lineWidth = 0.08;
+      const neighbourhood = neighbourhoods[cityWealth(b.x / 40, b.y / 40)];
+      this.rect(b.x + 6, b.y + 6, 28, 28, neighbourhood.paving); this.rect(b.x + 6.5, b.y + 6.5, 27, 27, b.park ? neighbourhood.park : neighbourhood.inset);
+      c.strokeStyle = neighbourhood.grout; c.lineWidth = 0.08;
       for (let i = 7; i < 34; i += 2) { c.beginPath(); c.moveTo(b.x + 6, b.y + i); c.lineTo(b.x + 34, b.y + i); c.stroke(); c.beginPath(); c.moveTo(b.x + i, b.y + 6); c.lineTo(b.x + i, b.y + 34); c.stroke(); }
       if (b.park) {
-        this.rect(b.x + 18.8, b.y + 6.5, 2.4, 27, '#a9aa82'); this.rect(b.x + 6.5, b.y + 18.8, 27, 2.4, '#a9aa82');
+        this.rect(b.x + 18.8, b.y + 6.5, 2.4, 27, neighbourhood.path); this.rect(b.x + 6.5, b.y + 18.8, 27, 2.4, neighbourhood.path);
         this.circle(vec(b.x + 20, b.y + 20), 3.7, '#697e6c'); this.circle(vec(b.x + 20, b.y + 20), 2.7, '#6ea6b2'); this.circle(vec(b.x + 20, b.y + 20), 1.5, '#9ac9cd'); this.label('CITY GARDENS', b.x + 20, b.y + 30, 1, '#bdd7ac');
       } else if (b.special === 'fuel') {
         this.rect(b.x + 7, b.y + 7, 26, 26, '#485152');
@@ -438,17 +440,28 @@ export class Renderer {
     }
     const art = artworkFor(prop);
     if (art && artworkImages.has(art.image)) {
+      if (art.hidden) { c.restore(); return; }
       // Structure artwork shares the old prop pass. Destruction above stays authoritative.
       c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
       trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
       artworkImages.draw(c, art);
-      if (prop.kind === 'building') {
-        this.rect(-4.3, 3.55, 8.6, 1.0, '#182320dd');
+      if (prop.kind === 'building' && prop.label) {
+        const sign = art.sign ?? { x: 0, y: 4.05, width: 8.6 };
+        c.save(); c.translate(sign.x, sign.y - 4.05);
+        this.rect(-sign.width / 2, 3.55, sign.width, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
         this.label(prop.label, 0, 81, 20 * Math.min(0.72, 8.6 / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
-        c.restore();
+        c.restore(); c.restore();
       }
+      c.restore(); return;
+    }
+    if (prop.cityLot) {
+      // Failed images fall back per physical rectangle, leaving the same courtyard open.
+      this.shadowRect(-b.w / 2 + so.x, -b.h / 2 + so.y, b.w, b.h, '#172c2d80');
+      this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#b9b29b');
+      for (let y = -b.h / 2 + 0.4; y < b.h / 2; y += 0.6) this.rect(-b.w / 2 + 0.2, y, b.w - 0.4, 0.06, '#b9b29b50');
+      if (prop.label && prop.cityLot.part === 0) this.label(prop.label, 0, 0, Math.min(0.65, b.w / (prop.label.length * 0.7)), '#f0dfae');
       c.restore(); return;
     }
     if (prop.kind === 'guardrail') {

@@ -1,17 +1,22 @@
+import { cityRoofs, type CityLot, type CityRoof } from '../city-neighbourhoods';
 import { vec, type Vec } from '../physics';
 
 /** All coordinates are metres, relative to the collision body's centre. */
 export type ArtBounds = Readonly<{ x: number; y: number; width: number; height: number }>;
 export type PropArtwork = Readonly<{
-  image: 'shop-tar' | 'shop-rust' | 'shop-concrete' | 'tree-worn';
+  image: 'shop-tar' | 'shop-rust' | 'shop-concrete' | 'tree-worn' | CityRoof;
   layer: 'structure';
   bounds: ArtBounds;
   rotation?: number;
-  /** Convex silhouette for sun shadows; optional outline for blocking directed light. */
+  /** Compound roofs draw once; every physical wing still supplies a convex light mask. */
+  hidden?: boolean;
+  clip?: boolean;
+  sign?: Readonly<{ x: number; y: number; width: number }>;
+  /** Sun silhouette may be concave; directed-light occluders must remain convex. */
   silhouette: readonly Vec[];
   occluder?: readonly Vec[];
 }>;
-export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number } };
+export type ArtProp = { id?: number; sourceId?: string; cityLot?: CityLot; kind: string; body: { position: Vec; angle?: number; w: number; h: number } };
 const shopOutline = [vec(-5.3, -5.3), vec(5.3, -5.3), vec(5.3, 5.3), vec(-5.3, 5.3)];
 const shop = { layer: 'structure', bounds: { x: -5.3, y: -5.3, width: 10.6, height: 10.6 }, silhouette: shopOutline, occluder: shopOutline } as const;
 export const propArtwork = {
@@ -20,6 +25,15 @@ export const propArtwork = {
   shopConcrete: { ...shop, image: 'shop-concrete' },
   tree: { image: 'tree-worn', layer: 'structure', bounds: { x: -2.6, y: -2.6, width: 5.2, height: 5.2 }, silhouette: Array.from({ length: 12 }, (_, i) => vec(Math.cos(i * Math.PI / 6) * 2.4, Math.sin(i * Math.PI / 6) * 2.4)) },
 } as const satisfies Record<string, PropArtwork>;
+const cityArtwork = Object.fromEntries(Object.entries(cityRoofs).map(([roof, shape]) => [roof,
+  shape.parts.map((part, i): PropArtwork => ({
+    image: roof as CityRoof, layer: 'structure', hidden: i > 0, clip: true,
+    bounds: { x: -5 - part.x, y: -5 - part.y, width: 10, height: 10 },
+    silhouette: shape.outline.map(p => vec(p.x - part.x, p.y - part.y)),
+    occluder: [vec(-part.w / 2, -part.h / 2), vec(part.w / 2, -part.h / 2), vec(part.w / 2, part.h / 2), vec(-part.w / 2, part.h / 2)],
+    sign: { x: -part.x, y: -part.y + (roof === 'courtyard' || roof === 'limestone' ? 4.1 : -2), width: 8.6 },
+  }))
+])) as Record<CityRoof, PropArtwork[]>;
 const shops = [propArtwork.shop, propArtwork.shopRust, propArtwork.shopConcrete];
 const trees = Array.from({ length: 4 }, (_, i) => ({ ...propArtwork.tree, rotation: i * Math.PI / 2 }));
 export const asphaltArtwork = { image: 'asphalt', layer: 'ground', tileMetres: 48 } as const;
@@ -32,6 +46,7 @@ function appearanceSeed(prop: ArtProp): number {
   return seed >>> 0;
 }
 export function artworkFor(prop: ArtProp): PropArtwork | undefined {
+  if (prop.cityLot) return cityArtwork[prop.cityLot.roof][prop.cityLot.part];
   const { position: p, w, h } = prop.body;
   if (p.x < 0 || p.x > 240 || p.y < 0 || p.y > 240) return;
   if (prop.kind === 'building' && w === 10 && h === 10) return shops[appearanceSeed(prop) % shops.length];

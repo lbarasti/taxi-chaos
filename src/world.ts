@@ -2,6 +2,7 @@ import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physi
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
+import { cityRoof, cityRoofs, type CityLot } from './city-neighbourhoods';
 import type { Parking } from './map/schema';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
@@ -9,7 +10,7 @@ export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'la
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
-export type Prop = { id: number; sourceId?: string; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
+export type Prop = { id: number; sourceId?: string; cityLot?: CityLot; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = { x: number; y: number; park: boolean; color: string; special?: 'fuel' | 'barracks' | 'depot' | 'parking' };
 export type ParkingSpot = Parking & { sourceId: string };
@@ -44,6 +45,7 @@ export class World {
     this.navigation = createNavigation(map);
     this.parking = map.document.parking.map(p => ({ ...structuredClone(p), sourceId: p.id }));
     this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
+    const cityWings: { roof: CityLot['roof']; x: number; y: number; color: string; label: string; source: string }[] = [];
     const colors = ['#334850', '#3c485b', '#4d4b59', '#3d5554', '#535045', '#394a5a'];
     const shops = ['NOODLE CLUB', 'VINYL & CO.', '24/7 DELI', 'LAUNDROMAT', 'COFFEE', 'BODEGA', 'FLOWERS', 'HOTEL', 'ARCADE', 'PIZZA', 'BOOK SHOP', 'NIGHT OWL'];
     for (let bx = 0; bx < 6; bx++) for (let by = 0; by < 6; by++) {
@@ -61,7 +63,19 @@ export class World {
         // Four buildings, separated by two genuine drivable/destructible alleys.
         for (let ix = 0; ix < 2; ix++) for (let iy = 0; iy < 2; iy++) {
           if (special && iy === 0) continue;
-          this.add('building', x + 14 + ix * 13, y + 14 + iy * 13, 10, 10, colors[(bx * 2 + by + ix + iy) % colors.length], bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length]);
+          const px = x + 14 + ix * 13, py = y + 14 + iy * 13;
+          const label = bx === 3 && by === 1 && ix === 1 && iy === 1 ? 'HOSPITAL' : bx === 0 && by === 0 && ix === 0 && iy === 1 ? 'PIT STOP' : shops[(bx * 5 + by * 3 + ix * 2 + iy) % shops.length];
+          const color = colors[(bx * 2 + by + ix + iy) % colors.length];
+          // Landmarks retain their established footprint. New wings only remove occupied space
+          // inside the old plot: streets, alleys, stops and the simulation RNG stay intact.
+          const roof = label === 'HOSPITAL' || label === 'PIT STOP' ? undefined : cityRoof(bx, by, ix, iy);
+          const part = roof ? cityRoofs[roof].parts[0] : { x: 0, y: 0, w: 10, h: 10 };
+          const prop = this.add('building', px + part.x, py + part.y, part.w, part.h, color, label);
+          if (roof) {
+            prop.sourceId = `city-lot-${bx}-${by}-${ix}-${iy}`;
+            prop.cityLot = { roof, part: 0 };
+            cityWings.push({ roof, x: px, y: py, color, label, source: prop.sourceId });
+          }
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
         if (special === 'depot') this.add('shed', x + 20.5, y + 14, 23, 10, '#776255', 'FREIGHT DEPOT');
@@ -169,6 +183,13 @@ export class World {
     for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(walkX(x), (PROMENADE.top + PROMENADE.bottom) / 2), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
     for (const x of [-8, 20, 64, 88, 110]) this.addPerson(vec(x, 253), 'civilian', '#dcaa84');
     this.random = beachRandom;
+    // Append wings after all original props, keeping generated prop IDs and random draws stable.
+    for (const lot of cityWings) for (const [i, part] of cityRoofs[lot.roof].parts.entries()) {
+      if (i === 0) continue;
+      const wing = this.add('building', lot.x + part.x, lot.y + part.y, part.w, part.h, lot.color, `${lot.label} / WING ${i}`);
+      wing.sourceId = `${lot.source}-wing-${i}`;
+      wing.cityLot = { roof: lot.roof, part: i };
+    }
   }
 }
 

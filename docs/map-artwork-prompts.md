@@ -1,6 +1,6 @@
-# Gritty artwork prompts
+# Map artwork prompts
 
-Generated with the built-in image-generation tool. The user supplied a top-down urban scene as a style reference. Each PNG was generated separately with transparency, then its near-transparent export margin was trimmed and the sprite resized for the game (256 px roofs, 192 px tree). Source artwork is preserved in the generation outputs. No API/CLI fallback was used.
+Generated with the built-in image-generation tool. The user supplied a top-down urban scene as a style reference. The original four PNGs were generated separately with transparency, then its near-transparent export margin was trimmed and the sprite resized for the game (256 px roofs, 192 px tree). Source artwork is preserved in the generation outputs. No API/CLI fallback was used.
 
 ## shop-tar.png
 
@@ -17,4 +17,25 @@ Use case: stylized-concept. Asset type: actual transparent PNG building sprite f
 ## tree-worn.png
 
 Use case: stylized-concept. Asset type: actual transparent PNG tree canopy sprite for a true top-down driving game. Input image is STYLE REFERENCE ONLY: gritty, muted, realistic overhead game world. Generate ONE isolated irregular mature urban broadleaf tree seen DIRECTLY FROM ABOVE, crown centred in a square canvas, fills 94% of canvas; transparent background. Rough asymmetric canopy with gaps, tiny hints of branches, some sparse dry brown foliage among dark dusty olive and sage-green leaves. Natural painterly realistic texture, large readable leaf clusters, restrained highlights, flat ambient daylight, no ground, no grass, no pavement, no text, no cast shadow, no isometric perspective, no shiny spherical topiary. Needs to read clearly at 40-70 pixels wide.
+
+## City neighbourhood roof sheet
+
+Generated with the built-in image-generation tool with `transparent_background: true`.
+The 1536 × 1024 transparent sheet has three columns and two rows of 512 px cells.
+Each cell was exported separately, its transparent margin trimmed, and resized to
+320 × 320 with ImageMagick. No creative postprocessing or external source art was used.
+The game clips each roof to the shared metre-scale shape; the transparent notches
+are usable space, with collision rectangles and convex light masks on the wings.
+
+Top row: `workshop.png`, `tenement.png`, `courtyard.png`.
+Bottom row: `copper.png`, `limestone.png`, `pavilion.png`.
+
+Create a professional game asset sheet of SIX isolated top-down rooftop sprites on TRANSPARENT background, arranged in a precise 3 columns by 2 rows grid, each sprite centred in its own equal square cell with generous transparent separation. No labels, no text. Orthographic directly overhead, north up, no perspective, no visible side walls, no ground or paving, no baked cast shadows. Rich painterly realistic gritty muted urban game art, crisp at small size, detailed roof material texture, believable drains and parapets, restrained ambient light. Each building fits a square 10x10 metre plot and has a NONRECTANGULAR footprint with fully transparent cutout recesses. Exact silhouettes with square corners:
+TOP LEFT: L shaped impoverished repair workshop. Full-width horizontal roof bar occupying TOP 40% of square; vertical stem occupying LEFT 40% below the top bar; BOTTOM RIGHT 60%x60% area completely empty transparent. Rusted corrugated metal, patched tar, battered skylights, rusty ducts, peeling brick parapet.
+TOP MIDDLE: T shaped working class tenement. Full-width TOP 40% bar plus central 40%-wide stem down to bottom edge. Bottom left and bottom right each 30%-wide and 60%-tall fully transparent cutouts. Dirty charcoal slate roofs with terracotta ridge caps, chimney pots, laundry and mismatched skylights.
+TOP RIGHT: U shaped middle-income brick courtyard block. Full-width BOTTOM 40% bar plus LEFT and RIGHT 30%-wide arms extending to top. Central 40%-wide TOP 60%-tall cutout entirely transparent. Warm terracotta tiled roofs, brick parapets, maintained skylights, small solar panels.
+BOTTOM LEFT: L shaped prosperous copper-roof atelier. Same EXACT L silhouette as top left. Patinated sage copper standing seam roofs, cream limestone parapets, elegant glass skylight, small rooftop planters contained INSIDE roof. Bottom-right fully transparent.
+BOTTOM MIDDLE: U shaped wealthy limestone residence. Same EXACT U silhouette as top right. Pale warm limestone flat roofs, luxurious timber roof decks, planted roof strips, restrained pale aqua skylights, no swimming pools, neat vents. Central notch fully transparent.
+BOTTOM RIGHT: T shaped contemporary affluent pavilion. Same EXACT T silhouette as top middle. Dark zinc roofs, broad glazed skylight panels, sedum roof garden with soft green planted strips, timber deck and neat rooftop furniture, all within the T roof. Two lower cutouts fully transparent.
+Make wealth distinctions readable through maintenance, materials and amenities. All roof silhouettes should have equal outer width and height, no elements sticking outside footprint. No surrounding trees. Transparent recesses contain nothing.
 

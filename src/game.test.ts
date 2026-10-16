@@ -46,7 +46,7 @@ describe('destruction, police and recovery', () => {
   });
   it('keeps a high-speed cab outside a solid building', () => {
     const g = make(); g.player.body.position = vec(14, 4); g.player.body.angle = Math.PI / 2; g.player.body.velocity = vec(0, 28);
-    step(g, 1, ['KeyW']); const building = g.world.props.find(p => p.kind === 'building' && dist(p.body.position, vec(14, 14)) < 1)!;
+    step(g, 1, ['KeyW']); const building = g.world.props.find(p => p.sourceId === 'city-lot-0-0-0-0')!;
     expect(building.alive).toBe(true); expect(g.player.body.position.y).toBeLessThan(7.1); expect(g.health).toBeLessThan(90);
     const overlap = contact(g.player.body, building.body); expect(overlap?.depth ?? 0).toBeLessThan(0.025);
   });
