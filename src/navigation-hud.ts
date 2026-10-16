@@ -8,6 +8,8 @@ const paths = {
   dispatch: '<path d="M4.5 13.5v-1.6a7.5 7.5 0 0 1 15 0v1.6"/><path d="M4.5 12.5h2.2a1 1 0 0 1 1 1v3.4a1 1 0 0 1-1 1H5.6a1.1 1.1 0 0 1-1.1-1.1zM19.5 12.5h-2.2a1 1 0 0 0-1 1v3.4a1 1 0 0 0 1 1h1.1a1.1 1.1 0 0 0 1.1-1.1z"/><path d="M17 19.4a3.4 3.4 0 0 1-3 1.6h-1.4"/>',
   message: '<path d="M21 14a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 8h10M7 12h7"/>',
   news: '<path d="M4 5h13v15H4zM17 9h3v11H7M7 9h7M7 13h7M7 17h4"/>',
+  camera: '<path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
 };
 const icon = (name: keyof typeof paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 
@@ -21,11 +23,24 @@ export const navigationHudMarkup = `<aside class="navigation-hud" aria-label="Ta
 <div class="navigation-actions" role="group" aria-label="Dispatch and campaign shortcuts">
   <button id="dispatch" aria-pressed="true" aria-label="Dispatch: route the next fare" title="Dispatch: route the next fare">${icon('dispatch')}</button>
   <button id="texts" aria-label="Bookings: read text messages" title="Bookings · read text messages">${icon('message')}</button>
-  <button id="newsroom" aria-label="Route to the newsroom" title="Route to the newsroom">${icon('news')}</button>
+  <button id="newsroom" aria-label="Newsroom: view records and story readiness" title="Newsroom · records and story readiness" aria-haspopup="dialog" aria-controls="modal">${icon('news')}</button>
+  <button id="observe" aria-label="Record a nearby observation" title="Record a nearby observation" hidden disabled>${icon('camera')}<span class="observation-recorded" aria-hidden="true">${icon('check')}</span></button>
 </div>`;
 
 export type NavigationStatus = 'ENGAGED' | 'ON BOARD' | 'LOADED' | 'ON FOOT' | 'VACANT';
 export type NavigationLoad = 'passenger' | 'parcel';
+
+/** Prefer a new, recordable nearby scene; never assume the first authored ID is local. */
+export function observationActionState(g: Game) {
+  const nearby = g.campaignContent.observations.map(observation => g.observationStatus(observation.id))
+    .filter((status): status is NonNullable<typeof status> => status !== null && status.nearby && status.sceneEligible)
+    .sort((a, b) => a.distance - b.distance);
+  const status = nearby.find(status => !status.recorded && status.available) ?? nearby.find(status => !status.recorded) ?? nearby[0];
+  if (!status) return null;
+  const title = g.campaignContent.materials[status.observation.id].title;
+  return { id: status.observation.id, recorded: status.recorded, disabled: !status.available || status.recorded,
+    label: status.recorded ? `Already recorded: ${title}. Saved in your Dispatch notebook.` : status.available ? status.observation.label : `${status.observation.label}: ${status.reason}` };
+}
 
 /** View-only state: dispatch, physics, pickups and the saved game remain authoritative. */
 export function navigationHudState(g: Game, fareRouted = true) {
@@ -56,10 +71,11 @@ export function navigationHudState(g: Game, fareRouted = true) {
   };
 }
 
-export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, actions: { texts: () => void; focus: () => void; routeVisibility: (visible: boolean) => void }) {
+export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, actions: { texts: () => void; newsroom: () => void; focus: () => void; routeVisibility: (visible: boolean) => void }) {
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = root.querySelector<HTMLElement>('.navigation-hud')!;
   const dispatch = get('dispatch') as HTMLButtonElement;
+  const observe = get('observe') as HTMLButtonElement;
   const map = get('map');
   const views = new WeakMap<Game, { job: Game['job']; routed: boolean }>();
   const view = () => {
@@ -93,7 +109,15 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     refresh(); actions.focus();
   });
   get('texts').addEventListener('click', actions.texts);
-  get('newsroom').addEventListener('click', () => { currentGame().navigateNewsroom(); refresh(); actions.focus(); });
+  get('newsroom').addEventListener('click', () => {
+    const g = currentGame();
+    if (g.mode === 'playing' && g.campaignEnabled) actions.newsroom();
+  });
+  observe.addEventListener('click', () => {
+    const g = currentGame(), action = observationActionState(g);
+    if (action && !action.disabled) g.observeScene(action.id);
+    refresh(); actions.focus();
+  });
   let dispatchLabel = '';
   function refresh() {
     const g = currentGame(), state = navigationHudState(g, view().routed);
@@ -119,6 +143,12 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     const text = `Dispatch: ${action}`;
     if (text !== dispatchLabel) { dispatchLabel = text; dispatch.setAttribute('aria-label', text); dispatch.title = text; }
     for (const id of ['texts', 'newsroom']) (get(id) as HTMLButtonElement).disabled = !g.campaignEnabled || g.mode !== 'playing';
+    const observation = observationActionState(g);
+    observe.hidden = !observation;
+    observe.disabled = !observation || observation.disabled;
+    observe.dataset.state = observation?.recorded ? 'recorded' : observation && !observation.disabled ? 'available' : 'unavailable';
+    const observationLabel = observation?.label ?? 'Record a nearby observation';
+    if (observe.getAttribute('aria-label') !== observationLabel) { observe.setAttribute('aria-label', observationLabel); observe.title = observationLabel; }
     return state;
   }
   return Object.assign(refresh, { routeFare });

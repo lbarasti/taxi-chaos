@@ -49,7 +49,7 @@ const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCa
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
-const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
+const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
 const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu });
 drawer.setInputDevice(inputDevice);

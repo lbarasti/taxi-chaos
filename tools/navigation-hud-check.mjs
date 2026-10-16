@@ -137,7 +137,7 @@ try {
         header: document.querySelector('.navigation-header') !== null,
         caption: document.querySelector('#map-caption') !== null,
         overflow: document.querySelector('.navigation-hud').scrollWidth > document.querySelector('.navigation-hud').clientWidth,
-        buttons: [...actions.querySelectorAll('button')].map(button => ({ id: button.id, label: button.getAttribute('aria-label'), disabled: button.disabled, className: button.className, ...box(`#${button.id}`) })),
+        buttons: [...actions.querySelectorAll('button')].filter(button => button.getClientRects().length).map(button => ({ id: button.id, label: button.getAttribute('aria-label'), disabled: button.disabled, className: button.className, ...box(`#${button.id}`) })),
         collisions: ['.player-hud', '.navigation-hud', '.controls', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '.context-actions']
           .filter(selector => [...document.querySelectorAll(selector)].some(element => {
             if (!element.getClientRects().length) return false;
@@ -255,7 +255,10 @@ try {
     await command({ op: 'mode', mode: 'playing' });
     // Booking newsroom guidance clears through the same toggle and keeps the booking.
     const booking = (await render()).job;
-    await page.locator('#newsroom').click(); await render();
+    await page.locator('#newsroom').click();
+    await waitForDrawer(page, 'newsroom');
+    assert.match(await page.locator('#newsroom-summary').textContent(), /No stories ready for the editor/);
+    await page.locator('#notebook-route').click(); await render();
     assert.match(await mapLabel(), /NEWSROOM · /);
     assert.equal(await target(), 'newsroom');
     assert.equal(await page.locator('#dispatch').isEnabled(), true);

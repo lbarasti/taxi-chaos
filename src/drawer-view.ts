@@ -3,6 +3,7 @@ import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
 import { calendarLabel } from './campaign/clock';
 import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
+import { newsroomMarkup, type NewsroomSection } from './campaign/newsroom-view';
 import { creditsMarkup } from './credits';
 import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
@@ -13,10 +14,11 @@ const pages = {
   rules: { title: 'The street rules.', parent: 'home' },
   shift: { title: 'This shift.', parent: 'home' },
   credits: { title: 'Credits.', parent: 'home' },
+  newsroom: { title: '', parent: null },
   notebook: { title: '', parent: 'home' },
   'notebook-guide': { title: 'Keeping records.', parent: 'notebook' },
 } as const satisfies Record<DrawerPage, { title: string; parent: DrawerPage | null }>;
-export const drawerParent = (page: DrawerPage) => pages[page].parent;
+export const drawerParent = (page: DrawerPage, entry: 'home' | 'newsroom' = 'home') => page === 'notebook' ? entry : pages[page].parent;
 export const isDrawerPage = (page: string): page is DrawerPage => Object.hasOwn(pages, page);
 
 function settingsMarkup(settings: SettingsControls) {
@@ -39,11 +41,12 @@ function campaignMarkup(game: Game) {
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
 }
-export function drawerMarkup(page: DrawerPage, { game, settings, saved }: { game: Game; settings: SettingsControls; saved: boolean }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
-    case 'notebook': return notebookMarkup(game);
+    case 'newsroom': return newsroomMarkup(game, newsroomSection);
+    case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;
     case 'rules': body = streetRulesMarkup(); break;
     case 'shift': body = shiftMarkup(game, campaignMarkup(game)); break;
