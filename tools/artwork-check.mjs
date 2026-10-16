@@ -23,10 +23,11 @@ try {
     page.on('console', m => { if (m.type() === 'error') errors.push(`${name}: ${m.text()}`); });
     page.on('request', r => { if (/^https?:/.test(r.url())) external.push(r.url()); });
     await page.addInitScript(failImages => {
-      window.artDraws = { shop: 0, tree: 0, asphalt: 0 };
+      window.artDraws = { shop: 0, tree: 0, asphalt: 0, asphaltRasterizations: 0 };
       window.artVariants = new Set();
       const draw = CanvasRenderingContext2D.prototype.drawImage;
       CanvasRenderingContext2D.prototype.drawImage = function(image, ...args) {
+        if (image instanceof HTMLImageElement && image.naturalWidth === 768) window.artDraws.asphaltRasterizations++;
         if (this.canvas.id === 'city' && image instanceof HTMLImageElement) {
           const key = { 256: 'shop', 192: 'tree' }[image.naturalWidth];
           if (key) window.artDraws[key]++;
@@ -36,7 +37,10 @@ try {
       };
       const create = CanvasRenderingContext2D.prototype.createPattern;
       CanvasRenderingContext2D.prototype.createPattern = function(image, repeat) {
-        if (this.canvas.id === 'city' && image instanceof HTMLImageElement && image.naturalWidth === 768) window.artDraws.asphalt++;
+        if (this.canvas.id === 'city') {
+          if (image instanceof HTMLImageElement) throw new Error('Live SVG patterns stall the world canvas; use the cached raster tile');
+          if (image instanceof HTMLCanvasElement && image.width === 768) window.artDraws.asphalt++;
+        }
         return create.call(this, image, repeat);
       };
       if (failImages) {
@@ -63,12 +67,13 @@ try {
       await page.evaluate(() => window.__scenario.render('world'));
     }
     const draws = await page.evaluate(() => window.artDraws);
-    if (failImages) assert.deepEqual(draws, { shop: 0, tree: 0, asphalt: 0 });
+    if (failImages) assert.deepEqual(draws, { shop: 0, tree: 0, asphalt: 0, asphaltRasterizations: 0 });
     else {
       assert(draws.shop > 0, `${name}: decoded shop PNG must be drawn`);
       assert(draws.tree > 0, `${name}: decoded tree PNG must be drawn`);
       if (name === 'desktop') assert.equal(await page.evaluate(() => window.artVariants.size), 3, 'all three roof designs must be visible');
       assert.equal(draws.asphalt, 1, `${name}: asphalt pattern is cached across frames`);
+      assert.equal(draws.asphaltRasterizations, 1, `${name}: SVG is rasterized once at load, never per frame`);
     }
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name}: horizontal overflow`);
     await command({ op: 'advance', to: { day: 1, hour: 23 } });
@@ -84,6 +89,9 @@ try {
     assert.deepEqual(a.position, b.position);
     assert.equal(b.health, 100);
     assert(Math.hypot(b.position.x - 4, b.position.y - 80) > 2, 'car must physically drive');
+    const afterDrive = await page.evaluate(() => window.artDraws);
+    assert.equal(afterDrive.asphalt, draws.asphalt, 'new scenarios reuse the context pattern');
+    assert.equal(afterDrive.asphaltRasterizations, draws.asphaltRasterizations, 'extra renders never rasterize SVG again');
     if (name === 'desktop') {
       // Real physical contact, using the isolated Lab's collision/damage pipeline.
       await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?debug=1`);

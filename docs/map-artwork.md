@@ -12,8 +12,8 @@ art. Vehicle, pedestrian, map and collision data are unchanged.
 - `src/assets/map/`: self-contained image files (transparent PNG sprites and an SVG ground tile).
 - `src/artwork/catalogue.ts`: image identity, bounds in metres, collision-centred
   alignment, stable visual variants, sun-shadow silhouette and optional directed-light occluder.
-- `src/artwork/images.ts`: explicit `?inline` imports, shared image decoding and
-  cached world-anchored ground patterns.
+- `src/artwork/images.ts`: explicit `?inline` imports, shared image decoding, one-time
+  SVG ground rasterization and cached world-anchored ground patterns.
 - `src/renderer.ts`: ground and structure passes, dynamic signs and fallback drawing.
 
 The existing default appearance rules choose city shops by kind, size and position,
@@ -54,7 +54,13 @@ asset needs them; this pass keeps the existing damage lifecycle.
 The asphalt tile repeats every 48 m, anchored at world origin. It is transparent
 grain and sparse repairs over the darker road colour, so daytime colour changes still work. Road
 markings and sidewalks are drawn above it. Surface physics continues to use map
-geometry, never pixel colours. The tile pattern is cached per canvas context.
+geometry, never pixel colours. Before the first playable frame, the SVG is rasterized
+once to a shared 768 × 768 canvas (about 2.25 MiB). Each context caches its own pattern
+from that immutable raster tile. **Never pass the live SVG image to `createPattern`:**
+Chrome can move the world canvas onto a software rendering path, stalling even the
+unchanged lighting compositor's `drawImage` calls. Rasterizing only after the first
+frame is too late to reliably recover that canvas's acceleration. Decode/raster
+failures retain procedural ground; PNG props, light masks and destruction are unchanged.
 
 Ground artwork remains below props and actors. Shop/tree artwork uses the existing
 structure pass; actors are drawn afterwards. Foreground canopy occlusion, stacked
@@ -68,6 +74,56 @@ one standalone HTML with embedded assets. `node tools/artwork-check.mjs` exercis
 the offline production build, actual PNG decoding/drawing and all three roof variants, missing-image fallback,
 night lighting, physical tree destruction, fixed-step driving and compact touch
 layouts. Screenshots are written to `scenario-runs/artwork` by default.
+
+### Performance regression checks
+
+`src/artwork/images.test.ts` verifies one-time rasterization, the raster-only pattern
+source, per-context caching, image/raster fallbacks and unchanged PNG drawing.
+The offline browser check also rejects live image patterns and checks that scenario
+resets and additional renders do not allocate new ground tiles or patterns.
+
+Use the **headed, GPU-enabled** performance check for timing comparisons:
+
+```sh
+npm run build
+node tools/artwork-performance.mjs --baseline /path/to/pre-artwork/dist/index.html \
+  --regressed /path/to/8951c85/dist/index.html --max-p95 20
+```
+
+The current `dist/index.html` is the candidate (`--candidate` overrides it). The tool
+uses fresh, offline contexts at DPR 2 for 1440 × 900 day/night, 390 × 844 portrait and
+844 × 390 landscape. It renders the actual world, HUD and lighting each RAF after
+60 warm-up frames and records 180 samples. JSON timings and screenshots go to
+`scenario-runs/artwork-performance`. The optional `--max-p95` budget is machine-specific,
+not a universal CI timing assertion. `--headless` is available for smoke checks, but
+software-only canvas timings cannot validate the GPU-path regression.
+
+Do not time idle scenario RAFs: `?scenario-preview=1` intentionally disables automatic
+rendering. Also do not toggle the expensive pattern off on a canvas that has already
+rendered it: its slow-path transition can persist and contaminate an A/B comparison.
+
+Measured on Apple M2 Max / Metal, Chrome 156, DPR 2 (180 samples per scene):
+
+| p95 frame interval (ms) | Before artwork (`e1926dd`) | Regressed (`8951c85`) | Raster tile fix |
+| --- | ---: | ---: | ---: |
+| Desktop day | 10.0 | 76.0 | 10.0 |
+| Desktop night | 9.9 | 76.6 | 10.0 |
+| Portrait | 9.2 | 25.3 | 10.2 |
+| Landscape | 9.3 | 25.1 | 10.0 |
+
+The regressed desktop recorded 176/180 daytime and 179/180 nighttime intervals above
+33.4 ms; the fixed build recorded none in any layout. CPU profiling put the long
+native stalls in the existing lighting pass's `drawImage`, not in PNG prop selection
+or physics. Fresh-context ablations with the ground pattern skipped or rasterized
+returned to baseline while all PNG shops/trees remained enabled.
+
+Additional realtime keyboard and actual touch-joystick drives covered 27–29 m without
+teleports/upgrades during driving, stayed at 100 HP, and measured 9.8–10.0 ms p95 across
+desktop day/night, portrait and landscape. All browser checks ran offline with no
+console errors or external requests.
+
+![Raster-cached artwork, desktop daylight](screenshots/artwork-performance/desktop-day.png)
+![Artwork and touch controls, portrait](screenshots/artwork-performance/portrait.png)
 
 Verification for this pass: 711 tests in 56 files passed, strict TypeScript
 and the standalone build passed, and the offline Chromium check passed on
