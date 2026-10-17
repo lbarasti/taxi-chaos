@@ -49,4 +49,16 @@ describe('top-down artwork geometry', () => {
       { kind: 'crate', body: new Body(14, 14, Infinity, 1.4, 1.4) },
     ]) expect(artworkFor(prop)).toBeUndefined();
   });
+  it('assigns hospital artwork by stable identity without changing the two-block collision body', () => {
+    const hospital = new World().props.find(p => p.sourceId === 'city-building-3-1-landmark')!;
+    const corners = hospital.body.corners();
+    expect(artworkFor(hospital)).toBe(propArtwork.hospital);
+    const renamed = { ...hospital, label: 'RENAMED' };
+    expect(artworkFor(renamed)).toBe(propArtwork.hospital);
+    expect(artworkFor({ ...hospital, sourceId: 'another-building' })).toBeUndefined();
+    const outline = occluderFor(hospital, propArtwork.hospital.occluder)!;
+    expect(pointInConvex(vec(140, 40), outline.points)).toBe(true);
+    expect(hospital.body.corners()).toEqual(corners);
+    expect([hospital.body.w, hospital.body.h]).toEqual([26, 66]);
+  });
 });

@@ -460,7 +460,6 @@ export class Renderer {
       if (prop.fire > 0) drawFire(c, vec(), prop.kind === 'station' ? 3 : 1.4, this.game.time, prop.id);
       c.restore(); return;
     }
-    if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
     const art = artworkFor(prop);
     if (art && artworkImages.has(art.image)) {
       // Structure artwork shares the old prop pass. Destruction above stays authoritative.
@@ -468,14 +467,16 @@ export class Renderer {
       trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
-        this.rect(-4.3, 3.55, 8.6, 1.0, '#182320dd');
+        const hospital = art.image === 'hospital-roof', signWidth = hospital ? 14 : 8.6, signY = hospital ? b.h / 2 - 1.4 : 4.05;
+        this.rect(-signWidth / 2, signY - 0.5, signWidth, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
-        this.label(prop.label, 0, 81, 20 * Math.min(0.72, 8.6 / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
+        this.label(prop.label, 0, signY * 20, 20 * Math.min(hospital ? 0.9 : 0.72, signWidth / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
         c.restore();
       }
       c.restore(); return;
     }
+    if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
     if (prop.kind === 'guardrail') {
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#314847');
       this.rect(-b.w / 2, -b.h / 2 - 0.12, b.w, b.h * 0.55, prop.color);

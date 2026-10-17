@@ -30,13 +30,16 @@ without backtracking through intersection centres. Interior hospital targets
 resolve to an outer road, while invalid starts inside it hold position. Both
 CLI and editor validation sweep actual car/truck bodies along open city roads
 as well as countryside roads. The hospital roof has three ward sections and a
-glazed spine, with metre-scale equipment and glazing.
+glazed spine in its procedural fallback. The normal appearance uses the
+user-supplied hospital roof, extended vertically to fit the two-block site;
+see [hospital-artwork.md](hospital-artwork.md) for its source and adaptation prompt.
 
-Large roofs are drawn as continuous structures with doors, glazing, skylights
+Ordinary large roofs are drawn as continuous structures with doors, glazing, skylights
 and HVAC kept at metre scale. Their membrane texture reuses a cropped section
 of the embedded shop artwork, cached once per image and canvas context; it adds
-no asset or network dependency. Procedural rendering remains available when
-images fail. Existing asset attribution remains in place.
+no extra asset or network dependency. The hospital PNG is also embedded in the
+standalone HTML. Procedural rendering remains available when images fail;
+asset attribution includes the supplied hospital image and its adaptation.
 
 Validation:
 

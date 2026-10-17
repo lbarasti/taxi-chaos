@@ -3,6 +3,7 @@ import shopRust from '../assets/map/shop-rust.png?inline';
 import shopConcrete from '../assets/map/shop-concrete.png?inline';
 import tree from '../assets/map/tree-worn.png?inline';
 import asphalt from '../assets/map/asphalt.svg?inline';
+import hospital from '../assets/map/hospital-structure.png?inline';
 import { asphaltArtwork, type ArtBounds, type PropArtwork } from './catalogue';
 
 /** One decoded image per asset, shared by normal games and editor previews. */
@@ -14,7 +15,7 @@ export class ArtworkImages {
   private roofTile?: HTMLCanvasElement;
   private roofPatterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
   load(): Promise<void> {
-    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt }).map(([id, src]) => new Promise<void>(resolve => {
+    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt, 'hospital-roof': hospital }).map(([id, src]) => new Promise<void>(resolve => {
       const image = new Image();
       image.onload = () => { this.images.set(id, image); resolve(); };
       // Individual failures retain procedural fallback artwork, including in offline builds.
@@ -60,7 +61,10 @@ export class ArtworkImages {
     if (!image) return false;
     const b = art.bounds;
     c.save(); c.rotate(art.rotation ?? 0);
-    c.drawImage(image, b.x, b.y, b.width, b.height); c.restore();
+    const source = art.source;
+    if (source) c.drawImage(image, source.x, source.y, source.width, source.height, b.x, b.y, b.width, b.height);
+    else c.drawImage(image, b.x, b.y, b.width, b.height);
+    c.restore();
     return true;
   }
   ground(c: CanvasRenderingContext2D, bounds: ArtBounds): void {
