@@ -30,7 +30,7 @@ try {
       await command({ op: 'advance', to: { day: 1, hour: 12 } });
     };
     await start();
-    await command({ op: 'place', at: { x: 120, y: 65 }, angle: Math.PI / 2 });
+    await command({ op: 'place', at: { x: 120, y: 40 }, angle: Math.PI / 2 });
     await page.screenshot({ path: resolve(output, `${name}-midtown.png`) });
     if (name === 'desktop') {
       await page.evaluate(() => window.__scenario.render('world', { zoom: 14 }));

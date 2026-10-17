@@ -36,7 +36,8 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   for (let pass = 0; pass < document.nodes.length; pass++) for (const road of country.COUNTRY_ROADS) if (seen.has(road.from) || seen.has(road.to)) { seen.add(road.from); seen.add(road.to); }
   for (const [i, id] of document.nodes.entries()) if (!seen.has(i)) push('disconnected-road', [id], 'Road node has no route to either fixed bridge', country.ROAD_NODES[i]);
   // Both lanes and centreline, not centre-point-only checks. Use actual definitions.
-  for (const road of country.COUNTRY_ROADS) {
+  const roads = [...compiled.city.roads.map(r => ({ ...r, points: [r.from, r.to], length: dist(r.from, r.to) })), ...country.COUNTRY_ROADS];
+  for (const road of roads) {
     if (road.length < 1) { push('unusable-road', [road.id], 'Road is shorter than 1 m', road.points[0]); continue; }
     const reported = new Set<string>();
     for (let i = 1; i < road.points.length; i++) {

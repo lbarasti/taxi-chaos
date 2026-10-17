@@ -1,5 +1,6 @@
 import { add, dist, rotate, scale, sub, vec, type Vec } from '../physics';
 import { World } from '../world';
+import { CITY_SIZE } from '../city';
 import { HARBOUR } from '../harbour';
 import { describe, descriptorBody, entities, entityPosition } from './operations';
 import type { CompiledMap } from './compile';
@@ -57,7 +58,12 @@ export class EditorRenderer {
       const prom = beach.PROMENADE; c.fillStyle = '#d8d5c3'; c.fillRect(prom.left, prom.top, prom.right - prom.left, prom.bottom - prom.top);
     }
     if (this.layers.roads) {
-      for (let x = 0; x <= 240; x += 40) { line([vec(x, -14), vec(x, 246)], '#2c4245', 12 * this.zoom); line([vec(-14, x), vec(254, x)], '#2c4245', 12 * this.zoom); }
+      for (const road of map.city.roads) {
+        const a = { ...road.from }, b = { ...road.to };
+        if (a.x === b.x) { if (a.y === 0) a.y = -14; if (b.y === CITY_SIZE) b.y = 246; }
+        else { if (a.x === 0) a.x = -14; if (b.x === CITY_SIZE) b.x = 254; }
+        line([a, b], '#2c4245', 12 * this.zoom);
+      }
       for (const road of country.COUNTRY_ROADS) line(road.points, road.bridge ? '#a3b5ad' : '#bdd1b0', 3);
       for (const drive of country.VILLA_DRIVES) line(drive, '#cbb89b', 2);
     }
