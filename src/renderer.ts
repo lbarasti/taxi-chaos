@@ -467,11 +467,12 @@ export class Renderer {
       trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
-        const hospital = art.image === 'hospital-roof', signWidth = hospital ? 14 : 8.6, signY = hospital ? b.h / 2 - 1.4 : 4.05;
+        const sign = prop.building?.presentation.sign ?? { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };
+        const signWidth = Math.min(sign.width, b.w - 1.4), signY = b.h / 2 - sign.inset;
         this.rect(-signWidth / 2, signY - 0.5, signWidth, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
-        this.label(prop.label, 0, signY * 20, 20 * Math.min(hospital ? 0.9 : 0.72, signWidth / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
+        this.label(prop.label, 0, signY * 20, 20 * Math.min(sign.size, signWidth / Math.max(1, prop.label.length * 0.65)), sign.color, '700');
         c.restore();
       }
       c.restore(); return;

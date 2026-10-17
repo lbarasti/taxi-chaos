@@ -1,7 +1,7 @@
 import { citySegmentOpen, type City } from './city';
 import { dist, vec, type Vec } from './physics';
 
-export type StreetAccess = { point: Vec; vertical?: number; horizontal?: number };
+export type StreetAccess = { point: Vec; vertical?: number; horizontal?: number; distance?: number };
 
 /** Small fixed road graph, used only when a closed street invalidates the usual
  * direct / one- or two-turn routes. Build once per independent compiled map. */

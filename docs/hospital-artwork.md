@@ -10,7 +10,8 @@ The project asset is `src/assets/map/hospital-structure.png` (787 × 1997 RGBA).
 The renderer crops transparent export padding with source bounds
 (33, 16, 726, 1951) pixels, then paints it at (-13.3, -33.3, 26.6, 66.6) metres
 relative to the collision centre. The physical building stays 26 × 66 m.
-The hospital's stable source ID selects the artwork; its display label does not.
+The building type supplies the artwork; neither placement ID nor display label
+selects it. Footprint overrides scale the compiled image bounds and light outline.
 Sun shadows and directed-light occlusion follow the artwork's outline.
 The runtime HOSPITAL sign sits at the south frontage by the recovery entrance.
 

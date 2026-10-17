@@ -17,7 +17,7 @@ export type Block = CityBlock;
 export type ParkingSpot = Parking & { sourceId: string };
 export const GRID = CITY_GRID, SIZE = CITY_SIZE, GARAGE = vec(4, 28);
 // Clear sidewalk outside Midtown Hospital; the adjacent curb bay is unoccupied.
-export const HOSPITAL = vec(147, 74.6);
+export const HOSPITAL = defaultCompiledMap.city.recovery!;
 export function district(p: Vec, map = defaultCompiledMap) {
   const { inBeach, onPromenade, PROMENADE } = map.beach, { SOUTH_WOODS_Y } = map.country;
   return inBeach(p) ? onPromenade(p) || p.x >= PROMENADE.left ? 'OCEAN WALK' : 'SUNSET BEACH' : inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
@@ -49,7 +49,8 @@ export class World {
     this.blocks = map.city.blocks;
     for (const block of this.blocks) {
       const { x, y, park, special } = block;
-      const campus = map.city.campuses.find(site => site.id === block.campusId);
+      // Replacing a generated park must not reshuffle subsequent residents/scenery.
+      for (let i = 0; i < block.legacySceneryDraws; i++) this.random();
       if (park) {
         for (let i = 0; i < 10; i++) this.add('tree', x + 11 + this.random() * 18, y + 11 + this.random() * 18, 1.8, 1.8, '#426e5c');
         this.add('kiosk', x + 24, y + 8.5, 3.4, 2, '#d88d64', 'ICE CREAM');
@@ -80,22 +81,15 @@ export class World {
           this.add('bench', x + 12 + i * 16, y + 7.8, 2.4, 0.75, '#bf9870');
         }
         // Keep every historical pose/color RNG draw, even when its home moves
-        // from the absorbed street to an outer hospital sidewalk.
-        const home = campus ? vec(campus.position.x - campus.width / 2, y + 14 + i * 12) : vec(x + 8, y + 12 + i * 14);
+        // from a replaced block to authored safe homes.
+        const home = block.residentHomes?.[i * 2] ?? vec(x + 8, y + 12 + i * 14);
         this.addPerson(home, 'civilian', ['#e9a69b', '#a7bce0', '#e4ca79', '#b0cbaa'][Math.floor(this.random() * 4)]);
-        const home2 = campus ? vec(campus.position.x + campus.width / 2, y + 14 + i * 12) : vec(x + 15 + i * 12, y + (block.buildings.some(b => b.width > 10 || b.height > 10) ? 33 : 32));
+        const home2 = block.residentHomes?.[i * 2 + 1] ?? vec(x + 15 + i * 12, y + (block.buildings.some(b => b.width > 10 || b.height > 10) ? 33 : 32));
         this.addPerson(home2, 'civilian', '#c3b7d7');
       }
     }
-    for (const site of map.city.campuses) {
-      const left = site.position.x - site.width / 2, right = site.position.x + site.width / 2;
-      const top = site.position.y - site.height / 2, bottom = site.position.y + site.height / 2;
-      for (const y of [top + 6, bottom - 6]) {
-        this.add('hydrant', left, y, 0.65, 0.65, '#eb735f');
-        this.add('lamp', right, y, 0.6, 0.6, '#a7bfbb');
-      }
-      for (const y of [top + 14, bottom - 14]) this.add('bench', left, y, 2.4, 0.75, '#bf9870', '', Math.PI / 2);
-      for (const y of [site.position.y - 10, site.position.y + 10]) this.add('bin', right, y, 0.85, 0.85, '#76a79b');
+    for (const site of map.city.campuses) for (const prop of site.props) {
+      this.add(prop.kind, prop.position.x, prop.position.y, prop.width, prop.height, prop.color, '', prop.angle ?? 0);
     }
     for (const rail of COAST_RAILS) this.add('guardrail', rail.position.x, rail.position.y, rail.width, 0.8, '#a7b9b1', '', rail.angle);
     for (const y of BRIDGE_Y) {
@@ -189,13 +183,12 @@ export class World {
 }
 
 // Prefer simple orthogonal routes; the compiled road graph supplies detours
-// around the hospital where a former grid street is now part of the campus.
+// around authored sites that replace former grid streets.
 export function createNavigation(map: CompiledMap) {
 const { ROAD_NODES, countryAccess, countryNeighbours, countryNode, countryPath, isCountry } = map.country;
 const { beachAccess, beachAccessPath, beachVehicleTarget, inBeach } = map.beach;
 const detour = createCityDetour(map.city);
-const hospital = map.city.buildings.find(b => b.label === 'HOSPITAL')!;
-const insideHospital = (p: Vec) => Math.abs(p.x - hospital.position.x) < hospital.width / 2 && Math.abs(p.y - hospital.position.y) < hospital.height / 2;
+const insideBuilding = (p: Vec) => map.city.buildings.some(b => Math.abs(p.x - b.position.x) < b.width / 2 && Math.abs(p.y - b.position.y) < b.height / 2);
 function gridNode(p: Vec): Vec { return vec(Math.round(Math.max(0, Math.min(SIZE, p.x)) / GRID) * GRID, Math.round(Math.max(0, Math.min(SIZE, p.y)) / GRID) * GRID); }
 function roadNode(p: Vec): Vec { return inBeach(p) ? gridNode(beachAccess(p)) : onPortRoad(p) ? portNode(p) : isCountry(p) ? countryNode(p) : gridNode(p); }
 const roadDistance = (p: Vec) => inBeach(p) ? dist(p, beachAccess(p)) : onPortRoad(p) ? portAccess(p).distance : isCountry(p) ? countryAccess(p).distance : cityRoadDistance(p);
@@ -210,12 +203,28 @@ function streetAccess(p: Vec): StreetAccess {
   const n = gridNode(p), dx = Math.abs(n.x - p.x), dy = Math.abs(n.y - p.y);
   const vx = vec(n.x, p.y), hy = vec(p.x, n.y);
   const vertical = citySegmentOpen(map.city, vx, vx), horizontal = citySegmentOpen(map.city, hy, hy);
+  if (!vertical && !horizontal) return nearestOpenStreet(p);
   if (vertical && dx <= 6 || horizontal && dy <= 6) return { point: { ...p }, vertical: vertical && dx <= 6 ? n.x : undefined, horizontal: horizontal && dy <= 6 ? n.y : undefined };
   return vertical && (dx < dy || !horizontal) ? { point: vx, vertical: n.x } : { point: hy, horizontal: n.y };
 }
+function nearestOpenStreet(p: Vec): StreetAccess {
+  let best: StreetAccess = { point: { ...p } }, distance = Infinity;
+  for (const road of map.city.roads) {
+    const vertical = road.from.x === road.to.x;
+    const q = vertical ? vec(road.from.x, Math.max(road.from.y, Math.min(road.to.y, p.y))) : vec(Math.max(road.from.x, Math.min(road.to.x, p.x)), road.from.y);
+    const d = dist(p, q);
+    if (d < distance) { distance = d; best = { point: q, vertical: vertical ? road.from.x : undefined, horizontal: vertical ? undefined : road.from.y, distance: d }; }
+  }
+  return best;
+}
+function streetPoint(p: Vec): Vec {
+  const access = streetAccess(p);
+  const projections = [access.vertical === undefined ? undefined : vec(access.vertical, access.point.y), access.horizontal === undefined ? undefined : vec(access.point.x, access.horizontal)].filter((q): q is Vec => !!q);
+  return projections.sort((a, b) => dist(p, a) - dist(p, b))[0] ?? access.point;
+}
 function cityRoadDistance(p: Vec): number {
   const access = streetAccess(p);
-  return Math.min(access.vertical === undefined ? Infinity : Math.abs(p.x - access.vertical), access.horizontal === undefined ? Infinity : Math.abs(p.y - access.horizontal));
+  return access.distance ?? Math.min(access.vertical === undefined ? Infinity : Math.abs(p.x - access.vertical), access.horizontal === undefined ? Infinity : Math.abs(p.y - access.horizontal));
 }
 const roadProjection = (p: Vec) => inBeach(p) ? beachAccess(p) : onPortRoad(p) ? portAccess(p).point : isCountry(p) ? countryAccess(p).point : streetAccess(p).point;
 function simplifyPath(points: Vec[]): Vec[] {
@@ -250,8 +259,8 @@ function gridPath(from: Vec, to: Vec): Vec[] {
 }
 
 function roadPath(from: Vec, to: Vec, travel: 'drive' | 'walk' = 'drive'): Vec[] {
-  if (insideHospital(from)) return [from];
-  if (insideHospital(to)) to = streetAccess(to).point;
+  if (insideBuilding(from)) return [from];
+  if (insideBuilding(to)) to = streetPoint(to);
   if (travel === 'drive') {
     to = beachVehicleTarget(to);
     // No vehicle-sized route exists inside the protected hotel/promenade strip.

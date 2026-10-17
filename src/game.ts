@@ -779,7 +779,7 @@ export class Game {
       if (this.player.dynamics instanceof MotorcycleDynamics && !this.player.dynamics.fallen) this.player.dynamics.resetLean();
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
       if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
-      this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...HOSPITAL }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
+      this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...(this.map.city.recovery ?? HOSPITAL) }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
       this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear();
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = []; this.roadMarkVehicleId = -1;
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;

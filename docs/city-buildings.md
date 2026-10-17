@@ -11,6 +11,12 @@ building IDs, footprints, roof silhouettes, campuses, open road segments and blo
 recursively frozen. World collisions, the editor, roof rendering, lighting and
 the minimap consume that geometry. The existing map document schema is unchanged.
 
+Reusable types live in `src/buildings.ts`; unique placements, campuses, resident
+homes, furniture and the recovery entrance live in `src/city-content.ts`.
+See [building-authoring.md](building-authoring.md) for the authoring workflow.
+Gameplay and rendering consume compiled definitions and footprints, rather than
+hospital labels, placement IDs or exact dimensions.
+
 Most ordinary blocks keep one 3 m alley. Old Town's garage keeps both original
 shortcuts. The café, newsroom and story hotel keep their small frontages and
 positions. Service yards, parks and public parking retain their layouts. The

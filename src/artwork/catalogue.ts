@@ -13,7 +13,7 @@ export type PropArtwork = Readonly<{
   silhouette: readonly Vec[];
   occluder?: readonly Vec[];
 }>;
-export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number } };
+export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number }; building?: { artwork?: PropArtwork } };
 const shopOutline = [vec(-5.3, -5.3), vec(5.3, -5.3), vec(5.3, 5.3), vec(-5.3, 5.3)];
 const shop = { layer: 'structure', bounds: { x: -5.3, y: -5.3, width: 10.6, height: 10.6 }, silhouette: shopOutline, occluder: shopOutline } as const;
 const hospitalOutline = [vec(-13.3, -33.3), vec(13.3, -33.3), vec(13.3, 33.3), vec(-13.3, 33.3)];
@@ -29,18 +29,18 @@ const trees = Array.from({ length: 4 }, (_, i) => ({ ...propArtwork.tree, rotati
 export const asphaltArtwork = { image: 'asphalt', layer: 'ground', tileMetres: 48 } as const;
 
 /** Appearance uses stable identity, never the simulation's random stream or display labels. */
-function appearanceSeed(prop: ArtProp): number {
-  const identity = prop.sourceId ?? String(prop.id ?? `${prop.body.position.x},${prop.body.position.y}`);
+export function appearanceSeed(identity: string): number {
   let seed = 2166136261;
   for (let i = 0; i < identity.length; i++) seed = Math.imul(seed ^ identity.charCodeAt(i), 16777619);
   return seed >>> 0;
 }
 export function artworkFor(prop: ArtProp): PropArtwork | undefined {
+  if (prop.kind === 'building' && prop.building) return prop.building.artwork;
   const { position: p, w, h } = prop.body;
   if (p.x < 0 || p.x > 240 || p.y < 0 || p.y > 240) return;
-  if (prop.kind === 'building' && prop.sourceId === 'city-building-3-1-landmark' && w === 26 && h === 66) return propArtwork.hospital;
-  if (prop.kind === 'building' && w === 10 && h === 10) return shops[appearanceSeed(prop) % shops.length];
-  if (prop.kind === 'tree') return trees[appearanceSeed(prop) % trees.length];
+  const seed = appearanceSeed(prop.sourceId ?? String(prop.id ?? `${p.x},${p.y}`));
+  if (prop.kind === 'building' && w === 10 && h === 10) return shops[seed % shops.length];
+  if (prop.kind === 'tree') return trees[seed % trees.length];
 }
 export function artRadius(prop: ArtProp): number {
   const b = artworkFor(prop)?.bounds;
