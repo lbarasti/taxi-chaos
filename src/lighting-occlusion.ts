@@ -87,7 +87,7 @@ export function occluderFor(prop: OccluderProp, outline?: readonly OcclusionPoin
  * Collect alive raised structures that can affect the visible frame. Destroyed structures (rubble)
  * stop occluding. The margin keeps buildings just off-screen from popping shadows in at the edges.
  */
-export function collectOccluders(props: readonly OccluderProp[], view: OcclusionViewport, margin = 20, outlineFor?: (prop: OccluderProp) => readonly OcclusionPoint[] | undefined): Occluder[] {
+export function collectOccluders<T extends OccluderProp>(props: readonly T[], view: OcclusionViewport, margin = 20, outlineFor?: (prop: T) => readonly OcclusionPoint[] | undefined): Occluder[] {
   const minX = view.minX - margin, maxX = view.maxX + margin;
   const minY = view.minY - margin, maxY = view.maxY + margin;
   const out: Occluder[] = [];

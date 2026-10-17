@@ -1,5 +1,6 @@
 import { add, dist, rotate, scale, sub, vec, type Vec } from '../physics';
 import { World } from '../world';
+import { CITY_SIZE } from '../city';
 import { HARBOUR } from '../harbour';
 import { describe, descriptorBody, entities, entityPosition } from './operations';
 import type { CompiledMap } from './compile';
@@ -25,7 +26,7 @@ export class EditorRenderer {
     const placement = [...d.parking, ...d.trafficSpawns].reverse().find(e => inside(descriptorBody(e)));
     if (placement) return placement.id;
     const prop = [...world.props].reverse().find(p => p.sourceId && inside(p.body));
-    if (prop) return prop.sourceId;
+    if (prop) return prop.building ? 'city' : prop.sourceId;
     const nearby = entities(d).filter(e => !('weight' in e) && !('points' in e)).map(e => ({ id: e.id, position: entityPosition(d, e.id)! })).filter(e => dist(e.position, point) * this.zoom < 10).sort((a, b) => dist(a.position, point) - dist(b.position, point))[0];
     if (nearby) return nearby.id;
     const selectionBounds = describe(d, selection).bounds;
@@ -57,12 +58,17 @@ export class EditorRenderer {
       const prom = beach.PROMENADE; c.fillStyle = '#d8d5c3'; c.fillRect(prom.left, prom.top, prom.right - prom.left, prom.bottom - prom.top);
     }
     if (this.layers.roads) {
-      for (let x = 0; x <= 240; x += 40) { line([vec(x, -14), vec(x, 246)], '#2c4245', 12 * this.zoom); line([vec(-14, x), vec(254, x)], '#2c4245', 12 * this.zoom); }
+      for (const road of map.city.roads) {
+        const a = { ...road.from }, b = { ...road.to };
+        if (a.x === b.x) { if (a.y === 0) a.y = -14; if (b.y === CITY_SIZE) b.y = 246; }
+        else { if (a.x === 0) a.x = -14; if (b.x === CITY_SIZE) b.x = 254; }
+        line([a, b], '#2c4245', 12 * this.zoom);
+      }
       for (const road of country.COUNTRY_ROADS) line(road.points, road.bridge ? '#a3b5ad' : '#bdd1b0', 3);
       for (const drive of country.VILLA_DRIVES) line(drive, '#cbb89b', 2);
     }
     for (const prop of world.props) {
-      const authored = !!prop.sourceId, fixed = !authored && (prop.body.position.x < 254 && prop.body.position.y < 246);
+      const authored = !!prop.sourceId && !prop.building, fixed = !!prop.building || !authored && (prop.body.position.x < 254 && prop.body.position.y < 246);
       if (!(authored ? this.layers.objects : fixed ? this.layers.objects : this.layers.scenery) && !this.layers.colliders) continue;
       c.save(); c.translate(prop.body.position.x, prop.body.position.y); c.rotate(prop.body.angle);
       if (authored || fixed || this.layers.scenery) { c.fillStyle = prop.color; c.globalAlpha = authored ? 1 : 0.7; c.fillRect(-prop.body.w / 2, -prop.body.h / 2, prop.body.w, prop.body.h); c.globalAlpha = 1; }

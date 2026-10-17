@@ -36,7 +36,8 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   for (let pass = 0; pass < document.nodes.length; pass++) for (const road of country.COUNTRY_ROADS) if (seen.has(road.from) || seen.has(road.to)) { seen.add(road.from); seen.add(road.to); }
   for (const [i, id] of document.nodes.entries()) if (!seen.has(i)) push('disconnected-road', [id], 'Road node has no route to either fixed bridge', country.ROAD_NODES[i]);
   // Both lanes and centreline, not centre-point-only checks. Use actual definitions.
-  for (const road of country.COUNTRY_ROADS) {
+  const roads = [...compiled.city.roads.map(r => ({ ...r, points: [r.from, r.to], length: dist(r.from, r.to) })), ...country.COUNTRY_ROADS];
+  for (const road of roads) {
     if (road.length < 1) { push('unusable-road', [road.id], 'Road is shorter than 1 m', road.points[0]); continue; }
     const reported = new Set<string>();
     for (let i = 1; i < road.points.length; i++) {
@@ -57,6 +58,17 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
   }
   const vehiclePlacements = [...document.parking, ...document.trafficSpawns].map(e => ({ e, body: descriptorBody(e) }));
+  for (const block of compiled.city.blocks) for (const home of block.residentHomes ?? []) {
+    const body = new Body(home.x, home.y, 75, 0.7, 0.7);
+    const solid = [...world.hash.query(body)].find(p => blocksWalking(p.kind) && contact(body, p.body));
+    if (solid) push('resident-home-blocked', [block.id, solid.sourceId ?? `runtime-prop-${solid.id}`], 'Authored resident home overlaps a collision footprint', home);
+    if (coast.inOcean(home)) push('resident-home-water', [block.id], 'Authored resident home is in water', home);
+  }
+  for (const building of compiled.city.buildings) if (building.recoveryEntrance) {
+    const p = building.recoveryEntrance, body = new Body(p.x, p.y, 75, 0.7, 0.7);
+    const solid = [...world.hash.query(body)].find(prop => blocksWalking(prop.kind) && contact(body, prop.body));
+    if (solid || coast.inOcean(p)) push('recovery-entrance-blocked', [building.id], 'Recovery entrance must be clear and on dry land', p);
+  }
   const checkVehicleClearance = (id: string, body: Body, code: string) => {
     const wet = footprint(body).find(coast.inOcean);
     if (wet) push(code, [id], 'Vehicle footprint crosses water', wet);

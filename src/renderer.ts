@@ -1,3 +1,5 @@
+import { CITY_GRID, CITY_SIZE, citySegmentOpen } from './city';
+import { drawCityBuilding } from './city-renderer';
 import { Game, type Vehicle } from './game';
 import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from './physics';
 import { GARAGE, type Prop } from './world';
@@ -240,7 +242,7 @@ export class Renderer {
   private worldOccluders(): Occluder[] {
     return collectOccluders(this.game.world.props, this.worldViewport(), 20, prop => {
       const art = artworkFor(prop);
-      return art && artworkImages.has(art.image) ? art.occluder : undefined;
+      return art && artworkImages.has(art.image) ? art.occluder : prop.building?.silhouette;
     });
   }
   private lightingPass(lighting: LightingState) {
@@ -276,6 +278,7 @@ export class Renderer {
     this.countrysideGround();
     drawHarbourGround(this);
     for (const b of g.world.blocks) {
+      if (b.campusId) continue;
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
       this.rect(b.x + 6, b.y + 6, 28, 28, '#596361'); this.rect(b.x + 6.5, b.y + 6.5, 27, 27, b.park ? '#345b4a' : '#444c4b');
       c.strokeStyle = '#68726b'; c.lineWidth = 0.08;
@@ -293,23 +296,44 @@ export class Renderer {
         this.rect(b.x + 7, b.y + 7, 26, 26, '#303e43');
         this.rect(b.x + 6, b.y + 17, 28, 6, '#29383e');
         this.label('P / PUBLIC PARKING', b.x + 20, b.y + 20, 0.9, '#a8c6cd', '700');
-      } else { this.rect(b.x + 19, b.y + 8, 3, 24, '#333d40'); this.rect(b.x + 8, b.y + 19, 24, 3, '#333d40'); }
+      } else {
+        if (['cross', 'vertical', 'west'].includes(b.alleys)) this.rect(b.x + 19, b.y + 8, 3, 24, '#333d40');
+        if (['cross', 'horizontal'].includes(b.alleys)) this.rect(b.x + 8, b.y + 19, 24, 3, '#333d40');
+        if (b.alleys === 'west') this.rect(b.x + 8, b.y + 19, 11, 3, '#333d40');
+      }
       // Curb paint and small planted corners.
       this.rect(b.x + 6, b.y + 6, 4, 0.25, '#e3c36c'); this.rect(b.x + 30, b.y + 33.8, 4, 0.25, '#e3c36c');
+    }
+    for (const site of g.map.city.campuses) {
+      const left = site.position.x - site.width / 2, top = site.position.y - site.height / 2;
+      this.rect(left, top, site.width, site.height, '#596b68');
+      // One continuous perimeter, with no internal curb or absorbed-road paint.
+      this.rect(left + 0.25, top + 0.25, site.width - 0.5, site.height - 0.5, '#6b7771', '#abb5a080');
     }
     for (const spot of g.world.parking) if (this.visible(spot.position, 5)) {
       c.save(); c.translate(spot.position.x, spot.position.y); c.rotate(spot.angle); c.strokeStyle = '#a9b9ae70'; c.lineWidth = 0.1;
       c.strokeRect(-2.7, -1.55, 5.4, 3.1); this.label('P', 0, 0, 0.65, '#9db4ba80'); c.restore();
     }
     c.strokeStyle = '#8c96866b'; c.lineWidth = 0.1; c.setLineDash([1.9, 2.9]);
-    for (let s = 0; s <= 240; s += 40) { c.beginPath(); c.moveTo(s, -12); c.lineTo(s, 252); c.stroke(); c.beginPath(); c.moveTo(-12, s); c.lineTo(252, s); c.stroke(); } c.setLineDash([]);
+    for (const road of g.map.city.roads) {
+      const a = { ...road.from }, b = { ...road.to };
+      if (a.x === b.x) { if (a.y === 0) a.y = -12; if (b.y === CITY_SIZE) b.y += 12; }
+      else { if (a.x === 0) a.x = -12; if (b.x === CITY_SIZE) b.x += 12; }
+      c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+    }
+    c.setLineDash([]);
     // Double center lines and crossings keep roads legible at high speed.
     for (let x = 0; x <= 240; x += 40) for (let y = 0; y <= 240; y += 40) {
       if (!this.visible(vec(x, y), 12)) continue;
       this.rect(x - 5.8, y - 5.8, 11.6, 11.6, '#29383e');
+      const node = vec(x, y);
+      const north = citySegmentOpen(g.map.city, node, vec(x, y - CITY_GRID)), south = citySegmentOpen(g.map.city, node, vec(x, y + CITY_GRID));
+      const west = citySegmentOpen(g.map.city, node, vec(x - CITY_GRID, y)), east = citySegmentOpen(g.map.city, node, vec(x + CITY_GRID, y));
       for (let i = -4; i <= 4; i += 1.5) {
-        this.rect(x + i, y - 7.7, 0.7, 2, '#9ba39b9a'); this.rect(x + i, y + 5.7, 0.7, 2, '#9ba39b9a');
-        this.rect(x - 7.7, y + i, 2, 0.7, '#9ba39b9a'); this.rect(x + 5.7, y + i, 2, 0.7, '#9ba39b9a');
+        if (north) this.rect(x + i, y - 7.7, 0.7, 2, '#9ba39b9a');
+        if (south) this.rect(x + i, y + 5.7, 0.7, 2, '#9ba39b9a');
+        if (west) this.rect(x - 7.7, y + i, 2, 0.7, '#9ba39b9a');
+        if (east) this.rect(x + 5.7, y + i, 2, 0.7, '#9ba39b9a');
       }
       this.rect(x + 2.4, y + 8, 3, 0.2, '#bdc4b59a'); this.rect(x - 5.4, y - 8.2, 3, 0.2, '#bdc4b59a');
     }
@@ -443,14 +467,17 @@ export class Renderer {
       trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
-        this.rect(-4.3, 3.55, 8.6, 1.0, '#182320dd');
+        const sign = prop.building?.presentation.sign ?? { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };
+        const signWidth = Math.min(sign.width, b.w - 1.4), signY = b.h / 2 - sign.inset;
+        this.rect(-signWidth / 2, signY - 0.5, signWidth, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
-        this.label(prop.label, 0, 81, 20 * Math.min(0.72, 8.6 / Math.max(1, prop.label.length * 0.65)), prop.label === 'PIT STOP' ? MINT : '#f0dfae', '700');
+        this.label(prop.label, 0, signY * 20, 20 * Math.min(sign.size, signWidth / Math.max(1, prop.label.length * 0.65)), sign.color, '700');
         c.restore();
       }
       c.restore(); return;
     }
+    if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
     if (prop.kind === 'guardrail') {
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#314847');
       this.rect(-b.w / 2, -b.h / 2 - 0.12, b.w, b.h * 0.55, prop.color);
@@ -850,7 +877,16 @@ export class Renderer {
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
     trace(c, BEACH_OUTLINE, true); c.fillStyle = '#d9bd88'; c.fill();
     c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
-    for (const b of g.world.blocks) { c.fillStyle = b.park ? '#456955' : '#3c4b50'; c.fillRect(b.x + 7, b.y + 7, 26, 26); }
+    for (const b of g.world.blocks) {
+      if (b.campusId) continue;
+      c.fillStyle = b.park ? '#456955' : '#293b40'; c.fillRect(b.x + 7, b.y + 7, 26, 26);
+    }
+    for (const site of g.map.city.campuses) {
+      c.fillStyle = '#586d66'; c.fillRect(site.position.x - site.width / 2, site.position.y - site.height / 2, site.width, site.height);
+    }
+    for (const building of g.map.city.buildings) {
+      c.fillStyle = '#64726d'; c.fillRect(building.position.x - building.width / 2, building.position.y - building.height / 2, building.width, building.height);
+    }
     for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
     if (this.navigationRouteVisible) { c.strokeStyle = navigationTargetColours[this.targetKind()]; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
     c.restore();

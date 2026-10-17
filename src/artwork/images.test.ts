@@ -38,7 +38,7 @@ describe('artwork image caching', () => {
     const loading = art.load();
     expect(art.load()).toBe(loading);
     await loading;
-    expect(images).toHaveLength(5);
+    expect(images).toHaveLength(6);
     expect(createElement).toHaveBeenCalledExactlyOnceWith('canvas');
     expect(tile).toMatchObject({ width: 768, height: 384 });
     expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[4], 0, 0);
@@ -96,5 +96,14 @@ describe('artwork image caching', () => {
     expect(main.calls.createPattern).toHaveBeenCalledTimes(2);
     expect(main.calls.createPattern.mock.calls).toEqual([[tile, 'repeat'], [tile, 'repeat']]);
     expect(main.calls.fillRect).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws the hospital crop at its collision-centred bounds and fails cleanly without a decoded image', async () => {
+    const { images } = browser();
+    const art = new ArtworkImages(), main = canvasContext();
+    expect(art.draw(main.ctx, propArtwork.hospital)).toBe(false);
+    await art.load();
+    expect(art.draw(main.ctx, propArtwork.hospital)).toBe(true);
+    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[5], 33, 16, 726, 1951, -13.3, -33.3, 26.6, 66.6);
   });
 });

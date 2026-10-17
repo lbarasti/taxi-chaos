@@ -3,6 +3,7 @@ import shopRust from '../assets/map/shop-rust.png?inline';
 import shopConcrete from '../assets/map/shop-concrete.png?inline';
 import tree from '../assets/map/tree-worn.png?inline';
 import asphalt from '../assets/map/asphalt.svg?inline';
+import hospital from '../assets/map/hospital-structure.png?inline';
 import { asphaltArtwork, type ArtBounds, type PropArtwork } from './catalogue';
 
 /** One decoded image per asset, shared by normal games and editor previews. */
@@ -11,8 +12,10 @@ export class ArtworkImages {
   private groundTile?: HTMLCanvasElement;
   private loading?: Promise<void>;
   private patterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
+  private roofTile?: HTMLCanvasElement;
+  private roofPatterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
   load(): Promise<void> {
-    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt }).map(([id, src]) => new Promise<void>(resolve => {
+    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt, 'hospital-roof': hospital }).map(([id, src]) => new Promise<void>(resolve => {
       const image = new Image();
       image.onload = () => { this.images.set(id, image); resolve(); };
       // Individual failures retain procedural fallback artwork, including in offline builds.
@@ -32,12 +35,36 @@ export class ArtworkImages {
     });
   }
   has(id: string): boolean { return this.images.has(id); }
+  /** Reuse the existing tar roof's bare membrane at metre scale. Crop out its
+   * shop fixtures; enlarged buildings draw their own human-scale equipment. */
+  roof(c: CanvasRenderingContext2D, bounds: ArtBounds): void {
+    const image = this.images.get('shop-tar');
+    if (!image) return;
+    if (!this.roofTile) {
+      const tile = document.createElement('canvas'); tile.width = 100; tile.height = 80;
+      const ctx = tile.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(image, 40, 112, 100, 80, 0, 0, 100, 80); this.roofTile = tile;
+    }
+    let pattern = this.roofPatterns.get(c);
+    if (!pattern) {
+      pattern = c.createPattern(this.roofTile, 'repeat') ?? undefined;
+      if (!pattern) return;
+      pattern.setTransform(new DOMMatrix().scale(0.05, 0.05));
+      this.roofPatterns.set(c, pattern);
+    }
+    c.save(); c.globalAlpha *= 0.38; c.fillStyle = pattern;
+    c.fillRect(bounds.x, bounds.y, bounds.width, bounds.height); c.restore();
+  }
   draw(c: CanvasRenderingContext2D, art: PropArtwork): boolean {
     const image = this.images.get(art.image);
     if (!image) return false;
     const b = art.bounds;
     c.save(); c.rotate(art.rotation ?? 0);
-    c.drawImage(image, b.x, b.y, b.width, b.height); c.restore();
+    const source = art.source;
+    if (source) c.drawImage(image, source.x, source.y, source.width, source.height, b.x, b.y, b.width, b.height);
+    else c.drawImage(image, b.x, b.y, b.width, b.height);
+    c.restore();
     return true;
   }
   ground(c: CanvasRenderingContext2D, bounds: ArtBounds): void {

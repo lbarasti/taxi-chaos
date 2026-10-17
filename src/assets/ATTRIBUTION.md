@@ -5,7 +5,7 @@ https://fonts.google.com/specimen/Space+Grotesk
 Licensed under the SIL Open Font License 1.1.
 https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt
 
-All city art is drawn procedurally, not texture-based.
+City art combines procedural drawing and self-contained embedded artwork.
 
 `src/assets/characters/` includes the user-supplied PNG portraits for Mia,
 Frankie, Rosa, Celia, Adrian Vale and Bea. The nine Open Shore SVG identity
@@ -25,3 +25,10 @@ generation tool, using a user-supplied urban scene as a style reference. Prompt
 specifications are in `docs/map-artwork-prompts.md`. Transparent sprites are trimmed
 and resized for gameplay. `map/asphalt.svg` is original vector surface detail.
 These assets require no external fonts, images or runtime services.
+
+`map/hospital-structure.png` adapts the user-supplied
+`hospital-structure-v2.png` for the two-block Midtown Hospital. OpenAI's built-in
+image-generation tool extended the roof vertically and retained its weathered
+concrete, skylights, pipes and teal helipad. The original upload remains unchanged.
+The adaptation prompt and sprite alignment are recorded in
+`docs/hospital-artwork.md`. The PNG is bundled inline with a procedural fallback.
