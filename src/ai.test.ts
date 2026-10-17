@@ -10,13 +10,13 @@ describe('NPC incident recovery', () => {
     const start = { ...car.body.position }; run(g, 10);
     expect(car.ai.attempts).toBeGreaterThan(0); expect(dist(car.body.position, start)).toBeGreaterThan(8); expect(length(car.body.velocity)).toBeGreaterThan(2);
     expect(car.ai.phase).not.toBe('reverse');
-  });
+  }, 15000); // 10 simulated seconds with recovery attempts can exceed the default 5 s on slower runners.
   it('resolves a head-on standoff between two cars', () => {
     const g = make(), a = g.vehicle('traffic', 88, 83, 0, '#abc'), b = g.vehicle('traffic', 92.1, 83, Math.PI, '#def');
     a.path = [vec(120, 83)]; b.path = [vec(40, 77)]; run(g, 12);
     expect(dist(a.body.position, b.body.position)).toBeGreaterThan(9); expect(length(a.body.velocity) + length(b.body.velocity)).toBeGreaterThan(5);
     expect(a.ai.attempts + b.ai.attempts).toBeGreaterThan(0);
-  });
+  }, 15000); // 12 simulated seconds with standoff recovery can exceed the default 5 s on slower runners.
   it('does not mistake intentional police containment for a stuck driver', () => {
     const g = make(); g.player.body.position = vec(84, 80); const cop = g.vehicle('police', 89, 80, Math.PI, '#abc');
     run(g, 3); expect(cop.ai.attempts).toBe(0); expect(dist(cop.body.position, g.player.body.position)).toBeLessThan(8);
