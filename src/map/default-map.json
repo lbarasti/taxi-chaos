@@ -47,12 +47,11 @@
           "y": 259
         },
         "width": 28,
-        "style": "luxury-condo"
+        "type": "condo"
       },
       {
         "color": "#b2d4cb",
         "floors": 14,
-        "height": 11,
         "id": "hotel-pacific-palm",
         "name": "PACIFIC PALM HOTEL",
         "owner": "beach",
@@ -60,7 +59,7 @@
           "x": 200,
           "y": 263.5
         },
-        "width": 33
+        "type": "hotel"
       },
       {
         "color": "#dfa7a0",
@@ -74,7 +73,7 @@
           "y": 259
         },
         "width": 28,
-        "style": "luxury-condo"
+        "type": "condo"
       }
     ],
     "left": -42,
@@ -3375,7 +3374,7 @@
       ]
     }
   ],
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "stops": [
     {
       "id": "pine-junction",

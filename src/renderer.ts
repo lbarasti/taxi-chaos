@@ -14,7 +14,7 @@ import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint,
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { CITY_SHORE } from './coast';
 import { artworkImages } from './artwork/images';
-import { artworkFor, artRadius } from './artwork/catalogue';
+import { artworkFor, artRadius, fallbackScale } from './artwork/catalogue';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
 import { drawBeachGround, drawBeachProp } from './beach-renderer';
@@ -469,13 +469,20 @@ export class Renderer {
       }
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
-        const sign = prop.building?.presentation.sign ?? { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };
-        const signWidth = Math.min(sign.width, b.w - 1.4), signY = b.h / 2 - sign.inset;
-        this.rect(-signWidth / 2, signY - 0.5, signWidth, 1.0, '#182320dd');
+        const sign = prop.presentation?.sign ?? prop.building?.presentation.sign ?? { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };
+        // The sign centre follows the presentation's normalized local offset, defaulting
+        // to the south face, so it tracks the parent position and any resize.
+        const signWidth = Math.min(sign.width, b.w - 1.4), signX = (sign.offset?.x ?? 0) * b.w, signY = (sign.offset?.y ?? 0.5) * b.h - sign.inset;
+        this.rect(signX - signWidth / 2, signY - 0.5, signWidth, 1.0, '#182320dd');
         // Rasterize at a normal font size; subpixel Canvas fonts lose glyph strokes.
         c.save(); c.scale(0.05, 0.05);
-        this.label(prop.label, 0, signY * 20, 20 * Math.min(sign.size, signWidth / Math.max(1, prop.label.length * 0.65)), sign.color, '700');
+        this.label(prop.label, signX * 20, signY * 20, 20 * Math.min(sign.size, signWidth / Math.max(1, prop.label.length * 0.65)), sign.color, '700');
         c.restore();
+        for (const feature of prop.features ?? []) if (feature.role === 'sign' && feature.label) {
+          c.save(); c.scale(0.05, 0.05);
+          this.label(feature.label, feature.offset.x * b.w * 20, feature.offset.y * b.h * 20, 11, sign.color, '700');
+          c.restore();
+        }
       }
       c.restore(); return;
     }
@@ -555,6 +562,9 @@ export class Renderer {
       c.strokeStyle = '#26383c'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(0.6, 0); c.lineTo(1.2, 0); c.lineTo(1.2, 0.8); c.lineTo(0.6, 0.8); c.stroke();
       if (prop.fire > 0) drawFire(c, vec(), 1.4, this.game.time, prop.id);
     } else if (prop.kind === 'tree') {
+      // Missing or failed PNG: draw the canopy at the resolved extent so the fallback
+      // matches the typed artwork and collider rather than a fixed sprite size.
+      const s = fallbackScale(prop); c.save(); c.scale(s.x, s.y);
       this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80');
       if (isCountry(b.position)) {
         for (const r of [2.4, 1.7, 1]) {
@@ -562,6 +572,7 @@ export class Renderer {
           trace(c, needles, true); c.fillStyle = r === 2.4 ? '#233f36' : r === 1.7 ? prop.color : '#63816a'; c.fill();
         }
       } else { this.circle(vec(), 1.9, '#294c43'); this.circle(vec(-0.25, -0.3), 1.6, prop.color); this.circle(vec(-0.6, -0.7), 0.8, '#6b92724a'); }
+      c.restore();
     } else if (prop.kind === 'hydrant') {
       this.shadowCircle(vec(0.15 + so.x, 0.2 + so.y), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
     } else if (prop.kind === 'lamp') {
@@ -573,7 +584,11 @@ export class Renderer {
       this.shadowRect(-b.w / 2 + 0.3 + so.x, -b.h / 2 + 0.4 + so.y, b.w, b.h, '#17272e80'); this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#d5bba0');
       this.rect(-b.w / 2, -b.h / 2, b.w, 0.4, '#ded4b5'); this.label(prop.label, 0, 0, 0.55, '#f1e3ca', '700');
     } else if (prop.kind === 'crate') {
+      // Missing or failed PNG: scale the nominal crate sprite to the resolved body so the
+      // drawn box never disagrees with the collider.
+      const s = fallbackScale(prop); c.save(); c.scale(s.x, s.y);
       this.rect(-0.7, -0.7, 1.4, 1.4, prop.color, '#725744'); this.rect(-0.65, -0.12, 1.3, 0.24, '#796346'); c.strokeStyle = '#796346'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(-0.5, -0.5); c.lineTo(0.5, 0.5); c.stroke();
+      c.restore();
     } else if (prop.kind === 'bench') {
       this.rect(-1.2, -0.4, 2.4, 0.8, '#23373b'); for (let y = -0.33; y < 0.4; y += 0.25) this.rect(-1.2, y, 2.4, 0.17, prop.color); this.rect(-0.9, -0.6, 0.2, 1.1, '#263a3d'); this.rect(0.7, -0.6, 0.2, 1.1, '#263a3d');
     } else if (prop.kind === 'barrier') {

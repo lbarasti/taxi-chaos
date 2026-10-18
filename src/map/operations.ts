@@ -1,7 +1,9 @@
 import { Body, add, scale, sub, vec, type Vec } from '../physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles';
+import { objectDefinitions } from '../artwork/catalogue';
+import { objectKindRegistry, type KindRegistry, type ObjectCatalogue } from '../catalogue/schema';
 import { copyDefaultMap } from './default';
-import { assertMap, type AuthoredCollection, type AuthoredDescriptor, type MapDocument } from './schema';
+import { assertMap, type AuthoredCollection, type AuthoredDescriptor, type CountryProp, type MapDocument } from './schema';
 import { exportMap, importMap, revision } from './serialization';
 
 export type MapOperation =
@@ -25,9 +27,30 @@ export function nextEntityId(d: MapDocument, prefix: string) {
   const used = new Set([...entities(d), ...d.districts, ...d.roads, ...d.constraints].map(e => e.id));
   for (let i = 1; ; i++) if (!used.has(`${prefix}-${i}`)) return `${prefix}-${i}`;
 }
-export function descriptorBody(e: AuthoredDescriptor): Body {
-  if ('width' in e) { const b = new Body(e.position.x, e.position.y, 1, e.width, e.height); b.angle = e.angle; return b; }
-  return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
+/** Physical body for an authored descriptor. Typed country props and type-only hotel
+ * placements resolve their footprint from the passed catalogue; a descriptor with
+ * neither explicit dimensions nor a known type is a caller error, never a 0.2 m fallback. */
+export function descriptorBody(e: AuthoredDescriptor, catalogue: ObjectCatalogue = objectDefinitions): Body {
+  if ('model' in e) return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
+  const { width, height } = sizeOf(catalogue, e.type, e.width, e.height);
+  const b = new Body(e.position.x, e.position.y, 1, width, height); b.angle = e.angle; return b;
+}
+/** Resolved footprint for a placement that may rely on a catalogue type default. */
+export function sizeOf(catalogue: ObjectCatalogue, type: string | undefined, width: number | undefined, height: number | undefined): { width: number; height: number } {
+  const definition = type === undefined ? undefined : catalogue[type];
+  const w = width ?? definition?.width, h = height ?? definition?.height;
+  if (w === undefined || h === undefined) throw new Error('Descriptor needs explicit dimensions or a known catalogue type');
+  return { width: w, height: h };
+}
+/** Build a country prop descriptor from the authoring form's editable fields. The form
+ * never exposes `artworkScale` or `features`, so those per-instance values are retained
+ * from the existing descriptor instead of being dropped by an untouched replace. */
+export function countryPropDescriptor(existing: CountryProp | undefined, edited: Omit<CountryProp, 'artworkScale' | 'features'>): CountryProp {
+  return {
+    ...edited,
+    ...(existing?.artworkScale === undefined ? {} : { artworkScale: existing.artworkScale }),
+    ...(existing?.features === undefined ? {} : { features: existing.features }),
+  };
 }
 export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   const e = entities(d).find(e => e.id === id);
@@ -38,7 +61,7 @@ export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   if ('points' in e) return e.points.reduce((sum, p) => add(sum, scale(p, 1 / e.points.length)), vec());
   if ('left' in e) return vec((e.left + e.right) / 2, (e.top + e.bottom) / 2);
 }
-export function describe(d: MapDocument, id: string) {
+export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue = objectDefinitions) {
   const district = d.districts.find(e => e.id === id), entity = entities(d).find(e => e.id === id), road = d.roads.find(e => e.id === id);
   if (!district && !entity && !road) throw new Error(`Unknown ID: ${id}`);
   const members = district ? entities(d).filter(e => e.owner === id) : entity ? [entity] : [];
@@ -46,7 +69,7 @@ export function describe(d: MapDocument, id: string) {
   const rectangle = (p: Vec, w: number, h: number) => positions.push(vec(p.x - w / 2, p.y - h / 2), vec(p.x + w / 2, p.y + h / 2));
   for (const e of members) {
     if (authoredCollection(d, e.id)) {
-      const authored = e as AuthoredDescriptor; positions.push(...descriptorBody(authored).corners());
+      const authored = e as AuthoredDescriptor; positions.push(...descriptorBody(authored, catalogue).corners());
       if ('occupied' in authored) { const bay = new Body(authored.position.x, authored.position.y, 1, 5.4, 2.6); bay.angle = authored.angle; positions.push(...bay.corners()); }
       if ('path' in authored) positions.push(...authored.path);
     }
@@ -57,7 +80,7 @@ export function describe(d: MapDocument, id: string) {
       const p = entityPosition(d, e.id), hotel = d.beach.hotels.find(h => h.id === e.id);
       if (p) {
         if (d.villas.some(v => v.id === e.id)) rectangle(p, 42, 34);
-        else if (hotel) rectangle(p, hotel.width, hotel.height);
+        else if (hotel) { const size = sizeOf(catalogue, hotel.type, hotel.width, hotel.height); rectangle(p, size.width, size.height); }
         else if (d.beach.towers.some(v => v.id === e.id)) rectangle(p, 4.6, 4.2);
         else if (d.beach.sets.some(v => v.id === e.id)) rectangle(add(p, vec(0, 1.7)), 8, 7);
         else positions.push(p);
@@ -99,8 +122,9 @@ function moveEntity(d: MapDocument, id: string, delta: Vec, changed: Set<string>
 }
 
 /** Pure atomic transaction. No mutation reaches the caller until every operation validates. */
-export function applyOperations(input: MapDocument, batch: MapBatch) {
-  if (!batch || Object.keys(batch).sort().join(',') !== 'baseRevision,operations' || batch.baseRevision !== revision(input)) throw new Error('Stale or malformed base revision; take a fresh snapshot');
+export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: ObjectCatalogue = objectDefinitions) {
+  const kinds = objectKindRegistry(catalogue);
+  if (!batch || Object.keys(batch).sort().join(',') !== 'baseRevision,operations' || batch.baseRevision !== revision(input, kinds)) throw new Error('Stale or malformed base revision; take a fresh snapshot');
   if (!Array.isArray(batch.operations) || !batch.operations.length || batch.operations.length > 100) throw new Error('Expected 1–100 operations');
   const d = structuredClone(input), changed = new Set<string>();
   for (const op of batch.operations) {
@@ -111,7 +135,7 @@ export function applyOperations(input: MapDocument, batch: MapBatch) {
       if (!['countryProps', 'parking', 'trafficSpawns'].includes(op.collection)) throw new Error('Unknown authored collection');
       if (!op.descriptor || typeof op.descriptor !== 'object') throw new Error('Malformed descriptor');
       (d[op.collection] as AuthoredDescriptor[]).push(structuredClone(op.descriptor));
-      assertMap(d); changed.add(op.descriptor.id);
+      assertMap(d, kinds); changed.add(op.descriptor.id);
     } else if (op.type === 'delete' || op.type === 'duplicate' || op.type === 'replace') {
       const key = authoredCollection(d, op.targetId);
       if (!key) throw new Error('Add/delete/duplicate/replace supports countryProps, parking and trafficSpawns only');
@@ -123,9 +147,9 @@ export function applyOperations(input: MapDocument, batch: MapBatch) {
       } else {
         finitePoint(op.delta);
         const e = structuredClone(items[index]); e.id = op.newId; items.push(e);
-        assertMap(d); moveEntity(d, e.id, op.delta, changed);
+        assertMap(d, kinds); moveEntity(d, e.id, op.delta, changed);
       }
-      assertMap(d); changed.add(op.targetId);
+      assertMap(d, kinds); changed.add(op.targetId);
     } else if (op.type === 'envelope') { finitePoint(op.min); finitePoint(op.max); d.envelope = { min: { ...op.min }, max: { ...op.max } }; changed.add('envelope'); }
     else if (op.type === 'translate') {
       finitePoint(op.delta);
@@ -146,29 +170,32 @@ export function applyOperations(input: MapDocument, batch: MapBatch) {
       if (!Number.isFinite(op.width) || !Number.isFinite(op.height) || op.width <= 0 || op.height <= 0) throw new Error('Dimensions must be positive finite metres');
       const e = entities(d).find(e => e.id === op.targetId);
       if (!e || !authoredCollection(d, e.id) && !d.districts.find(o => o.id === e.owner)!.editable) throw new Error('Unknown/read-only object');
-      if ('width' in e) { e.width = op.width; e.height = op.height; }
+      if (authoredCollection(d, e.id) === 'countryProps') { const country = e as CountryProp; country.width = op.width; country.height = op.height; }
+      else if (d.beach.hotels.some(h => h.id === e.id)) { const hotel = e as MapDocument['beach']['hotels'][number]; hotel.width = op.width; hotel.height = op.height; }
+      else if ('width' in e) { e.width = op.width; e.height = op.height; }
       else if ('left' in e) { const center = entityPosition(d, e.id)!; e.left = center.x - op.width / 2; e.right = center.x + op.width / 2; e.top = center.y - op.height / 2; e.bottom = center.y + op.height / 2; }
       else throw new Error('Dimensions are editable only for country props, golf, hotels and promenade');
       changed.add(e.id);
     } else throw new Error('Unknown operation type');
   }
-  assertMap(d);
-  return { document: d, revision: revision(d), changedIds: [...changed].sort(), affectedConnections: d.roads.filter(r => [r.from, ...r.via, r.to].some(id => changed.has(id))).map(r => r.id) };
+  assertMap(d, kinds);
+  return { document: d, revision: revision(d, kinds), changedIds: [...changed].sort(), affectedConnections: d.roads.filter(r => [r.from, ...r.via, r.to].some(id => changed.has(id))).map(r => r.id) };
 }
 
 export class MapHistory {
   private document: MapDocument;
   private past: MapDocument[] = []; private future: MapDocument[] = [];
-  constructor(document = copyDefaultMap()) { assertMap(document); this.document = structuredClone(document); }
-  snapshot() { return { schemaVersion: 2, revision: revision(this.document), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
-  describe(id: string) { return describe(this.document, id); }
+  private readonly kinds: KindRegistry;
+  constructor(document = copyDefaultMap(), private readonly catalogue: ObjectCatalogue = objectDefinitions) { this.kinds = objectKindRegistry(catalogue); assertMap(document, this.kinds); this.document = structuredClone(document); }
+  snapshot() { return { schemaVersion: 3, revision: revision(this.document, this.kinds), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
+  describe(id: string) { return describe(this.document, id, this.catalogue); }
   apply(batch: MapBatch) {
-    const result = applyOperations(this.document, batch);
-    if (result.revision !== revision(this.document)) { this.past.push(this.document); if (this.past.length > 100) this.past.shift(); this.document = result.document; this.future = []; }
+    const result = applyOperations(this.document, batch, this.catalogue);
+    if (result.revision !== revision(this.document, this.kinds)) { this.past.push(this.document); if (this.past.length > 100) this.past.shift(); this.document = result.document; this.future = []; }
     return structuredClone(result);
   }
   undo() { const previous = this.past.pop(); if (previous) { this.future.push(this.document); this.document = previous; } return this.snapshot(); }
   redo() { const next = this.future.pop(); if (next) { this.past.push(this.document); this.document = next; } return this.snapshot(); }
-  export() { return exportMap(this.document); }
-  import(json: string) { const next = importMap(json); if (revision(next) !== revision(this.document)) { this.past.push(this.document); if (this.past.length > 100) this.past.shift(); this.document = next; this.future = []; } return this.snapshot(); }
+  export() { return exportMap(this.document, this.kinds); }
+  import(json: string) { const next = importMap(json, this.kinds); if (revision(next, this.kinds) !== revision(this.document, this.kinds)) { this.past.push(this.document); if (this.past.length > 100) this.past.shift(); this.document = next; this.future = []; } return this.snapshot(); }
 }

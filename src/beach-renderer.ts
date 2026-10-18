@@ -69,10 +69,14 @@ export function drawBeachGround(r: Renderer) {
     path(r, [vec(x, PROMENADE.top - 2.3), vec(x, PROMENADE.top - 0.7)], '#f4ebcf', 0.2);
     r.circle(vec(x, PROMENADE.top - 1.9), 0.15, '#718984');
   }
-  for (const hotel of BEACH_HOTELS.filter(h => h.style !== 'luxury-condo')) {
+  for (const hotel of BEACH_HOTELS) {
+    // Entrance apron copy comes from the catalogue record, so no hotel-style branch
+    // decides which buildings get a labelled frontage.
+    const apron = hotel.presentation?.apron;
+    if (!apron) continue;
     const front = hotel.position.y - hotel.height / 2;
     r.rect(hotel.position.x - hotel.width / 2, front - 1.3, hotel.width, 1.3, '#b4b4a4');
-    label(r, 'PRIVATE FRONTAGE', hotel.position.x, front - 0.7, 0.48, '#6d7772', '700');
+    label(r, apron, hotel.position.x, front - 0.7, 0.48, '#6d7772', '700');
   }
   if (r.visible(vec(28, 249.5), 12)) label(r, 'BEACH PATROL / OFF-ROAD PARKING', 28, 246.8, 0.6, '#84744e', '700');
 }
@@ -112,7 +116,7 @@ function drawHotel(r: Renderer, prop: Prop) {
   label(r, prop.label, 0, roofBottom - 0.7, 0.85, '#38565b', '700');
   label(r, `${hotel.floors} STOREYS / OCEANFRONT LUXURY`, 0, roofBottom - 1.5, 0.55, '#38565b', '700');
   r.rect(-4.2, h / 2 - 0.85, 8.4, 0.85, '#526e70');
-  label(r, hotel.style === 'luxury-condo' ? 'RESIDENTS ONLY' : 'GUESTS ONLY', 0, h / 2 - 0.4, 0.65, '#f3e5c7', '700');
+  label(r, hotel.presentation?.frontage ?? 'GUESTS ONLY', 0, h / 2 - 0.4, 0.65, '#f3e5c7', '700');
   c.restore();
 }
 

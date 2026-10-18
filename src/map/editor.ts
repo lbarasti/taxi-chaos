@@ -5,8 +5,9 @@ import { add, dist, scale, sub, vec, type Vec } from '../physics';
 import { World } from '../world';
 import { vehicleDefinitions } from '../vehicles';
 import { compileMap } from './compile';
-import { MapHistory, entities, nextEntityId, type MapBatch, type MapOperation } from './operations';
-import { countryPropKinds, type AuthoredCollection, type AuthoredDescriptor } from './schema';
+import { MapHistory, countryPropDescriptor, entities, nextEntityId, type MapBatch, type MapOperation } from './operations';
+import { countryPropKinds, type AuthoredCollection, type AuthoredDescriptor, type MapDocument } from './schema';
+import { objectDefinitions } from '../artwork/catalogue';
 import { EditorRenderer, type Layers } from './editor-renderer';
 import { validateMap, type Validation } from './validation';
 import { createPreview } from './preview';
@@ -36,7 +37,7 @@ export class MapEditor {
       <header class="editor-header"><div><span class="editor-eyebrow">TAXI CHAOS / WORLD AUTHORING</span><h1>Map studio<span class="editor-draft">DRAFT</span></h1></div><div class="editor-toolbar"><button data-map="undo">Undo</button><button data-map="redo">Redo</button><button data-map="import">Import</button><button data-map="export">Export JSON</button><button data-map="close">Close editor</button></div></header>
       <div class="editor-main"><div class="editor-stage"><div class="editor-camera"><button data-map="fit">Fit map</button><button data-map="fit-selection">Fit selection</button><button data-map="zoom-in" aria-label="Zoom in">+</button><button data-map="zoom-out" aria-label="Zoom out">−</button><button data-map="measure" aria-pressed="false">Measure</button><label>Snap <select data-map="snap" aria-label="Grid snapping"><option value="0">Off</option><option value="1" selected>1 m</option><option value="5">5 m</option><option value="10">10 m</option></select></label></div><canvas data-map="canvas" tabindex="0" aria-label="Map overview. Drag selected geometry to move; Shift-drag or middle-drag to pan; wheel to zoom."></canvas><div class="editor-stage-note">Select → drag or enter metres. Shift-drag pans · wheel zooms · Ctrl/⌘ Z undoes</div></div>
       <aside class="editor-inspector"><section><div class="editor-section-title">INSPECT / EDIT <span data-map="revision"></span></div><label>Selection<select data-map="selection" aria-label="Map selection"></select></label><div data-map="description" class="editor-description"></div><div data-map="placement"><div class="editor-fields"><label>X (m)<input data-map="x" type="number" step="0.1"></label><label>Y (m)<input data-map="y" type="number" step="0.1"></label></div><button data-map="move">Set position</button></div><div data-map="dimensions"><div class="editor-fields"><label>Width (m)<input data-map="width" type="number" step="0.1" min="1"></label><label>Height (m)<input data-map="height" type="number" step="0.1" min="1"></label></div><button data-map="resize">Set dimensions</button></div><div class="editor-fields"><label>Δ X (m)<input data-map="dx" type="number" step="1" value="0"></label><label>Δ Y (m)<input data-map="dy" type="number" step="1" value="20"></label></div><button data-map="translate" class="editor-primary">Translate selection</button></section>
-      <section><div class="editor-section-title">AUTHOR CONTENT</div><label>Content type<select data-map="collection" name="map-collection" aria-label="Content type"><option value="countryProps">Country prop</option><option value="parking">Parking bay</option><option value="trafficSpawns">Traffic spawn</option></select></label><label>New / duplicate ID<input data-map="new-id" name="map-new-id" maxlength="160"></label><label>Owner district<select data-map="owner" name="map-owner" aria-label="Owner district"></select></label><div data-map="prop-fields"><label>Prop kind<select data-map="prop-kind" name="map-prop-kind" aria-label="Prop kind">${countryPropKinds.map(k => `<option>${k}</option>`).join('')}</select></label><div class="editor-fields"><label>Prop width (m)<input data-map="prop-width" name="map-prop-width" type="number" min="0.2" max="100" step="0.1"></label><label>Prop height (m)<input data-map="prop-height" name="map-prop-height" type="number" min="0.2" max="100" step="0.1"></label></div><label>Label<input data-map="label" name="map-label" maxlength="160"></label></div><div data-map="vehicle-fields"><label>Vehicle model<select data-map="model" name="map-model" aria-label="Vehicle model"></select></label></div><div class="editor-fields"><label>Angle (rad)<input data-map="angle" name="map-angle" type="number" min="-6.2832" max="6.2832" step="0.1"></label><label>Colour<input data-map="color" name="map-color" type="color"></label></div><div data-map="parking-fields" class="editor-layers"><label><input data-map="occupied" name="map-occupied" type="checkbox">Occupied</label><label><input data-map="lot" name="map-lot" type="checkbox">Public lot marking</label></div><label data-map="path-field">Initial waypoints (JSON, metres)<textarea data-map="path" name="map-path" rows="3" aria-label="Initial traffic waypoints"></textarea></label><button data-map="add" class="editor-primary">Add at view centre</button><button data-map="properties">Apply selected properties</button><div class="editor-fields"><button data-map="duplicate">Duplicate selection</button><button data-map="delete">Delete selection</button></div><small>Duplicates use Δ X / Δ Y above. All edits support Undo.</small></section>
+      <section><div class="editor-section-title">AUTHOR CONTENT</div><label>Content type<select data-map="collection" name="map-collection" aria-label="Content type"><option value="countryProps">Country prop</option><option value="parking">Parking bay</option><option value="trafficSpawns">Traffic spawn</option></select></label><label>New / duplicate ID<input data-map="new-id" name="map-new-id" maxlength="160"></label><label>Owner district<select data-map="owner" name="map-owner" aria-label="Owner district"></select></label><div data-map="prop-fields"><label>Prop kind<select data-map="prop-kind" name="map-prop-kind" aria-label="Prop kind">${countryPropKinds.map(k => `<option>${k}</option>`).join('')}</select></label><label>Catalogue type<select data-map="prop-type" name="map-prop-type" aria-label="Catalogue object type"></select></label><div class="editor-fields"><label>Prop width (m)<input data-map="prop-width" name="map-prop-width" type="number" min="0.2" max="100" step="0.1"></label><label>Prop height (m)<input data-map="prop-height" name="map-prop-height" type="number" min="0.2" max="100" step="0.1"></label></div><label>Label<input data-map="label" name="map-label" maxlength="160"></label></div><div data-map="vehicle-fields"><label>Vehicle model<select data-map="model" name="map-model" aria-label="Vehicle model"></select></label></div><div class="editor-fields"><label>Angle (rad)<input data-map="angle" name="map-angle" type="number" min="-6.2832" max="6.2832" step="0.1"></label><label>Colour<input data-map="color" name="map-color" type="color"></label></div><div data-map="parking-fields" class="editor-layers"><label><input data-map="occupied" name="map-occupied" type="checkbox">Occupied</label><label><input data-map="lot" name="map-lot" type="checkbox">Public lot marking</label></div><label data-map="path-field">Initial waypoints (JSON, metres)<textarea data-map="path" name="map-path" rows="3" aria-label="Initial traffic waypoints"></textarea></label><button data-map="add" class="editor-primary">Add at view centre</button><button data-map="properties">Apply selected properties</button><div class="editor-fields"><button data-map="duplicate">Duplicate selection</button><button data-map="delete">Delete selection</button></div><small>Duplicates use Δ X / Δ Y above. All edits support Undo.</small></section>
       <section><div class="editor-section-title">LAYERS</div><div class="editor-layers">${Object.entries(this.viewLayers()).map(([key, value]) => `<label><input type="checkbox" data-layer="${key}" ${value ? 'checked' : ''}>${key === 'points' ? 'Points / anchors' : key}</label>`).join('')}</div></section>
       <section><div class="editor-section-title">MAP ENVELOPE / METRES</div><div class="editor-fields">${['min-x', 'min-y', 'max-x', 'max-y'].map(key => `<label>${key.replace('-', ' ')}<input type="number" data-map="${key}" step="1"></label>`).join('')}</div><button data-map="envelope">Set envelope</button></section>
       <section><div class="editor-section-title">VALIDATION <span data-map="summary"></span></div><strong data-map="gap" class="editor-gap"></strong><small data-map="resolution"></small><div data-map="findings" class="editor-findings"></div></section>
@@ -50,6 +51,8 @@ export class MapEditor {
   private viewLayers(): Layers { return { land: true, roads: true, objects: true, scenery: true, colliders: false, navigation: false, findings: true, points: false }; }
   private q<T extends HTMLElement = HTMLElement>(key: string) { return this.element.querySelector<T>(`[data-map="${key}"]`)!; }
   private number(key: string) { const input = this.q<HTMLInputElement>(key); if (!input.value.trim() || !Number.isFinite(input.valueAsNumber)) throw new Error(`Enter a finite number for ${key}`); return input.valueAsNumber; }
+  /** Blank inputs are an omitted optional override, not an error. */
+  private optionalNumber(key: string) { const input = this.q<HTMLInputElement>(key); if (!input.value.trim()) return undefined; if (!Number.isFinite(input.valueAsNumber)) throw new Error(`Enter a finite number for ${key}`); return input.valueAsNumber; }
   private status(text: string, error = false) { this.q('status').textContent = text; this.q('status').classList.toggle('editor-error', error); }
   private attempt(action: () => unknown) { try { action(); } catch (error) { this.status((error as Error).message, true); } }
   private rebuild() { this.compiled = compileMap(this.history.snapshot().document); this.world = new World(this.compiled); this.validation = validateMap(this.compiled.document, this.compiled, this.world); this.refresh(); this.draw(); }
@@ -74,8 +77,10 @@ export class MapEditor {
     this.q('placement').hidden = !p;
     if (p) { this.q<HTMLInputElement>('x').value = String(p.x); this.q<HTMLInputElement>('y').value = String(p.y); }
     let dimensions: { width: number; height: number } | undefined;
-    if (descriptor && 'width' in descriptor) dimensions = descriptor;
+    if (descriptor && 'width' in descriptor && descriptor.width !== undefined) dimensions = descriptor as { width: number; height: number };
+    else if (descriptor && 'floors' in descriptor) { const hotel = descriptor as MapDocument['beach']['hotels'][number], definition = objectDefinitions[hotel.type ?? 'hotel']; if (definition) dimensions = { width: hotel.width ?? definition.width, height: hotel.height ?? definition.height }; }
     else if (descriptor && 'left' in descriptor) dimensions = { width: descriptor.right - descriptor.left, height: descriptor.bottom - descriptor.top };
+    else if (description.collection === 'countryProps') { const prop = this.world.props.find(p => p.sourceId === this.selection); if (prop) dimensions = { width: prop.body.w, height: prop.body.h }; }
     this.q('dimensions').hidden = !dimensions;
     if (dimensions) { this.q<HTMLInputElement>('width').value = String(dimensions.width); this.q<HTMLInputElement>('height').value = String(dimensions.height); }
     for (const key of ['width', 'height']) this.q<HTMLInputElement>(key).min = description.collection === 'countryProps' ? '0.2' : '1';
@@ -104,8 +109,16 @@ export class MapEditor {
     this.q<HTMLSelectElement>('model').innerHTML = Object.entries(vehicleDefinitions).filter(([, v]) => key !== 'trafficSpawns' || v.ai.controller === 'road').map(([m]) => `<option>${m}</option>`).join('');
     this.q<HTMLSelectElement>('model').value = descriptor && 'model' in descriptor ? descriptor.model : 'car';
     this.q<HTMLSelectElement>('prop-kind').value = descriptor && 'kind' in descriptor ? descriptor.kind : 'tree';
-    this.q<HTMLInputElement>('prop-width').value = String(descriptor && 'width' in descriptor ? descriptor.width : 1.6);
-    this.q<HTMLInputElement>('prop-height').value = String(descriptor && 'height' in descriptor ? descriptor.height : 1.6);
+    // Owned country props may reference any catalogue type; the picker stays scoped to
+    // those props and never unlocks read-only city content.
+    this.q<HTMLSelectElement>('prop-type').innerHTML = `<option value="">(dimensions only)</option>` + Object.keys(objectDefinitions).map(id => `<option value="${escapeHTML(id)}">${escapeHTML(id)}</option>`).join('');
+    this.q<HTMLSelectElement>('prop-type').value = descriptor && 'type' in descriptor && descriptor.type ? descriptor.type : '';
+    const explicitWidth = descriptor && 'width' in descriptor ? descriptor.width : undefined;
+    const typed = descriptor && 'type' in descriptor && descriptor.type !== undefined;
+    // A typed placement with no override leaves the fields blank so the type default
+    // applies; an untyped placement still needs explicit dimensions.
+    this.q<HTMLInputElement>('prop-width').value = explicitWidth !== undefined ? String(explicitWidth) : typed ? '' : '1.6';
+    this.q<HTMLInputElement>('prop-height').value = descriptor && 'height' in descriptor && descriptor.height !== undefined ? String(descriptor.height) : typed ? '' : '1.6';
     this.q<HTMLInputElement>('label').value = descriptor && 'label' in descriptor ? descriptor.label : '';
     this.q<HTMLInputElement>('angle').value = String(descriptor?.angle ?? 0);
     // Catalogue angles include exact π/2 values, so a decimal step anchored to
@@ -119,7 +132,23 @@ export class MapEditor {
   private authoredDescriptor(id: string, position: Vec): AuthoredDescriptor {
     const key = this.q<HTMLSelectElement>('collection').value as AuthoredCollection;
     const base = { id, owner: this.q<HTMLSelectElement>('owner').value, position: { ...position }, angle: this.number('angle'), color: this.q<HTMLInputElement>('color').value };
-    if (key === 'countryProps') return { ...base, kind: this.q<HTMLSelectElement>('prop-kind').value as typeof countryPropKinds[number], width: this.number('prop-width'), height: this.number('prop-height'), label: this.q<HTMLInputElement>('label').value };
+    if (key === 'countryProps') {
+      // Preserve a catalogue type reference when editing an existing typed prop, and
+      // allow choosing/changing it from the picker without unlocking read-only city content.
+      const existing = this.history.snapshot().document.countryProps.find(p => p.id === id);
+      // The picker is seeded from the selected descriptor, so an untouched edit keeps the
+      // type; choosing "(dimensions only)" explicitly removes it.
+      const type = this.q<HTMLSelectElement>('prop-type').value || undefined;
+      const width = this.optionalNumber('prop-width'), height = this.optionalNumber('prop-height');
+      if ((width === undefined) !== (height === undefined)) throw new Error('Declare prop width and height together');
+      if (type === undefined && width === undefined) throw new Error('Enter a prop width or choose a catalogue type');
+      // `countryPropDescriptor` retains the per-instance fields the form does not edit
+      // (`artworkScale`, `features`), so an untouched replace loses no imported data.
+      return countryPropDescriptor(existing, { ...base, kind: this.q<HTMLSelectElement>('prop-kind').value as typeof countryPropKinds[number],
+        ...(type === undefined ? {} : { type }),
+        ...(width === undefined ? {} : { width, height }),
+        label: this.q<HTMLInputElement>('label').value });
+    }
     const model = this.q<HTMLSelectElement>('model').value as keyof typeof vehicleDefinitions;
     if (key === 'parking') return { ...base, model, occupied: this.q<HTMLInputElement>('occupied').checked, lot: this.q<HTMLInputElement>('lot').checked };
     return { ...base, model, path: JSON.parse(this.q<HTMLTextAreaElement>('path').value) };
@@ -131,6 +160,9 @@ export class MapEditor {
     on('zoom-in', () => this.zoom(1.4)); on('zoom-out', () => this.zoom(1 / 1.4));
     on('undo', () => this.api.undo()); on('redo', () => this.api.redo());
     this.q<HTMLSelectElement>('collection').addEventListener('change', () => { this.authorForm(this.q<HTMLSelectElement>('collection').value as AuthoredCollection); this.q<HTMLButtonElement>('properties').disabled = this.history.describe(this.selection).collection !== this.q<HTMLSelectElement>('collection').value; });
+    // Choosing a catalogue type also selects its behaviour kind, so kind mismatches are
+    // not typed by hand.
+    this.q<HTMLSelectElement>('prop-type').addEventListener('change', () => { const definition = objectDefinitions[this.q<HTMLSelectElement>('prop-type').value]; if (definition) this.q<HTMLSelectElement>('prop-kind').value = definition.kind; });
     on('add', () => { const id = this.q<HTMLInputElement>('new-id').value; this.apply([{ type: 'add', collection: this.q<HTMLSelectElement>('collection').value as AuthoredCollection, descriptor: this.authoredDescriptor(id, this.view.camera) }]); this.api.select(id); });
     on('properties', () => this.apply([{ type: 'replace', targetId: this.selection, descriptor: this.authoredDescriptor(this.selection, this.history.describe(this.selection).position!) }]));
     on('duplicate', () => { const id = this.q<HTMLInputElement>('new-id').value; this.apply([{ type: 'duplicate', targetId: this.selection, newId: id, delta: vec(this.number('dx'), this.number('dy')) }]); this.api.select(id); });

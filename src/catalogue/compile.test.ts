@@ -5,10 +5,10 @@ import { vec, type Vec } from '../physics';
 import { propArtwork, asphaltArtwork } from '../artwork/catalogue';
 import { buildingDefinitions } from '../buildings';
 import { artworkRecords, objectRecords } from './content';
-import { compileArtworkCatalogue, compileBuildingCatalogue, compileObjectCatalogue, compilePlacement, deriveArtwork } from './compile';
+import { compileArtworkCatalogue, compileBuildingCatalogue, compileObjectCatalogue, compileObjectPlacement, compilePlacement, deriveArtwork } from './compile';
 import { inlineEntries } from './generate';
 import { measureArtworkSources } from './png';
-import type { ArtworkRecord, BuildingSign, ObjectRecord } from './schema';
+import type { ArtworkRecord, BuildingCatalogue, BuildingSign, ObjectRecord } from './schema';
 
 const read = (png: string) => {
   try { return readFileSync(fileURLToPath(new URL(`../assets/${png}`, import.meta.url))); }
@@ -40,7 +40,7 @@ describe('shared catalogue compiler', () => {
     expect(building.artwork?.bounds.width).toBeCloseTo(18 * 1160 / 1213);
     expect(building.artwork?.bounds.x).toBeCloseTo(-building.artwork!.bounds.width / 2);
     expect(building.artwork?.bounds.y).toBeCloseTo(-9);
-    expect(objectRecords.every(record => record.id !== 'clinic')).toBe(true);
+    expect(objectRecords.some(record => (record.id as string) === 'clinic')).toBe(false);
   });
 
   it('fits artwork to the footprint by default and stretches or offsets it only when declared', () => {
@@ -58,9 +58,13 @@ describe('shared catalogue compiler', () => {
     const offset = deriveArtwork(compileObjectCatalogue([overhang], sourcesFor([overhang])).clinic.artwork![0], 20, 18);
     expect(offset.bounds).toEqual({ x: -9, y: -11.7, width: 22, height: 16.2 });
 
-    const outlined: ObjectRecord = { ...clinic(), artwork: { outline: [vec(0, -1), vec(1, 1), vec(-1, 1)] } };
+    const outlined: ObjectRecord = { ...clinic(), artwork: { fit: 'stretch', outline: { shape: 'path', points: [vec(0, -0.5), vec(0.5, 0.5), vec(-0.5, 0.5)] } } };
     const outline = deriveArtwork(compileObjectCatalogue([outlined], sourcesFor([outlined])).clinic.artwork![0], 20, 18);
-    expect(outline.silhouette).toEqual([vec(0, -1), vec(1, 1), vec(-1, 1)]);
+    expect(outline.silhouette).toEqual([vec(0, -9), vec(10, 9), vec(-10, 9)]);
+    // The normalized outline scales with the resolved art extent, so a resize keeps
+    // the shadow silhouette and light blocker aligned with the drawing.
+    const resizedOutline = deriveArtwork(compileObjectCatalogue([outlined], sourcesFor([outlined])).clinic.artwork![0], 40, 36);
+    expect(resizedOutline.silhouette).toEqual([vec(0, -18), vec(20, 18), vec(-20, 18)]);
     expect(outline.occluder).toBeUndefined();
   });
 
@@ -141,8 +145,8 @@ describe('shared catalogue compiler', () => {
   it('resolves default rectangles, circles and explicit silhouettes', () => {
     const objects: readonly ObjectRecord[] = [
       { id: 'rect', kind: 'crate', width: 8, height: 8, image: 'map/shop-tar.png' },
-      { id: 'circle', kind: 'tree', width: 4, height: 4, image: 'map/tree-worn.png', artwork: { outline: { shape: 'circle', radius: 1.5, points: 4 } } },
-      { id: 'explicit', kind: 'crate', width: 2, height: 2, image: 'map/tree-worn.png', artwork: { outline: [vec(0, -1), vec(1, 1), vec(-1, 1)] } },
+      { id: 'circle', kind: 'tree', width: 4, height: 4, image: 'map/tree-worn.png', artwork: { outline: { shape: 'circle', radius: 0.75, points: 4 } } },
+      { id: 'explicit', kind: 'crate', width: 2, height: 2, image: 'map/tree-worn.png', artwork: { outline: [vec(0, -0.5), vec(0.5, 0.5), vec(-0.5, 0.5)] } },
     ];
     const definitions = compileObjectCatalogue(objects, sourcesFor(objects));
     const art = (id: string) => deriveArtwork(definitions[id].artwork![0], definitions[id].width, definitions[id].height);
@@ -199,7 +203,12 @@ describe('shared catalogue compiler', () => {
       expect(hospitalOutline[i].x).toBeCloseTo(x);
       expect(hospitalOutline[i].y).toBeCloseTo(y);
     });
-    expect(propArtwork['luxury-condo']).toMatchObject({ bounds: { x: -7.15, y: -6.65, width: 14.3, height: 13.3 }, source: { x: 100, y: 60, width: 1055, height: 1090 }, castsShadow: false });
+    expect(propArtwork.condo.source).toEqual({ x: 100, y: 60, width: 1055, height: 1090 });
+    expect(propArtwork.condo.castsShadow).toBe(false);
+    expect(propArtwork.condo.bounds.x).toBeCloseTo(-7.15);
+    expect(propArtwork.condo.bounds.y).toBeCloseTo(-6.65);
+    expect(propArtwork.condo.bounds.width).toBeCloseTo(14.3);
+    expect(propArtwork.condo.bounds.height).toBeCloseTo(13.3);
     expect(propArtwork['tree-worn'].silhouette).toHaveLength(12);
     propArtwork['tree-worn'].silhouette.forEach((point: Vec, i: number) => {
       expect(point.x).toBeCloseTo(Math.cos(i * Math.PI / 6) * 2.4);
@@ -214,8 +223,33 @@ describe('shared catalogue compiler', () => {
     expect(buildingDefinitions.commercial.artwork).toBeUndefined();
     expect(buildingDefinitions.landmark).toMatchObject({ width: 23, height: 23, storeys: 8, presentation: { fallback: 'terraced', sign: commercialSign } });
     expect(buildingDefinitions.hospital.presentation).toEqual({ fallback: 'wards', sign: { width: 14, inset: 1.4, size: 0.9, color: '#f0dfae' } });
-    expect(artworkRecords.map(record => record.id)).toEqual(['shop-tar', 'shop-rust', 'shop-concrete', 'tree-worn', 'asphalt', 'luxury-condo']);
-    expect(objectRecords.map(record => record.id)).toEqual(['shop', 'commercial', 'landmark', 'hospital']);
-    expect(Object.keys(buildingDefinitions)).toEqual(objectRecords.map(record => record.id));
+    expect(buildingDefinitions.condo.presentation).toMatchObject({ frontage: 'RESIDENTS ONLY' });
+    expect(buildingDefinitions.hotel.presentation).toMatchObject({ frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE' });
+    expect(artworkRecords.map(record => record.id)).toEqual(['shop-tar', 'shop-rust', 'shop-concrete', 'tree-worn', 'asphalt']);
+    expect(objectRecords.map(record => record.id)).toEqual(['shop', 'commercial', 'landmark', 'hospital', 'condo', 'hotel', 'tree', 'crate', 'shipping-crate']);
+    expect(Object.keys(buildingDefinitions)).toEqual(['shop', 'commercial', 'landmark', 'hospital', 'condo', 'hotel']);
+  });
+
+  it('compiles a non-building placement generically and rejects it through the building compiler', () => {
+    const crate: ObjectRecord = { id: 'crate', kind: 'crate', width: 1.4, height: 1.4 };
+    const definitions = compileObjectCatalogue([crate]);
+    const placed = compileObjectPlacement({ id: 'crate-1', type: 'crate', position: vec(5, 5), width: 2, height: 2 }, definitions);
+    expect(placed).toMatchObject({ kind: 'crate', type: 'crate', width: 2, height: 2 });
+    expect(placed.artwork).toBeUndefined();
+    expect(placed.silhouette).toEqual([vec(-1, -1), vec(1, -1), vec(1, 1), vec(-1, 1)]);
+    // The building compiler reports a clear error rather than failing on missing fields.
+    expect(() => compilePlacement({ ...placement, type: 'crate' }, { crate: definitions.crate } as unknown as BuildingCatalogue)).toThrow(/is crate artwork; compile props with compileObjectPlacement/);
+    expect(() => compileObjectPlacement({ id: 'missing', type: 'nope', position: vec() }, definitions)).toThrow(/unknown type nope/);
+  });
+
+  it('freezes the legacy artwork catalogue and validates explicit outlines eagerly', () => {
+    const legacy = compileArtworkCatalogue(artworkRecords, sourcesFor([], artworkRecords));
+    expect(Object.isFrozen(legacy)).toBe(true);
+    expect(Object.isFrozen(legacy.structures['shop-tar'])).toBe(true);
+    expect(Object.isFrozen(propArtwork['shop-tar'].silhouette)).toBe(true);
+    const bad = (points: readonly Vec[], id = 'bad'): ObjectRecord => ({ id, kind: 'crate', width: 2, height: 2, image: 'map/shop-tar.png', artwork: { outline: points } });
+    expect(() => compileObjectCatalogue([bad([])])).toThrow(/outline needs at least one point/);
+    expect(() => compileObjectCatalogue([bad([vec(0, 0), vec(NaN, 1)])])).toThrow(/outline points must be finite/);
+    expect(() => compileObjectCatalogue([{ ...bad([vec(0, 0)], 'bad2'), artwork: { outline: { shape: 'circle', radius: 0, points: 4 } } }])).toThrow(/invalid artwork outline/);
   });
 });

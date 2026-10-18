@@ -41,7 +41,8 @@ describe('southern beach geography and access', () => {
       expect(prop.body.position.y - prop.body.h / 2).toBeGreaterThanOrEqual(246);
       expect(prop.body.corners().every(p => inBeach(p) && !onPromenade(p) && !inOcean(p))).toBe(true);
       expect(g.world.props.some(p => p !== prop && p.alive && contact(p.body, prop.body))).toBe(false);
-      if (hotel.style === 'luxury-condo') expect(prop.body.w * prop.body.h).toBe(4 * 14 * 13);
+      if (hotel.type === 'condo') expect(prop.presentation?.frontage).toBe('RESIDENTS ONLY');
+      else expect(prop.presentation?.frontage).toBe('GUESTS ONLY');
     }
   });
   it('routes western sand, eastern sand and promenade walkers to the city and woods on dry land', () => {

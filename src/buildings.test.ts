@@ -17,7 +17,7 @@ describe('building authoring', () => {
   it('renames, re-identifies and resizes a building without losing artwork or routing', () => {
     const entrance = vec(149, 74.6);
     const map = mapWith({ ...cityContent, buildings: cityContent.buildings.map(b => b.type === 'hospital'
-      ? { ...b, id: 'metropolitan-care', label: 'METROPOLITAN CARE', width: 24, height: 64, recoveryEntrance: entrance } : b) });
+      ? { ...b, id: 'metropolitan-care', label: 'METROPOLITAN CARE', width: 24, height: 64, features: [{ id: 'care-service', role: 'service' as const, offset: vec(9 / 24, 34.6 / 64) }] } : b) });
     const world = new World(map), prop = world.props.find(p => p.sourceId === 'metropolitan-care')!;
     const art = artworkFor(prop)!;
     expect(art.image).toBe('hospital');
@@ -97,7 +97,7 @@ describe('building authoring', () => {
 
   it('reports invalid authored residents and service entrances by stable entity', () => {
     const map = mapWith({ ...cityContent,
-      buildings: cityContent.buildings.map(b => b.recoveryEntrance ? { ...b, recoveryEntrance: vec(140, 40) } : b),
+      buildings: cityContent.buildings.map(b => b.features ? { ...b, features: b.features.map(f => ({ ...f, offset: vec(0, 0) })) } : b),
       campuses: cityContent.campuses.map(s => ({ ...s, residents: { ...s.residents, 'city-block-3-0': [vec(140, 40), vec(154, 14), vec(126, 26), vec(154, 26)] } })),
     });
     const result = validateMap(map.document, map);

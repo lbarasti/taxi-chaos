@@ -45,3 +45,8 @@ inline with a procedural fallback.
 by Lorenzo for the Ocean Walk condos. It is embedded unchanged; only transparent
 export padding is cropped at draw time. The same asset appears at two beachfront
 plots, with a procedural building fallback if image decoding fails.
+
+`map/crate-shipping.png` and `map/bakery-front.png` are original pixel art created
+for Taxi Chaos (simple generated artwork, no third-party source) for the shared
+catalogue's representative crate and bakery building records. Both are small,
+fully opaque sprites bundled inline with the other map artwork.

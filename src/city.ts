@@ -1,5 +1,6 @@
 import { vec, type Vec } from './physics';
-import { compileBuilding, buildingDefinitions, type BuildingCatalogue, type CompiledBuilding } from './buildings';
+import { compileBuilding, buildingDefinitions, type CompiledBuilding } from './buildings';
+import type { ObjectCatalogue } from './catalogue/schema';
 import { cityContent, type CityContent, type CityCampus, type ResidentHomes } from './city-content';
 export type { CityCampus } from './city-content';
 
@@ -16,7 +17,7 @@ export type CityBlock = Readonly<{
 
 /** Fixed, read-only city content. Compiled and recursively frozen with each map;
  * no random draws and no runtime-only geometry for rendering or collisions. */
-export function createCity(content: CityContent = cityContent, catalogue: BuildingCatalogue = buildingDefinitions) {
+export function createCity(content: CityContent = cityContent, catalogue: ObjectCatalogue = buildingDefinitions) {
   const colors = ['#334850', '#3c485b', '#4d4b59', '#3d5554', '#535045', '#394a5a'];
   const shops = ['NOODLE CLUB', 'VINYL & CO.', '24/7 DELI', 'LAUNDROMAT', 'COFFEE', 'BODEGA', 'FLOWERS', 'HOTEL', 'ARCADE', 'PIZZA', 'BOOK SHOP', 'NIGHT OWL'];
   const blocks: CityBlock[] = [];

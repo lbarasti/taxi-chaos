@@ -1,17 +1,28 @@
 import type { Vec } from '../physics';
 import { vehicleDefinitions, type VehicleModel } from '../vehicles';
+import type { AttachedFeature, KindRegistry } from '../catalogue/schema';
+import { objectKinds } from '../catalogue/content';
 
 export type Owned = { id: string; owner: string };
 export type MapPoint = Owned & { position: Vec; weight: number; editable: boolean };
 export type Placement = Owned & { position: Vec; name: string; color: string };
 export const countryPropKinds = ['building', 'tree', 'rock', 'hydrant', 'crate', 'bench', 'lamp', 'kiosk', 'bin', 'barrier', 'shed', 'pump', 'guardrail', 'palm'] as const;
-export type CountryProp = Owned & { position: Vec; kind: typeof countryPropKinds[number]; width: number; height: number; angle: number; color: string; label: string };
+export type CountryProp = Owned & { position: Vec; kind: typeof countryPropKinds[number]; width?: number; height?: number; angle: number; color: string; label: string;
+  /** Optional catalogue object type. When present, its artwork and resolved footprint
+   * presentation are compiled through the shared object compiler; new image types need
+   * no schema change and the instance `width`/`height` overrides become optional. */
+  type?: string;
+  /** Artwork-only size multiplier for the referenced catalogue type. */
+  artworkScale?: number;
+  /** Local normalized service entrances/signage attached to this placement. */
+  features?: readonly AttachedFeature[];
+};
 export type Parking = Owned & { position: Vec; angle: number; occupied: boolean; lot: boolean; model: VehicleModel; color: string };
 export type TrafficSpawn = Owned & { position: Vec; angle: number; model: VehicleModel; color: string; path: Vec[] };
 export type AuthoredCollection = 'countryProps' | 'parking' | 'trafficSpawns';
 export type AuthoredDescriptor = CountryProp | Parking | TrafficSpawn;
 export type MapDocument = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   coordinates: 'metres-screen-south-positive-radians';
   envelope: { min: Vec; max: Vec };
   districts: { id: string; name: string; editable: boolean }[];
@@ -30,7 +41,7 @@ export type MapDocument = {
   beach: {
     shore: string[]; left: number; right: number; top: number;
     promenade: Owned & { left: number; right: number; top: number; bottom: number; entries: number[]; southEntries: number[] };
-    hotels: (Placement & { width: number; height: number; floors: number; style?: 'luxury-condo' })[];
+    hotels: (Placement & { floors: number; width?: number; height?: number; type?: string; features?: readonly AttachedFeature[] })[];
     towers: (Owned & { position: Vec })[];
     sets: (Owned & { position: Vec })[];
     castles: (Owned & { position: Vec })[];
@@ -39,8 +50,10 @@ export type MapDocument = {
   constraints: { id: string; type: 'beach-water-gap'; minimum: number; resolution: number }[];
 };
 
-/** Strict shape checking also bounds imported workloads before any factory runs. */
-export function assertMap(value: unknown): asserts value is MapDocument {
+/** Strict shape checking also bounds imported workloads before any factory runs.
+ * References are validated against the injected kind registry, so a custom catalogue
+ * can be checked consistently across country, beach and city content. */
+export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): asserts value is MapDocument {
   const fail = (path: string, why: string): never => { throw new Error(`${path}: ${why}`); };
   const object = (v: unknown, keys: string[], path: string, optional: string[] = []): Record<string, unknown> => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) return fail(path, 'expected object');
@@ -57,9 +70,31 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   const id = (v: unknown, path: string) => { const s = text(v, path); if (!/^[a-z][a-z0-9-]*$/.test(s) || ids.has(s)) fail(path, 'invalid or duplicate ID'); ids.add(s); };
   const owned = (obj: Record<string, unknown>, path: string) => { id(obj.id, `${path}.id`); owners.push(text(obj.owner, `${path}.owner`)); };
   const ref = (v: unknown, path: string) => refs.push(text(v, path));
+  /** Strict catalogue reference: the type must exist and match the declared behaviour.
+   * Unknown types and kind mismatches are rejected structurally, never as draft errors. */
+  const kindOf = (v: unknown, path: string, expected?: string): string => {
+    const type = text(v, path);
+    const kind = kinds[type];
+    if (kind === undefined) fail(path, `unknown catalogue type ${type}`);
+    if (expected !== undefined && kind !== expected) fail(path, `catalogue type ${type} is ${kind}, not ${expected}`);
+    return kind;
+  };
+  const features = (v: unknown, path: string) => {
+    const seen = new Set<string>();
+    for (const f of list(v, path, 0, 8)) {
+      const feature = object(f, ['id', 'role', 'offset'], path, ['label']);
+      const featureId = text(feature.id, `${path}.id`);
+      if (featureId.length > 60) fail(`${path}.id`, 'feature ID must be at most 60 characters');
+      if (!/^[a-z][a-z0-9-]*$/.test(featureId) || seen.has(featureId)) fail(`${path}.id`, 'invalid or duplicate feature ID');
+      seen.add(featureId);
+      if (feature.role !== 'service' && feature.role !== 'sign') fail(`${path}.role`, 'expected service or sign');
+      point(feature.offset, `${path}.offset`);
+      if (feature.label !== undefined && (typeof feature.label !== 'string' || feature.label.length > 160)) fail(`${path}.label`, 'expected label (max 160)');
+    }
+  };
   const placement = (v: unknown, path: string, extras: string[] = [], optional: string[] = []) => { const p = object(v, ['id', 'owner', 'position', 'name', 'color', ...extras], path, optional); owned(p, path); point(p.position, `${path}.position`); text(p.name, path); if (!/^#[0-9a-f]{6}$/i.test(text(p.color, path))) fail(path, 'expected hex colour'); return p; };
   const root = object(value, ['schemaVersion', 'coordinates', 'envelope', 'districts', 'points', 'highlandOutline', 'roads', 'nodes', 'villas', 'countryProps', 'parking', 'trafficSpawns', 'stops', 'golf', 'ridges', 'labels', 'beach', 'generation', 'constraints'], 'map');
-  if (root.schemaVersion !== 2 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
+  if (root.schemaVersion !== 3 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
   const env = object(root.envelope, ['min', 'max'], 'envelope'); point(env.min, 'envelope.min'); point(env.max, 'envelope.max');
   const bounds = env as unknown as MapDocument['envelope'];
   for (const axis of ['x', 'y'] as const) if (bounds.max[axis] <= bounds.min[axis] || bounds.max[axis] - bounds.min[axis] > 2000) fail('envelope', 'must have positive extent at most 2000 m');
@@ -73,14 +108,21 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   for (const v of list(root.roads, 'roads', 1, 100)) { const p = object(v, ['id', 'owner', 'from', 'to', 'via', 'name', 'bridge'], 'road'); owned(p, 'road'); ref(p.from, 'road.from'); ref(p.to, 'road.to'); if (!nodes.has(p.from as string) || !nodes.has(p.to as string) || p.from === p.to) fail('road', 'endpoints must be distinct nodes'); text(p.name, 'road.name'); bool(p.bridge, 'road.bridge'); const via = list(p.via, 'road.via', 0, 20); via.forEach(v => ref(v, 'road.via')); if (p.bridge && [p.from, ...via, p.to].some(v => !locked.has(v as string))) fail('road', 'bridge anchors must be pinned'); }
   for (const v of list(root.villas, 'villas', 1, 100)) placement(v, 'villa');
   for (const key of ['countryProps', 'parking', 'trafficSpawns'] as const) for (const v of list(root[key], key, 0, key === 'countryProps' ? 500 : key === 'parking' ? 200 : 60)) {
-    const extras = key === 'countryProps' ? ['kind', 'width', 'height', 'label'] : key === 'parking' ? ['occupied', 'lot', 'model'] : ['model', 'path'];
-    const p = object(v, ['id', 'owner', 'position', 'angle', 'color', ...extras], key);
+    const extras = key === 'countryProps' ? ['kind', 'label'] : key === 'parking' ? ['occupied', 'lot', 'model'] : ['model', 'path'];
+    const optional = key === 'countryProps' ? ['width', 'height', 'type', 'artworkScale', 'features'] : [];
+    const p = object(v, ['id', 'owner', 'position', 'angle', 'color', ...extras], key, optional);
     owned(p, key); point(p.position, `${key}.position`); num(p.angle, `${key}.angle`, -Math.PI * 2, Math.PI * 2);
     if (!/^#[0-9a-f]{6}$/i.test(text(p.color, `${key}.color`))) fail(key, 'expected hex colour');
     if (key === 'countryProps') {
       if (!countryPropKinds.includes(p.kind as CountryProp['kind'])) fail(key, 'unknown prop kind');
-      num(p.width, 'prop.width', 0.2, 100); num(p.height, 'prop.height', 0.2, 100);
+      if (p.type !== undefined) kindOf(p.type, 'prop.type', p.kind as string);
+      if (p.width === undefined && p.type === undefined) fail(key, 'props need an explicit width or a catalogue type');
+      if ((p.width === undefined) !== (p.height === undefined)) fail(key, 'declare width and height together');
+      if (p.width !== undefined) num(p.width, 'prop.width', 0.2, 100);
+      if (p.height !== undefined) num(p.height, 'prop.height', 0.2, 100);
       if (typeof p.label !== 'string' || p.label.length > 160) fail(key, 'expected label (max 160)');
+      if (p.artworkScale !== undefined) num(p.artworkScale, 'prop.artworkScale', 0.01, 100);
+      if (p.features !== undefined) features(p.features, 'prop.features');
     } else {
       if (typeof p.model !== 'string' || !Object.hasOwn(vehicleDefinitions, p.model) || key === 'trafficSpawns' && vehicleDefinitions[p.model as VehicleModel].ai.controller !== 'road') fail(key, 'unsupported vehicle model');
       if (key === 'parking') { bool(p.occupied, 'parking.occupied'); bool(p.lot, 'parking.lot'); }
@@ -100,7 +142,16 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   for (const key of ['left', 'right', 'top', 'bottom']) num(prom[key], `promenade.${key}`);
   if ((prom.right as number) - (prom.left as number) < 10 || (prom.bottom as number) - (prom.top as number) < 2) fail('promenade', 'invalid dimensions');
   for (const key of ['entries', 'southEntries']) { const xs = list(prom[key], `promenade.${key}`, 1, 30); xs.forEach((x, i) => { num(x, key, (prom.left as number) + 2.4, (prom.right as number) - 2.4); if (i && (x as number) - (xs[i - 1] as number) < 4.8) fail(key, 'entries must be ordered with 4.8 m spacing'); }); }
-  for (const v of list(beach.hotels, 'hotels', 1, 30)) { const p = placement(v, 'hotel', ['width', 'height', 'floors'], ['style']); num(p.width, 'hotel.width', 1, 100); num(p.height, 'hotel.height', 1, 100); num(p.floors, 'hotel.floors', 1, 50); if (p.style !== undefined && p.style !== 'luxury-condo') fail('hotel.style', 'unknown style'); }
+  for (const v of list(beach.hotels, 'hotels', 1, 30)) {
+    const p = placement(v, 'hotel', ['floors'], ['width', 'height', 'type', 'features']);
+    num(p.floors, 'hotel.floors', 1, 50);
+    if (p.type !== undefined) kindOf(p.type, 'hotel.type', 'building');
+    if (p.width === undefined && p.type === undefined) fail('hotel', 'hotels need an explicit width or a catalogue type');
+    if ((p.width === undefined) !== (p.height === undefined)) fail('hotel', 'declare width and height together');
+    if (p.width !== undefined) num(p.width, 'hotel.width', 1, 100);
+    if (p.height !== undefined) num(p.height, 'hotel.height', 1, 100);
+    if (p.features !== undefined) features(p.features, 'hotel.features');
+  }
   for (const key of ['towers', 'sets', 'castles']) for (const v of list(beach[key], key, 0, 100)) { const p = object(v, ['id', 'owner', 'position'], key); owned(p, key); point(p.position, key); }
   const gen = object(root.generation, ['ruralSeed', 'candidates'], 'generation'); num(gen.ruralSeed, 'ruralSeed', 0, 2147483647); num(gen.candidates, 'candidates', 0, 5000); if (!Number.isInteger(gen.candidates)) fail('candidates', 'must be integer');
   for (const v of list(root.constraints, 'constraints', 1, 20)) { const p = object(v, ['id', 'type', 'minimum', 'resolution'], 'constraint'); id(p.id, 'constraint.id'); if (p.type !== 'beach-water-gap') fail('constraint', 'unknown type'); num(p.minimum, 'minimum', 1, 500); num(p.resolution, 'resolution', 0.5, 10); }

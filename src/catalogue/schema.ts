@@ -9,8 +9,26 @@ export type ArtBounds = Readonly<{ x: number; y: number; width: number; height: 
 export type ArtworkSource = Readonly<{ width: number; height: number; crop: PixelCrop }>;
 export type CatalogueSources = Readonly<Record<string, ArtworkSource>>;
 
-/** A silhouette is the art rectangle, a circle of `points` vertices, or explicit metres. */
+/** A silhouette is the art rectangle, a circle of `points` vertices, or explicit metres.
+ * This absolute form belongs to the legacy artwork registry, whose records own an
+ * explicit metre extent. Object presentations use the normalized `ArtworkOutline`. */
 export type ArtworkSilhouette = 'bounds' | Readonly<{ shape: 'circle'; radius: number; points?: number }> | readonly Vec[];
+
+/** Authored custom outline for a normalized object presentation. Coordinates are
+ * fractions of the resolved art extent: the art rectangle spans ±0.5 on each axis,
+ * and a circle's `radius` is a fraction of half its smaller edge. Resizing a type
+ * default or one placement therefore scales the silhouette, sun shadow and light
+ * blocker with the drawing. A plain point array is shorthand for `shape: 'path'`. */
+export type ArtworkOutline =
+  | 'bounds'
+  | Readonly<{ shape: 'circle'; radius: number; points?: number }>
+  | Readonly<{ shape: 'path'; points: readonly Vec[] }>
+  | readonly Vec[];
+
+/** Validated, detached normalized outline stored on a compiled template. */
+export type NormalizedOutline =
+  | Readonly<{ shape: 'circle'; radius: number; points: number }>
+  | Readonly<{ shape: 'path'; points: readonly Vec[] }>;
 
 /** Legacy shared image record. Ordinary single-image objects no longer need one:
  * keep this registry for ground tiles, shared variants and standalone prop artwork
@@ -60,8 +78,44 @@ export type ArtworkCatalogue = Readonly<{
 export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
 
 export type BuildingFallback = 'shop' | 'commercial' | 'terraced' | 'wards';
-export type BuildingSign = Readonly<{ width: number; inset: number; size: number; color: string }>;
-export type BuildingPresentation = Readonly<{ fallback: BuildingFallback; sign: BuildingSign }>;
+export type BuildingSign = Readonly<{
+  width: number;
+  inset: number;
+  size: number;
+  color: string;
+  /** Normalized facade offset (±0.5 is the footprint edge). Defaults to the south
+   * face centre, so it follows the parent's position and every resize. */
+  offset?: Vec;
+}>;
+
+/** A feature attached to a placement. It is authored in local normalized coordinates
+ * (fractions of the parent footprint, ±0.5 = edge), so it follows the parent's position
+ * and every resize instead of pinning a world position. IDs stay stable so validation
+ * can name the affected feature. */
+export type FeatureRole = 'service' | 'sign';
+export type AttachedFeature = Readonly<{
+  /** Stable ID, unique within the parent placement (max 60 characters, matching strict
+   * map validation and `resolveFeatures`). */
+  id: string;
+  /** `service` names a recovery/serving entrance, consumed only by the city's single
+   * primary recovery entrance; `sign` anchors facade signage drawn by the generic
+   * building renderer. A `service` feature elsewhere is reported by `validateMap`. */
+  role: FeatureRole;
+  /** Local offset from the parent centre as fractions of its footprint. */
+  offset: Vec;
+  /** Optional label drawn for `sign` features. */
+  label?: string;
+}>;
+/** A placement's attached feature resolved against one concrete footprint. */
+export type ResolvedFeature = Readonly<{ id: string; role: FeatureRole; offset: Vec; position: Vec; label?: string }>;
+export type BuildingPresentation = Readonly<{
+  fallback: BuildingFallback;
+  sign: BuildingSign;
+  /** Door/entrance label supplied by data instead of renderer branches. */
+  frontage?: string;
+  /** Optional ground apron label for procedural buildings. */
+  apron?: string;
+}>;
 
 /** How the cropped source fills the resolved footprint.
  * `contain` (default) centres it and preserves its aspect; `stretch` fills the
@@ -80,8 +134,9 @@ export type ArtworkPresentation = Readonly<{
   height?: number;
   /** Art centre offset as a fraction of the resolved footprint width/height. */
   offset?: Readonly<{ x?: number; y?: number }>;
-  /** Explicit outline in metres relative to the art centre. Defaults to the art rectangle. */
-  outline?: ArtworkSilhouette;
+  /** Normalized outline as fractions of the resolved art extent. Defaults to the art
+   * rectangle, so it stays aligned when the footprint or art scale changes. */
+  outline?: ArtworkOutline;
   /** Reuse the outline as a directed-light occluder. */
   occluder?: boolean;
   /** Supplied sprites with their own depth shading need no sun shadow. */
@@ -106,6 +161,10 @@ export type ObjectRecord = Readonly<{
   fallback?: BuildingFallback;
   /** Required for buildings. */
   sign?: BuildingSign;
+  /** Optional door/entrance label for buildings, consumed by generic renderers. */
+  frontage?: string;
+  /** Optional ground apron label for procedural buildings. */
+  apron?: string;
   /** Direct source image for an ordinary single-image type, under `src/assets`. */
   image?: string;
   /** Shared legacy artwork IDs, in authored order. A placement's stable ID picks one
@@ -118,6 +177,8 @@ export type ObjectRecord = Readonly<{
   artwork?: ArtworkPresentation;
   /** Artwork-only size multiplier, independent of the collision footprint. */
   artworkScale?: number;
+  /** Local normalized service entrances/signage shared by every instance. */
+  features?: readonly AttachedFeature[];
 }>;
 
 /** Immutable, normalized drawing geometry. Templates never store absolute bounds:
@@ -133,7 +194,7 @@ export type ArtworkTemplate = Readonly<{
   width?: number;
   height?: number;
   offset: Readonly<{ x: number; y: number }>;
-  outline: ArtworkSilhouette;
+  outline: NormalizedOutline;
   occluder: boolean;
   castsShadow: boolean;
 }>;
@@ -148,6 +209,7 @@ export type ObjectDefinition = Readonly<{
   presentation?: BuildingPresentation;
   /** Artwork-only size multiplier, independent of the collision footprint. */
   artworkScale?: number;
+  features?: readonly AttachedFeature[];
 }>;
 
 export type BuildingDefinition = ObjectDefinition & Readonly<{
@@ -156,6 +218,27 @@ export type BuildingDefinition = ObjectDefinition & Readonly<{
   presentation: BuildingPresentation;
 }>;
 export type BuildingCatalogue = Readonly<Record<string, BuildingDefinition>>;
+export type ObjectCatalogue = Readonly<Record<string, ObjectDefinition>>;
+
+/** One authored placement of any catalogue object type (building or prop). Levels
+ * other than the catalogue type are optional overrides resolved against the type. */
+export type ObjectPlacementRecord = Readonly<{
+  id: string; type: string; position: Vec; angle?: number;
+  width?: number; height?: number; artworkScale?: number;
+  features?: readonly AttachedFeature[];
+}>;
+
+/** Generic compiled placement shared by buildings and props. Its resolved footprint
+ * drives collision, and its artwork/silhouette drives drawing, shadows, lighting and
+ * culling. Both are freshly allocated and detached per placement. */
+export type CompiledObject = Readonly<{
+  id: string; type: string; kind: PropKind;
+  position: Vec; angle: number; width: number; height: number;
+  artwork?: PropArtwork; silhouette: readonly Vec[];
+  storeys?: number; presentation?: BuildingPresentation;
+  /** Local attached features resolved to world positions for this instance. */
+  features: readonly ResolvedFeature[];
+}>;
 
 export type PlacementRecord<Type extends string = string> = Readonly<{
   id: string; type: Type; owner: 'city'; blockId: string; position: Vec; label: string; color: string;
@@ -164,11 +247,18 @@ export type PlacementRecord<Type extends string = string> = Readonly<{
   artworkScale?: number;
   /** Otherwise a matching ID replaces only that generated building; a new ID adds one. */
   replaceBlock?: boolean;
-  /** Optional exterior service entrance, independent of the display label. */
-  recoveryEntrance?: Vec;
+  /** Optional exterior service entrance/signage in local normalized coordinates. */
+  features?: readonly AttachedFeature[];
 }>;
 export type CompiledBuilding = Readonly<{
   id: string; type: string; owner: 'city'; blockId: string; position: Vec; label: string; color: string;
   width: number; height: number; storeys: number; silhouette: readonly Vec[];
-  artwork?: PropArtwork; presentation: BuildingPresentation; recoveryEntrance?: Vec;
+  artwork?: PropArtwork; presentation: BuildingPresentation; features: readonly ResolvedFeature[]; recoveryEntrance?: Vec;
 }>;
+
+/** Type identity → behaviour kind. Kept next to the records so strict map imports can
+ * validate references without pulling the generated artwork manifest. */
+export type KindRegistry = Readonly<Record<string, PropKind>>;
+export function objectKindRegistry(catalogue: ObjectCatalogue): KindRegistry {
+  return Object.fromEntries(Object.entries(catalogue).map(([id, definition]) => [id, definition.kind]));
+}

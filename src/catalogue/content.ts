@@ -1,4 +1,4 @@
-import type { ArtworkRecord, BuildingSign, ObjectRecord } from './schema';
+import type { ArtworkRecord, BuildingSign, KindRegistry, ObjectRecord } from './schema';
 
 /** Shared images that still own absolute geometry (standalone props, ground tiles)
  * or are reused as stable variants by several types. An ordinary single-image type
@@ -11,21 +11,25 @@ export const artworkRecords: readonly ArtworkRecord[] = [
   { id: 'shop-concrete', png: 'map/shop-concrete.png', layer: 'structure', metres: 10.6, silhouette: 'bounds', occluder: true },
   { id: 'tree-worn', png: 'map/tree-worn.png', layer: 'structure', metres: 5.2, silhouette: { shape: 'circle', radius: 2.4 } },
   { id: 'asphalt', png: 'map/asphalt.svg', layer: 'ground', tileMetres: 48 },
-  // The supplied condo sheet keeps its lawn edges, so the authored crop is wider
-  // than the measured transparent padding. Kept as a legacy adapter until beach
-  // hotels migrate to object records.
-  { id: 'luxury-condo', png: 'map/luxury-condo.png', layer: 'structure', metres: { width: 14.3, height: 13.3 },
-    crop: { x: 100, y: 60, width: 1055, height: 1090 }, silhouette: 'bounds', occluder: true, castsShadow: false },
 ];
 
 const commercialSign: BuildingSign = { width: 14, inset: 1.72, size: 0.78, color: '#eadab8' };
+const hotelSign: BuildingSign = { width: 12, inset: 1.2, size: 0.8, color: '#f0e6ce' };
+// The condo predates the shared sign data and used the generic south-face label
+// (`width 8.6`, `inset 0.95`, `size 0.72`). Keep that exact look as a per-type override
+// instead of inheriting the hotel sign, so migrating the condo onto the catalogue does
+// not silently restyle the two shipped residences.
+const condoSign: BuildingSign = { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };
 
 /** Reusable object types. An ordinary new type is one record: its direct image path
  * and normalized art geometry live here, next to its footprint and fallback. The
  * generated inline manifest and measured crop follow from `image` automatically.
  * Geometry factors are relative to the resolved footprint, so changing a default
- * size or instance override moves collision and artwork together. */
-export const objectRecords: readonly ObjectRecord[] = [
+ * size or instance override moves collision and artwork together.
+ *
+ * `as const` keeps the authored IDs literal, so `BuildingType` remains a checked union
+ * rather than collapsing to `string`. */
+export const objectRecords = [
   {
     id: 'shop', kind: 'building', width: 10, height: 10, storeys: 2,
     fallback: 'shop',
@@ -42,4 +46,34 @@ export const objectRecords: readonly ObjectRecord[] = [
     image: 'map/hospital-structure.png',
     artwork: { fit: 'stretch', width: 26.6 / 26, height: 66.6 / 66, outline: 'bounds', occluder: true },
   },
-];
+  // Beach hotels. `frontage`/`apron`/`sign` keep entrance signage and ground
+  // treatments in data, so renderers carry no hotel- or condo-specific branches.
+  {
+    id: 'condo', kind: 'building', width: 14, height: 13, storeys: 12,
+    fallback: 'commercial', sign: condoSign, frontage: 'RESIDENTS ONLY',
+    image: 'map/luxury-condo.png',
+    // The supplied sheet keeps its lawn edges, so the authored crop is wider than
+    // the measured transparent padding.
+    crop: { x: 100, y: 60, width: 1055, height: 1090 },
+    artwork: { fit: 'stretch', width: 14.3 / 14, height: 13.3 / 13, outline: 'bounds', occluder: true, castsShadow: false },
+  },
+  {
+    id: 'hotel', kind: 'building', width: 33, height: 11, storeys: 14,
+    fallback: 'commercial', sign: hotelSign, frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE',
+  },
+  // Representative existing-behaviour props. The tree reuses shared artwork with a
+  // normalized outline; the crate has no imported art and keeps procedural drawing.
+  {
+    id: 'tree', kind: 'tree', width: 1.8, height: 1.8,
+    variants: ['tree-worn'],
+    artwork: { fit: 'stretch', width: 5.2 / 1.8, height: 5.2 / 1.8, outline: { shape: 'circle', radius: 2.4 / 2.6 } },
+  },
+  { id: 'crate', kind: 'crate', width: 1.4, height: 1.4 },
+  // A representative single-image crate whose original pixel art is committed at
+  // `map/crate-shipping.png` (not an alias of an existing sprite) and attributed in
+  // `src/assets/ATTRIBUTION.md`.
+  { id: 'shipping-crate', kind: 'crate', width: 1.8, height: 1.8, image: 'map/crate-shipping.png' },
+] as const satisfies readonly ObjectRecord[];
+
+/** Type identity → behaviour kind for strict, asset-free map import validation. */
+export const objectKinds: KindRegistry = Object.fromEntries(objectRecords.map(record => [record.id, record.kind]));

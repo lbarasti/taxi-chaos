@@ -1,6 +1,7 @@
 import { Body, add, contact, cross, dist, scale, sub, vec, type Vec } from '../physics';
 import { World, blocksWalking, isRigidObstacle } from '../world';
 import { vehicleDefinition, createVehicleBody } from '../vehicles';
+import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';
 import { compileMap, type CompiledMap } from './compile';
 import type { MapDocument } from './schema';
 import { descriptorBody } from './operations';
@@ -53,10 +54,26 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     }
   }
   const checkLand = (id: string, body: Body, land: (p: Vec) => boolean) => { const outside = footprint(body).find(p => !land(p)); if (outside) push('object-outside-land', [id], 'Composite footprint extends outside its intended land', outside, { length: body.w, width: body.h }); };
+  const compiledBody = (object: CompiledObject) => { const b = new Body(object.position.x, object.position.y, 1, object.width, object.height); b.angle = object.angle; return b; };
+  // Attached features are resolved from local normalized offsets; report any that stray
+  // beyond the allowed attachment band, naming the parent and stable feature ID. The
+  // `service` role feeds the single city recovery entrance, so it is only consumed on
+  // city buildings; elsewhere it would be silently inert, so report it by stable ID.
+  const checkFeatures = (id: string, features: readonly ResolvedFeature[] | undefined, service: boolean) => {
+    for (const feature of features ?? []) {
+      if (Math.abs(feature.offset.x) > 0.75 || Math.abs(feature.offset.y) > 0.75) push('feature-outside-bounds', [id, `${id}/${feature.id}`], `Attached ${feature.role} ${feature.id} lies outside its placement`, feature.position);
+      if (feature.role === 'service' && !service) push('service-feature-unsupported', [id, `${id}/${feature.id}`], `Service feature ${feature.id} is only consumed by the city recovery entrance`, feature.position);
+    }
+  };
   for (const p of document.countryProps) {
-    const body = descriptorBody(p); checkLand(p.id, body, q => !coast.inOcean(q));
+    const compiledObject = compiled.objects[p.id];
+    const body = compiledObject ? compiledBody(compiledObject) : descriptorBody(p);
+    checkLand(p.id, body, q => !coast.inOcean(q));
+    if (compiledObject) checkFeatures(p.id, compiledObject.features, false);
     if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
   }
+  for (const hotel of document.beach.hotels) checkFeatures(hotel.id, compiled.objects[hotel.id]?.features, false);
+  for (const building of compiled.city.buildings) checkFeatures(building.id, building.features, true);
   const vehiclePlacements = [...document.parking, ...document.trafficSpawns].map(e => ({ e, body: descriptorBody(e) }));
   for (const block of compiled.city.blocks) for (const home of block.residentHomes ?? []) {
     const body = new Body(home.x, home.y, 75, 0.7, 0.7);

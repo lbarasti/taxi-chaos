@@ -38,7 +38,7 @@ describe('artwork image caching', () => {
     const loading = art.load();
     expect(art.load()).toBe(loading);
     await loading;
-    expect(images).toHaveLength(7);
+    expect(images).toHaveLength(8);
     expect(createElement).toHaveBeenCalledExactlyOnceWith('canvas');
     expect(tile).toMatchObject({ width: 768, height: 384 });
     expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[4], 0, 0);
@@ -105,7 +105,7 @@ describe('artwork image caching', () => {
     await art.load();
     expect(art.draw(main.ctx, propArtwork.hospital)).toBe(true);
     const args = main.calls.drawImage.mock.calls[0];
-    expect(args.slice(0, 5)).toEqual([images[6], 33, 16, 726, 1951]);
+    expect(args.slice(0, 5)).toEqual([images[5], 33, 16, 726, 1951]);
     expect(args[5]).toBeCloseTo(-13.3);
     expect(args[6]).toBeCloseTo(-33.3);
     expect(args[7]).toBeCloseTo(26.6);

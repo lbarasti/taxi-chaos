@@ -55,12 +55,48 @@ describe('authored content transactions', () => {
     if (kind === 'extra') Object.assign(d.parking[0], { surprise: true });
     expect(() => assertMap(d)).toThrow();
   });
-  it('rejects version 1 exports without upgrading them and retains canonical version 2 imports', () => {
+  it('rejects stale hotel style, unknown references and kind mismatches structurally', () => {
+    const stale = copyDefaultMap();
+    Object.assign(stale.beach.hotels[0], { style: 'luxury-condo' });
+    expect(() => assertMap(stale)).toThrow(/expected fields/);
+
+    const unknownProp = copyDefaultMap();
+    Object.assign(unknownProp.countryProps[0], { kind: 'crate', type: 'no-such-type' });
+    expect(() => assertMap(unknownProp)).toThrow(/unknown catalogue type no-such-type/);
+
+    const unknownHotel = copyDefaultMap();
+    Object.assign(unknownHotel.beach.hotels[0], { type: 'no-such-type' });
+    expect(() => assertMap(unknownHotel)).toThrow(/unknown catalogue type no-such-type/);
+
+    const wrongKind = copyDefaultMap();
+    Object.assign(wrongKind.countryProps[0], { kind: 'crate', type: 'hospital' });
+    expect(() => assertMap(wrongKind)).toThrow(/catalogue type hospital is building, not crate/);
+
+    const hotelWrongKind = copyDefaultMap();
+    Object.assign(hotelWrongKind.beach.hotels[0], { type: 'crate' });
+    expect(() => assertMap(hotelWrongKind)).toThrow(/catalogue type crate is crate, not building/);
+
+    const propKind = copyDefaultMap();
+    Object.assign(propKind.countryProps[0], { kind: 'building', type: 'crate' });
+    expect(() => assertMap(propKind)).toThrow(/catalogue type crate is crate, not building/);
+  });
+
+  it('accepts the current catalogue type references through import and ops', () => {
+    const d = copyDefaultMap(), history = new MapHistory(d);
+    const typed = { id: 'typed-crate', owner: 'southern-estates' as const, kind: 'crate' as const, position: vec(300, 470), angle: 0, color: '#bc9465', label: '', type: 'crate' };
+    history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'countryProps', descriptor: typed }] });
+    expect(exportMap(importMap(history.export()))).toBe(history.export());
+    // An unknown type is rejected by the same structural gate, not a draft warning.
+    expect(() => history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'countryProps', descriptor: { ...typed, id: 'broken-crate', type: 'missing' } }] })).toThrow(/unknown catalogue type missing/);
+  });
+
+  it('rejects version 1 and stale-style exports without upgrading them and retains canonical version 3 imports', () => {
     const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...previous } = d;
     const old = { ...previous, schemaVersion: 1, beach: { ...previous.beach, pickup: vec(30, 249.5) } };
     expect(() => importMap(JSON.stringify(old))).toThrow();
     expect(() => importMap(JSON.stringify({ ...old, parking: [] }))).toThrow();
     expect(exportMap(importMap(exportMap(d)))).toBe(exportMap(d));
+    expect(d.schemaVersion).toBe(3);
   });
 });
 

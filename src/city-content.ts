@@ -13,7 +13,10 @@ export type CityContent = Readonly<{ buildings: readonly BuildingPlacement<strin
 
 /** Add unique buildings here; ordinary shop/commercial blocks remain generated. */
 const buildings: readonly BuildingPlacement[] = [
-  { id: 'city-building-3-1-landmark', type: 'hospital', owner: 'city', blockId: 'city-block-3-1', position: vec(140, 40), label: 'HOSPITAL', color: '#3c485b', recoveryEntrance: vec(147, 74.6) },
+  { id: 'city-building-3-1-landmark', type: 'hospital', owner: 'city', blockId: 'city-block-3-1', position: vec(140, 40), label: 'HOSPITAL', color: '#3c485b',
+    // The exterior recovery entrance is a local normalized feature, so it follows the
+    // hospital's position and any future resize instead of pinning a world coordinate.
+    features: [{ id: 'hospital-service', role: 'service', offset: vec(7 / 26, 34.6 / 66) }] },
   { id: 'city-building-2-3-landmark', type: 'landmark', owner: 'city', blockId: 'city-block-2-3', position: vec(100.5, 140.5), label: 'GARDEN COURT', color: '#3c485b', replaceBlock: true },
 ];
 

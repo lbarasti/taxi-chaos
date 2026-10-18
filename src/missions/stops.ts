@@ -70,9 +70,9 @@ export function compileStops(raw: unknown, map: CompiledMap, strict = true): Com
     byId[stop.id] = stop;
   }
 
-  const props = map.document.countryProps.map(p => ({ position: p.position, width: p.width, height: p.height }));
+  const props = map.document.countryProps.map(p => ({ position: p.position, width: map.objects[p.id]?.width ?? p.width ?? 0, height: map.objects[p.id]?.height ?? p.height ?? 0 }));
   const parking = map.document.parking.map(p => ({ position: p.position, width: 5, height: 2.6 }));
-  const hotels = map.document.beach.hotels.map(h => ({ position: h.position, width: h.width, height: h.height }));
+  const hotels = map.document.beach.hotels.map(h => ({ position: h.position, width: map.objects[h.id]?.width ?? h.width ?? 0, height: map.objects[h.id]?.height ?? h.height ?? 0 }));
 
   for (const stop of all) {
     const p = stop.position;

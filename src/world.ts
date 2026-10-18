@@ -1,19 +1,19 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
-import type { PropKind } from './catalogue/schema';
+import type { BuildingPresentation, PropKind, ResolvedFeature } from './catalogue/schema';
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
 import type { Parking } from './map/schema';
 import { CITY_GRID, CITY_SIZE, citySegmentOpen, type CityBlock, type CityBuilding } from './city';
 import { createCityDetour, type StreetAccess } from './city-navigation';
-import { propArtwork, scaleArtwork, type PropArtwork } from './artwork/catalogue';
+import type { PropArtwork } from './artwork/catalogue';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
 export type { PropKind } from './catalogue/schema';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
-export type Prop = { id: number; sourceId?: string; artwork?: PropArtwork; building?: CityBuilding; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
+export type Prop = { id: number; sourceId?: string; artwork?: PropArtwork; building?: CityBuilding; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean; presentation?: BuildingPresentation; features?: readonly ResolvedFeature[] };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = CityBlock;
 export type ParkingSpot = Parking & { sourceId: string };
@@ -63,7 +63,7 @@ export class World {
       } else if (special !== 'parking') {
         for (const building of block.buildings) {
           const p = this.add('building', building.position.x, building.position.y, building.width, building.height, building.color, building.label);
-          p.sourceId = building.id; p.building = building;
+          p.sourceId = building.id; p.building = building; p.features = building.features;
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
         if (special === 'depot') this.add('shed', x + 20.5, y + 14, 23, 10, '#776255', 'FREIGHT DEPOT');
@@ -99,7 +99,16 @@ export class World {
         this.add('lamp', 249, y + side * 9, 0.6, 0.6, '#a7bfbb');
       }
     }
-    for (const p of map.document.countryProps) this.add(p.kind, p.position.x, p.position.y, p.width, p.height, p.color, p.label, p.angle).sourceId = p.id;
+    for (const p of map.document.countryProps) {
+      // Typed placements resolve their kind/artwork/footprint through the shared object
+      // compiler; unresolved drafts are skipped here and reported by validation.
+      const compiled = map.objects[p.id];
+      const width = compiled?.width ?? p.width, height = compiled?.height ?? p.height;
+      if (width === undefined || height === undefined) continue;
+      const prop = this.add(compiled?.kind ?? p.kind, p.position.x, p.position.y, width, height, p.color, p.label, p.angle);
+      prop.sourceId = p.id;
+      if (compiled) { prop.artwork = compiled.artwork; prop.presentation = compiled.presentation; prop.features = compiled.features; }
+    }
     // Separate RNG preserves the existing city's layouts, traffic and deterministic fixtures.
     const ruralRandom = seeded(map.document.generation.ruralSeed);
     // Keep the original candidate lattice/RNG draws; carry the southern stream in
@@ -163,7 +172,9 @@ export class World {
     for (const hotel of BEACH_HOTELS) {
       const prop = this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name);
       prop.sourceId = hotel.id;
-      if (hotel.style === 'luxury-condo') prop.artwork = scaleArtwork(propArtwork['luxury-condo'], hotel.width / 14, hotel.height / 13);
+      if (hotel.artwork) prop.artwork = hotel.artwork;
+      if (hotel.presentation) prop.presentation = hotel.presentation;
+      if (hotel.features) prop.features = hotel.features;
     }
     for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i % 3], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`).sourceId = map.document.beach.towers[i].id;
     for (const [i, p] of BEACH_SETS.entries()) {

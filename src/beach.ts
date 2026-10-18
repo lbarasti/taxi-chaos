@@ -1,9 +1,12 @@
 import { Body, clamp, vec, type TyreLayout, type Vec } from './physics';
 import { defaultMap } from './map/default';
 import type { MapDocument } from './map/schema';
+import { objectDefinitions } from './artwork/catalogue';
+import { compileObjectPlacement } from './catalogue/compile';
+import type { CompiledObject, ObjectCatalogue } from './catalogue/schema';
 
 export type SandHandling = { coverage: number; drive: number; grip: number; rollingDrag: number; lateralAcceleration: number };
-export function createBeach(document: MapDocument) {
+export function createBeach(document: MapDocument, catalogue: ObjectCatalogue = objectDefinitions, compiledObjects?: Readonly<Record<string, CompiledObject>>) {
 
 // Screen south is +y. This shore widens to the west and tapers into Ocean Walk
 // to the east. The opposite woodland shore sits across an open-water inlet.
@@ -51,7 +54,15 @@ const BEACH_STOPS = [
 // Compatibility fixture location follows the authored bay. A deleted bay does
 // not respawn a pickup; the fallback only supplies a LAB camera location.
 const BEACH_PICKUP = { ...(document.parking.find(p => p.owner === 'beach' && p.model === 'pickup')?.position ?? vec(28, 249.5)) };
-const BEACH_HOTELS = structuredClone(document.beach.hotels);
+const BEACH_HOTELS = document.beach.hotels.map(hotel => {
+  // Beach buildings resolve through the same generic object catalogue passed down from
+  // `compileMap`; strict `assertMap` already rejected unknown types and wrong kinds.
+  // When the map compiler already resolved this placement, reuse that detached object
+  // instead of compiling the hotel a second time.
+  const type = hotel.type ?? 'hotel';
+  const object = compiledObjects?.[hotel.id] ?? compileObjectPlacement({ id: hotel.id, type, position: hotel.position, angle: 0, width: hotel.width, height: hotel.height, features: hotel.features }, catalogue);
+  return { ...structuredClone(hotel), width: object.width, height: object.height, artwork: object.artwork, presentation: object.presentation, features: object.features };
+});
 const LIFEGUARD_TOWERS = document.beach.towers.map(t => ({ ...t.position }));
 const BEACH_SETS = document.beach.sets.map(t => ({ ...t.position }));
 const SAND_CASTLES = document.beach.castles.map(t => ({ ...t.position }));
