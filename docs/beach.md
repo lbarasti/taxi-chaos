@@ -3,8 +3,9 @@
 A 296 m sandy shoreline extends the south side of the city. The western beach is
 open and informal, with a volleyball court, pastel lifeguard huts, colourful beach
 setups and sand castles. Heading east, the shore narrows into a tiled, palm-lined
-promenade behind two 12/16-storey luxury condos and the 14-storey Pacific Palm
-Hotel. Their podiums occupy the actual sand between the promenade and surf;
+promenade between two 12/16-storey luxury condos and the 14-storey Pacific Palm
+Hotel. The condos extend across the former side sections of Ocean Walk, while
+their podiums occupy the sand toward the surf;
 rooftop pools, penthouses and private frontage make the beach appropriation visible.
 Public access survives in the gaps between buildings. Surf rentals, cafés, palms,
 benches and strolling pedestrians occupy the public promenade.
@@ -15,7 +16,9 @@ The existing south street provides access and fare pickup/drop-off points.
 The Sandpiper and Ocean Sunset Suites plots now hold Azure Residences and Ocean
 Crest Condos. Both use Lorenzo's supplied straight-overhead transparent condo
 PNG, cropped at render time without altering the original file. Each has a
-14 × 13 m physical footprint on dry sand; the original hotel IDs stay stable in
+28 × 26 m physical footprint—four times the previous area—on dry sand and the
+former side sections of Ocean Walk. The public walkway remains between the two
+condos. The original hotel IDs stay stable in
 the versioned map, and Pacific Palm Hotel keeps its name and fare stop. An
 optional `style` field on beachfront building placements selects the sprite,
 so older map documents still load and names do not control appearance. Failed

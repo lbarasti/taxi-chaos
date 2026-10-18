@@ -64,12 +64,14 @@ describe('top-down artwork geometry', () => {
   it('gives two beachfront condos the supplied roof while keeping the remaining hotel procedural', () => {
     const beachBuildings = new World().props.filter(p => p.kind === 'building' && p.sourceId?.startsWith('hotel-'));
     expect(beachBuildings).toHaveLength(3);
-    const condos = beachBuildings.filter(p => p.artwork === propArtwork.luxuryCondo);
+    const condos = beachBuildings.filter(p => p.artwork?.image === propArtwork.luxuryCondo.image);
     expect(condos.map(p => p.label)).toEqual(['AZURE RESIDENCES', 'OCEAN CREST CONDOS']);
     for (const condo of condos) {
-      expect([condo.body.w, condo.body.h]).toEqual([14, 13]);
+      expect([condo.body.w, condo.body.h]).toEqual([28, 26]);
+      expect([condo.artwork?.bounds.width, condo.artwork?.bounds.height]).toEqual([28.6, 26.6]);
+      expect(condo.artwork?.castsShadow).toBe(false);
       const renamed = { ...condo, label: 'RENAMED', sourceId: 'another-site' };
-      expect(artworkFor(renamed)).toBe(propArtwork.luxuryCondo);
+      expect(artworkFor(renamed)).toBe(condo.artwork);
     }
     expect(artworkFor(beachBuildings[1])).toBeUndefined();
     expect(beachBuildings[1].label).toBe('PACIFIC PALM HOTEL');

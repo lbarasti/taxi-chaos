@@ -5,7 +5,7 @@ import { defaultMap } from './map/default';
 import type { Parking } from './map/schema';
 import { CITY_GRID, CITY_SIZE, citySegmentOpen, type CityBlock, type CityBuilding } from './city';
 import { createCityDetour, type StreetAccess } from './city-navigation';
-import { propArtwork, type PropArtwork } from './artwork/catalogue';
+import { propArtwork, scaleArtwork, type PropArtwork } from './artwork/catalogue';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
 export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
@@ -162,7 +162,7 @@ export class World {
     for (const hotel of BEACH_HOTELS) {
       const prop = this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name);
       prop.sourceId = hotel.id;
-      if (hotel.style === 'luxury-condo') prop.artwork = propArtwork.luxuryCondo;
+      if (hotel.style === 'luxury-condo') prop.artwork = scaleArtwork(propArtwork.luxuryCondo, hotel.width / 14, hotel.height / 13);
     }
     for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i % 3], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`).sourceId = map.document.beach.towers[i].id;
     for (const [i, p] of BEACH_SETS.entries()) {
@@ -174,14 +174,14 @@ export class World {
     for (const gate of PROMENADE_GATES) this.add('pedestrian-gate', gate.position.x, gate.position.y, gate.width, 0.6, '#d8c4a1', '', gate.angle);
     for (const p of PROMENADE_BOLLARDS) this.add('bollard', p.x, p.y, 0.6, 0.6, '#758e8b');
     for (const x of [-6, 16, 44, 100]) this.add('palm', x, 247.8, 0.8, 0.8, '#547f66');
-    const walkX = (x: number) => PROMENADE.left + (x - 146) * (PROMENADE.right - PROMENADE.left) / 106;
-    for (const x of [154, 174, 194, 214, 244]) this.add('palm', walkX(x), PROMENADE.bottom - 1.8, 0.8, 0.8, '#547f66');
-    for (const x of [150, 174, 194, 214, 248]) this.add('lamp', walkX(x), PROMENADE.top + 2, 0.6, 0.6, '#a7bfbb');
-    for (const x of [168, 208, 228]) this.add('bench', walkX(x), PROMENADE.bottom - 1.8, 2.4, 0.75, '#c29b76');
-    this.add('kiosk', walkX(158), PROMENADE.bottom - 2.3, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
-    this.add('kiosk', walkX(202), PROMENADE.bottom - 2.3, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
+    const walkX = (fraction: number) => PROMENADE.left + fraction * (PROMENADE.right - PROMENADE.left);
+    for (const fraction of [0.4, 0.6, 0.84]) this.add('palm', walkX(fraction), PROMENADE.bottom - 1.7, 0.8, 0.8, '#547f66');
+    for (const fraction of [0.16, 0.4, 0.6, 0.84]) this.add('lamp', walkX(fraction), PROMENADE.top + 1.5, 0.6, 0.6, '#a7bfbb');
+    for (const fraction of [0.33, 0.67]) this.add('bench', walkX(fraction), PROMENADE.bottom - 1.6, 2.4, 0.75, '#c29b76');
+    this.add('kiosk', walkX(0.23), PROMENADE.bottom - 2.2, 4, 2.8, '#76b9b6', 'SURF / RENTALS');
+    this.add('kiosk', walkX(0.77), PROMENADE.bottom - 2.2, 4, 2.8, '#d9a578', 'JUICE / COFFEE');
     const beachRandom = this.random; this.random = seeded(1965);
-    for (const x of [154, 162, 178, 186, 198, 218, 232, 244]) this.addPerson(vec(walkX(x), (PROMENADE.top + PROMENADE.bottom) / 2), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
+    for (const fraction of [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85]) this.addPerson(vec(walkX(fraction), (PROMENADE.top + PROMENADE.bottom) / 2), 'civilian', ['#df8976', '#78b9c0', '#efc468'][Math.floor(this.random() * 3)]);
     for (const x of [-8, 20, 64, 88, 110]) this.addPerson(vec(x, 253), 'civilian', '#dcaa84');
     this.random = beachRandom;
   }

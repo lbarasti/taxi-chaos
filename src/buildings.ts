@@ -1,4 +1,4 @@
-import { appearanceSeed, propArtwork, type PropArtwork } from './artwork/catalogue';
+import { appearanceSeed, propArtwork, scaleArtwork, type PropArtwork } from './artwork/catalogue';
 import { vec, type Vec } from './physics';
 
 export type BuildingSign = Readonly<{ width: number; inset: number; size: number; color: string }>;
@@ -43,13 +43,7 @@ export function compileBuilding(placement: BuildingPlacement<string>, catalogue:
   const width = placement.width ?? definition.width, height = placement.height ?? definition.height;
   if ([definition.width, definition.height, width, height].some(n => !Number.isFinite(n) || n <= 0)) throw new Error(`Building ${placement.id}: invalid footprint`);
   const selected = definition.artwork?.[appearanceSeed(placement.id) % definition.artwork.length];
-  const artwork = selected ? structuredClone(selected) : undefined;
-  if (artwork && (width !== definition.width || height !== definition.height)) {
-    const sx = width / definition.width, sy = height / definition.height;
-    const scale = (p: Vec) => vec(p.x * sx, p.y * sy);
-    const b = artwork.bounds;
-    Object.assign(artwork, { bounds: { x: b.x * sx, y: b.y * sy, width: b.width * sx, height: b.height * sy }, silhouette: artwork.silhouette.map(scale), occluder: artwork.occluder?.map(scale) });
-  }
+  const artwork = selected ? scaleArtwork(selected, width / definition.width, height / definition.height) : undefined;
   const { sign, replaceBlock, ...instance } = structuredClone(placement);
   return { ...instance, width, height, storeys: placement.storeys ?? definition.storeys, artwork,
     presentation: { fallback: definition.presentation.fallback, sign: { ...definition.presentation.sign, ...placement.sign } },

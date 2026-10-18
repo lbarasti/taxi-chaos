@@ -27,10 +27,12 @@ describe('coastal geography', () => {
     expect(rails.length).toBe(COAST_RAILS.length);
     expect(rails.every(p => p.hp === 24 && p.body.w <= 8)).toBe(true);
     expect(world.props.filter(p => p.kind === 'building').every(p => !!p.label)).toBe(true);
-    // No solid contact in the middle of the first open section on each edge.
+    // No solid contact in representative open sections on each edge. The
+    // southern sample passes through Ocean Walk's remaining central corridor.
     for (const [a, b] of [[vec(-14, -14), vec(254, -14)], [vec(254, -14), vec(254, 254)], [vec(254, 254), vec(-14, 254)], [vec(-14, 254), vec(-14, -14)], [HIGHLAND_OUTLINE[1], HIGHLAND_OUTLINE[2]]]) {
       const n = Math.ceil(dist(a, b) / 8), t = 4 / n;
-      const probe = new Body(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 1, 0.7, 0.7);
+      const sample = a.y === 254 && b.y === 254 ? vec(200, 254) : vec(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+      const probe = new Body(sample.x, sample.y, 1, 0.7, 0.7);
       expect([...world.hash.query(probe)].filter(p => contact(probe, p.body))).toEqual([]);
     }
   });

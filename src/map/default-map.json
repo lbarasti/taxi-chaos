@@ -38,15 +38,15 @@
       {
         "color": "#e4c391",
         "floors": 12,
-        "height": 13,
+        "height": 26,
         "id": "hotel-sandpiper",
         "name": "AZURE RESIDENCES",
         "owner": "beach",
         "position": {
           "x": 162,
-          "y": 263.5
+          "y": 259
         },
-        "width": 14,
+        "width": 28,
         "style": "luxury-condo"
       },
       {
@@ -65,15 +65,15 @@
       {
         "color": "#dfa7a0",
         "floors": 16,
-        "height": 13,
+        "height": 26,
         "id": "hotel-ocean-sunset",
         "name": "OCEAN CREST CONDOS",
         "owner": "beach",
         "position": {
           "x": 237,
-          "y": 263.5
+          "y": 259
         },
-        "width": 14,
+        "width": 28,
         "style": "luxury-condo"
       }
     ],
@@ -81,16 +81,14 @@
     "promenade": {
       "bottom": 256,
       "entries": [
-        160,
         180,
         200,
-        220,
-        240
+        220
       ],
       "id": "ocean-walk",
-      "left": 146,
+      "left": 177.6,
       "owner": "beach",
-      "right": 252,
+      "right": 222.4,
       "southEntries": [
         180,
         220
@@ -2965,7 +2963,7 @@
       "owner": "beach",
       "position": {
         "x": 162,
-        "y": 272
+        "y": 274
       },
       "weight": 0
     },
@@ -2975,7 +2973,7 @@
       "owner": "beach",
       "position": {
         "x": 214,
-        "y": 272
+        "y": 274
       },
       "weight": 0
     },
@@ -2985,7 +2983,7 @@
       "owner": "beach",
       "position": {
         "x": 254,
-        "y": 270.5
+        "y": 273
       },
       "weight": 0
     }
