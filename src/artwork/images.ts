@@ -4,6 +4,7 @@ import shopConcrete from '../assets/map/shop-concrete.png?inline';
 import tree from '../assets/map/tree-worn.png?inline';
 import asphalt from '../assets/map/asphalt.svg?inline';
 import hospital from '../assets/map/hospital-structure.png?inline';
+import luxuryCondo from '../assets/map/luxury-condo.png?inline';
 import { asphaltArtwork, type ArtBounds, type PropArtwork } from './catalogue';
 
 /** One decoded image per asset, shared by normal games and editor previews. */
@@ -15,7 +16,7 @@ export class ArtworkImages {
   private roofTile?: HTMLCanvasElement;
   private roofPatterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern>();
   load(): Promise<void> {
-    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt, 'hospital-roof': hospital }).map(([id, src]) => new Promise<void>(resolve => {
+    return this.loading ??= Promise.all(Object.entries({ 'shop-tar': shopTar, 'shop-rust': shopRust, 'shop-concrete': shopConcrete, 'tree-worn': tree, asphalt, 'hospital-roof': hospital, 'luxury-condo': luxuryCondo }).map(([id, src]) => new Promise<void>(resolve => {
       const image = new Image();
       image.onload = () => { this.images.set(id, image); resolve(); };
       // Individual failures retain procedural fallback artwork, including in offline builds.

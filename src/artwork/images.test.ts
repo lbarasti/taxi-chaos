@@ -38,7 +38,7 @@ describe('artwork image caching', () => {
     const loading = art.load();
     expect(art.load()).toBe(loading);
     await loading;
-    expect(images).toHaveLength(6);
+    expect(images).toHaveLength(7);
     expect(createElement).toHaveBeenCalledExactlyOnceWith('canvas');
     expect(tile).toMatchObject({ width: 768, height: 384 });
     expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[4], 0, 0);

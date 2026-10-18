@@ -3,12 +3,32 @@
 A 296 m sandy shoreline extends the south side of the city. The western beach is
 open and informal, with a volleyball court, pastel lifeguard huts, colourful beach
 setups and sand castles. Heading east, the shore narrows into a tiled, palm-lined
-promenade behind three oversized hotel blocks. Their podiums occupy the actual
-sand between the promenade and surf; rising 9/14/18-storey balcony walls, private
-pools, penthouses and guests-only signs make the beach appropriation visible.
-Public access survives in two gaps between hotels. Surf rentals, cafés, palms,
+promenade behind two 12/16-storey luxury condos and the 14-storey Pacific Palm
+Hotel. Their podiums occupy the actual sand between the promenade and surf;
+rooftop pools, penthouses and private frontage make the beach appropriation visible.
+Public access survives in the gaps between buildings. Surf rentals, cafés, palms,
 benches and strolling pedestrians occupy the public promenade.
 The existing south street provides access and fare pickup/drop-off points.
+
+## Luxury condos
+
+The Sandpiper and Ocean Sunset Suites plots now hold Azure Residences and Ocean
+Crest Condos. Both use Lorenzo's supplied straight-overhead transparent condo
+PNG, cropped at render time without altering the original file. Each has a
+14 × 13 m physical footprint on dry sand; the original hotel IDs stay stable in
+the versioned map, and Pacific Palm Hotel keeps its name and fare stop. An
+optional `style` field on beachfront building placements selects the sprite,
+so older map documents still load and names do not control appearance. Failed
+image decoding falls back to procedural beachfront architecture with resident
+signage. The condo sprites omit the renderer's displaced ground shadow while
+retaining their footprint-based night-light occluder.
+
+Offline production QA checked desktop and portrait rendering, image failure,
+console errors, overflow and external requests. The full package suite, strict
+TypeScript production build and map validator passed.
+
+![Two condos flanking Pacific Palm Hotel](screenshots/luxury-condos/desktop.png)
+![Azure Residences in portrait layout](screenshots/luxury-condos/portrait.png)
 
 ## Seafront spacing
 
@@ -86,20 +106,22 @@ attempting a geographically exact Los Angeles map.
 - **Fares/navigation:** Sunset Beach, Ocean Walk and Pacific Palm Hotel stops sit on
   the south city street. Beach access paths stay on dry land; eastern sand traffic
   stops at the city street rather than a fictional vehicle bypass through the
-  narrow hotel frontage. Walking navigation uses real pedestrian entrances and
-  gaps between the hotel podiums; collider sweeps verify both approaches.
+  narrow private frontage. Walking navigation uses real pedestrian entrances and
+  gaps between the building podiums; collider sweeps verify both approaches.
 
 ## Implementation and extension
 
 - `src/beach.ts` owns beach/shore geometry, sand detection, access paths, hotel/prop
   descriptors, pedestrian entries and per-tyre `sandHandling()` force modifiers.
-- `src/world.ts` creates the actual props, hotels, barriers, parked pickup and seeded
+- `src/world.ts` creates the actual props, beachfront buildings, barriers, parked pickup and seeded
   beachgoers. `blocksWalking()` distinguishes grouped vehicle entrance envelopes
-  from individual pedestrian collision posts. Hotel footprints live on the beach
+  from individual pedestrian collision posts. Building footprints live on the beach
   side of Ocean Walk, with widths/heights/floor counts in the shared descriptors.
   The original city blocks are restored, and street lanes remain accessible.
 - `src/beach-renderer.ts` draws sand texture, wet shoreline, foam, court/towels,
-  tiled walk, pastel hotels, towers, parasols, chairs, castles, palms and wreckage.
+  tiled walk, the remaining pastel hotel, towers, parasols, chairs, castles, palms and wreckage.
+  The two condos use the supplied embedded PNG through the shared artwork renderer,
+  with procedural beachfront drawing if it cannot load.
   The local radar also includes sand, promenade and hotels.
 - `src/vehicles.ts` adds `terrain.sand` (0 = road, 1 = off-road) to every definition
   and introduces the player-drivable `pickup` model. Existing freight access is unchanged.

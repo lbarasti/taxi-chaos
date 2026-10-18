@@ -37,16 +37,17 @@
     "hotels": [
       {
         "color": "#e4c391",
-        "floors": 9,
-        "height": 10,
+        "floors": 12,
+        "height": 13,
         "id": "hotel-sandpiper",
-        "name": "THE SANDPIPER",
+        "name": "AZURE RESIDENCES",
         "owner": "beach",
         "position": {
           "x": 162,
-          "y": 263
+          "y": 263.5
         },
-        "width": 33
+        "width": 14,
+        "style": "luxury-condo"
       },
       {
         "color": "#b2d4cb",
@@ -63,16 +64,17 @@
       },
       {
         "color": "#dfa7a0",
-        "floors": 18,
-        "height": 12,
+        "floors": 16,
+        "height": 13,
         "id": "hotel-ocean-sunset",
-        "name": "OCEAN SUNSET SUITES",
+        "name": "OCEAN CREST CONDOS",
         "owner": "beach",
         "position": {
           "x": 237,
-          "y": 264
+          "y": 263.5
         },
-        "width": 31
+        "width": 14,
+        "style": "luxury-condo"
       }
     ],
     "left": -42,

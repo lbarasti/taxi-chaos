@@ -1,6 +1,7 @@
 import type { Renderer } from './renderer';
 import type { Prop } from './world';
 import { vec, type Vec } from './physics';
+import { artworkImages } from './artwork/images';
 
 function path(r: Renderer, points: readonly Vec[], color: string, width = 0.12, closed = false) {
   const c = r.ctx; c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y));
@@ -110,13 +111,13 @@ function drawHotel(r: Renderer, prop: Prop) {
   label(r, prop.label, 0, roofBottom - 0.7, 0.85, '#38565b', '700');
   label(r, `${hotel.floors} STOREYS / OCEANFRONT LUXURY`, 0, roofBottom - 1.5, 0.55, '#38565b', '700');
   r.rect(-4.2, h / 2 - 0.85, 8.4, 0.85, '#526e70');
-  label(r, 'GUESTS ONLY', 0, h / 2 - 0.4, 0.65, '#f3e5c7', '700');
+  label(r, hotel.style === 'luxury-condo' ? 'RESIDENTS ONLY' : 'GUESTS ONLY', 0, h / 2 - 0.4, 0.65, '#f3e5c7', '700');
   c.restore();
 }
 
 export function drawBeachProp(r: Renderer, prop: Prop): boolean {
   const { BEACH_HOTELS } = r.game.map.beach;
-  if (prop.kind === 'building' && BEACH_HOTELS.some(h => h.name === prop.label)) { drawHotel(r, prop); return true; }
+  if (prop.kind === 'building' && BEACH_HOTELS.some(h => h.id === prop.sourceId) && (!prop.artwork || !artworkImages.has(prop.artwork.image))) { drawHotel(r, prop); return true; }
   if (!['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(prop.kind)) return false;
   const c = r.ctx, b = prop.body;
   c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);

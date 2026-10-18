@@ -61,4 +61,17 @@ describe('top-down artwork geometry', () => {
     expect(hospital.body.corners()).toEqual(corners);
     expect([hospital.body.w, hospital.body.h]).toEqual([26, 66]);
   });
+  it('gives two beachfront condos the supplied roof while keeping the remaining hotel procedural', () => {
+    const beachBuildings = new World().props.filter(p => p.kind === 'building' && p.sourceId?.startsWith('hotel-'));
+    expect(beachBuildings).toHaveLength(3);
+    const condos = beachBuildings.filter(p => p.artwork === propArtwork.luxuryCondo);
+    expect(condos.map(p => p.label)).toEqual(['AZURE RESIDENCES', 'OCEAN CREST CONDOS']);
+    for (const condo of condos) {
+      expect([condo.body.w, condo.body.h]).toEqual([14, 13]);
+      const renamed = { ...condo, label: 'RENAMED', sourceId: 'another-site' };
+      expect(artworkFor(renamed)).toBe(propArtwork.luxuryCondo);
+    }
+    expect(artworkFor(beachBuildings[1])).toBeUndefined();
+    expect(beachBuildings[1].label).toBe('PACIFIC PALM HOTEL');
+  });
 });
