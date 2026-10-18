@@ -20,7 +20,7 @@ describe('building authoring', () => {
       ? { ...b, id: 'metropolitan-care', label: 'METROPOLITAN CARE', width: 24, height: 64, recoveryEntrance: entrance } : b) });
     const world = new World(map), prop = world.props.find(p => p.sourceId === 'metropolitan-care')!;
     const art = artworkFor(prop)!;
-    expect(art.image).toBe('hospital-roof');
+    expect(art.image).toBe('hospital');
     expect(art.source).toEqual(propArtwork.hospital.source);
     expect(art.bounds.width).toBeCloseTo(26.6 * 24 / 26);
     expect(art.bounds.height).toBeCloseTo(66.6 * 64 / 66);
@@ -72,7 +72,7 @@ describe('building authoring', () => {
   it('lets another type reuse registered artwork without placement or renderer conditions', () => {
     const catalogue = { ...buildingDefinitions, clinic: buildingDefinitions.hospital };
     const building = compileBuilding({ id: 'a-new-clinic', type: 'clinic', owner: 'city', blockId: 'city-block-5-4', position: vec(220, 180), label: 'EAST CLINIC', color: '#596b70' }, catalogue);
-    expect(artworkFor({ kind: 'building', sourceId: building.id, building, body: new Body(220, 180, Infinity, building.width, building.height) })!.image).toBe('hospital-roof');
+    expect(artworkFor({ kind: 'building', sourceId: building.id, building, body: new Body(220, 180, Infinity, building.width, building.height) })!.image).toBe('hospital');
   });
 
   it('preserves the legacy scenery RNG when a placement replaces a park', () => {

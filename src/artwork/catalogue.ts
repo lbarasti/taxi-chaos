@@ -1,54 +1,30 @@
 import { vec, type Vec } from '../physics';
+import { artworkRecords, objectRecords } from '../catalogue/content';
+import { artworkSources } from '../catalogue/generated';
+import { appearanceSeed, compileArtworkCatalogue, compileObjectCatalogue, deriveArtwork, scaleArtwork } from '../catalogue/compile';
+import type { ArtBounds, PropArtwork } from '../catalogue/schema';
 
-/** All coordinates are metres, relative to the collision body's centre. */
-export type ArtBounds = Readonly<{ x: number; y: number; width: number; height: number }>;
-export type PropArtwork = Readonly<{
-  image: 'shop-tar' | 'shop-rust' | 'shop-concrete' | 'tree-worn' | 'hospital-roof' | 'luxury-condo';
-  layer: 'structure';
-  bounds: ArtBounds;
-  /** Optional pixel crop removes export padding without changing the source PNG. */
-  source?: ArtBounds;
-  rotation?: number;
-  /** Convex silhouette for sun shadows; optional outline for blocking directed light. */
-  silhouette: readonly Vec[];
-  /** Some supplied sprites carry their own depth shading and need no ground shadow. */
-  castsShadow?: boolean;
-  occluder?: readonly Vec[];
-}>;
+export type { ArtBounds, PropArtwork } from '../catalogue/schema';
+export { appearanceSeed, scaleArtwork };
+
+/** Compiled once from the authored records in `src/catalogue/content.ts`; shared by
+ * normal games and editor previews. Legacy records keep absolute prop geometry;
+ * object records expose a default-footprint view of their normalized templates. */
+const catalogue = compileArtworkCatalogue(artworkRecords, artworkSources);
+const objects = compileObjectCatalogue(objectRecords, artworkSources, artworkRecords);
+const objectArtwork: Record<string, PropArtwork> = Object.fromEntries(Object.entries(objects).flatMap(([id, definition]) => {
+  const template = definition.artwork?.[0];
+  // Only direct images add a new drawn image ID; variant-based types reuse legacy IDs.
+  return template && template.image === id ? [[id, deriveArtwork(template, definition.width, definition.height, definition.artworkScale ?? 1)] as const] : [];
+}));
+export const propArtwork: Readonly<Record<string, PropArtwork>> = { ...catalogue.structures, ...objectArtwork };
+export const asphaltArtwork = catalogue.ground.asphalt;
+
 export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number }; artwork?: PropArtwork; building?: { artwork?: PropArtwork } };
-const shopOutline = [vec(-5.3, -5.3), vec(5.3, -5.3), vec(5.3, 5.3), vec(-5.3, 5.3)];
-const shop = { layer: 'structure', bounds: { x: -5.3, y: -5.3, width: 10.6, height: 10.6 }, silhouette: shopOutline, occluder: shopOutline } as const;
-const hospitalOutline = [vec(-13.3, -33.3), vec(13.3, -33.3), vec(13.3, 33.3), vec(-13.3, 33.3)];
-const condoOutline = [vec(-7.15, -6.65), vec(7.15, -6.65), vec(7.15, 6.65), vec(-7.15, 6.65)];
-export const propArtwork = {
-  shop: { ...shop, image: 'shop-tar' },
-  shopRust: { ...shop, image: 'shop-rust' },
-  shopConcrete: { ...shop, image: 'shop-concrete' },
-  hospital: { image: 'hospital-roof', layer: 'structure', bounds: { x: -13.3, y: -33.3, width: 26.6, height: 66.6 }, source: { x: 33, y: 16, width: 726, height: 1951 }, silhouette: hospitalOutline, occluder: hospitalOutline },
-  luxuryCondo: { image: 'luxury-condo', layer: 'structure', bounds: { x: -7.15, y: -6.65, width: 14.3, height: 13.3 }, source: { x: 100, y: 60, width: 1055, height: 1090 }, silhouette: condoOutline, castsShadow: false, occluder: condoOutline },
-  tree: { image: 'tree-worn', layer: 'structure', bounds: { x: -2.6, y: -2.6, width: 5.2, height: 5.2 }, silhouette: Array.from({ length: 12 }, (_, i) => vec(Math.cos(i * Math.PI / 6) * 2.4, Math.sin(i * Math.PI / 6) * 2.4)) },
-} as const satisfies Record<string, PropArtwork>;
-const shops = [propArtwork.shop, propArtwork.shopRust, propArtwork.shopConcrete];
-const trees = Array.from({ length: 4 }, (_, i) => ({ ...propArtwork.tree, rotation: i * Math.PI / 2 }));
-export const asphaltArtwork = { image: 'asphalt', layer: 'ground', tileMetres: 48 } as const;
 
-/** Keep an image, its sun silhouette and its light blocker aligned to one footprint. */
-export function scaleArtwork(art: PropArtwork, sx: number, sy: number): PropArtwork {
-  const point = (p: Vec) => vec(p.x * sx, p.y * sy), b = art.bounds;
-  return {
-    ...art,
-    bounds: { x: b.x * sx, y: b.y * sy, width: b.width * sx, height: b.height * sy },
-    silhouette: art.silhouette.map(point),
-    occluder: art.occluder?.map(point),
-  };
-}
+const shops = [propArtwork['shop-tar'], propArtwork['shop-rust'], propArtwork['shop-concrete']];
+const trees = Array.from({ length: 4 }, (_, i) => ({ ...propArtwork['tree-worn'], rotation: i * Math.PI / 2 }));
 
-/** Appearance uses stable identity, never the simulation's random stream or display labels. */
-export function appearanceSeed(identity: string): number {
-  let seed = 2166136261;
-  for (let i = 0; i < identity.length; i++) seed = Math.imul(seed ^ identity.charCodeAt(i), 16777619);
-  return seed >>> 0;
-}
 export function artworkFor(prop: ArtProp): PropArtwork | undefined {
   if (prop.artwork) return prop.artwork;
   if (prop.kind === 'building' && prop.building) return prop.building.artwork;

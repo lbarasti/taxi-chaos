@@ -1,52 +1,16 @@
-import { appearanceSeed, propArtwork, scaleArtwork, type PropArtwork } from './artwork/catalogue';
-import { vec, type Vec } from './physics';
+import { artworkSources } from './catalogue/generated';
+import { artworkRecords, objectRecords } from './catalogue/content';
+import { compileBuildingCatalogue, compilePlacement } from './catalogue/compile';
+import type { BuildingCatalogue, BuildingDefinition, CompiledBuilding, PlacementRecord } from './catalogue/schema';
 
-export type BuildingSign = Readonly<{ width: number; inset: number; size: number; color: string }>;
-export type BuildingPresentation = Readonly<{
-  fallback: 'shop' | 'commercial' | 'terraced' | 'wards';
-  sign: BuildingSign;
-}>;
-export type BuildingDefinition = Readonly<{
-  width: number; height: number; storeys: number;
-  artwork?: readonly PropArtwork[];
-  presentation: BuildingPresentation;
-}>;
-const commercialSign: BuildingSign = { width: 14, inset: 1.72, size: 0.78, color: '#eadab8' };
+export type { BuildingCatalogue, BuildingDefinition, BuildingSign, BuildingPresentation, CompiledBuilding } from './catalogue/schema';
 
-/** Reusable types. New content chooses one of these styles and optional artwork;
- * neither the renderer nor navigation needs to know the building's type/name. */
-export const buildingDefinitions = {
-  shop: { width: 10, height: 10, storeys: 2, artwork: [propArtwork.shop, propArtwork.shopRust, propArtwork.shopConcrete], presentation: { fallback: 'shop', sign: { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' } } },
-  commercial: { width: 23, height: 10, storeys: 4, presentation: { fallback: 'commercial', sign: commercialSign } },
-  landmark: { width: 23, height: 23, storeys: 8, presentation: { fallback: 'terraced', sign: commercialSign } },
-  hospital: { width: 26, height: 66, storeys: 8, artwork: [propArtwork.hospital], presentation: { fallback: 'wards', sign: { width: 14, inset: 1.4, size: 0.9, color: '#f0dfae' } } },
-} satisfies Record<string, BuildingDefinition>;
-export type BuildingType = keyof typeof buildingDefinitions;
-export type BuildingCatalogue = Readonly<Record<string, BuildingDefinition>>;
-export type BuildingPlacement<Type extends string = BuildingType> = Readonly<{
-  id: string; type: Type; owner: 'city'; blockId: string; position: Vec; label: string; color: string;
-  width?: number; height?: number; storeys?: number; sign?: Partial<BuildingSign>;
-  /** Otherwise a matching ID replaces only that generated building; a new ID adds one. */
-  replaceBlock?: boolean;
-  /** Optional exterior service entrance, independent of the display label. */
-  recoveryEntrance?: Vec;
-}>;
-export type CompiledBuilding = Readonly<{
-  id: string; type: string; owner: 'city'; blockId: string; position: Vec; label: string; color: string;
-  width: number; height: number; storeys: number; silhouette: readonly Vec[];
-  artwork?: PropArtwork; presentation: BuildingPresentation; recoveryEntrance?: Vec;
-}>;
+/** Reusable types compiled once from the authored object records in `src/catalogue/content.ts`.
+ * Adding a type there needs no renderer, navigation or collision change. */
+export const buildingDefinitions: Readonly<Record<string, BuildingDefinition>> = compileBuildingCatalogue(objectRecords, artworkSources, artworkRecords);
+export type BuildingType = (typeof objectRecords)[number]['id'];
+export type BuildingPlacement<Type extends string = BuildingType> = PlacementRecord<Type>;
 
 export function compileBuilding(placement: BuildingPlacement<string>, catalogue: BuildingCatalogue = buildingDefinitions): CompiledBuilding {
-  const definition = catalogue[placement.type];
-  if (!definition) throw new Error(`Building ${placement.id}: unknown type ${placement.type}`);
-  const width = placement.width ?? definition.width, height = placement.height ?? definition.height;
-  if ([definition.width, definition.height, width, height].some(n => !Number.isFinite(n) || n <= 0)) throw new Error(`Building ${placement.id}: invalid footprint`);
-  const selected = definition.artwork?.[appearanceSeed(placement.id) % definition.artwork.length];
-  const artwork = selected ? scaleArtwork(selected, width / definition.width, height / definition.height) : undefined;
-  const { sign, replaceBlock, ...instance } = structuredClone(placement);
-  return { ...instance, width, height, storeys: placement.storeys ?? definition.storeys, artwork,
-    presentation: { fallback: definition.presentation.fallback, sign: { ...definition.presentation.sign, ...placement.sign } },
-    silhouette: [vec(-width / 2 - 0.25, -height / 2 - 0.6), vec(width / 2, -height / 2 - 0.6), vec(width / 2, height / 2), vec(-width / 2 - 0.25, height / 2)],
-  };
+  return compilePlacement(placement, catalogue);
 }

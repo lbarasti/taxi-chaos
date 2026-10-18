@@ -1,4 +1,5 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
+import type { PropKind } from './catalogue/schema';
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
@@ -8,7 +9,7 @@ import { createCityDetour, type StreetAccess } from './city-navigation';
 import { propArtwork, scaleArtwork, type PropArtwork } from './artwork/catalogue';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
-export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
+export type { PropKind } from './catalogue/schema';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
@@ -162,7 +163,7 @@ export class World {
     for (const hotel of BEACH_HOTELS) {
       const prop = this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name);
       prop.sourceId = hotel.id;
-      if (hotel.style === 'luxury-condo') prop.artwork = scaleArtwork(propArtwork.luxuryCondo, hotel.width / 14, hotel.height / 13);
+      if (hotel.style === 'luxury-condo') prop.artwork = scaleArtwork(propArtwork['luxury-condo'], hotel.width / 14, hotel.height / 13);
     }
     for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i % 3], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`).sourceId = map.document.beach.towers[i].id;
     for (const [i, p] of BEACH_SETS.entries()) {

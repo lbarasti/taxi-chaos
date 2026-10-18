@@ -20,7 +20,7 @@ describe('top-down artwork geometry', () => {
   it('rotates and translates artwork occluders, drops destroyed ones and blocks light behind roofs', () => {
     const prop = { kind: 'building', alive: true, body: new Body(14, 14, Infinity, 10, 10) };
     prop.body.angle = Math.PI / 4;
-    const outlineFor = () => propArtwork.shop.occluder;
+    const outlineFor = () => propArtwork['shop-tar'].occluder;
     const [outline] = collectOccluders([prop], { minX: 0, minY: 0, maxX: 40, maxY: 40 }, 20, outlineFor);
     expect(outline.radius).toBeCloseTo(Math.hypot(5.3, 5.3));
     expect(outline.points[0].x).toBeCloseTo(14);
@@ -64,7 +64,7 @@ describe('top-down artwork geometry', () => {
   it('gives two beachfront condos the supplied roof while keeping the remaining hotel procedural', () => {
     const beachBuildings = new World().props.filter(p => p.kind === 'building' && p.sourceId?.startsWith('hotel-'));
     expect(beachBuildings).toHaveLength(3);
-    const condos = beachBuildings.filter(p => p.artwork?.image === propArtwork.luxuryCondo.image);
+    const condos = beachBuildings.filter(p => p.artwork?.image === propArtwork['luxury-condo'].image);
     expect(condos.map(p => p.label)).toEqual(['AZURE RESIDENCES', 'OCEAN CREST CONDOS']);
     for (const condo of condos) {
       expect([condo.body.w, condo.body.h]).toEqual([28, 26]);

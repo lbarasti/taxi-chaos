@@ -21,7 +21,7 @@ npm run build
 npm run map:check -- --input src/map/default-map.json --json
 ```
 
-`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map.
+`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding; `npm run artwork:test` covers the prep CLI offline.
 
 For interactive testing, open **http://localhost:5173/?debug=1** or press **F2**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
 
@@ -76,14 +76,36 @@ operation types are defined in [`src/map/operations.ts`](src/map/operations.ts).
 it and `close()` restores the original game. `live()` restores realtime preview
 after fixed stepping.
 
-For city buildings, edit reusable types in [`src/buildings.ts`](src/buildings.ts)
-and placements/campuses in [`src/city-content.ts`](src/city-content.ts). A matching
-placement ID replaces one generated building; `replaceBlock` or campus ownership
-replaces whole blocks. Campus bounds derive street closures; relocate affected
-parking/traffic descriptors in the map. Declare resident homes and an exterior
-recovery entrance explicitly. [`src/buildings.test.ts`](src/buildings.test.ts)
-contains examples. Register new inline images in `src/artwork/images.ts`, their
-bounds and outlines in `src/artwork/catalogue.ts`, and provenance in asset attribution.
+For city buildings, edit reusable object records in
+[`src/catalogue/content.ts`](src/catalogue/content.ts) and placements/campuses in
+[`src/city-content.ts`](src/city-content.ts). A type declares its footprint, storeys,
+fallback, sign and normalized artwork — a direct `image` path or shared `variants`; a
+placement references it by stable ID and type. A matching placement ID replaces one
+generated building; `replaceBlock` or campus ownership replaces whole blocks. Campus
+bounds derive street closures; relocate affected parking/traffic descriptors in the map.
+Declare resident homes and an exterior recovery entrance explicitly.
+[`src/buildings.test.ts`](src/buildings.test.ts) contains examples.
+
+An ordinary new image type is two records — one object type and one placement:
+
+```ts
+// src/catalogue/content.ts
+{
+  id: 'bakery', kind: 'building', width: 10, height: 10, storeys: 2,
+  fallback: 'shop',
+  sign: { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' },
+  image: 'map/bakery-front.png',
+  artwork: { fit: 'stretch', width: 10.6 / 10, height: 10.6 / 10, outline: 'bounds', occluder: true },
+},
+```
+
+Reference the PNG as the type's `image` and run `npm run artwork:prep -- --write`: the
+CLI measures the source, regenerates the inline manifest in
+[`src/catalogue/generated.ts`](src/catalogue/generated.ts) and reports the transparent
+padding it trimmed. There is no import list, artwork record or asset union to edit by
+hand. Artwork geometry is stored as fractions of the resolved footprint, so resizing a
+type default or a placement moves collision and drawing together; `artworkScale` changes
+the drawing alone. Keep provenance in asset attribution.
 
 To publish a reviewed map change, export the validated draft to `src/map/default-map.json`, run the map check, tests, and build, then open a pull request with affected fixtures updated. Merging to `main` triggers the Pages deployment workflow.
 
@@ -194,6 +216,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/ai.ts`: civilian traffic and police behavior.
 - `src/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
 - `src/characters.json`, `src/characters.ts`, `src/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/portrait-manifest.ts` is the DOM-free declared file list.
+- `src/catalogue/`: shared DOM-free building/prop catalogue records, compiler, browser-free PNG measurement and the generated inline image manifest.
 - `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
 - `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.
 - `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.

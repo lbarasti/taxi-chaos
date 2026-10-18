@@ -76,10 +76,10 @@ describe('artwork image caching', () => {
   it('leaves PNG sprites, their bounds and rotation intact', async () => {
     const { images } = browser();
     const art = new ArtworkImages(), main = canvasContext();
-    expect(art.draw(main.ctx, propArtwork.shopRust)).toBe(false);
+    expect(art.draw(main.ctx, propArtwork['shop-rust'])).toBe(false);
     await art.load();
     expect(art.has('shop-rust')).toBe(true);
-    expect(art.draw(main.ctx, propArtwork.shopRust)).toBe(true);
+    expect(art.draw(main.ctx, propArtwork['shop-rust'])).toBe(true);
     expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[1], -5.3, -5.3, 10.6, 10.6);
     expect(main.calls.rotate).toHaveBeenCalledExactlyOnceWith(0);
   });
@@ -104,6 +104,11 @@ describe('artwork image caching', () => {
     expect(art.draw(main.ctx, propArtwork.hospital)).toBe(false);
     await art.load();
     expect(art.draw(main.ctx, propArtwork.hospital)).toBe(true);
-    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[5], 33, 16, 726, 1951, -13.3, -33.3, 26.6, 66.6);
+    const args = main.calls.drawImage.mock.calls[0];
+    expect(args.slice(0, 5)).toEqual([images[6], 33, 16, 726, 1951]);
+    expect(args[5]).toBeCloseTo(-13.3);
+    expect(args[6]).toBeCloseTo(-33.3);
+    expect(args[7]).toBeCloseTo(26.6);
+    expect(args[8]).toBeCloseTo(66.6);
   });
 });
