@@ -32,3 +32,8 @@ image-generation tool extended the roof vertically and retained its weathered
 concrete, skylights, pipes and teal helipad. The original upload remains unchanged.
 The adaptation prompt and sprite alignment are recorded in
 `docs/hospital-artwork.md`. The PNG is bundled inline with a procedural fallback.
+
+`map/luxury-condo.png` is the original straight-overhead transparent PNG supplied
+by Lorenzo for the Ocean Walk condos. It is embedded unchanged; only transparent
+export padding is cropped at draw time. The same asset appears at two beachfront
+plots, with a procedural building fallback if image decoding fails.

@@ -3,7 +3,7 @@ import { vec, type Vec } from '../physics';
 /** All coordinates are metres, relative to the collision body's centre. */
 export type ArtBounds = Readonly<{ x: number; y: number; width: number; height: number }>;
 export type PropArtwork = Readonly<{
-  image: 'shop-tar' | 'shop-rust' | 'shop-concrete' | 'tree-worn' | 'hospital-roof';
+  image: 'shop-tar' | 'shop-rust' | 'shop-concrete' | 'tree-worn' | 'hospital-roof' | 'luxury-condo';
   layer: 'structure';
   bounds: ArtBounds;
   /** Optional pixel crop removes export padding without changing the source PNG. */
@@ -13,15 +13,17 @@ export type PropArtwork = Readonly<{
   silhouette: readonly Vec[];
   occluder?: readonly Vec[];
 }>;
-export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number }; building?: { artwork?: PropArtwork } };
+export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number }; artwork?: PropArtwork; building?: { artwork?: PropArtwork } };
 const shopOutline = [vec(-5.3, -5.3), vec(5.3, -5.3), vec(5.3, 5.3), vec(-5.3, 5.3)];
 const shop = { layer: 'structure', bounds: { x: -5.3, y: -5.3, width: 10.6, height: 10.6 }, silhouette: shopOutline, occluder: shopOutline } as const;
 const hospitalOutline = [vec(-13.3, -33.3), vec(13.3, -33.3), vec(13.3, 33.3), vec(-13.3, 33.3)];
+const condoOutline = [vec(-7.15, -6.65), vec(7.15, -6.65), vec(7.15, 6.65), vec(-7.15, 6.65)];
 export const propArtwork = {
   shop: { ...shop, image: 'shop-tar' },
   shopRust: { ...shop, image: 'shop-rust' },
   shopConcrete: { ...shop, image: 'shop-concrete' },
   hospital: { image: 'hospital-roof', layer: 'structure', bounds: { x: -13.3, y: -33.3, width: 26.6, height: 66.6 }, source: { x: 33, y: 16, width: 726, height: 1951 }, silhouette: hospitalOutline, occluder: hospitalOutline },
+  luxuryCondo: { image: 'luxury-condo', layer: 'structure', bounds: { x: -7.15, y: -6.65, width: 14.3, height: 13.3 }, source: { x: 100, y: 60, width: 1055, height: 1090 }, silhouette: condoOutline, occluder: condoOutline },
   tree: { image: 'tree-worn', layer: 'structure', bounds: { x: -2.6, y: -2.6, width: 5.2, height: 5.2 }, silhouette: Array.from({ length: 12 }, (_, i) => vec(Math.cos(i * Math.PI / 6) * 2.4, Math.sin(i * Math.PI / 6) * 2.4)) },
 } as const satisfies Record<string, PropArtwork>;
 const shops = [propArtwork.shop, propArtwork.shopRust, propArtwork.shopConcrete];
@@ -35,6 +37,7 @@ export function appearanceSeed(identity: string): number {
   return seed >>> 0;
 }
 export function artworkFor(prop: ArtProp): PropArtwork | undefined {
+  if (prop.artwork) return prop.artwork;
   if (prop.kind === 'building' && prop.building) return prop.building.artwork;
   const { position: p, w, h } = prop.body;
   if (p.x < 0 || p.x > 240 || p.y < 0 || p.y > 240) return;

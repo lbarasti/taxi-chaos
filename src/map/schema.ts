@@ -30,7 +30,7 @@ export type MapDocument = {
   beach: {
     shore: string[]; left: number; right: number; top: number;
     promenade: Owned & { left: number; right: number; top: number; bottom: number; entries: number[]; southEntries: number[] };
-    hotels: (Placement & { width: number; height: number; floors: number })[];
+    hotels: (Placement & { width: number; height: number; floors: number; style?: 'luxury-condo' })[];
     towers: (Owned & { position: Vec })[];
     sets: (Owned & { position: Vec })[];
     castles: (Owned & { position: Vec })[];
@@ -42,10 +42,10 @@ export type MapDocument = {
 /** Strict shape checking also bounds imported workloads before any factory runs. */
 export function assertMap(value: unknown): asserts value is MapDocument {
   const fail = (path: string, why: string): never => { throw new Error(`${path}: ${why}`); };
-  const object = (v: unknown, keys: string[], path: string): Record<string, unknown> => {
+  const object = (v: unknown, keys: string[], path: string, optional: string[] = []): Record<string, unknown> => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) return fail(path, 'expected object');
     const obj = v as Record<string, unknown>;
-    if (Object.keys(obj).some(k => !keys.includes(k)) || keys.some(k => !Object.hasOwn(obj, k))) fail(path, `expected fields ${keys.join(', ')}`);
+    if (Object.keys(obj).some(k => !keys.includes(k) && !optional.includes(k)) || keys.some(k => !Object.hasOwn(obj, k))) fail(path, `expected fields ${keys.join(', ')}`);
     return obj;
   };
   const num = (v: unknown, path: string, min = -10000, max = 10000): number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fail(path, `expected finite number in [${min}, ${max}]`);
@@ -57,7 +57,7 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   const id = (v: unknown, path: string) => { const s = text(v, path); if (!/^[a-z][a-z0-9-]*$/.test(s) || ids.has(s)) fail(path, 'invalid or duplicate ID'); ids.add(s); };
   const owned = (obj: Record<string, unknown>, path: string) => { id(obj.id, `${path}.id`); owners.push(text(obj.owner, `${path}.owner`)); };
   const ref = (v: unknown, path: string) => refs.push(text(v, path));
-  const placement = (v: unknown, path: string, extras: string[] = []) => { const p = object(v, ['id', 'owner', 'position', 'name', 'color', ...extras], path); owned(p, path); point(p.position, `${path}.position`); text(p.name, path); if (!/^#[0-9a-f]{6}$/i.test(text(p.color, path))) fail(path, 'expected hex colour'); return p; };
+  const placement = (v: unknown, path: string, extras: string[] = [], optional: string[] = []) => { const p = object(v, ['id', 'owner', 'position', 'name', 'color', ...extras], path, optional); owned(p, path); point(p.position, `${path}.position`); text(p.name, path); if (!/^#[0-9a-f]{6}$/i.test(text(p.color, path))) fail(path, 'expected hex colour'); return p; };
   const root = object(value, ['schemaVersion', 'coordinates', 'envelope', 'districts', 'points', 'highlandOutline', 'roads', 'nodes', 'villas', 'countryProps', 'parking', 'trafficSpawns', 'stops', 'golf', 'ridges', 'labels', 'beach', 'generation', 'constraints'], 'map');
   if (root.schemaVersion !== 2 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
   const env = object(root.envelope, ['min', 'max'], 'envelope'); point(env.min, 'envelope.min'); point(env.max, 'envelope.max');
@@ -100,7 +100,7 @@ export function assertMap(value: unknown): asserts value is MapDocument {
   for (const key of ['left', 'right', 'top', 'bottom']) num(prom[key], `promenade.${key}`);
   if ((prom.right as number) - (prom.left as number) < 10 || (prom.bottom as number) - (prom.top as number) < 2) fail('promenade', 'invalid dimensions');
   for (const key of ['entries', 'southEntries']) { const xs = list(prom[key], `promenade.${key}`, 1, 30); xs.forEach((x, i) => { num(x, key, (prom.left as number) + 2.4, (prom.right as number) - 2.4); if (i && (x as number) - (xs[i - 1] as number) < 4.8) fail(key, 'entries must be ordered with 4.8 m spacing'); }); }
-  for (const v of list(beach.hotels, 'hotels', 1, 30)) { const p = placement(v, 'hotel', ['width', 'height', 'floors']); num(p.width, 'hotel.width', 1, 100); num(p.height, 'hotel.height', 1, 100); num(p.floors, 'hotel.floors', 1, 50); }
+  for (const v of list(beach.hotels, 'hotels', 1, 30)) { const p = placement(v, 'hotel', ['width', 'height', 'floors'], ['style']); num(p.width, 'hotel.width', 1, 100); num(p.height, 'hotel.height', 1, 100); num(p.floors, 'hotel.floors', 1, 50); if (p.style !== undefined && p.style !== 'luxury-condo') fail('hotel.style', 'unknown style'); }
   for (const key of ['towers', 'sets', 'castles']) for (const v of list(beach[key], key, 0, 100)) { const p = object(v, ['id', 'owner', 'position'], key); owned(p, key); point(p.position, key); }
   const gen = object(root.generation, ['ruralSeed', 'candidates'], 'generation'); num(gen.ruralSeed, 'ruralSeed', 0, 2147483647); num(gen.candidates, 'candidates', 0, 5000); if (!Number.isInteger(gen.candidates)) fail('candidates', 'must be integer');
   for (const v of list(root.constraints, 'constraints', 1, 20)) { const p = object(v, ['id', 'type', 'minimum', 'resolution'], 'constraint'); id(p.id, 'constraint.id'); if (p.type !== 'beach-water-gap') fail('constraint', 'unknown type'); num(p.minimum, 'minimum', 1, 500); num(p.resolution, 'resolution', 0.5, 10); }

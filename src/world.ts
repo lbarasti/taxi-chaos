@@ -5,13 +5,14 @@ import { defaultMap } from './map/default';
 import type { Parking } from './map/schema';
 import { CITY_GRID, CITY_SIZE, citySegmentOpen, type CityBlock, type CityBuilding } from './city';
 import { createCityDetour, type StreetAccess } from './city-navigation';
+import { propArtwork, type PropArtwork } from './artwork/catalogue';
 import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
 export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
-export type Prop = { id: number; sourceId?: string; building?: CityBuilding; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
+export type Prop = { id: number; sourceId?: string; artwork?: PropArtwork; building?: CityBuilding; body: Body; kind: PropKind; alive: boolean; hp: number; maxHp: number; color: string; label: string; brokenAt: number; lastHit: number; fire: number; fuelSpent: boolean; blamed: boolean };
 export type Person = { id: number; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = CityBlock;
 export type ParkingSpot = Parking & { sourceId: string };
@@ -158,7 +159,11 @@ export class World {
     const portRandom = this.random; this.random = seeded(9076);
     for (const p of [vec(210, -19.5), vec(96, -63), vec(150, -96), vec(180, -64)]) this.addPerson(p, 'civilian', '#e3bd67');
     this.random = portRandom;
-    for (const hotel of BEACH_HOTELS) this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name).sourceId = hotel.id;
+    for (const hotel of BEACH_HOTELS) {
+      const prop = this.add('building', hotel.position.x, hotel.position.y, hotel.width, hotel.height, hotel.color, hotel.name);
+      prop.sourceId = hotel.id;
+      if (hotel.style === 'luxury-condo') prop.artwork = propArtwork.luxuryCondo;
+    }
     for (const [i, p] of LIFEGUARD_TOWERS.entries()) this.add('lifeguard-tower', p.x, p.y, 4.6, 4.2, ['#9cced1', '#e0b0ba', '#bdd6b0'][i % 3], `LIFEGUARD ${String(i + 1).padStart(2, '0')}`).sourceId = map.document.beach.towers[i].id;
     for (const [i, p] of BEACH_SETS.entries()) {
       this.add('parasol', p.x, p.y, 3.4, 3.4, ['#df8976', '#78b9c0', '#efc468', '#a3a5cb', '#80b5a2'][i % 5]).sourceId = map.document.beach.sets[i].id;
