@@ -32,6 +32,17 @@ const shops = [propArtwork.shop, propArtwork.shopRust, propArtwork.shopConcrete]
 const trees = Array.from({ length: 4 }, (_, i) => ({ ...propArtwork.tree, rotation: i * Math.PI / 2 }));
 export const asphaltArtwork = { image: 'asphalt', layer: 'ground', tileMetres: 48 } as const;
 
+/** Keep an image, its sun silhouette and its light blocker aligned to one footprint. */
+export function scaleArtwork(art: PropArtwork, sx: number, sy: number): PropArtwork {
+  const point = (p: Vec) => vec(p.x * sx, p.y * sy), b = art.bounds;
+  return {
+    ...art,
+    bounds: { x: b.x * sx, y: b.y * sy, width: b.width * sx, height: b.height * sy },
+    silhouette: art.silhouette.map(point),
+    occluder: art.occluder?.map(point),
+  };
+}
+
 /** Appearance uses stable identity, never the simulation's random stream or display labels. */
 export function appearanceSeed(identity: string): number {
   let seed = 2166136261;

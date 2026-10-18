@@ -31,11 +31,11 @@ function beachAccessPath(p: Vec): Vec[] {
     const entry = PROMENADE_ENTRIES.reduce((a, b) => Math.abs(a + 0.675 - p.x) < Math.abs(b + 0.675 - p.x) ? a : b) + 0.675;
     return [p, vec(entry, p.y), vec(entry, 240)];
   }
-  if (p.x >= PROMENADE.left && p.y >= PROMENADE.top) {
+  if (p.x >= PROMENADE.left - 30 && p.y >= PROMENADE.top) {
     if (p.x > PROMENADE.right && p.y < PROMENADE.bottom + 1.6) return [p, vec(p.x, 244), vec(240, 244), vec(240, 240)];
     const entry = PROMENADE_SOUTH_ENTRIES.reduce((a, b) => Math.abs(a + 0.675 - p.x) < Math.abs(b + 0.675 - p.x) ? a : b) + 0.675;
     // Walk along the front apron or the remaining surf strip, then through a
-    // genuine gap between the hotels. Never route through a hotel podium.
+    // genuine gap between the buildings. Never route through a podium.
     const inGap = BEACH_HOTELS.every(h => p.x < h.position.x - h.width / 2 - 0.4 || p.x > h.position.x + h.width / 2 + 0.4);
     const y = p.y < PROMENADE.bottom + 1.6 || inGap ? p.y : Math.max(p.y, Math.max(...BEACH_HOTELS.map(h => h.position.y + h.height / 2)) + 0.45);
     return [p, vec(p.x, y), vec(entry, y), vec(entry, 240)];

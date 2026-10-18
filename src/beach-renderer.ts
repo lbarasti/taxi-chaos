@@ -62,13 +62,14 @@ export function drawBeachGround(r: Renderer) {
     for (let y = PROMENADE.top + 2; y < PROMENADE.bottom; y += 2) r.rect(x, y, 2, 0.035, '#9caaa757');
   }
   r.rect(PROMENADE.left, (PROMENADE.top + PROMENADE.bottom) / 2 - 0.7, PROMENADE.right - PROMENADE.left, 1.2, '#eee7d14a');
-  label(r, 'O C E A N   W A L K', PROMENADE.left + 38, (PROMENADE.top + PROMENADE.bottom) / 2, 1, '#647d7a', '700');
-  label(r, 'PEDESTRIANS ONLY', PROMENADE.right - 20, (PROMENADE.top + PROMENADE.bottom) / 2, 0.67, '#647d7a', '700');
+  const walkCenter = (PROMENADE.left + PROMENADE.right) / 2;
+  label(r, 'O C E A N   W A L K', walkCenter, (PROMENADE.top + PROMENADE.bottom) / 2, 0.9, '#647d7a', '700');
+  label(r, 'PEDESTRIANS ONLY', walkCenter, PROMENADE.top + 1.2, 0.55, '#647d7a', '700');
   for (const x of PROMENADE_ENTRIES) {
     path(r, [vec(x, PROMENADE.top - 2.3), vec(x, PROMENADE.top - 0.7)], '#f4ebcf', 0.2);
     r.circle(vec(x, PROMENADE.top - 1.9), 0.15, '#718984');
   }
-  for (const hotel of BEACH_HOTELS) {
+  for (const hotel of BEACH_HOTELS.filter(h => h.style !== 'luxury-condo')) {
     const front = hotel.position.y - hotel.height / 2;
     r.rect(hotel.position.x - hotel.width / 2, front - 1.3, hotel.width, 1.3, '#b4b4a4');
     label(r, 'PRIVATE FRONTAGE', hotel.position.x, front - 0.7, 0.48, '#6d7772', '700');

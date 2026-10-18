@@ -38,9 +38,10 @@ describe('southern beach geography and access', () => {
     expect([...g.world.hash.query(pickup.body)].some(p => contact(pickup.body, p.body))).toBe(false);
     for (const hotel of BEACH_HOTELS) {
       const prop = g.world.props.find(p => p.label === hotel.name)!;
-      expect(prop.body.position.y - prop.body.h / 2).toBeGreaterThan(256);
+      expect(prop.body.position.y - prop.body.h / 2).toBeGreaterThanOrEqual(246);
       expect(prop.body.corners().every(p => inBeach(p) && !onPromenade(p) && !inOcean(p))).toBe(true);
       expect(g.world.props.some(p => p !== prop && p.alive && contact(p.body, prop.body))).toBe(false);
+      if (hotel.style === 'luxury-condo') expect(prop.body.w * prop.body.h).toBe(4 * 14 * 13);
     }
   });
   it('routes western sand, eastern sand and promenade walkers to the city and woods on dry land', () => {
@@ -56,9 +57,9 @@ describe('southern beach geography and access', () => {
     }
   });
   it('approaches eastern sand from the street with vehicle clearance, rather than clipping promenade edges', () => {
-    const g = new Game(), from = vec(140, 240), target = vec(170, 256.7);
+    const g = new Game(), from = vec(140, 240), target = vec(180, 256.7);
     const path = roadPath(from, target);
-    expect(path.at(-1)).toEqual(vec(170, 240));
+    expect(path.at(-1)).toEqual(vec(180, 240));
     for (let i = 1; i < path.length; i++) {
       const a = path[i - 1], b = path[i], steps = Math.ceil(dist(a, b) / 0.2);
       for (let j = 0; j <= steps; j++) {
@@ -71,7 +72,7 @@ describe('southern beach geography and access', () => {
   });
   it('routes walkers around hotel podiums through real entrances with full body clearance', () => {
     const g = new Game();
-    for (const from of [vec(170, 256.7), vec(200, 270.5), vec(237, 270.45), vec(180.675, 265)]) {
+    for (const from of [vec(180.675, 272.6), vec(200, 270.5), vec(237, 272.6), vec(220.675, 265)]) {
       const path = roadPath(from, vec(200, 240), 'walk');
       for (let i = 1; i < path.length; i++) {
         const a = path[i - 1], b = path[i], steps = Math.ceil(dist(a, b) / 0.15);
