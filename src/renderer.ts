@@ -463,8 +463,10 @@ export class Renderer {
     const art = artworkFor(prop);
     if (art && artworkImages.has(art.image)) {
       // Structure artwork shares the old prop pass. Destruction above stays authoritative.
-      c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
-      trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
+      if (art.castsShadow !== false) {
+        c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
+        trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
+      }
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
         const sign = prop.building?.presentation.sign ?? { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };

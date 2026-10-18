@@ -20,7 +20,8 @@ the versioned map, and Pacific Palm Hotel keeps its name and fare stop. An
 optional `style` field on beachfront building placements selects the sprite,
 so older map documents still load and names do not control appearance. Failed
 image decoding falls back to procedural beachfront architecture with resident
-signage. The artwork, shadow and light occluder use the same footprint anchor.
+signage. The condo sprites omit the renderer's displaced ground shadow while
+retaining their footprint-based night-light occluder.
 
 Offline production QA checked desktop and portrait rendering, image failure,
 console errors, overflow and external requests. The full package suite, strict

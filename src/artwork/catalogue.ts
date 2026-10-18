@@ -11,6 +11,8 @@ export type PropArtwork = Readonly<{
   rotation?: number;
   /** Convex silhouette for sun shadows; optional outline for blocking directed light. */
   silhouette: readonly Vec[];
+  /** Some supplied sprites carry their own depth shading and need no ground shadow. */
+  castsShadow?: boolean;
   occluder?: readonly Vec[];
 }>;
 export type ArtProp = { id?: number; sourceId?: string; kind: string; body: { position: Vec; angle?: number; w: number; h: number }; artwork?: PropArtwork; building?: { artwork?: PropArtwork } };
@@ -23,7 +25,7 @@ export const propArtwork = {
   shopRust: { ...shop, image: 'shop-rust' },
   shopConcrete: { ...shop, image: 'shop-concrete' },
   hospital: { image: 'hospital-roof', layer: 'structure', bounds: { x: -13.3, y: -33.3, width: 26.6, height: 66.6 }, source: { x: 33, y: 16, width: 726, height: 1951 }, silhouette: hospitalOutline, occluder: hospitalOutline },
-  luxuryCondo: { image: 'luxury-condo', layer: 'structure', bounds: { x: -7.15, y: -6.65, width: 14.3, height: 13.3 }, source: { x: 100, y: 60, width: 1055, height: 1090 }, silhouette: condoOutline, occluder: condoOutline },
+  luxuryCondo: { image: 'luxury-condo', layer: 'structure', bounds: { x: -7.15, y: -6.65, width: 14.3, height: 13.3 }, source: { x: 100, y: 60, width: 1055, height: 1090 }, silhouette: condoOutline, castsShadow: false, occluder: condoOutline },
   tree: { image: 'tree-worn', layer: 'structure', bounds: { x: -2.6, y: -2.6, width: 5.2, height: 5.2 }, silhouette: Array.from({ length: 12 }, (_, i) => vec(Math.cos(i * Math.PI / 6) * 2.4, Math.sin(i * Math.PI / 6) * 2.4)) },
 } as const satisfies Record<string, PropArtwork>;
 const shops = [propArtwork.shop, propArtwork.shopRust, propArtwork.shopConcrete];
