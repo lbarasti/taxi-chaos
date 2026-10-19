@@ -138,7 +138,7 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
       const district = d.districts.find(e => e.id === op.targetId);
       if (district) {
         if (district.id !== 'southern-estates') throw new Error('Only southern-estates supports whole-district translation; edit individual geometry in other districts');
-        for (const e of entities(d).filter(e => e.owner === district.id && !('point' in e))) {
+        for (const e of entities(d).filter(e => e.owner === district.id && !('point' in e) && !('fromNode' in e))) {
           const weight = d.points.find(p => p.id === e.id)?.weight ?? 1;
           if (weight) moveEntity(d, e.id, scale(op.delta, weight), changed);
         }

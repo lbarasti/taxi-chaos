@@ -204,7 +204,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     // Directed inlet clearance, sampled along exposed facing shoreline segments.
     // The direction belongs to the authored constraint, not a named district.
     const direction=constraint.direction;
-    for(const shore of coast.shorelines.filter(s=>s.landId===a.id && s.normal.x*direction.x+s.normal.y*direction.y>1e-6)) {
+    for(const shore of coast.landBoundaries.filter(s=>s.landId===a.id && s.normal.x*direction.x+s.normal.y*direction.y>1e-6)) {
       const steps=Math.ceil(dist(shore.a,shore.b)/constraint.resolution);
       for(let i=0;i<=steps;i++) {
         const origin=add(shore.a,scale(sub(shore.b,shore.a),i/(steps||1)));
@@ -217,7 +217,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       }
     }
     waterGap=Math.min(waterGap,gap);
-    push('water-gap',[constraint.id,constraint.fromLand,constraint.toLand],`Minimum directed water gap: ${gap.toFixed(1)} m (required ${constraint.minimum} m)`,a.outline[0],{gap:Number.isFinite(gap)?gap:-1,minimum:constraint.minimum},gap<constraint.minimum?'error':gap<constraint.minimum+5?'warning':'info');
+    push('water-gap',[constraint.id,constraint.fromLand,constraint.toLand],Number.isFinite(gap)?`Minimum directed water gap: ${gap.toFixed(1)} m (required ${constraint.minimum} m)`:'Cannot verify the directed water gap: no exposed source boundary faces the target land',a.outline[0],{gap:Number.isFinite(gap)?gap:-1,minimum:constraint.minimum},!Number.isFinite(gap)||gap<constraint.minimum?'error':gap<constraint.minimum+5?'warning':'info');
   }
   return { revision: compiled.revision, findings, errors: findings.filter(f => f.severity === 'error').length, warnings: findings.filter(f => f.severity === 'warning').length, waterGap: Number.isFinite(waterGap) ? waterGap : null, resolution: { roads: 1, waterGap: document.constraints[0]?.resolution ?? 1, footprintEdge: 0.5, tolerance: 0.04 } };
 }

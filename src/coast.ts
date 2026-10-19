@@ -31,8 +31,8 @@ const coverage=landRegions.map(r=>({ ...r,bounds:regionBounds(r.outline),rectang
 const inOcean = (p: Vec): boolean => !coverage.some(r => p.x>=r.bounds.min.x && p.x<=r.bounds.max.x && p.y>=r.bounds.min.y && p.y<=r.bounds.max.y && (r.rectangle || contains(r.outline,p)));
 // Split coverage edges at all crossings, then keep only exposed land/water edges.
 // This also suppresses foam along overlaps with the city apron or another island.
-const shorelines: { landId: string; a: Vec; b: Vec; normal: Vec }[] = [];
-for (const region of document.landRegions) for (let i=0;i<region.outline.length;i++) {
+const landBoundaries: { landId: string; a: Vec; b: Vec; normal: Vec }[] = [];
+for (const region of landRegions) for (let i=0;i<region.outline.length;i++) {
   const a=region.outline[i],b=region.outline[(i+1)%region.outline.length], delta=sub(b,a), size=dist(a,b);
   if(size<1e-8)continue;
   const cuts=[0,1];
@@ -48,7 +48,7 @@ for (const region of document.landRegions) for (let i=0;i<region.outline.length;
     const start=add(a,scale(delta,cuts[j-1])),end=add(a,scale(delta,cuts[j])),mid=scale(add(start,end),.5),n=vec(-delta.y/size,delta.x/size);
     const plus=inOcean(add(mid,scale(n,.02))),minus=inOcean(add(mid,scale(n,-.02)));
     if(plus===minus)continue;
-    shorelines.push({landId:region.id,a:start,b:end,normal:scale(n,plus?1:-1)});
+    landBoundaries.push({landId:region.id,a:start,b:end,normal:scale(n,plus?1:-1)});
   }
 }
 
@@ -75,7 +75,11 @@ for (const outline of [cityOutline, HIGHLAND_OUTLINE]) {
 for (const y of BRIDGE_Y) for (const side of [-1, 1]) for (let i = 0; i < 9; i++) {
   COAST_RAILS.push({ position: vec(246 + (i + 0.5) * 66 / 9, y + side * BRIDGE_HALF_WIDTH), width: 66 / 9, angle: 0 });
 }
-return { onBridge, inOcean, landRegions, shorelines, COAST_RAILS };
+// Foam remains authored presentation; clearance needs every exposed boundary,
+// including land supplied by the city, harbour, countryside and bridge generators.
+const authoredLand = new Set(document.landRegions.map(r => r.id));
+const shorelines = landBoundaries.filter(s => authoredLand.has(s.landId));
+return { onBridge, inOcean, landRegions, landBoundaries, shorelines, COAST_RAILS };
 }
 export const { onBridge, inOcean, COAST_RAILS } = createCoast(createCountryside(defaultMap), defaultMap);
 

@@ -1,7 +1,7 @@
 import { Body, SpatialHash, cross, dist, dot, sub, vec, type Vec } from './physics';
 import type { BuildingPresentation, PropKind, ResolvedFeature } from './catalogue/schema';
 import { contains, regionOrder } from './regions';
-import { createAccess } from './access';
+import { createAccess, type AccessGeometry } from './access';
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { defaultMap } from './map/default';
@@ -48,7 +48,6 @@ export class World {
   constructor(public readonly map: CompiledMap = defaultCompiledMap) {
     const { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, inCountryClearing, inHighlands } = map.country;
     const { COAST_RAILS } = map.coast;
-    this.navigation = createNavigation(map);
     this.parking = map.document.parking.map(p => ({ ...structuredClone(p), sourceId: p.id }));
     this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
     this.blocks = map.city.blocks;
@@ -182,14 +181,18 @@ export class World {
       const person = this.addPerson(resident.position,'civilian',resident.color); person.wander = resident.wander; person.sourceId = resident.id;
     }
     this.random = residentRandom;
+    this.navigation = createNavigation(map, this);
   }
 }
 
 // Prefer simple orthogonal routes; the compiled road graph supplies detours
 // around authored sites that replace former grid streets.
-export function createNavigation(map: CompiledMap) {
+export function createNavigation(map: CompiledMap, collisionGeometry?: AccessGeometry) {
 const { ROAD_NODES, countryAccess, countryNeighbours, countryNode, countryPath, isCountry } = map.country;
-const access = createAccess(map);
+// Standalone map consumers build the same complete world lazily when they need
+// access clearance. A live World supplies its own collision index after spawning.
+let detachedGeometry: AccessGeometry | undefined;
+const access = createAccess(map, () => collisionGeometry ?? (detachedGeometry ??= new World(map)));
 const detour = createCityDetour(map.city);
 const insideBuilding = (p: Vec) => map.city.buildings.some(b => Math.abs(p.x - b.position.x) < b.width / 2 && Math.abs(p.y - b.position.y) < b.height / 2);
 function gridNode(p: Vec): Vec { return vec(Math.round(Math.max(0, Math.min(SIZE, p.x)) / GRID) * GRID, Math.round(Math.max(0, Math.min(SIZE, p.y)) / GRID) * GRID); }

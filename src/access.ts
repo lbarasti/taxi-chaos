@@ -1,21 +1,18 @@
 import { vehicleDefinition } from './vehicles';
 import { Body, contact, dist, type Vec } from './physics';
 import type { CompiledMap } from './map/compile';
+import type { PropKind } from './catalogue/schema';
 import { freezeGeometry } from './map/default';
 import { closestOnSegment, contains, regionBounds, regionOrder } from './regions';
 
 export type Travel = 'walk' | 'drive';
 /** Small authored access graph. Neither surface materials nor district names enter
  * routing. Connections to the existing road network are explicit road nodes. */
-const accessCache = new WeakMap<CompiledMap, ReturnType<typeof buildAccess>>();
-export function createAccess(map: CompiledMap) {
-  const cached = accessCache.get(map);
-  if (cached) return cached;
-  const access = buildAccess(map);
-  if (Object.isFrozen(map)) accessCache.set(map, access);
-  return access;
-}
-function buildAccess(map: CompiledMap) {
+export type AccessGeometry = {
+  hash: { query(body: Body): Iterable<{ body: Body; kind: PropKind }> };
+  pools: readonly Body[];
+};
+export function createAccess(map: CompiledMap, collisionGeometry: () => AccessGeometry) {
   const areas = map.document.accessAreas
       .map((a) => freezeGeometry({ ...a, bounds: regionBounds(a.outline) }))
       .sort(regionOrder),
@@ -35,19 +32,6 @@ function buildAccess(map: CompiledMap) {
     }
     return undefined;
   };
-  const placements = [
-    ...Object.values(map.objects),
-    ...map.city.buildings.map((b) => ({ ...b, kind: 'building', angle: 0 })),
-    ...map.document.countryProps
-      .filter((p) => !map.objects[p.id])
-      .map((p) => ({ ...p, width: p.width!, height: p.height! })),
-    ...map.country.VILLA_POOLS.map((p) => ({ ...p, kind: 'pool', angle: 0 })),
-  ];
-  const objects = placements.map((o) => {
-    const body = new Body(o.position.x, o.position.y, 1, o.width, o.height);
-    body.angle = o.angle;
-    return { body, kind: o.kind };
-  });
   const land = map.coast.inOcean;
   function clear(
     a: Vec,
@@ -58,15 +42,7 @@ function buildAccess(map: CompiledMap) {
     const chassis = vehicleDefinition('pickup').chassis;
     const w = dimensions?.width ?? (travel === 'walk' ? 0.7 : chassis.length),
       h = dimensions?.height ?? (travel === 'walk' ? 0.7 : chassis.width),
-      radius = Math.hypot(w, h) / 2;
-    const obstacles = objects.filter(
-      (o) =>
-        !(travel === 'walk' && o.kind === 'pedestrian-gate') &&
-        o.body.position.x + Math.hypot(o.body.w, o.body.h) / 2 >= Math.min(a.x, b.x) - radius &&
-        o.body.position.x - Math.hypot(o.body.w, o.body.h) / 2 <= Math.max(a.x, b.x) + radius &&
-        o.body.position.y + Math.hypot(o.body.w, o.body.h) / 2 >= Math.min(a.y, b.y) - radius &&
-        o.body.position.y - Math.hypot(o.body.w, o.body.h) / 2 <= Math.max(a.y, b.y) + radius,
-    );
+      geometry = collisionGeometry();
     const steps = Math.ceil(dist(a, b) / 0.25),
       body = new Body(a.x, a.y, 1, w, h);
     body.angle = travel === 'walk' ? 0 : Math.atan2(b.y - a.y, b.x - a.x);
@@ -75,7 +51,12 @@ function buildAccess(map: CompiledMap) {
       body.position = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
       if (
         [body.position, ...body.corners()].some(land) ||
-        obstacles.some((o) => (contact(body, o.body)?.depth ?? 0) > 0.001)
+        [...geometry.hash.query(body)].some(
+          (o) =>
+            !(travel === 'walk' && o.kind === 'pedestrian-gate') &&
+            (contact(body, o.body)?.depth ?? 0) > 0.001,
+        ) ||
+        geometry.pools.some((pool) => contact(body, pool))
       )
         return false;
       if (travel === 'drive' && areaAt(body.position)?.driving === 'approach') return false;
@@ -117,8 +98,8 @@ function buildAccess(map: CompiledMap) {
   function vehicleTarget(p: Vec): Vec {
     return areaAt(p)?.driving === 'approach' ? approach(p) : p;
   }
-  // Precompute bounded graph clearance once per navigation instance. Invalid authored
-  // connections stay visible to validation but can never become runtime shortcuts.
+  // Cache topology only. Clearance uses the live collision index, so generated
+  // props, newly added obstacles and destruction all affect the same route queries.
   const adjacency = {
     walk: new Map<string, { id: string; cost: number }[]>(),
     drive: new Map<string, { id: string; cost: number }[]>(),
@@ -127,7 +108,6 @@ function buildAccess(map: CompiledMap) {
     for (const mode of e.modes) {
       const a = byId.get(e.fromNode)!,
         b = byId.get(e.toNode)!;
-      if (!clear(a.position, b.position, mode)) continue;
       for (const [from, to] of [
         [a, b],
         [b, a],
@@ -157,6 +137,7 @@ function buildAccess(map: CompiledMap) {
       const n = byId.get(id)!;
       if (n.road) return paths.get(id)!;
       for (const edge of adjacency[travel].get(id) ?? []) {
+        if (!clear(n.position, byId.get(edge.id)!.position, travel)) continue;
         const cost = costs.get(id)! + edge.cost;
         if (cost >= (costs.get(edge.id) ?? Infinity)) continue;
         costs.set(edge.id, cost);
