@@ -105,12 +105,12 @@ dismounting is immediate.
 
 ## Settings and sound
 
-Pulp gore and difficulty can be changed from the welcome or pause screen. Sound effects start after your first click, tap, or key press. Adjust effect volume, mute, and separate siren volume from the welcome/pause screen or Test Lab. Audio preferences are saved independently from progress. There is no music or voice audio.
+Pulp gore and difficulty can be changed in **Settings** from the welcome or pause screen. Sound effects start after your first click, tap, or key press. Adjust effect volume, mute, and separate siren volume in the same Settings menu. Audio preferences are saved independently from progress. There is no music or voice audio.
 
 The world clock begins at **07:00** and advances while you play; pause, garage, and game-over states stop it. Lighting transitions through morning, afternoon, evening, and night. The time of day does not change fare or fire timers.
 
 ## Test Lab
 
-Press **F2** to try scenarios, inspect debug views, adjust traffic, or change gameplay settings. Fixtures cover deliveries, vehicles, collisions, recovery, police, fires, coastal hazards, and locations listed above. The lab uses an isolated game without changing normal progress. **Erase saved progress** is a separate action from resetting a test run.
+Press **F2** to try scenarios, inspect debug views, adjust traffic, use cheats, or audition sound effects. Difficulty, gore, and audio preferences are in the welcome/pause **Settings** menu. Fixtures cover deliveries, vehicles, collisions, recovery, police, fires, coastal hazards, and locations listed above. The lab uses an isolated game without changing normal progress. **Erase saved progress** is a separate action from resetting a test run.
 
 Progress and gameplay settings are stored in browser storage when available. If storage is blocked, the game remains playable, but progress may not persist.
