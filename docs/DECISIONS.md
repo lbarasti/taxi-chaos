@@ -199,3 +199,19 @@ version 3: typed catalogue references are validated structurally on import and i
 operations, and older documents are rejected rather than upgraded. Authoring fixtures
 are small placement lists composed onto the current default map, so they do not drift
 when the baseline map changes.
+
+## D14 — Remove the visual Map studio and keep authoring programmatic
+
+**Decision:** Delete the in-game Map studio overlay, its canvas renderer and editor
+styles. Keep the strict map engine, validation, operations, map/authoring CLIs and the
+`__taxi.map` browser automation, including isolated gameplay previews.
+
+**Reason:** The overlay duplicated the checked CLI workflow, hid the actual game and
+added a large maintenance surface for a tool that authors and reviewers already drive
+through commands and automation.
+
+**Consequences:** F2 no longer exposes a map editor. Map changes go through
+`map:check`, the authoring-preview CLI or `__taxi.map`; previews still use a fresh
+persistence-disabled game. `edit()` restores the prior game and camera and freezes
+drafting; `close()` additionally restores the prior live/frozen clock. The DOM-free
+map engine, validation operations and CLI remain the only authoring paths.

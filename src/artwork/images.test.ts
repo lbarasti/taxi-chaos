@@ -59,7 +59,7 @@ describe('artwork image caching', () => {
     expect(createElement).toHaveBeenCalledTimes(1);
   });
 
-  it('shares the raster tile, but not context-owned patterns, with editor/preview canvases', async () => {
+  it('shares the raster tile, but not context-owned patterns, with authoring preview canvases', async () => {
     const { tile, createElement } = browser();
     const art = new ArtworkImages(), game = canvasContext(), preview = canvasContext();
     await art.load();

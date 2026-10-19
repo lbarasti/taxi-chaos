@@ -63,7 +63,7 @@ test('--json inspects real compiled geometry and the generated inline manifest',
   assert.equal(report.preview.allowed, true);
 });
 
-test('--resize previews one instance through the atomic editor operation', () => {
+test('--resize previews one instance through the atomic map operation', () => {
   const result = run(['--input', example, '--entity', 'authoring-bakery', '--resize', '24,16', '--json']);
   assert.equal(result.status, 0, result.stderr);
   const payload = json(result);
@@ -324,7 +324,7 @@ test('--drive-from rejects a distant run that never reaches the selected bakery'
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test('the Map studio adopts a catalogue type default footprint', { skip: !chromiumReady, timeout: 240000 }, async () => {
+test('map authoring automation applies typed placements and isolates previews', { skip: !chromiumReady, timeout: 240000 }, async () => {
   const errors = [], requests = [];
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   try {
@@ -340,80 +340,190 @@ test('the Map studio adopts a catalogue type default footprint', { skip: !chromi
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     await page.goto(`${pathToFileURL(await standaloneHtml()).href}?debug=1`);
     await page.waitForFunction(() => typeof window.__taxi?.map?.open === 'function');
-    // The real Map studio, driven through its own DOM: no test-only editor hooks.
+    // The removed studio must leave no visible entry point or residual editor DOM.
+    assert.equal(await page.locator('#map-editor, #map-preview-bar').count(), 0);
+    assert.equal(await page.locator('[data-lab="map"]').count(), 0);
+    assert.equal(await page.getByText('Map studio', { exact: false }).count(), 0);
+
     const result = await page.evaluate(() => {
-      const api = window.__taxi.map;
+      const lab = window.__taxi, api = lab.map, locks = () => ({ panel: document.querySelector('#debug-panel').inert, app: document.querySelector('#app').inert });
       api.open();
-      const editor = document.getElementById('map-editor');
-      const field = key => editor.querySelector(`[data-map="${key}"]`);
-      const choose = (key, value) => { const select = field(key); select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); };
-      const press = key => field(key).click();
-      const enter = (key, value) => { field(key).value = value; };
-      const status = () => ({ text: field('status').textContent, error: field('status').classList.contains('editor-error') });
+      const opened = api.snapshot();
+      const draftLocks = locks();
+      const exported = api.export();
+      const roundTrip = { revision: api.import(exported).revision === opened.revision, valid: api.validate().errors, canonical: api.export() === exported };
       const size = id => { const bounds = api.describe(id).bounds; return { width: bounds.max.x - bounds.min.x, height: bounds.max.y - bounds.min.y }; };
-      const descriptor = id => ({ ...api.snapshot().document.countryProps.find(prop => prop.id === id) });
+      // An untyped 1.6 m placement, then a typed bakery placement that resolves the
+      // catalogue default through the same atomic operations the CLI uses.
+      api.apply({ baseRevision: opened.revision, operations: [{
+        type: 'add', collection: 'countryProps',
+        descriptor: { id: 'automation-untyped', owner: 'southern-estates', position: { x: 150, y: 450 }, kind: 'crate', angle: 0, color: '#426e58', label: '', width: 1.6, height: 1.6 },
+      }] });
+      const applied = api.apply({ baseRevision: api.snapshot().revision, operations: [{
+        type: 'add', collection: 'countryProps',
+        descriptor: { id: 'automation-bakery', owner: 'southern-estates', position: { x: 166, y: 450 }, kind: 'building', angle: 0, color: '#426e58', label: '', type: 'bakery' },
+      }] });
+      const typed = { size: size('automation-bakery'), descriptor: { ...api.snapshot().document.countryProps.find(p => p.id === 'automation-bakery') } };
+      const untyped = size('automation-untyped');
+      api.undo();
+      const undone = api.snapshot().document.countryProps.some(p => p.id === 'automation-bakery');
+      api.redo();
+      const redone = api.snapshot().document.countryProps.some(p => p.id === 'automation-bakery');
+      const revision = api.snapshot().revision;
 
-      // 1. An untyped 1.6 m placement: choosing the bakery type adopts its 12 × 8 m default.
-      choose('collection', 'countryProps');
-      enter('new-id', 'studio-untyped');
-      choose('prop-kind', 'crate');
-      const seeded = { width: field('prop-width').value, height: field('prop-height').value };
-      press('add');
-      const untypedBefore = size('studio-untyped');
-      choose('prop-type', 'bakery');
-      const chosen = {
-        width: field('prop-width').value, height: field('prop-height').value,
-        widthHint: field('prop-width').placeholder, heightHint: field('prop-height').placeholder,
-        kind: field('prop-kind').value,
+      // A structurally valid draft with a real validation error must not build a preview.
+      api.apply({ baseRevision: revision, operations: [{ type: 'move', targetId: 'fairway-a', position: { x: 208, y: 310 } }] });
+      const invalid = { errors: api.validate().errors, blocked: false, message: '', state: null };
+      try { api.preview({ spawnId: 'fairway-club' }); } catch (error) { invalid.blocked = true; invalid.message = error.message; }
+      invalid.state = api.previewState();
+      api.undo();
+
+      // Preview runs an isolated persistence-disabled game; fixed stepping must not
+      // alter the lab game or the draft used to build it.
+      const labBefore = { time: lab.state().time, position: lab.state().position };
+      const preview = api.preview({ spawnId: 'fairway-club' });
+      const previewLocks = locks();
+      const stepped = api.step(0.5, ['KeyW']);
+      const previewState = api.previewState();
+      api.live();
+      const edited = api.edit();
+      const editLocks = locks();
+      const labAfter = { time: lab.state().time, position: lab.state().position };
+      const restored = { edited: edited.revision === revision, previewState: api.previewState(), lab: labAfter.time === labBefore.time && labAfter.position.x === labBefore.position.x && labAfter.position.y === labBefore.position.y };
+
+      // A second preview can be closed directly, restoring the pre-open clock and UI.
+      api.preview({ spawnId: 'fairway-club' }); api.close();
+      return {
+        opened: opened.schemaVersion, applied: applied.changedIds, typed, untyped, undone, redone, revision, roundTrip, invalid, draftLocks, previewLocks, editLocks, closedLocks: locks(),
+        preview: { mode: preview.mode, time: preview.time, moved: Math.hypot(stepped.position.x - preview.position.x, stepped.position.y - preview.position.y), state: previewState?.time, restored },
+        closed: { active: api.previewState(), state: lab.state().lab },
       };
-      press('properties');
-      const untypedAfter = { size: size('studio-untyped'), status: status(), descriptor: descriptor('studio-untyped') };
-
-      // 2. A typed placement with explicit overrides: choosing the type clears them.
-      enter('new-id', 'studio-typed');
-      choose('prop-type', 'shipping-crate');
-      press('add');
-      enter('prop-width', '20'); enter('prop-height', '10');
-      press('properties');
-      const overrideBefore = size('studio-typed');
-      choose('prop-type', 'bakery');
-      const cleared = { width: field('prop-width').value, height: field('prop-height').value };
-      press('properties');
-      const typedAfter = { size: size('studio-typed'), status: status(), descriptor: descriptor('studio-typed') };
-
-      // 3. Explicit overrides can be reentered for the chosen type.
-      enter('prop-width', '20'); enter('prop-height', '10');
-      press('properties');
-      const reentered = { size: size('studio-typed'), status: status(), descriptor: descriptor('studio-typed') };
-      return { seeded, untypedBefore, chosen, untypedAfter, overrideBefore, cleared, typedAfter, reentered };
     });
-    assert.deepEqual(result.seeded, { width: '1.6', height: '1.6' }, 'an untyped placement still starts from explicit 1.6 m');
+    assert.equal(result.opened, 3);
+    assert.ok(result.applied.includes('automation-bakery'));
+    assert.equal(result.roundTrip.revision, true);
+    assert.equal(result.roundTrip.valid, 0);
+    assert.equal(result.roundTrip.canonical, true);
+    assert.ok(result.invalid.errors > 0, `the invalid draft reports validation errors: ${JSON.stringify(result.invalid)}`);
+    assert.equal(result.invalid.blocked, true);
+    assert.match(result.invalid.message, /Preview blocked by/);
+    assert.equal(result.invalid.state, null);
+    assert.deepEqual(result.draftLocks, { panel: true, app: true });
+    assert.deepEqual(result.previewLocks, { panel: true, app: false });
+    assert.deepEqual(result.editLocks, { panel: true, app: true });
+    assert.deepEqual(result.closedLocks, { panel: false, app: false });
     const metres = (actual, width, height, message) => assert.ok(
       Math.abs(actual.width - width) < 1e-6 && Math.abs(actual.height - height) < 1e-6,
       `${message}: ${JSON.stringify(actual)}`,
     );
-    metres(result.untypedBefore, 1.6, 1.6, 'the untyped placement resolves its explicit size');
-    // Choosing the type clears the override fields and hints the type default.
-    assert.deepEqual([result.chosen.width, result.chosen.height], ['', '']);
-    assert.deepEqual([result.chosen.widthHint, result.chosen.heightHint], ['12', '8']);
-    assert.equal(result.chosen.kind, 'building', 'the picker still selects the type behaviour kind');
-    // Applying adopts the type default, with no explicit override left behind.
-    metres(result.untypedAfter.size, 12, 8, 'applying adopts the bakery default');
-    assert.equal(result.untypedAfter.status.error, false, result.untypedAfter.status.text);
-    assert.equal(result.untypedAfter.descriptor.type, 'bakery');
-    assert.equal(result.untypedAfter.descriptor.width, undefined);
-    assert.equal(result.untypedAfter.descriptor.height, undefined);
+    metres(result.untyped, 1.6, 1.6, 'an untyped placement resolves its explicit size');
+    metres(result.typed.size, 12, 8, 'a typed placement adopts the bakery default');
+    assert.equal(result.typed.descriptor.type, 'bakery');
+    assert.equal(result.typed.descriptor.width, undefined);
+    assert.equal(result.typed.descriptor.height, undefined);
+    assert.equal(result.undone, false, 'undo removed the typed placement');
+    assert.equal(result.redone, true, 'redo restored the typed placement');
+    assert.equal(result.preview.mode, 'playing');
+    assert.ok(result.preview.moved > 0.1, `fixed-step preview moved under its own power: ${JSON.stringify(result.preview)}`);
+    assert.ok(Math.abs(result.preview.state - (result.preview.time + 0.5)) < 1e-9, `stepping advanced the preview clock: ${JSON.stringify(result.preview)}`);
+    assert.equal(result.preview.restored.edited, true);
+    assert.equal(result.preview.restored.previewState, null);
+    assert.equal(result.preview.restored.lab, true, 'the lab game is untouched by the isolated preview');
+    assert.equal(result.closed.active, null);
+    assert.deepEqual(errors, [], 'Browser errors');
+    assert.deepEqual(requests, [], 'External runtime requests');
+    await context.close();
+  } finally { await browser.close(); }
+});
 
-    metres(result.overrideBefore, 20, 10, 'explicit overrides resolve first');
-    assert.deepEqual([result.cleared.width, result.cleared.height], ['', '']);
-    metres(result.typedAfter.size, 12, 8, 'an explicitly sized type adopts the new type default');
-    assert.equal(result.typedAfter.descriptor.type, 'bakery');
-    assert.equal(result.typedAfter.descriptor.width, undefined);
+test('drafting rejects real input and restores the prior clock on edit and close', { skip: !chromiumReady, timeout: 240000 }, async () => {
+  const errors = [], requests = [];
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  try {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    await context.addInitScript(() => { try { localStorage.clear(); sessionStorage.clear(); } catch { /* file:// may deny storage */ } });
+    await context.route('**/*', route => {
+      const url = route.request().url();
+      if (url.startsWith('file:') || url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
+      requests.push(url); return route.abort();
+    });
+    const page = await context.newPage();
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    await page.goto(`${pathToFileURL(await standaloneHtml()).href}?debug=1`);
+    await page.waitForFunction(() => typeof window.__taxi?.map?.open === 'function');
+    const snapshot = () => page.evaluate(() => structuredClone(__taxi.state()));
+    const locks = () => page.evaluate(() => ({ panel: document.querySelector('#debug-panel').inert, app: document.querySelector('#app').inert }));
 
-    metres(result.reentered.size, 20, 10, 'an explicit override can be reentered');
-    assert.equal(result.reentered.descriptor.width, 20);
-    assert.equal(result.reentered.descriptor.height, 10);
-    assert.equal(result.reentered.status.error, false, result.reentered.status.text);
+    // Drafting must reject every real user path, including keys that would normally
+    // clear externalClock, and LAB controls that mutate the original temporary game.
+    await page.evaluate(() => __taxi.realtime());
+    await page.evaluate(() => __taxi.map.open());
+    assert.deepEqual(await locks(), { panel: true, app: true });
+    const before = await snapshot();
+    await page.keyboard.down('w');
+    await page.waitForTimeout(300);
+    await page.keyboard.up('w');
+    for (const key of ['p', 'g', 'h', 'e', 'r', 'Escape']) await page.keyboard.press(key);
+    const controls = await page.evaluate(() => ['live', 'step', 'reset'].map(key => {
+      const rect = document.querySelector(`[data-lab="${key}"]`).getBoundingClientRect();
+      return { key, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    }));
+    for (const control of controls) await page.mouse.click(control.x, control.y);
+    await page.waitForTimeout(300);
+    assert.deepEqual(await snapshot(), before, 'drafting rejected keys, shortcuts and LAB controls');
+
+    // close() restores the clock state that existed before open(): live here.
+    await page.evaluate(() => __taxi.map.close());
+    assert.deepEqual(await locks(), { panel: false, app: false });
+    const liveStart = await snapshot();
+    await page.waitForTimeout(350);
+    const liveEnd = await snapshot();
+    assert.ok(liveEnd.time > liveStart.time, 'close restores a previously live clock');
+
+    // close() also restores a previously frozen clock.
+    await page.evaluate(() => __taxi.step(0));
+    await page.evaluate(() => { __taxi.map.open(); __taxi.map.close(); });
+    const frozenStart = await snapshot();
+    await page.waitForTimeout(350);
+    assert.equal((await snapshot()).time, frozenStart.time, 'close restores a previously frozen clock');
+
+    // edit() always freezes drafting, even when the prior clock was live.
+    await page.evaluate(() => __taxi.realtime());
+    await page.evaluate(() => { __taxi.map.open(); __taxi.map.preview({ spawnId: 'fairway-club' }); __taxi.map.edit(); });
+    assert.deepEqual(await locks(), { panel: true, app: true });
+    const editedStart = await snapshot();
+    await page.waitForTimeout(350);
+    assert.equal((await snapshot()).time, editedStart.time, 'edit freezes the restored draft');
+    await page.evaluate(() => __taxi.map.close());
+    const afterEditStart = await snapshot();
+    await page.waitForTimeout(350);
+    assert.ok((await snapshot()).time > afterEditStart.time, 'close after edit restores the prior live clock');
+
+    // With a previously frozen clock, both edit and close stay frozen.
+    await page.evaluate(() => __taxi.step(0));
+    await page.evaluate(() => { __taxi.map.open(); __taxi.map.preview({ spawnId: 'fairway-club' }); __taxi.map.edit(); });
+    const frozenEditStart = await snapshot();
+    await page.waitForTimeout(350);
+    assert.equal((await snapshot()).time, frozenEditStart.time, 'edit keeps a frozen prior clock frozen');
+    await page.evaluate(() => __taxi.map.close());
+    const frozenCloseStart = await snapshot();
+    await page.waitForTimeout(350);
+    assert.equal((await snapshot()).time, frozenCloseStart.time, 'close keeps a frozen prior clock frozen');
+
+    // Preview keeps physical gameplay live while the LAB panel stays inert.
+    await page.evaluate(() => { __taxi.realtime(); __taxi.map.open(); });
+    const preview = await page.evaluate(() => __taxi.map.preview({ spawnId: 'fairway-club' }));
+    assert.deepEqual(await locks(), { panel: true, app: false });
+    await page.keyboard.down('w');
+    await page.waitForTimeout(500);
+    await page.keyboard.up('w');
+    const previewAfter = await page.evaluate(() => __taxi.map.previewState());
+    assert.ok(previewAfter.time > preview.time, 'physical preview gameplay advances time');
+    assert.ok(Math.hypot(previewAfter.position.x - preview.position.x, previewAfter.position.y - preview.position.y) > 0.1, 'physical preview gameplay drives the isolated taxi');
+    await page.evaluate(() => __taxi.map.close());
+    assert.deepEqual(await locks(), { panel: false, app: false }, 'close restores LAB usability');
+
     assert.deepEqual(errors, [], 'Browser errors');
     assert.deepEqual(requests, [], 'External runtime requests');
     await context.close();

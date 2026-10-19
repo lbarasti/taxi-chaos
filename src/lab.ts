@@ -24,7 +24,7 @@ import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
 import { removeStorage, storageKeys } from './storage';
-import type { MapAPI } from './map/editor';
+import type { MapAPI } from './map/workspace';
 import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles';
 
 const STEP = 1 / 120;
@@ -551,7 +551,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       <div class="lab-head">
         <strong>Taxi Chaos Lab · temporary game</strong>
         ${hooks.leave ? '<button data-lab="leave">Return to saved game</button>' : ''}
-        ${hooks.map ? '<button data-lab="map" class="lab-primary">Map studio</button>' : ''}
         <span class="lab-pill" data-lab="clock-2">LIVE</span>
         <span class="lab-tele" data-lab="tele"></span>
         <button data-lab="collapse" aria-label="Collapse LAB panel">Collapse ▾</button>
@@ -934,7 +933,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   q<HTMLButtonElement>('leave')?.addEventListener('click', () => { api.realtime(); hooks.leave?.(); });
   q<HTMLButtonElement>('campaign-advance')?.addEventListener('click', () => api.campaign(dayMinute(clamp(Number(q<HTMLInputElement>('campaign-day')!.value) || 1, 1, 15))));
   expandButton.addEventListener('click', () => api.toggle());
-  q<HTMLButtonElement>('map')?.addEventListener('click', () => hooks.map?.open());
   if (hooks.audio) {
     bindAudioControls(panel, hooks.audio);
     q<HTMLButtonElement>('sound-play')!.addEventListener('click', () => { void api.sound(q<HTMLSelectElement>('sound-cue')!.value as SoundCue); });

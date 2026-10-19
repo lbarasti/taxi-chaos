@@ -23,10 +23,6 @@ export function entities(d: MapDocument) {
 export function authoredCollection(d: MapDocument, id: string): AuthoredCollection | undefined {
   return (['countryProps', 'parking', 'trafficSpawns'] as const).find(key => d[key].some(e => e.id === id));
 }
-export function nextEntityId(d: MapDocument, prefix: string) {
-  const used = new Set([...entities(d), ...d.districts, ...d.roads, ...d.constraints].map(e => e.id));
-  for (let i = 1; ; i++) if (!used.has(`${prefix}-${i}`)) return `${prefix}-${i}`;
-}
 /** Physical body for an authored descriptor. Typed country props and type-only hotel
  * placements resolve their footprint from the passed catalogue; a descriptor with
  * neither explicit dimensions nor a known type is a caller error, never a 0.2 m fallback. */
@@ -41,16 +37,6 @@ export function sizeOf(catalogue: ObjectCatalogue, type: string | undefined, wid
   const w = width ?? definition?.width, h = height ?? definition?.height;
   if (w === undefined || h === undefined) throw new Error('Descriptor needs explicit dimensions or a known catalogue type');
   return { width: w, height: h };
-}
-/** Build a country prop descriptor from the authoring form's editable fields. The form
- * never exposes `artworkScale` or `features`, so those per-instance values are retained
- * from the existing descriptor instead of being dropped by an untouched replace. */
-export function countryPropDescriptor(existing: CountryProp | undefined, edited: Omit<CountryProp, 'artworkScale' | 'features'>): CountryProp {
-  return {
-    ...edited,
-    ...(existing?.artworkScale === undefined ? {} : { artworkScale: existing.artworkScale }),
-    ...(existing?.features === undefined ? {} : { features: existing.features }),
-  };
 }
 export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   const e = entities(d).find(e => e.id === id);

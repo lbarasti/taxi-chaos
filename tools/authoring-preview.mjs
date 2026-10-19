@@ -23,7 +23,7 @@ Usage: npm run authoring:preview -- --entity ID [options]
   --width N           One custom viewport width (240–4096)
   --height N          One custom viewport height (240–4096)
   --touch             Treat a custom viewport as touch/mobile
-  --resize W,H        Preview one instance resize through the atomic editor operation
+  --resize W,H        Preview one instance resize through the atomic map operation
   --artwork-scale N   Preview a visual-only per-instance artwork scale (country prop/hotel)
   --type-size W,H     Preview a catalogue type default footprint without editing records
   --drive-from X,Y    Start the taxi here once, then drive into the entity (no mid-drive
@@ -150,8 +150,9 @@ try {
       document = importMap(JSON.stringify({ ...base, countryProps: [...base.countryProps, ...source] }));
     } else document = importMap(JSON.stringify(source));
     if (resize) {
-      // Reuse the editor's atomic transaction, so an instance resize is the exact same
-      // edit the map studio applies rather than a bespoke preview-only mutation.
+      // Reuse the committed map operations, so an instance resize is the exact same
+      // atomic edit the map CLI and `__taxi.map` automation apply rather than a
+      // bespoke preview-only mutation.
       document = applyOperations(document, { baseRevision: revision(document), operations: [{ type: 'resize', targetId: values.entity, width: resize.width, height: resize.height }] }).document;
     }
     if (artworkScale !== undefined) {

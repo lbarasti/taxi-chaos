@@ -1,7 +1,7 @@
 import { artworkInline } from '../catalogue/generated';
 import { asphaltArtwork, type ArtBounds, type PropArtwork } from './catalogue';
 
-/** One decoded image per asset, shared by normal games and editor previews. */
+/** One decoded image per asset, shared by normal games and authoring previews. */
 export class ArtworkImages {
   private images = new Map<string, HTMLImageElement>();
   private groundTile?: HTMLCanvasElement;

@@ -21,7 +21,7 @@ npm run build
 npm run map:check -- --input src/map/default-map.json --json
 ```
 
-`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding; `npm run artwork:test` covers the prep CLI offline. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs, and `npm run authoring:test` covers the DOM-free report and offline screenshot CLI.
+`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding; `npm run artwork:test` covers the prep CLI offline. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs, and `npm run authoring:test` covers the DOM-free report, offline screenshot CLI and `__taxi.map` automation.
 
 For interactive testing, open **http://localhost:5173/?debug=1** or press **F2**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
 
@@ -51,9 +51,10 @@ no decision entry or separate feature document.
 ## Map development
 
 [`src/map/default-map.json`](src/map/default-map.json) is the authored source for
-the shipped map. Open **F2 → Map studio** to select geometry, edit positions,
-inspect findings, undo/redo, import/export and preview. Drafts stay in memory;
-export before reloading. Invalid geometry remains editable but blocks preview.
+the shipped map. There is no in-game map editor or **Map studio** entry point:
+authored geometry is changed through the checked map CLI and the programmatic
+`__taxi.map` automation described below. Drafts stay in memory; export before
+reloading. Invalid geometry remains editable but blocks preview.
 
 ```sh
 npm run map:check -- --input src/map/default-map.json --json
@@ -72,13 +73,14 @@ Only version-3 documents are accepted. An older revision, a stale hotel `style`,
 or an unknown catalogue `type` (or one whose behaviour does not match its `kind`)
 is rejected structurally on import and in operations rather than upgraded.
 
-Browser automation exposes `__taxi.map`: `open`, `snapshot`, `describe`, `apply`,
-`validate`, `undo`, `redo`, `import`, `export`, `preview`, `step`, `previewState`,
-`live`, `edit` and `close`. Apply batches as `{ baseRevision, operations }`;
-operation types are defined in [`src/map/operations.ts`](src/map/operations.ts).
-`preview({ spawnId: 'fairway-club' })` starts an isolated game; `edit()` discards
-it and `close()` restores the original game. `live()` restores realtime preview
-after fixed stepping.
+Browser automation exposes `__taxi.map`: `open`, `snapshot`, `describe`, `select`,
+`apply`, `validate`, `undo`, `redo`, `import`, `export`, `preview`, `step`,
+`previewState`, `live`, `edit` and `close`. Apply batches as
+`{ baseRevision, operations }`; operation types are defined in
+[`src/map/operations.ts`](src/map/operations.ts). `open()` freezes a programmatic
+drafting session, and `preview({ spawnId: 'fairway-club' })` starts an isolated
+persistence-disabled game; `edit()` discards it and `close()` restores the original
+game. `live()` restores realtime preview after fixed stepping.
 
 For city buildings, edit reusable object records in
 [`src/catalogue/content.ts`](src/catalogue/content.ts) and placements/campuses in
@@ -245,7 +247,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.
 - `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.
 - `src/lab.ts`: scenario fixtures, inspector, and test API.
-- `src/map/`: versioned authored map, compiler, validation, editor, and preview.
+- `src/map/`: versioned authored map, compiler, validation, programmatic authoring workspace, and preview.
 - `src/renderer.ts`: Canvas rendering and debug overlays.
 - `vite.config.ts`: standalone single-file build; fails if external assets remain.
 

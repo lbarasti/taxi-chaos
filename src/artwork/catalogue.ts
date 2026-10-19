@@ -8,7 +8,7 @@ export type { ArtBounds, PropArtwork } from '../catalogue/schema';
 export { appearanceSeed, scaleArtwork };
 
 /** Compiled once from the authored records in `src/catalogue/content.ts`; shared by
- * normal games and editor previews. Legacy records keep absolute prop geometry;
+ * normal games and authoring previews. Legacy records keep absolute prop geometry;
  * object records expose a default-footprint view of their normalized templates. */
 const catalogue = compileArtworkCatalogue(artworkRecords, artworkSources);
 /** Every object type (buildings and props). Map placements and the world resolve

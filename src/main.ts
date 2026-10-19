@@ -12,7 +12,7 @@ import { PORT_FEE } from './harbour';
 import { setupLab, type LabAPI } from './lab';
 import { AudioFX } from './audio';
 import { refreshAudioControls } from './audio-controls';
-import { MapEditor } from './map/editor';
+import { MapWorkspace } from './map/workspace';
 import { bindStoryView, storyMarkup } from './story-view';
 import { bindMissionInbox, inboxMarkup } from './mission-inbox';
 import { bindPlayerHud, playerHudMarkup } from './player-hud';
@@ -22,6 +22,7 @@ import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
 import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
 import { createAuthoringPreview } from './catalogue/authoring-preview';
+import { createPreview } from './map/preview';
 
 const arrowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -58,9 +59,12 @@ drawer.setInputDevice(inputDevice);
 function detectInput(device: InputDevice) { inputDevice = device; drawer.setInputDevice(device); }
 let splashExiting = false;
 let lab: LabAPI | undefined;
-let mapEditor: MapEditor | undefined;
+let mapWorkspace: MapWorkspace | undefined;
 let normalGame: Game | undefined;
 let laboratoryGame: Game | undefined;
+/** Map drafting owns the real game and must reject every user input path, not
+ *  just the fixed-step API. Preview keeps physical gameplay enabled. */
+const drafting = () => mapWorkspace?.editing === true;
 function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; amount: number }[]) {
   const rows = charges.map(({ label, amount }) => `<div><span>${label}</span><strong>−$${amount}</strong></div>`).join('');
   return `<h2 id="modal-title" class="danger">${title}</h2><div class="game-over-bill">${rows}</div><button class="primary" id="recover"><span class="continue-keyboard">Press space bar to continue</span><span class="continue-touch">Tap to continue</span></button>`;
@@ -91,12 +95,13 @@ function modal() {
     card.innerHTML = gameOverMarkup('BUSTED', [{ label: 'Impound bill', amount: bill.impound }, { label: 'Bail', amount: bill.bail }]);
   }
   $('resume')?.addEventListener('click', playFromMenu);
-  $('recover')?.addEventListener('click', () => { realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
-  $('repair')?.addEventListener('click', () => game.repair());
-  document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => game.buy(button.dataset.upgrade as Upgrade)));
+  $('recover')?.addEventListener('click', () => { if (drafting()) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); });
+  $('repair')?.addEventListener('click', () => { if (!drafting()) game.repair(); });
+  document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button => button.addEventListener('click', () => { if (!drafting()) game.buy(button.dataset.upgrade as Upgrade); }));
   if (!overlay.hidden && !sharedMenu) (card.querySelector('button:not(:disabled)') as HTMLButtonElement | null)?.focus();
 }
 function playFromMenu() {
+  if (drafting()) return;
   const overlay = $('overlay');
   realtime(); externalClock = false;
   if (game.mode === 'intro') {
@@ -146,10 +151,10 @@ function hud() {
   refreshAudioControls(audio);
 }
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
-function realtime() { if (mapEditor?.active) mapEditor.api.live(); else lab?.realtime(); }
-function interact() { if (game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
-function garage() { game.garage(); hud(); if (game.mode === 'playing') $('city').focus(); }
-function tow() { if (game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
+function realtime() { if (mapWorkspace?.previewing) mapWorkspace.api.live(); else if (!drafting()) lab?.realtime(); }
+function interact() { if (drafting() || game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
+function garage() { if (drafting()) return; game.garage(); hud(); if (game.mode === 'playing') $('city').focus(); }
+function tow() { if (drafting() || game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('garage-action').addEventListener('click', garage); $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
 // Lazy browser activation. Merely loading the page never creates an AudioContext.
 document.addEventListener('pointerdown', event => {
@@ -159,11 +164,14 @@ document.addEventListener('pointerdown', event => {
 // Refresh hints after the click target is fixed. Changing their wrapping while a
 // finger is down can shift a scrolled menu row away from the release position.
 document.addEventListener('click', () => detectInput(inputDevice), { capture: true });
-function pause() { if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
+function pause() { if (drafting()) return; if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a, .credits-section a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   detectInput('keyboard');
-  if (mapEditor?.handleKey(e)) return;
+  // A draft owns the game and the LAB panel. Reject keyboard shortcuts before
+  // any caller can clear the external clock or mutate the original run. Programmatic
+  // `__taxi.map` calls do not pass through this listener.
+  if (drafting()) { e.preventDefault(); return; }
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
   if (!$('overlay').inert && !target?.closest('#debug-panel') && drawer.handleKey(e)) return;
@@ -177,18 +185,18 @@ window.addEventListener('keydown', e => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
    if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
-  if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; }
+  if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) realtime(); externalClock = false; }
   if (game.mode === 'playing') game.keys.add(e.code);
 });
 window.addEventListener('keyup', e => game.keys.delete(e.code));
-window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (!mapEditor?.editing && game.mode === 'playing') game.setMode('paused'); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (!mapEditor?.editing && game.mode === 'playing') game.setMode('paused'); } });
+window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (!mapWorkspace?.editing && game.mode === 'playing') game.setMode('paused'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (!mapWorkspace?.editing && game.mode === 'playing') game.setMode('paused'); } });
 window.addEventListener('pagehide', () => game.persist());
 const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HTMLButtonElement>('[data-key]'), {
-  active: () => !mapEditor?.editing && game.mode === 'playing',
+  active: () => !mapWorkspace?.editing && game.mode === 'playing',
   move: value => { game.touchMove = value; },
   action: (key, pressed) => { if (pressed) game.keys.add(key); else game.keys.delete(key); },
-  begin: () => { if (externalClock && lab) { if (mapEditor?.active) mapEditor.api.live(); else lab.realtime(); } externalClock = false; },
+  begin: () => { if (drafting()) return; if (externalClock && lab) realtime(); externalClock = false; },
 });
 window.addEventListener('resize', resetTouch);
 let previousPadButtons: boolean[] = [];
@@ -199,7 +207,8 @@ function pollController() {
   const pressed = pad?.buttons.map(b => b.pressed) ?? [];
   const activity = pressed.some((value, index) => value && !previousPadButtons[index]) || !!pad?.axes.some((a, index) => Math.abs(a) > 0.25 && Math.abs(a - (previousPadAxes[index] ?? 0)) > 0.1);
   if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
-  if (pad && drawer.active && !$('overlay').inert) {
+  const locked = drafting();
+  if (!locked && pad && drawer.active && !$('overlay').inert) {
     if (pressed[12] && !previousPadButtons[12]) drawer.move(-1);
     if (pressed[14] && !previousPadButtons[14]) drawer.adjust(-1);
     if (pressed[15] && !previousPadButtons[15]) drawer.adjust(1);
@@ -207,10 +216,10 @@ function pollController() {
     if (pressed[0] && !previousPadButtons[0]) drawer.activate();
     if (pressed[1] && !previousPadButtons[1]) drawer.back();
   }
-  if (pad && pressed[9] && !previousPadButtons[9]) pause();
+  if (!locked && pad && pressed[9] && !previousPadButtons[9]) pause();
   for (const key of padKeys) game.keys.delete(key);
   padKeys.clear();
-  if (pad && game.mode === 'playing' && (inputDevice === 'xbox' || inputDevice === 'playstation')) {
+  if (!locked && pad && game.mode === 'playing' && (inputDevice === 'xbox' || inputDevice === 'playstation')) {
     const add = (key: string, active: boolean) => { if (active) { padKeys.add(key); game.keys.add(key); } };
     add('KeyA', pad.axes[0] < -0.2); add('KeyD', pad.axes[0] > 0.2);
     add('KeyW', pressed[7] || pad.axes[1] < -0.2); add('KeyS', pressed[6] || pad.axes[1] > 0.2);
@@ -230,10 +239,11 @@ function frame(now: number) {
   // `realtime()` could never resume the restored game. Simulation and painting stay frozen.
   if (authoringPreviewMode && externalClock) { last = now; requestAnimationFrame(frame); return; }
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
-  if (!externalClock) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
+  const locked = drafting();
+  if (!externalClock && !locked) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
   pollController();
-  audio.update(game, !externalClock, !document.hidden && document.hasFocus());
-  if (!mapEditor?.editing) renderer.draw(game.mode === 'paused' ? 0 : dt);
+  audio.update(game, !externalClock && !locked, !document.hidden && document.hasFocus());
+  renderer.draw(game.mode === 'paused' ? 0 : dt);
   hudClock += dt; if (hudClock > 0.1) { hud(); hudClock = 0; }
   requestAnimationFrame(frame);
 }
@@ -244,17 +254,18 @@ function ensureLab() {
   if (!laboratoryGame) { normalGame = game; normalGame.persist(); laboratoryGame = new Game(game.map, false, true, game.save); }
   const activateLab = () => { if (game === normalGame) { audio.silence(game); game = laboratoryGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; modal(); hud(); } };
   activateLab();
-  if (!mapEditor) mapEditor = new MapEditor(game, renderer, {
+  if (!mapWorkspace) mapWorkspace = new MapWorkspace(game, renderer, {
     clock: () => externalClock,
     freeze: frozen => { externalClock = frozen; accumulator = 0; },
     clearInput: () => { resetTouch(); game.keys.clear(); game.touchMove = null; game.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; },
     activate: active => { game = active; renderer.game = active; bindGame(); modal(); hud(); },
     silence: () => audio.silence(game),
-  });
+    lock: (panel, gameUi) => { $('debug-panel').inert = panel; $('app').inert = gameUi; },
+  }, createPreview);
   if (!lab) lab = setupLab(game, renderer, {
-    map: mapEditor.api,
+    map: mapWorkspace.api,
     enter: activateLab,
-    leave: () => { if (mapEditor?.active) mapEditor.api.close(); audio.silence(game); externalClock = false; accumulator = 0; timeScale = 1; game = normalGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; $('debug-panel').hidden = true; modal(); hud(); $('city').focus(); },
+    leave: () => { if (mapWorkspace?.active) mapWorkspace.api.close(); audio.silence(game); externalClock = false; accumulator = 0; timeScale = 1; game = normalGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; $('debug-panel').hidden = true; modal(); hud(); $('city').focus(); },
     setExternalClock: frozen => { externalClock = frozen; accumulator = 0; if (frozen) audio.silence(game); },
     setTimeScale: scale => { timeScale = scale; },
     refresh: () => { hud(); renderer.draw(1 / 60); },
