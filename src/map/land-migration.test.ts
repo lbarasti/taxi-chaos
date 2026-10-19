@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import baseline from './fixtures/land-migration-baseline.json';
 import { copyDefaultMap } from './default';
 import { compileMap, defaultCompiledMap } from './compile';
 import { MapHistory } from './operations';
@@ -10,23 +9,15 @@ import { World } from '../world';
 import { boundaryHasSource, directedWaterGap } from '../land';
 import { add, scale, vec } from '../physics';
 
-function signature(values: unknown) {
-  const text=JSON.stringify(values,(k,v)=>typeof v==='number'?Math.round(v*1e8)/1e8:v);let hash=2166136261;
-  for(let i=0;i<text.length;i++)hash=Math.imul(hash^text.charCodeAt(i),16777619);
-  return (hash>>>0).toString(16).padStart(8,'0');
-}
 function physics(world: World) {
   return world.props.map(p=>[p.id,p.kind,p.body.position,p.body.w,p.body.h,p.body.angle,p.color,p.label,p.hp]);
 }
 
 describe('canonical land migration acceptance',()=>{
-  it('preserves pre-migration spawn ordering, geometry and both RNG streams',()=>{
-    const world=new World();
-    expect(world.props).toHaveLength(baseline.props);
-    expect(world.people).toHaveLength(baseline.people);
-    expect(signature(physics(world))).toBe(baseline.propSignature);
-    expect(signature(world.people.map(p=>[p.id,p.position,p.home,p.phase,p.color,p.angle]))).toBe(baseline.personSignature);
-    expect(defaultCompiledMap.presentation.placements).toHaveLength(baseline.rails);
+  it('generates identical geometry and residents from identical current documents',()=>{
+    const a=new World(compileMap(copyDefaultMap())),b=new World(compileMap(copyDefaultMap()));
+    expect(physics(a)).toEqual(physics(b));
+    expect(a.people).toEqual(b.people);
   });
   it('renames every original land ID using data references alone',()=>{
     const doc=copyDefaultMap();
@@ -52,13 +43,13 @@ describe('canonical land migration acceptance',()=>{
     doc.landRegions.push({id:'unadorned',owner:'highlands',outline:[vec(-35,-90),vec(20,-90),vec(20,-45),vec(-35,-45)]});
     const map=compileMap(doc);
     expect(map.land.onLand(vec(-20,-60))).toBe(true);
-    expect(map.presentation.placements).toEqual(defaultCompiledMap.presentation.placements);
+    expect(map.boundaryPlacements).toEqual(defaultCompiledMap.boundaryPlacements);
     expect(map.presentation.shorelines).toEqual(defaultCompiledMap.presentation.shorelines);
     expect(map.presentation.ground.some(p=>p.land==='unadorned')).toBe(false);
     expect(map.terrain.sample(vec(-20,-60))).toBe('road');
     const world=new World(map);
     expect(world.navigation.access.areaAt(vec(-20,-60))).toBeUndefined();
-    expect(world.props).toHaveLength(baseline.props);
+    expect(world.props).toHaveLength(new World(defaultCompiledMap).props.length);
   });
   it('removes ground appearance and surf without changing coverage or collision bodies',()=>{
     const doc=copyDefaultMap();doc.landPresentation=[];doc.surf=[];
@@ -86,7 +77,7 @@ describe('canonical land migration acceptance',()=>{
     expect(moved.accessNodes.find(p=>p.id==='seam-walk-b')!.position).toEqual(vec(145,430));
     expect(moved.accessEdges.find(p=>p.id===edge.id)).toEqual(edge);
     expect(result.changedIds).toContain(region.id);expect(result.changedIds).toContain('estate-surf');
-    const panel=map.presentation.placements.find(p=>p.id==='shore-panels-1-edge-17-slot-1')!;
+    const panel=map.boundaryPlacements.find(p=>p.id==='shore-panels-1-edge-17-slot-1')!;
     const boundary=map.land.landBoundaries.find(e=>boundaryHasSource(e,region.id,17))!;
     expect(panel.position.y).toBeCloseTo(add(add(region.outline[17],scale({x:region.outline[18].x-region.outline[17].x,y:region.outline[18].y-region.outline[17].y},1.5/Math.ceil(Math.hypot(region.outline[18].x-region.outline[17].x,region.outline[18].y-region.outline[17].y)/8))),scale(boundary.normal,-.9)).y);
     const after=history.export();expect(exportMap(importMap(after))).toBe(after);
@@ -135,5 +126,24 @@ describe('shared land authoring',()=>{
     const after=history.export();history.undo();expect(history.export()).toBe(before);history.redo();expect(history.export()).toBe(after);
     expect(history.describe(doc.generation.cityLand).editable).toBe(false);
     expect(()=>history.apply({baseRevision:history.snapshot().revision,operations:[{type:'move',targetId:doc.generation.cityLand,position:vec(50,50)}]})).toThrow(/read-only/);
+  });
+});
+
+describe('one current map contract',()=>{
+  it('rejects removed prop collections and untyped placements instead of adapting them',()=>{
+    const doc=copyDefaultMap();
+    for(const field of ['countryProps','coastalPlacements'])expect(()=>assertMap({...doc,[field]:[]})).toThrow(/expected fields/);
+    const {type,...untyped}=doc.objectPlacements[0];
+    expect(()=>assertMap({...doc,objectPlacements:[untyped]})).toThrow(/expected fields/);
+  });
+  it('samples an explicitly selected current source region without consulting shipped land',()=>{
+    const doc=copyDefaultMap();
+    doc.landRegions.push({id:'new-forest',owner:'highlands',outline:[vec(-40,-90),vec(20,-90),vec(20,-45),vec(-40,-45)]});
+    doc.generation.countryLand='new-forest';doc.generation.candidates=100;
+    const map=compileMap(doc),a=new World(map),b=new World(compileMap(doc));
+    const forest=a.props.filter(p=>!p.sourceId&&p.kind==='tree'&&map.country.inHighlands(p.body.position));
+    expect(forest.length).toBeGreaterThan(0);
+    expect(forest.every(p=>p.body.corners().every(map.land.onLand))).toBe(true);
+    expect(physics(a)).toEqual(physics(b));
   });
 });

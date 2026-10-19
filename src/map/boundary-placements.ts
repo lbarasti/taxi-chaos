@@ -1,4 +1,4 @@
-import { add, dist, dot, scale, sub, vec } from '../physics';
+import { add, dist, scale, sub } from '../physics';
 import { closestOnSegment, contains } from '../regions';
 import { boundaryHasSource, type LandGeometry } from '../land';
 import type { Countryside } from '../countryside';
@@ -6,13 +6,13 @@ import type { MapDocument, ObjectPlacement } from './schema';
 
 /** A single bounded shore-panel rule, independent of the land compiler. Slot IDs
  * follow ring edge indices, so openings never renumber their neighbours. */
-export function compileCoastalContent(document: MapDocument, land: LandGeometry, country: Countryside) {
+export function compileBoundaryPlacements(document: MapDocument, land: LandGeometry, country: Countryside) {
   const placements: (ObjectPlacement & { ruleId?: string; edge?: number; slot?: number })[] = [];
   for (const rule of document.boundaryPlacements) {
     const ring=land.landRegions.find(r=>r.id===rule.land)!.outline;
     const excluded=land.landRegions.filter(r=>rule.excludeLand.includes(r.id));
     const roads=country.COUNTRY_ROADS.filter(r=>rule.excludeRoads.includes(r.id));
-    for(let edge=0;edge<ring.length;edge++) {
+    for(const edge of rule.edges) {
       const a=ring[edge], b=ring[(edge+1)%ring.length], delta=sub(b,a), size=dist(a,b);
       const count=Math.ceil(size/rule.maxLength); if(!count) continue;
       for(let slot=0;slot<count;slot++) {
@@ -27,8 +27,5 @@ export function compileCoastalContent(document: MapDocument, land: LandGeometry,
       }
     }
   }
-  placements.push(...structuredClone(document.coastalPlacements));
-  const shorelines=document.surf.flatMap(effect=>land.landBoundaries.filter(s=>s.sources.some(source=>source.landId===effect.land&&effect.edges.includes(source.edge))).map(s=>({...s,landId:effect.land,presentationId:effect.id})));
-  const ground=document.landPresentation.map(p=>({...structuredClone(p),region:land.landRegions.find(r=>r.id===p.land)!}));
-  return { placements, shorelines, ground };
+  return placements;
 }

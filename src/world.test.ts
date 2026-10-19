@@ -1,6 +1,9 @@
+import { defaultCompiledMap } from './map/compile';
+import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
 import { dist, vec } from './physics';
-import { roadDistance, roadPath } from './world';
+
+const { roadDistance, roadPath } = createNavigation(defaultCompiledMap);
 
 describe('simple street routing', () => {
   it('goes directly to a customer on the same street, without visiting an intersection', () => {

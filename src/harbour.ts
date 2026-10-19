@@ -1,18 +1,14 @@
 import { add, clamp, dist, dot, scale, sub, vec, type Vec } from './physics';
 
-import { defaultMap } from './map/default';
-import { referencedLand } from './map/land-references';
 import type { ResolvedLand } from './land';
 import { contains, regionBounds } from './regions';
-/** Legacy harbour systems receive their source region explicitly from map data. */
+/** Harbour queries use the compiled map's explicit source region. */
 export function createHarbourGeometry(region: ResolvedLand) {
   const bounds=regionBounds(region.outline);
   const inHarbour=(p: Vec)=>contains(region.outline,p);
   const onPortRoad=(p: Vec)=>inHarbour(p) || p.y < -6 && p.y >= -14 && (Math.abs(p.x-200)<=6 || Math.abs(p.x-220)<=6);
   return { region, left:bounds.min.x, right:bounds.max.x, top:bounds.min.y, bottom:bounds.max.y, inHarbour, onPortRoad };
 }
-export const HARBOUR = createHarbourGeometry(referencedLand(defaultMap,defaultMap.generation.harbourLand));
-export const { inHarbour, onPortRoad } = HARBOUR;
 export const PORT_FEE = 75;
 export const PORT_ENTRY = vec(200, -8);
 export const PORT_EXIT = vec(220, -8);

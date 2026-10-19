@@ -1,9 +1,11 @@
+import { defaultCompiledMap } from './map/compile';
 import { describe, expect, it } from 'vitest';
-import { HIGHLAND_STOPS } from './countryside';
 import { igniteVehicle } from './damage';
 import { Game } from './game';
 import { dist, vec } from './physics';
-import { HOSPITAL } from './world';
+
+const HOSPITAL=defaultCompiledMap.city.recovery!;
+const { HIGHLAND_STOPS } = defaultCompiledMap.country;
 
 describe('hospital dispatch after a distant explosion', () => {
   it.each(HIGHLAND_STOPS)('offers a hospital-area pickup after dying at $name', stop => {

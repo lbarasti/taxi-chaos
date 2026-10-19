@@ -3,30 +3,36 @@
     "angle": 0,
     "color": "#596b70",
     "id": "authoring-bakery",
-    "kind": "building",
     "label": "BAKERY",
     "owner": "southern-estates",
-    "position": { "x": 240, "y": 430 },
+    "position": {
+      "x": 240,
+      "y": 430
+    },
     "type": "bakery"
   },
   {
     "angle": 0,
     "color": "#bc9465",
     "id": "authoring-crate",
-    "kind": "crate",
     "label": "SHIPPING CRATE",
     "owner": "southern-estates",
-    "position": { "x": 260, "y": 430 },
+    "position": {
+      "x": 260,
+      "y": 430
+    },
     "type": "shipping-crate"
   },
   {
     "angle": 0,
     "color": "#547f66",
     "id": "authoring-palm",
-    "kind": "palm",
     "label": "PALM",
     "owner": "southern-estates",
-    "position": { "x": 268, "y": 446 },
+    "position": {
+      "x": 268,
+      "y": 446
+    },
     "type": "palm"
   }
 ]

@@ -75,16 +75,6 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       }
     }
   };
-  for (const p of document.countryProps) {
-    const compiledObject = compiled.objects[p.id];
-    const body = compiledObject ? compiledBody(compiledObject) : descriptorBody(p);
-    checkLand(p.id, body, q => !land.inOcean(q));
-    if (compiledObject) checkFeatures(p.id, compiledObject.features, { service: false, sign: compiledObject.kind === 'building' && !!compiledObject.artwork });
-    // Features resolve against a catalogue type; an untyped prop has nowhere to attach
-    // them, so report the inert data instead of importing it silently.
-    else if (p.features?.length) push('features-need-catalogue-type', [p.id], 'Attached features need a catalogue type to resolve', p.position);
-    if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
-  }
   for (const p of document.objectPlacements) {
     const object=compiled.objects[p.id],body=compiledBody(object);
     checkLand(p.id,body,q=>!land.inOcean(q));
@@ -152,13 +142,11 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   checkLand(golf.id, new Body(golf.clubhouse.x, golf.clubhouse.y, 1, 20, 22), country.inHighlands);
   for (const p of [...country.GOLF_CART_ROUTE, ...country.GOLF_HOLES.flatMap(h => [h.tee, h.green, h.bunker])]) checkLand(golf.id, new Body(p.x, p.y, 1, 3, 3), country.inHighlands);
   const overlaps = new Set<string>();
-  const countryPropIds = new Set([...document.countryProps,...document.objectPlacements].filter(p => compiled.objects[p.id]?.kind !== 'pedestrian-gate').map(p => p.id));
-  // Shore-panel runs keep their historical joined corners and scenery contacts.
-  // They remain blockers in every footprint/route sweep and in checks initiated
-  // by ordinary authored placements; do not initiate new overlap findings at joins.
-  const boundaryChildren = new Set(compiled.presentation.placements.map(p=>p.id));
-  for (const prop of world.props.filter(p => p.sourceId && !boundaryChildren.has(p.sourceId) && (isRigidObstacle(p.kind) || countryPropIds.has(p.sourceId)))) for (const other of world.hash.query(prop.body)) {
-    if (prop.kind === 'pedestrian-gate' || prop === other || prop.sourceId === other.sourceId || !countryPropIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
+  const placementIds = new Set(document.objectPlacements.filter(p => compiled.objects[p.id]?.kind !== 'pedestrian-gate').map(p => p.id));
+  const ruleParents=new Map(compiled.boundaryPlacements.map(p=>[p.id,p.ruleId]));
+  for (const prop of world.props.filter(p => p.sourceId && (isRigidObstacle(p.kind) || placementIds.has(p.sourceId)))) for (const other of world.hash.query(prop.body)) {
+    if(prop.sourceId && other.sourceId && ruleParents.get(prop.sourceId) && ruleParents.get(prop.sourceId)===ruleParents.get(other.sourceId))continue;
+    if (prop.kind === 'pedestrian-gate' || prop === other || prop.sourceId === other.sourceId || !placementIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
     const depth = contact(prop.body, other.body)?.depth ?? 0, ids = [prop.sourceId!, other.sourceId ?? `runtime-prop-${other.id}`].sort(), key = ids.join(':');
     if (depth > 0.04 && !overlaps.has(key)) { overlaps.add(key); push('object-overlap', ids, 'Authored solid overlaps another collision footprint (same-composite attachments are allowed)', prop.body.position, { penetration: depth }); }
   }

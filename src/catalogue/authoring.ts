@@ -89,8 +89,8 @@ export type AuthoringReport = Readonly<{
   preview: Readonly<{ allowed: boolean; reason: string | null }>;
   map: Readonly<{
     schemaVersion: 5;
-    counts: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; objectPlacements: number; points: number; roads: number }>;
-    budgets: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; objectPlacements: number; routeLength: number }>;
+    counts: Readonly<{ parking: number; trafficSpawns: number; objectPlacements: number; points: number; roads: number }>;
+    budgets: Readonly<{ parking: number; trafficSpawns: number; objectPlacements: number; routeLength: number }>;
     withinBudgets: boolean;
   }>;
 }>;
@@ -139,7 +139,6 @@ function descriptorLabel(value: unknown, fallback: string): string {
 
 function collectionOf(document: MapDocument, id: string): string | null {
   const authored=authoredCollection(document,id); if(authored)return authored;
-  if (document.countryProps.some(p => p.id === id)) return 'countryProps';
   if (document.objectPlacements.some(h => h.id === id)) return 'objectPlacements';
   if (document.villas.some(v => v.id === id)) return 'villas';
   if (document.parking.some(p => p.id === id)) return 'parking';
@@ -257,7 +256,7 @@ export function inspectAuthoring(
   const world = context.world ?? new World(map);
   const validation = context.validation ?? validateMap(document, map, world);
   const compiled = map.objects[entityId];
-  const childIds = new Set(map.presentation.placements.filter(p=>p.ruleId===entityId).map(p=>p.id));
+  const childIds = new Set(map.boundaryPlacements.filter(p=>p.ruleId===entityId).map(p=>p.id));
   const props = world.props.filter(prop => prop.sourceId === entityId || prop.sourceId && childIds.has(prop.sourceId));
   const cityBuilding = map.city.buildings.find(building => building.id === entityId);
   const descriptor = entities(document).find(entity => entity.id === entityId);
@@ -269,14 +268,14 @@ export function inspectAuthoring(
     : compiled
       ? [objectBody(compiled, null)]
       : [];
-  if (!bodies.length && descriptor && 'position' in descriptor && ('model' in descriptor || descriptorType(descriptor) || collectionOf(document, entityId) === 'countryProps')) {
+  if (!bodies.length && descriptor && 'position' in descriptor && ('model' in descriptor || descriptorType(descriptor))) {
     // Parking bays and traffic spawns are physical vehicles rather than catalogue
     // artwork; they still have a stable ID and a shared descriptor body.
     const physical = descriptor as Extract<AuthoredDescriptor, { position: Vec; angle: number }>;
     const body = descriptorBody(physical, catalogue);
     bodies = [{
       propId: null,
-      kind: 'model' in physical ? 'vehicle' : ('kind' in physical ? physical.kind : 'vehicle'),
+      kind: 'model' in physical ? 'vehicle' : catalogue[physical.type].kind,
       label: descriptorLabel(physical, entityId),
       position: clonePoint(body.position), angle: body.angle, width: body.w, height: body.h,
       cullingRadius: Math.max(body.w, body.h), features: [],
@@ -294,9 +293,9 @@ export function inspectAuthoring(
   const blocked = validation.errors > 0;
   const routeWork = document.trafficSpawns.reduce((sum, spawn) =>
     sum + spawn.path.reduce((length, point, index) => length + dist(point, index ? spawn.path[index - 1] : spawn.position), 0), 0);
-  const budgets = { countryProps: 500, parking: 200, trafficSpawns: 60, objectPlacements: 500, routeLength: 10000 };
+  const budgets = { parking: 200, trafficSpawns: 60, objectPlacements: 500, routeLength: 10000 };
   const counts = {
-    countryProps: document.countryProps.length, parking: document.parking.length, trafficSpawns: document.trafficSpawns.length,
+    parking: document.parking.length, trafficSpawns: document.trafficSpawns.length,
     objectPlacements: document.objectPlacements.length, points: document.points.length, roads: document.roads.length,
   };
   return {
@@ -331,7 +330,7 @@ export function inspectAuthoring(
       schemaVersion: 5,
       counts,
       budgets,
-      withinBudgets: counts.countryProps <= budgets.countryProps && counts.parking <= budgets.parking
+      withinBudgets: counts.parking <= budgets.parking
         && counts.trafficSpawns <= budgets.trafficSpawns && counts.objectPlacements <= budgets.objectPlacements && routeWork <= budgets.routeLength,
     },
   };
@@ -373,7 +372,7 @@ export function listAuthoring(document: MapDocument, catalogue: ObjectCatalogue,
     });
   }
   for (const rule of document.boundaryPlacements) {
-    const children=new Set(map.presentation.placements.filter(p=>p.ruleId===rule.id).map(p=>p.id));
+    const children=new Set(map.boundaryPlacements.filter(p=>p.ruleId===rule.id).map(p=>p.id));
     const props=world.props.filter(p=>p.sourceId&&children.has(p.sourceId));
     if(props.length)byId.set(rule.id,{id:rule.id,type:rule.type,kind:props[0].kind,collection:'boundaryPlacements',label:rule.id,position:clonePoint(props[0].body.position),bodies:props.length});
   }

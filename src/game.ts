@@ -1,5 +1,5 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, HOSPITAL, World, blocksWalking, isStructural, type Person, type Prop } from './world';
+import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
 import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
@@ -779,7 +779,8 @@ export class Game {
       if (this.player.dynamics instanceof MotorcycleDynamics && !this.player.dynamics.fallen) this.player.dynamics.resetLean();
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
       if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
-      this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...(this.map.city.recovery ?? HOSPITAL) }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
+      if(!this.map.city.recovery) throw new Error('Map has no recovery entrance');
+      this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...this.map.city.recovery }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
       this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear();
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = []; this.roadMarkVehicleId = -1;
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;

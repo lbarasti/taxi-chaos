@@ -268,3 +268,25 @@ uses every panel for physical clearance and access sweeps. Surf and ground appea
 are explicit references independent of coverage. Adding land creates neither rail
 objects nor surf. Imports reject older schemas; operations, descriptions, CLI
 fingerprints and fixtures use the current contract together.
+
+
+## D17 — Remove map compatibility formats and historical generation replay
+
+**Decision:** Supersede D16's historical RNG reservation and early coastal spawn
+phase. Keep one current map contract: every prop is a typed `objectPlacements`
+record; bridge and shoreline panels use the same bounded boundary-placement rule.
+Delete `countryProps`, `coastalPlacements`, old coordinate helpers, default geometry
+adapters and the historical spawn-signature fixture. Old formats are rejected.
+
+**Reason:** The migration must simplify the engine. Preserving obsolete prop APIs,
+old runtime IDs and old RNG consumption created parallel paths and made edited maps
+depend on a second, shipped map at runtime.
+
+**Consequences:** All authored props resolve and spawn once through the catalogue.
+Callers use the actual compiled map instead of separately instantiated default
+countryside, harbour or navigation exports. Hospital recovery uses that map too.
+Scenery samples current canonical land bounds, with deterministic RNG draws and
+clearance against current placements and reserved vehicle bodies. Identical
+current documents reproduce identical results; historical runtime IDs and scenery
+sequences are not an import or gameplay contract. Existing city/road/harbour game
+algorithms remain active systems, without a compatibility path around the map.

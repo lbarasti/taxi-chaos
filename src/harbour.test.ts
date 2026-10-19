@@ -1,11 +1,15 @@
+import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
 import { Body, contact, dist, length, vec } from './physics';
-import { World, district, roadDistance, roadPath } from './world';
+import { World, district } from './world';
 import { defaultCompiledMap } from './map/compile';
-const { inOcean } = defaultCompiledMap.land;
-import { HARBOUR, FREIGHT_ROUTE, PORT_ENTRY, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, craneLoad, portPath } from './harbour';
+import { FREIGHT_ROUTE, PORT_ENTRY, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, craneLoad, portPath } from './harbour';
 import { loadScenario } from './lab';
+
+const HARBOUR=defaultCompiledMap.harbour;
+const { roadDistance, roadPath } = createNavigation(defaultCompiledMap);
+const { inOcean } = defaultCompiledMap.land;
 
 const run = (g: Game, seconds: number) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };
 function quiet() { const g = new Game(); g.start(); g.vehicles = [g.player]; g.world.people = []; g.trafficTarget = 0; return g; }

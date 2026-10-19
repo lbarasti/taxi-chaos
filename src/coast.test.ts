@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
 import { defaultCompiledMap } from './map/compile';
-const { inOcean } = defaultCompiledMap.land;
-const COAST_RAILS = defaultCompiledMap.presentation.placements;
 import { Body, contact, dist, length, vec } from './physics';
-import { HOSPITAL, World } from './world';
-import { HIGHLAND_OUTLINE } from './countryside';
+import { World } from './world';
 import { loadScenario } from './lab';
 import { igniteVehicle } from './damage';
 import { MotorcycleDynamics } from './motorcycle';
+
+const HOSPITAL=defaultCompiledMap.city.recovery!;
+const { HIGHLAND_OUTLINE } = defaultCompiledMap.country;
+const { inOcean } = defaultCompiledMap.land;
+const COAST_RAILS = defaultCompiledMap.boundaryPlacements;
 
 const run = (g: Game, seconds: number) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };
 function quiet() {
@@ -86,7 +88,7 @@ describe('guardrail impacts', () => {
     run(g, 3); expect(g.player.sinking).toBeUndefined(); expect(inOcean(g.player.body.position)).toBe(false); expect(northRail(g).alive).toBe(true);
   });
   it('lets a hard side impact break a bridge panel and carry the cab into the river', () => {
-    const g = quiet(), rail = g.world.props.find(p => p.kind === 'guardrail' && p.body.position.x > 270 && p.body.position.x < 274 && p.body.position.y === 72.5)!;
+    const g = quiet(), rail = g.world.props.find(p => p.kind === 'guardrail' && p.sourceId === 'bridge-panels-0-edge-0-slot-4')!;
     g.player.body.position = vec(rail.body.position.x, 74.8); g.player.body.angle = -Math.PI / 2; g.player.body.velocity = vec(0, -26);
     g.collision(g.player, rail, 1 / 120); expect(rail.alive).toBe(false);
     run(g, 0.5); expect(g.snapshot().water).toBe('ocean');

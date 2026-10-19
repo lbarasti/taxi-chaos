@@ -72,7 +72,9 @@ directly for JSON stdout without npm's banner.
 Terrain (`terrainRegions`), dry land (`landRegions`), catalogue objects
 (`objectPlacements`), walking/vehicle access (`accessAreas`, `accessNodes`,
 `accessEdges`), residents, district zones and presentation are independent
-collections. Higher terrain priority wins; equal priorities use stable ID order.
+collections. Every prop requires a catalogue `type` in `objectPlacements`; there
+is no untyped or country-specific prop format. All object placements compile and
+spawn through one path. Higher terrain priority wins; equal priorities use stable ID order.
 The terrain renderer and tyre sampler use that same order. Materials never grant
 access or create land, and adding land creates neither access nor a material.
 
@@ -86,12 +88,12 @@ polygons with arbitrary IDs; its detached union supplies bounds, inclusive dry-l
 queries, exposed segments, outward normals and all contributing source identities.
 World and minimap drawing clip to that same polygon union, including overlaps.
 
-Legacy generators receive explicit source references in `generation`: `cityLand`,
+Map compilation uses explicit source references in `generation`: `cityLand`,
 `countryLand`, `harbourLand` and `bridgeLands`. Their IDs have no engine meaning.
-`translationPoints` identifies the rural stream's Southern Estates frame, and
-`candidateBounds` preserves its seeded sampling lattice independently of envelope
-edits. Existing city blocks, road graphs and harbour missions remain generators;
-these references supply their land-dependent inputs rather than granting access.
+Seeded scenery samples the current region bounds and rejects actual water, roads,
+clearings, placements and reserved vehicle footprints. Compilation never consults
+a previous or default map to reproduce an old sequence. City blocks, road graphs
+and harbour missions use these references for their land-dependent inputs.
 Read-only ownership policy is separate: city/harbour land and bridge attachments
 stay pinned in operations. Strict imports still allow inspection of invalid drafts,
 but validation must pass before gameplay preview.
@@ -103,13 +105,12 @@ Coastal composition is explicit, bounded data:
 - `surf` references a land ID and selected ring `edges` (zero-based indices).
   Only exposed portions draw foam; removing surf leaves land and collisions intact.
 - `boundaryPlacements` references a land ID and a guardrail catalogue type. A run
-  declares `maxLength`, inward `inset`, a `panels`/`period` repeat (open slots),
+  declares selected `edges`, `maxLength`, inward `inset`, a `panels`/`period` repeat (open slots),
   `excludeLand`, and explicit `excludeRoads`/`clearance` openings. At most 20 runs
   and 2,000 candidate slots are accepted. Child IDs are
   `<rule-id>-edge-<index>-slot-<index>`; openings never renumber surviving children.
-- `coastalPlacements` contains ordinary catalogue placements in the historical
-  early spawn phase. The bridge's continuous panels are explicit records here;
-  their clearances and runtime ordering are preserved.
+- Bridge panels use that same bounded rule with continuous slots on selected deck
+  edges. There is no coastal-only object collection or special spawn phase.
 
 Access edges declare modes and connect independently owned nodes; moving a district
 moves each owned endpoint once and leaves the coordinate-free edge unchanged.
@@ -182,7 +183,7 @@ npm run authoring:preview -- --input tools/examples/map-authoring.json --entity 
 
 Any stable entity ID in any version-5 map can be inspected; there is no per-image
 command or script. `--input` accepts a full strict map or a small placement list (a JSON
-array of country props) composed onto `--base`, so the fixture cannot drift when the
+array of catalogue placements) composed onto `--base`, so the fixture cannot drift when the
 baseline map changes. `--list` prints the catalogue types and every inspectable ID;
 `--json` returns the DOM-free report without Chromium. PNG mode records real frames with
 art bounds, collision, shadow, light blocker, culling radius, attached features and

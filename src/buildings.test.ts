@@ -75,11 +75,12 @@ describe('building authoring', () => {
     expect(artworkFor({ kind: 'building', sourceId: building.id, building, body: new Body(220, 180, Infinity, building.width, building.height) })!.image).toBe('hospital');
   });
 
-  it('preserves the legacy scenery RNG when a placement replaces a park', () => {
+  it('deterministically compiles the current content when a placement replaces a park', () => {
     const world = new World(mapWith({ ...cityContent, buildings: [...cityContent.buildings, { id: 'garden-hall', type: 'landmark', owner: 'city', blockId: 'city-block-2-2', position: vec(100.5, 100.5), label: 'GARDEN HALL', color: '#596b70', replaceBlock: true }] }));
     expect(world.blocks.find(b => b.id === 'city-block-2-2')!.park).toBe(false);
     expect(world.props.some(p => p.sourceId === 'garden-hall')).toBe(true);
-    expect(world.random()).toBe(new World().random());
+    expect(world.props).toEqual(new World(world.map).props);
+    expect(world.people).toEqual(new World(world.map).people);
   });
 
   it('replaces one generated shop with a new type while preserving its neighbours and alleys', () => {

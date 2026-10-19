@@ -70,16 +70,15 @@ export function compileStops(raw: unknown, map: CompiledMap, strict = true): Com
     byId[stop.id] = stop;
   }
 
-  const props = map.document.countryProps.map(p => ({ position: p.position, width: map.objects[p.id]?.width ?? p.width ?? 0, height: map.objects[p.id]?.height ?? p.height ?? 0 }));
-  const parking = map.document.parking.map(p => ({ position: p.position, width: 5, height: 2.6 }));
-  const hotels = map.document.objectPlacements.map(h => ({ position: h.position, width: map.objects[h.id]?.width ?? h.width ?? 0, height: map.objects[h.id]?.height ?? h.height ?? 0 }));
+  const props=Object.values(map.objects);
+  const parking=map.document.parking.map(p=>({position:p.position,width:5,height:2.6}));
 
   for (const stop of all) {
     const p = stop.position;
     if (!strict) continue;
     if (p.x < min.x || p.x > max.x || p.y < min.y || p.y > max.y) fail(stop.id, 'outside the map envelope');
     if (inOcean(p)) fail(stop.id, 'is in open water');
-    for (const prop of [...props, ...parking, ...hotels]) if (inside(p, prop.position, prop.width, prop.height, 0.8)) fail(stop.id, `overlaps a static prop at ${prop.position.x},${prop.position.y}`);
+    for (const prop of [...props, ...parking]) if (inside(p, prop.position, prop.width, prop.height, 0.8)) fail(stop.id, `overlaps a static prop at ${prop.position.x},${prop.position.y}`);
     if (navigation.roadDistance(p) > 6) fail(stop.id, 'is more than 6 m from a drivable road');
   }
   const city = authored.filter(s => s.kind === 'city').map(s => s.position);

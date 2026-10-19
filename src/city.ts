@@ -10,7 +10,7 @@ export type CityBuilding = CompiledBuilding;
 export type CityBlock = Readonly<{
   id: string; x: number; y: number; park: boolean; color: string;
   special?: 'fuel' | 'barracks' | 'depot' | 'parking';
-  campusId?: string; residentHomes?: ResidentHomes; legacySceneryDraws: number;
+  campusId?: string; residentHomes?: ResidentHomes;
   alleys: 'cross' | 'horizontal' | 'vertical' | 'west' | 'none';
   buildings: readonly CityBuilding[];
 }>;
@@ -44,7 +44,6 @@ export function createCity(content: CityContent = cityContent, catalogue: Object
     const replacements = authored.filter(b => b.blockId === id);
     const replacedBlock = !!campusId || replacementBlocks.has(id);
     const park = originalPark && !replacedBlock, special = replacedBlock ? undefined : originalSpecial;
-    const legacySceneryDraws = originalPark && !park ? 20 : 0;
     const alleys: CityBlock['alleys'] = park || special === 'fuel' || special === 'parking' || replacedBlock ? 'none'
       : special || bx === 0 && by === 0 ? 'cross' : westShops ? 'west' : (bx + by) % 2 ? 'vertical' : 'horizontal';
     const buildings: CityBuilding[] = [];
@@ -74,7 +73,7 @@ export function createCity(content: CityContent = cityContent, catalogue: Object
       const index = buildings.findIndex(b => b.id === placement.id);
       if (index < 0) buildings.push(placement); else buildings[index] = placement;
     }
-    blocks.push({ id, x, y, park, special, campusId, residentHomes: campus?.residents[id], legacySceneryDraws, color: colors[(bx + by * 3) % colors.length], alleys, buildings });
+    blocks.push({ id, x, y, park, special, campusId, residentHomes: campus?.residents[id], color: colors[(bx + by * 3) % colors.length], alleys, buildings });
   }
   const roads: CityRoad[] = [], closedRoads: CityRoad[] = [];
   const addRoad = (road: CityRoad) => (citySegmentOpen({ campuses }, road.from, road.to) ? roads : closedRoads).push(road);

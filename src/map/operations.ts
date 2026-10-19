@@ -4,7 +4,7 @@ import { objectDefinitions } from '../artwork/catalogue';
 import { objectKindRegistry, type KindRegistry, type ObjectCatalogue } from '../catalogue/schema';
 import { referencedLand, resolveLandRegion } from './land-references';
 import { copyDefaultMap } from './default';
-import { authoredCollections, assertMap, type AuthoredCollection, type AuthoredDescriptor, type CountryProp, type MapDocument } from './schema';
+import { authoredCollections, assertMap, type AuthoredCollection, type AuthoredDescriptor, type MapDocument } from './schema';
 import { exportMap, importMap, revision } from './serialization';
 
 export type MapOperation =
@@ -19,25 +19,17 @@ export type MapOperation =
 export type MapBatch = { baseRevision: string; operations: MapOperation[] };
 
 export function entities(d: MapDocument) {
-  return [...d.points, ...d.villas, ...d.countryProps, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, ...d.objectPlacements, ...d.terrainRegions, ...d.landRegions, ...d.accessAreas, ...d.accessNodes, ...d.accessEdges, ...d.districtZones, ...d.residents, ...d.groundMarks, ...d.groundLabels, ...d.landPresentation, ...d.surf, ...d.boundaryPlacements, ...d.coastalPlacements];
+  return [...d.points, ...d.villas, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, ...d.objectPlacements, ...d.terrainRegions, ...d.landRegions, ...d.accessAreas, ...d.accessNodes, ...d.accessEdges, ...d.districtZones, ...d.residents, ...d.groundMarks, ...d.groundLabels, ...d.landPresentation, ...d.surf, ...d.boundaryPlacements];
 }
 export function authoredCollection(d: MapDocument, id: string): AuthoredCollection | undefined {
   return authoredCollections.find(key => d[key].some(e => e.id === id));
 }
-/** Physical body for an authored descriptor. Typed country props and type-only hotel
- * placements resolve their footprint from the passed catalogue; a descriptor with
- * neither explicit dimensions nor a known type is a caller error, never a 0.2 m fallback. */
+/** Every prop resolves its footprint from the same typed catalogue placement. */
 export function descriptorBody(e: Extract<AuthoredDescriptor, { position: Vec; angle: number }>, catalogue: ObjectCatalogue = objectDefinitions): Body {
   if ('model' in e) return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
-  const { width, height } = sizeOf(catalogue, e.type, e.width, e.height);
-  const b = new Body(e.position.x, e.position.y, 1, width, height); b.angle = e.angle; return b;
-}
-/** Resolved footprint for a placement that may rely on a catalogue type default. */
-export function sizeOf(catalogue: ObjectCatalogue, type: string | undefined, width: number | undefined, height: number | undefined): { width: number; height: number } {
-  const definition = type === undefined ? undefined : catalogue[type];
-  const w = width ?? definition?.width, h = height ?? definition?.height;
-  if (w === undefined || h === undefined) throw new Error('Descriptor needs explicit dimensions or a known catalogue type');
-  return { width: w, height: h };
+  const object= catalogue[e.type];
+  if(!object)throw new Error(`Unknown catalogue type ${e.type}`);
+  const body=new Body(e.position.x,e.position.y,1,e.width ?? object.width,e.height ?? object.height); body.angle=e.angle; return body;
 }
 export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   const e = entities(d).find(e => e.id === id);
@@ -167,8 +159,7 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
       if (!Number.isFinite(op.width) || !Number.isFinite(op.height) || op.width <= 0 || op.height <= 0) throw new Error('Dimensions must be positive finite metres');
       const e = entities(d).find(e => e.id === op.targetId);
       if (!e || !authoredCollection(d, e.id) && !d.districts.find(o => o.id === e.owner)!.editable) throw new Error('Unknown/read-only object');
-      if (authoredCollection(d, e.id) === 'countryProps') { const country = e as CountryProp; country.width = op.width; country.height = op.height; }
-      else if ('angle' in e && 'type' in e) { e.width = op.width; e.height = op.height; }
+      if ('angle' in e && 'type' in e) { e.width = op.width; e.height = op.height; }
       else if ('width' in e) { e.width = op.width; e.height = op.height; }
       else throw new Error('Dimensions are editable only for object placements and golf');
       changed.add(e.id);

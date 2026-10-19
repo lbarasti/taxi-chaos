@@ -46,9 +46,9 @@ const beachLodge: ObjectRecord = {
 const custom = compileObjectCatalogue([bakery, crate, beachLodge], measureArtworkSources(inlineEntries(artworkRecords, [bakery, crate]), read), artworkRecords);
 const catalogue: ObjectCatalogue = { ...objectDefinitions, ...custom };
 
-const bakeryPlacement = { id: 'catalogue-bakery', owner: 'southern-estates' as const, kind: 'building' as const, position: vec(300, 470), angle: 0, color: '#596b70', label: 'BAKERY', type: 'bakery' };
-const cratePlacement = { id: 'catalogue-crate', owner: 'southern-estates' as const, kind: 'crate' as const, position: vec(320, 470), angle: 0, color: '#bc9465', label: '', type: 'crate-png' };
-const document = () => { const d = copyDefaultMap(); d.countryProps.push({ ...bakeryPlacement }, { ...cratePlacement }); return d; };
+const bakeryPlacement = { id: 'catalogue-bakery', owner: 'southern-estates' as const,  position: vec(300, 470), angle: 0, color: '#596b70', label: 'BAKERY', type: 'bakery' };
+const cratePlacement = { id: 'catalogue-crate', owner: 'southern-estates' as const,  position: vec(320, 470), angle: 0, color: '#bc9465', label: '', type: 'crate-png' };
+const document = () => { const d = copyDefaultMap(); d.objectPlacements.push({ ...bakeryPlacement }, { ...cratePlacement }); return d; };
 
 describe('generic object placements through map, world and render', () => {
   it('resolves an unknown PNG building and PNG crate from definition plus placement only', () => {
@@ -79,8 +79,8 @@ describe('generic object placements through map, world and render', () => {
 
   it('drives collision and artwork from one or two instance override fields', () => {
     const resizedDocument = document();
-    resizedDocument.countryProps.find(p => p.id === 'catalogue-crate')!.width = 4;
-    resizedDocument.countryProps.find(p => p.id === 'catalogue-crate')!.height = 3;
+    resizedDocument.objectPlacements.find(p => p.id === 'catalogue-crate')!.width = 4;
+    resizedDocument.objectPlacements.find(p => p.id === 'catalogue-crate')!.height = 3;
     const resized = compileMap(resizedDocument, catalogue), world = new World(resized);
     const box = world.props.find(p => p.sourceId === 'catalogue-crate')!;
     expect([box.body.w, box.body.h]).toEqual([4, 3]);
@@ -93,7 +93,7 @@ describe('generic object placements through map, world and render', () => {
 
   it('keeps the visual scale independent of the physical footprint', () => {
     const scaled = document();
-    scaled.countryProps.find(p => p.id === 'catalogue-bakery')!.artworkScale = 2;
+    scaled.objectPlacements.find(p => p.id === 'catalogue-bakery')!.artworkScale = 2;
     const world = new World(compileMap(scaled, catalogue));
     const building = world.props.find(p => p.sourceId === 'catalogue-bakery')!;
     expect([building.body.w, building.body.h]).toEqual([12, 8]);
@@ -120,25 +120,25 @@ describe('generic object placements through map, world and render', () => {
   it('round-trips typed placements losslessly through import, export and undo/redo', () => {
     const history = new MapHistory(document(), catalogue);
     const before = history.export();
-    expect(history.snapshot().document.countryProps.find(p => p.id === 'catalogue-crate')!.type).toBe('crate-png');
+    expect(history.snapshot().document.objectPlacements.find(p => p.id === 'catalogue-crate')!.type).toBe('crate-png');
     history.import(before);
     expect(history.export()).toBe(before);
     history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'resize', targetId: 'catalogue-crate', width: 3, height: 2 }] });
-    expect(history.snapshot().document.countryProps.find(p => p.id === 'catalogue-crate')).toMatchObject({ width: 3, height: 2, type: 'crate-png' });
+    expect(history.snapshot().document.objectPlacements.find(p => p.id === 'catalogue-crate')).toMatchObject({ width: 3, height: 2, type: 'crate-png' });
     history.undo();
     expect(history.export()).toBe(before);
     history.redo();
-    expect(history.snapshot().document.countryProps.find(p => p.id === 'catalogue-crate')).toMatchObject({ width: 3, height: 2 });
+    expect(history.snapshot().document.objectPlacements.find(p => p.id === 'catalogue-crate')).toMatchObject({ width: 3, height: 2 });
   });
 
   it('rejects unknown catalogue references and kind mismatches structurally', () => {
     const missing = document();
-    missing.countryProps.find(p => p.id === 'catalogue-crate')!.type = 'missing-type';
+    missing.objectPlacements.find(p => p.id === 'catalogue-crate')!.type = 'missing-type';
     expect(() => compileMap(missing, catalogue)).toThrow(/unknown catalogue type missing-type/);
 
     const mismatch = document();
-    (mismatch.countryProps.find(p => p.id === 'catalogue-crate')! as { kind: string }).kind = 'rock';
-    expect(() => compileMap(mismatch, catalogue)).toThrow(/catalogue type crate-png is crate, not rock/);
+    Object.assign(mismatch.objectPlacements.find(p => p.id === 'catalogue-crate')!,{kind:'rock'});
+    expect(() => compileMap(mismatch, catalogue)).toThrow(/expected fields/);
 
     const staleHotel = copyDefaultMap();
     Object.assign(staleHotel.objectPlacements[0], { style: 'luxury-condo' });
@@ -149,16 +149,16 @@ describe('generic object placements through map, world and render', () => {
   });
 
   it('reports an unknown reference through the injected kind registry on import', () => {    const missing = document();
-    (missing.countryProps.find(p => p.id === 'catalogue-crate') as { type: string }).type = 'missing-type';
+    (missing.objectPlacements.find(p => p.id === 'catalogue-crate') as { type: string }).type = 'missing-type';
     expect(() => importMap(JSON.stringify(missing), objectKindRegistry(catalogue))).toThrow(/unknown catalogue type missing-type/);
     // The same document round-trips when the custom catalogue supplies every reference.
     const exported = new MapHistory(document(), catalogue).export();
-    expect(importMap(exported, objectKindRegistry(catalogue)).countryProps.some(p => p.type === 'bakery')).toBe(true);
+    expect(importMap(exported, objectKindRegistry(catalogue)).objectPlacements.some(p => p.type === 'bakery')).toBe(true);
   });
 
   it('names the entity and route when a typed solid blocks a road lane', () => {
     const blocked = copyDefaultMap();
-    blocked.countryProps.push({ ...bakeryPlacement, id: 'road-building', position: vec(40, 40) });
+    blocked.objectPlacements.push({ ...bakeryPlacement, id: 'road-building', position: vec(40, 40) });
     const findings = validateMap(blocked, compileMap(blocked, catalogue)).findings;
     const finding = findings.find(f => f.code === 'road-blocked' && f.entityIds.includes('road-building'));
     expect(finding).toBeDefined();
@@ -167,26 +167,26 @@ describe('generic object placements through map, world and render', () => {
 
   it('bounds local attached features and blocks preview, naming the stable feature ID', () => {
     const d = copyDefaultMap();
-    d.countryProps.push({ id: 'feature-crate', owner: 'southern-estates', kind: 'crate', type: 'crate-png', position: vec(300, 470), angle: 0, color: '#bc9465', label: '', features: [{ id: 'far-sign', role: 'sign', offset: vec(2, 0) }] });
+    d.objectPlacements.push({ id: 'feature-crate', owner: 'southern-estates',  type: 'crate-png', position: vec(300, 470), angle: 0, color: '#bc9465', label: '', features: [{ id: 'far-sign', role: 'sign', offset: vec(2, 0) }] });
     const findings = validateMap(d, compileMap(d, catalogue)).findings;
     expect(findings).toContainEqual(expect.objectContaining({ code: 'feature-outside-bounds', entityIds: ['feature-crate', 'feature-crate/far-sign'] }));
   });
 
   it('rejects a feature ID past the 60-character compiler bound, so imports accepted compile', () => {
     const d = copyDefaultMap();
-    const push = (id: string) => d.countryProps.push({ id: 'long-feature', owner: 'southern-estates', kind: 'crate', type: 'crate-png', position: vec(300, 470), angle: 0, color: '#bc9465', label: '', features: [{ id, role: 'sign', offset: vec(0, 0) }] });
+    const push = (id: string) => d.objectPlacements.push({ id: 'long-feature', owner: 'southern-estates',  type: 'crate-png', position: vec(300, 470), angle: 0, color: '#bc9465', label: '', features: [{ id, role: 'sign', offset: vec(0, 0) }] });
     push('f'.repeat(61));
     // Strict import rejects what `resolveFeatures` would otherwise fail on at compile time.
     expect(() => assertMap(d, objectKindRegistry(catalogue))).toThrow(/feature ID must be at most 60/);
     expect(() => importMap(JSON.stringify(d), objectKindRegistry(catalogue))).toThrow(/feature ID must be at most 60/);
     // The 60-character boundary is accepted and compiles.
-    d.countryProps.pop(); push('f'.repeat(60));
+    d.objectPlacements.pop(); push('f'.repeat(60));
     expect(() => compileMap(d, catalogue)).not.toThrow();
   });
 
   it('reports a service feature outside the city recovery entrance instead of ignoring it', () => {
     const d = copyDefaultMap();
-    d.countryProps.push({ id: 'service-prop', owner: 'southern-estates', kind: 'crate', type: 'crate-png', position: vec(300, 470), angle: 0, color: '#bc9465', label: '', features: [{ id: 'service-door', role: 'service', offset: vec(0, 0) }] });
+    d.objectPlacements.push({ id: 'service-prop', owner: 'southern-estates',  type: 'crate-png', position: vec(300, 470), angle: 0, color: '#bc9465', label: '', features: [{ id: 'service-door', role: 'service', offset: vec(0, 0) }] });
     const findings = validateMap(d, compileMap(d, catalogue)).findings;
     expect(findings).toContainEqual(expect.objectContaining({ code: 'service-feature-unsupported', entityIds: ['service-prop', 'service-prop/service-door'], severity: 'error' }));
     // The hospital's city recovery entrance stays supported and produces no such finding.
@@ -196,24 +196,24 @@ describe('generic object placements through map, world and render', () => {
 
   it('retains per-instance artwork fields supplied by a replacement', () => {
     const d = copyDefaultMap();
-    d.countryProps.push({ id: 'feature-tree', owner: 'southern-estates', kind: 'tree', type: 'tree', position: vec(300, 470), angle: 0, color: '#426e58', label: '', artworkScale: 1.5, features: [{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }] });
+    d.objectPlacements.push({ id: 'feature-tree', owner: 'southern-estates',  type: 'tree', position: vec(300, 470), angle: 0, color: '#426e58', label: '', artworkScale: 1.5, features: [{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }] });
     const history = new MapHistory(d, catalogue);
-    const existing = history.snapshot().document.countryProps.find(p => p.id === 'feature-tree')!;
+    const existing = history.snapshot().document.objectPlacements.find(p => p.id === 'feature-tree')!;
     const replacement = { ...existing, ...{ label: 'PARK', type: 'tree' } };
     history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'replace', targetId: 'feature-tree', descriptor: replacement }] });
-    const after = history.snapshot().document.countryProps.find(p => p.id === 'feature-tree')!;
+    const after = history.snapshot().document.objectPlacements.find(p => p.id === 'feature-tree')!;
     expect(after).toMatchObject({ type: 'tree', label: 'PARK', artworkScale: 1.5 });
     expect(after.features).toEqual([{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }]);
   });
 
   it('keeps user features through a type change and surfaces them as validation findings', () => {
     const d = copyDefaultMap();
-    d.countryProps.push({ id: 'feature-swap', owner: 'southern-estates', kind: 'tree', type: 'tree', position: vec(300, 470), angle: 0, color: '#426e58', label: '', artworkScale: 1.5, features: [{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }] });
+    d.objectPlacements.push({ id: 'feature-swap', owner: 'southern-estates',  type: 'tree', position: vec(300, 470), angle: 0, color: '#426e58', label: '', artworkScale: 1.5, features: [{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }] });
     const history = new MapHistory(d, catalogue);
-    const existing = history.snapshot().document.countryProps.find(p => p.id === 'feature-swap')!;
-    const replacement = { ...existing, color: '#bc9465', kind: 'crate' as const, type: 'crate-png', label: '' };
+    const existing = history.snapshot().document.objectPlacements.find(p => p.id === 'feature-swap')!;
+    const replacement = { ...existing, color: '#bc9465', type: 'crate-png', label: '' };
     history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'replace', targetId: 'feature-swap', descriptor: replacement }] });
-    const after = history.snapshot().document.countryProps.find(p => p.id === 'feature-swap')!;
+    const after = history.snapshot().document.objectPlacements.find(p => p.id === 'feature-swap')!;
     // A type change that supplies the existing features must not delete them.
     expect(after).toMatchObject({ type: 'crate-png', artworkScale: 1.5 });
     expect(after.features).toEqual([{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }]);

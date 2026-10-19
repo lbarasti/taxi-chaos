@@ -100,13 +100,11 @@ describe('map compilation, gameplay and validation', () => {
     const route = preview.world.navigation.roadPath(vec(242, 470), vec(132, 478));
     expect(route.at(-1)).toEqual(vec(132, 478)); expect(route.every(p => !preview.map.land.inOcean(p))).toBe(true);
   });
-  it('preserves unrelated seeded scenery and repeatable compilation', () => {
+  it('deterministically compiles scenery against the edited geometry', () => {
     const original = new World(), h = new MapHistory(); translate(h);
     const map = compileMap(h.snapshot().document), a = new World(map), b = new World(compileMap(h.snapshot().document));
-    // Connector shore rails and trees beside the re-curved eastern approaches
-    // legitimately change. The city/harbour and highlands north of the seams do not.
-    const summarize = (world: World, north = false) => world.props.filter(p => !north || p.body.position.y < 211).map(p => ({ kind: p.kind, position: p.body.position, width: p.body.w, height: p.body.h, angle: p.body.angle, label: p.label, color: p.color }));
-    expect(summarize(a)).toEqual(summarize(b)); expect(summarize(a, true)).toEqual(summarize(original, true));
+    expect(a.props).toEqual(b.props);
+    expect(a.people).toEqual(b.people);
   });
   it('validates the shipped map and reversible south move with measured gap', () => {
     const d = copyDefaultMap(), baseline = validateMap(d); expect(baseline.errors).toBe(0); expect(baseline.waterGap).toBeGreaterThanOrEqual(110);

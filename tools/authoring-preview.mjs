@@ -11,7 +11,7 @@ const help = `Prepare and review catalogue artwork in the actual standalone game
 
 Usage: npm run authoring:preview -- --entity ID [options]
 
-  --input PATH        Placement fixture (a JSON array of country props) or a full
+  --input PATH        Placement fixture (a JSON array of catalogue placements) or a full
                       strict version-3 map JSON (default: src/map/default-map.json)
   --base PATH         Base version-3 map for an array fixture (default: src/map/default-map.json)
   --entity ID         Stable entity ID to inspect (repeatable selection is not supported)
@@ -140,14 +140,14 @@ try {
     const { inspectAuthoring, listAuthoring } = await server.ssrLoadModule('/src/catalogue/authoring.ts');
     const { objectDefinitions } = await server.ssrLoadModule('/src/artwork/catalogue.ts');
     // `--input` accepts either a full strict map or a small authored placement fixture
-    // (a JSON array of country props) composed onto the current default map. The fixture
+    // (a JSON array of catalogue placements) composed onto the current default map. The fixture
     // never copies the 75 KB default map, so it cannot drift when the base map changes.
     const source = JSON.parse(await readFile(inputPath, 'utf8'));
     let document;
     if (Array.isArray(source)) {
       const basePath = path.resolve(values.base ?? 'src/map/default-map.json');
       const base = JSON.parse(await readFile(basePath, 'utf8'));
-      document = importMap(JSON.stringify({ ...base, countryProps: [...base.countryProps, ...source] }));
+      document = importMap(JSON.stringify({ ...base, objectPlacements: [...base.objectPlacements, ...source] }));
     } else document = importMap(JSON.stringify(source));
     if (resize) {
       // Reuse the committed map operations, so an instance resize is the exact same
@@ -157,18 +157,15 @@ try {
     }
     if (artworkScale !== undefined) {
       // A visual-only per-instance multiplier; collision stays untouched.
-      const prop = document.countryProps.find(p => p.id === values.entity);
-      const hotel = document.objectPlacements.find(h => h.id === values.entity);
-      if (prop) prop.artworkScale = artworkScale;
-      else if (hotel) hotel.artworkScale = artworkScale;
-      else fail('--artwork-scale applies to a country prop or object placement');
+      const placement = document.objectPlacements.find(p=>p.id===values.entity);
+      if(!placement)fail('--artwork-scale requires an object placement');
+      placement.artworkScale=artworkScale;
     }
     // A type-default preview keeps the committed records untouched: only the in-memory
     // catalogue handed to the report and the browser preview is overridden.
     let catalogue = objectDefinitions;
     if (typeSize) {
-      const type = document.countryProps.find(p => p.id === values.entity)?.type
-        ?? document.objectPlacements.find(h => h.id === values.entity)?.type;
+      const type = document.objectPlacements.find(h => h.id === values.entity)?.type;
       if (!type || !objectDefinitions[type]) fail('--type-size needs an --entity with a catalogue type');
       catalogue = { ...objectDefinitions, [type]: { ...objectDefinitions[type], width: typeSize.width, height: typeSize.height } };
     }

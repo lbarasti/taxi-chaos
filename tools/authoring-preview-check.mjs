@@ -136,7 +136,7 @@ test('invalid selections fail loudly', () => {
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--resize', '0,16', '--json']).stderr, /positive W,H/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--artwork-scale', '0', '--json']).stderr, /--artwork-scale/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--type-size', '24', '--json']).stderr, /--type-size needs positive W,H/);
-  assert.match(run(['--input', example, '--entity', 'villa-cedar-house', '--artwork-scale', '2', '--json']).stderr, /--artwork-scale applies to a country prop or object/);
+  assert.match(run(['--input', example, '--entity', 'villa-cedar-house', '--artwork-scale', '2', '--json']).stderr, /--artwork-scale requires an object placement/);
   assert.match(run(['--input', example, '--entity', 'villa-cedar-house', '--type-size', '2,2', '--json']).stderr, /--type-size needs an --entity with a catalogue type/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--drive-angle', '0']).stderr, /require --drive-from/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--layout', 'nope']).stderr, /Unknown layout/);
@@ -353,22 +353,22 @@ test('map authoring automation applies typed placements and isolates previews', 
       const exported = api.export();
       const roundTrip = { revision: api.import(exported).revision === opened.revision, valid: api.validate().errors, canonical: api.export() === exported };
       const size = id => { const bounds = api.describe(id).bounds; return { width: bounds.max.x - bounds.min.x, height: bounds.max.y - bounds.min.y }; };
-      // An untyped 1.6 m placement, then a typed bakery placement that resolves the
+      // An explicitly sized crate, then a bakery placement that resolves the
       // catalogue default through the same atomic operations the CLI uses.
       api.apply({ baseRevision: opened.revision, operations: [{
-        type: 'add', collection: 'countryProps',
-        descriptor: { id: 'automation-untyped', owner: 'southern-estates', position: { x: 150, y: 450 }, kind: 'crate', angle: 0, color: '#426e58', label: '', width: 1.6, height: 1.6 },
+        type: 'add', collection: 'objectPlacements',
+        descriptor: { id: 'automation-crate', owner: 'southern-estates', position: { x: 150, y: 450 }, type: 'crate', angle: 0, color: '#426e58', label: '', width: 1.6, height: 1.6 },
       }] });
       const applied = api.apply({ baseRevision: api.snapshot().revision, operations: [{
-        type: 'add', collection: 'countryProps',
-        descriptor: { id: 'automation-bakery', owner: 'southern-estates', position: { x: 166, y: 450 }, kind: 'building', angle: 0, color: '#426e58', label: '', type: 'bakery' },
+        type: 'add', collection: 'objectPlacements',
+        descriptor: { id: 'automation-bakery', owner: 'southern-estates', position: { x: 166, y: 450 }, angle: 0, color: '#426e58', label: '', type: 'bakery' },
       }] });
-      const typed = { size: size('automation-bakery'), descriptor: { ...api.snapshot().document.countryProps.find(p => p.id === 'automation-bakery') } };
-      const untyped = size('automation-untyped');
+      const typed = { size: size('automation-bakery'), descriptor: { ...api.snapshot().document.objectPlacements.find(p => p.id === 'automation-bakery') } };
+      const explicit = size('automation-crate');
       api.undo();
-      const undone = api.snapshot().document.countryProps.some(p => p.id === 'automation-bakery');
+      const undone = api.snapshot().document.objectPlacements.some(p => p.id === 'automation-bakery');
       api.redo();
-      const redone = api.snapshot().document.countryProps.some(p => p.id === 'automation-bakery');
+      const redone = api.snapshot().document.objectPlacements.some(p => p.id === 'automation-bakery');
       const revision = api.snapshot().revision;
 
       // A structurally valid draft with a real validation error must not build a preview.
@@ -394,7 +394,7 @@ test('map authoring automation applies typed placements and isolates previews', 
       // A second preview can be closed directly, restoring the pre-open clock and UI.
       api.preview({ spawnId: 'fairway-club' }); api.close();
       return {
-        opened: opened.schemaVersion, applied: applied.changedIds, typed, untyped, undone, redone, revision, roundTrip, invalid, draftLocks, previewLocks, editLocks, closedLocks: locks(),
+        opened: opened.schemaVersion, applied: applied.changedIds, typed, explicit, undone, redone, revision, roundTrip, invalid, draftLocks, previewLocks, editLocks, closedLocks: locks(),
         preview: { mode: preview.mode, time: preview.time, moved: Math.hypot(stepped.position.x - preview.position.x, stepped.position.y - preview.position.y), state: previewState?.time, restored },
         closed: { active: api.previewState(), state: lab.state().lab },
       };
@@ -416,7 +416,7 @@ test('map authoring automation applies typed placements and isolates previews', 
       Math.abs(actual.width - width) < 1e-6 && Math.abs(actual.height - height) < 1e-6,
       `${message}: ${JSON.stringify(actual)}`,
     );
-    metres(result.untyped, 1.6, 1.6, 'an untyped placement resolves its explicit size');
+    metres(result.explicit, 1.6, 1.6, 'a catalogue placement resolves its explicit size');
     metres(result.typed.size, 12, 8, 'a typed placement adopts the bakery default');
     assert.equal(result.typed.descriptor.type, 'bakery');
     assert.equal(result.typed.descriptor.width, undefined);
