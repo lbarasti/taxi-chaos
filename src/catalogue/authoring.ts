@@ -88,9 +88,9 @@ export type AuthoringReport = Readonly<{
   validation: Validation;
   preview: Readonly<{ allowed: boolean; reason: string | null }>;
   map: Readonly<{
-    schemaVersion: 3;
-    counts: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; hotels: number; points: number; roads: number }>;
-    budgets: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; routeLength: number }>;
+    schemaVersion: 4;
+    counts: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; objectPlacements: number; points: number; roads: number }>;
+    budgets: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; objectPlacements: number; routeLength: number }>;
     withinBudgets: boolean;
   }>;
 }>;
@@ -139,7 +139,7 @@ function descriptorLabel(value: unknown, fallback: string): string {
 
 function collectionOf(document: MapDocument, id: string): string | null {
   if (document.countryProps.some(p => p.id === id)) return 'countryProps';
-  if (document.beach.hotels.some(h => h.id === id)) return 'beach.hotels';
+  if (document.objectPlacements.some(h => h.id === id)) return 'objectPlacements';
   if (document.villas.some(v => v.id === id)) return 'villas';
   if (document.parking.some(p => p.id === id)) return 'parking';
   if (document.trafficSpawns.some(t => t.id === id)) return 'trafficSpawns';
@@ -157,7 +157,7 @@ function entityPosition(document: MapDocument, id: string): Vec | undefined {
   if ('center' in entity) return { ...entity.center };
   if ('point' in entity) return entityPosition(document, entity.point);
   if ('points' in entity) return entity.points.reduce((sum, p) => vec(sum.x + p.x / entity.points.length, sum.y + p.y / entity.points.length), vec());
-  if ('left' in entity) return vec((entity.left + entity.right) / 2, (entity.top + entity.bottom) / 2);
+  if ('outline' in entity) return entity.outline.reduce((sum,p)=>vec(sum.x+p.x/entity.outline.length,sum.y+p.y/entity.outline.length),vec());
   return undefined;
 }
 
@@ -281,7 +281,7 @@ export function inspectAuthoring(
   if (!bodies.length && descriptor && ('model' in descriptor || descriptorType(descriptor) || collectionOf(document, entityId) === 'countryProps')) {
     // Parking bays and traffic spawns are physical vehicles rather than catalogue
     // artwork; they still have a stable ID and a shared descriptor body.
-    const physical = descriptor as AuthoredDescriptor;
+    const physical = descriptor as Extract<AuthoredDescriptor, { position: Vec; angle: number }>;
     const body = descriptorBody(physical, catalogue);
     bodies = [{
       propId: null,
@@ -303,10 +303,10 @@ export function inspectAuthoring(
   const blocked = validation.errors > 0;
   const routeWork = document.trafficSpawns.reduce((sum, spawn) =>
     sum + spawn.path.reduce((length, point, index) => length + dist(point, index ? spawn.path[index - 1] : spawn.position), 0), 0);
-  const budgets = { countryProps: 500, parking: 200, trafficSpawns: 60, routeLength: 10000 };
+  const budgets = { countryProps: 500, parking: 200, trafficSpawns: 60, objectPlacements: 500, routeLength: 10000 };
   const counts = {
     countryProps: document.countryProps.length, parking: document.parking.length, trafficSpawns: document.trafficSpawns.length,
-    hotels: document.beach.hotels.length, points: document.points.length, roads: document.roads.length,
+    objectPlacements: document.objectPlacements.length, points: document.points.length, roads: document.roads.length,
   };
   return {
     version: 1,
@@ -337,11 +337,11 @@ export function inspectAuthoring(
       reason: blocked ? `${validation.errors} map validation error${validation.errors === 1 ? '' : 's'} block gameplay preview; fix the named findings first.` : null,
     },
     map: {
-      schemaVersion: 3,
+      schemaVersion: 4,
       counts,
       budgets,
       withinBudgets: counts.countryProps <= budgets.countryProps && counts.parking <= budgets.parking
-        && counts.trafficSpawns <= budgets.trafficSpawns && routeWork <= budgets.routeLength,
+        && counts.trafficSpawns <= budgets.trafficSpawns && counts.objectPlacements <= budgets.objectPlacements && routeWork <= budgets.routeLength,
     },
   };
 }

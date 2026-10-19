@@ -4,6 +4,7 @@ import { vehicleDefinition, createVehicleBody } from '../vehicles';
 import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';
 import { compileMap, type CompiledMap } from './compile';
 import type { MapDocument } from './schema';
+import { contains, ringDistance } from '../regions';
 import { descriptorBody } from './operations';
 
 export type Finding = { code: string; severity: 'error' | 'warning' | 'info'; entityIds: string[]; position?: Vec; message: string; measured?: Record<string, number> };
@@ -20,9 +21,9 @@ function intersects(a: Vec, b: Vec, c: Vec, d: Vec) {
   return orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0 || on(c, a, b) || on(d, a, b) || on(a, c, d) || on(b, c, d);
 }
 export function validateMap(document: MapDocument, compiled: CompiledMap = compileMap(document), world = new World(compiled)): Validation {
-  const findings: Finding[] = [], { country, beach, coast } = compiled;
+  const findings: Finding[] = [], { country, coast } = compiled;
   const push = (code: string, entityIds: string[], message: string, position?: Vec, measured?: Record<string, number>, severity: Finding['severity'] = 'error') => findings.push({ code, severity, entityIds, message, position, measured });
-  for (const [id, ring, refs] of [['highland-land', country.HIGHLAND_OUTLINE, document.highlandOutline], ['beach-land', beach.BEACH_OUTLINE, document.beach.shore]] as [string, Vec[], string[]][]) {
+  for (const [id, ring, refs] of [['highland-land', country.HIGHLAND_OUTLINE, document.highlandOutline], ...[...document.landRegions,...document.terrainRegions,...document.accessAreas,...document.districtZones].map(r => [r.id,r.outline,[r.id]])] as [string, Vec[], string[]][]) {
     const area = Math.abs(ring.reduce((sum, a, i) => sum + cross(a, ring[(i + 1) % ring.length]), 0)) / 2;
     if (area < 1) push('degenerate-land', refs, `${id} has less than 1 m² area`, ring[0], { area });
     for (let i = 0; i < ring.length; i++) {
@@ -83,9 +84,11 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     else if (p.features?.length) push('features-need-catalogue-type', [p.id], 'Attached features need a catalogue type to resolve', p.position);
     if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
   }
-  for (const hotel of document.beach.hotels) {
-    const object = compiled.objects[hotel.id];
-    checkFeatures(hotel.id, object?.features, { service: false, sign: object?.kind === 'building' && !!object.artwork });
+  for (const p of document.objectPlacements) {
+    const object=compiled.objects[p.id],body=compiledBody(object);
+    checkLand(p.id,body,q=>!coast.inOcean(q));
+    checkFeatures(p.id,object.features,{service:false,sign:object.kind==='building'&&!!object.artwork});
+    if(world.pools.some(pool=>contact(body,pool)))push('pool-overlap',[p.id],'Object intersects a pool',p.position);
   }
   for (const building of compiled.city.buildings) checkFeatures(building.id, building.features, { service: true, sign: !!building.artwork });
   const vehiclePlacements = [...document.parking, ...document.trafficSpawns].map(e => ({ e, body: descriptorBody(e) }));
@@ -119,7 +122,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   }
   for (const spawn of document.trafficSpawns) {
     const access = country.countryAccess(spawn.position);
-    if (world.navigation.roadDistance(spawn.position) > 6 || country.isCountry(spawn.position) && !beach.inBeach(spawn.position) && !seen.has(access.road.from)) push('unreachable-spawn', [spawn.id], 'Traffic spawn lacks a reachable road lane', spawn.position);
+    if (world.navigation.roadDistance(spawn.position) > 6 || country.isCountry(spawn.position) && !world.navigation.access.areaAt(spawn.position) && !seen.has(access.road.from)) push('unreachable-spawn', [spawn.id], 'Traffic spawn lacks a reachable road lane', spawn.position);
     // Paths are waypoints, not a promise that AI can cross arbitrary water or
     // props. Sweep the actual model along every authored initial route leg.
     let from = spawn.position, reported = false;
@@ -147,12 +150,10 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   checkLand(golf.id, new Body(golf.center.x, golf.center.y, 1, golf.width + 14, golf.height + 8), country.inHighlands);
   checkLand(golf.id, new Body(golf.clubhouse.x, golf.clubhouse.y, 1, 20, 22), country.inHighlands);
   for (const p of [...country.GOLF_CART_ROUTE, ...country.GOLF_HOLES.flatMap(h => [h.tee, h.green, h.bunker])]) checkLand(golf.id, new Body(p.x, p.y, 1, 3, 3), country.inHighlands);
-  for (const h of beach.BEACH_HOTELS) checkLand(h.id, new Body(h.position.x, h.position.y, 1, h.width, h.height), beach.inBeach);
-  for (const prop of world.props.filter(p => p.sourceId && ['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle'].includes(p.kind))) checkLand(prop.sourceId!, prop.body, beach.inBeach);
   const overlaps = new Set<string>();
-  const countryPropIds = new Set(document.countryProps.map(p => p.id));
+  const countryPropIds = new Set([...document.countryProps,...document.objectPlacements].filter(p => compiled.objects[p.id]?.kind !== 'pedestrian-gate').map(p => p.id));
   for (const prop of world.props.filter(p => p.sourceId && (isRigidObstacle(p.kind) || countryPropIds.has(p.sourceId)))) for (const other of world.hash.query(prop.body)) {
-    if (prop === other || prop.sourceId === other.sourceId || !countryPropIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
+    if (prop.kind === 'pedestrian-gate' || prop === other || prop.sourceId === other.sourceId || !countryPropIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
     const depth = contact(prop.body, other.body)?.depth ?? 0, ids = [prop.sourceId!, other.sourceId ?? `runtime-prop-${other.id}`].sort(), key = ids.join(':');
     if (depth > 0.04 && !overlaps.has(key)) { overlaps.add(key); push('object-overlap', ids, 'Authored solid overlaps another collision footprint (same-composite attachments are allowed)', prop.body.position, { penetration: depth }); }
   }
@@ -166,16 +167,24 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     if (access.distance > 6 || footprint(body).some(coast.inOcean) || !seen.has(access.road.from)) push('unreachable-stop', [stop.id, stop.point], 'Fare destination lacks a dry reachable driving lane', stop.position, { roadDistance: access.distance });
     if (!world.props.some(p => p.sourceId === stop.id && p.kind === 'kiosk')) push('stop-clearing-unavailable', [stop.id], 'No dry kiosk clearing can be generated beside this stop', stop.position);
   }
-  // Preserve 0.75 m real pedestrian gaps; vehicle-only envelopes intentionally do not block walkers.
-  const prom = beach.PROMENADE;
-  for (const [y, entries] of [[prom.top, prom.entries], [prom.bottom, prom.southEntries]] as [number, number[]][]) for (const x of entries) {
-    let blocked: Vec | undefined;
-    const limit = y === prom.top ? 240 : Math.max(...beach.BEACH_HOTELS.map(h => h.position.y + h.height / 2)) + 0.45;
-    for (let q = Math.min(y, limit); q <= Math.max(y, limit); q += 0.25) {
-      const body = new Body(x + 0.675, q, 1, 0.7, 0.7);
-      if (coast.inOcean(body.position) || [...world.hash.query(body)].some(p => blocksWalking(p.kind) && (contact(body, p.body)?.depth ?? 0) > 0.001)) { blocked = body.position; break; }
-    }
-    if (blocked) push('walking-entrance-blocked', [prom.id, ...beach.BEACH_HOTELS.filter(h => Math.abs(h.position.x - x) < h.width).map(h => h.id)], 'Required 0.7 m walking route is blocked', blocked, { entryX: x, bodyWidth: 0.7 });
+  // Sweep authored access with actual bodies and shared water coverage. Runtime
+  // refuses blocked edges too; invalid drafts are still inspectable here.
+  const nodes=new Map(document.accessNodes.map(n=>[n.id,n]));
+  for(const edge of document.accessEdges) for(const mode of edge.modes) {
+    const a=nodes.get(edge.fromNode)!,b=nodes.get(edge.toNode)!;
+    if(!world.navigation.access.clear(a.position,b.position,mode))push(mode==='walk'?'walking-entrance-blocked':'vehicle-access-blocked',[edge.id,a.id,b.id],`Required ${mode} connection crosses a collision footprint, restricted area or water`,a.position);
+  }
+  for(const area of document.accessAreas)if(!document.accessNodes.some(n=>contains(area.outline,n.position)))push('unconnected-access-area',[area.id],'Access area has no authored connection nodes',area.outline[0]);
+  for(const node of document.accessNodes) {
+    if(node.road && world.navigation.access.areaAt(node.position))push('access-road-inside-area',[node.id],'Road connection must end outside authored access areas',node.position);
+    const reachable=new Set([node.id]);
+    for(let i=0;i<nodes.size;i++)for(const e of document.accessEdges)if(e.modes.includes('walk')&&(reachable.has(e.fromNode)||reachable.has(e.toNode))){reachable.add(e.fromNode);reachable.add(e.toNode);}
+    if(![...reachable].some(id=>nodes.get(id)!.road))push('disconnected-access',[node.id],'Walking node has no authored connection to a road',node.position);
+    if(node.road && world.navigation.roadDistance(node.position)>6)push('unreachable-access-road',[node.id],'Road connection is not near a drivable road',node.position);
+  }
+  for(const resident of document.residents) {
+    const body=new Body(resident.position.x,resident.position.y,75,.7,.7);
+    if(footprint(body).some(coast.inOcean)||[...world.hash.query(body)].some(p=>blocksWalking(p.kind)&&contact(body,p.body)))push('resident-home-blocked',[resident.id],'Resident home crosses water or a collision footprint',resident.position);
   }
   const env = document.envelope, outside = (p: Vec) => p.x < env.min.x - 0.001 || p.x > env.max.x + 0.001 || p.y < env.min.y - 0.001 || p.y > env.max.y + 0.001;
   for (const { e, body } of vehiclePlacements) {
@@ -186,18 +195,29 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   for (const p of document.points) if (outside(p.position)) push('outside-envelope', [p.id], 'Authored point is outside the map envelope', p.position);
   for (const prop of world.props) { const p = prop.body.corners().find(outside); if (p) push('outside-envelope', [prop.sourceId ?? `runtime-prop-${prop.id}`], 'Generated collision footprint is outside the map envelope', p); }
   for (const ridge of document.ridges) { const p = ridge.points.find(outside); if (p) push('outside-envelope', [ridge.id], 'Decorative ridge lies outside the envelope', p); }
-  let waterGap = Infinity;
-  for (const constraint of document.constraints) {
-    let best = Infinity, at: Vec | undefined;
-    for (let x = beach.BEACH.left; x <= beach.BEACH.right; x += constraint.resolution) {
-      const y = beach.beachShoreY(x);
-      for (let gap = 0.1; gap <= Math.min(1000, env.max.y - y); gap += 0.5) {
-        const p = vec(x, y + gap);
-        if (!coast.inOcean(p)) { if (gap < best) { best = gap; at = vec(x, y); } break; }
+  for(const region of [...document.landRegions,...document.terrainRegions,...document.accessAreas,...document.districtZones]) { const p=region.outline.find(outside);if(p)push('outside-envelope',[region.id],'Region is outside the map envelope',p); }
+  for(const node of document.accessNodes)if(outside(node.position))push('outside-envelope',[node.id],'Access node is outside the envelope',node.position);
+  let waterGap=Infinity;
+  for(const constraint of document.constraints) {
+    const a=coast.landRegions.find(r=>r.id===constraint.fromLand)!,b=coast.landRegions.find(r=>r.id===constraint.toLand)!;
+    let gap=ringDistance(a.outline,b.outline)===0?0:Infinity;
+    // Directed inlet clearance, sampled along exposed facing shoreline segments.
+    // The direction belongs to the authored constraint, not a named district.
+    const direction=constraint.direction;
+    for(const shore of coast.landBoundaries.filter(s=>s.landId===a.id && s.normal.x*direction.x+s.normal.y*direction.y>1e-6)) {
+      const steps=Math.ceil(dist(shore.a,shore.b)/constraint.resolution);
+      for(let i=0;i<=steps;i++) {
+        const origin=add(shore.a,scale(sub(shore.b,shore.a),i/(steps||1)));
+        for(let j=0;j<b.outline.length;j++) {
+          const start=b.outline[j],delta=sub(b.outline[(j+1)%b.outline.length],start),den=cross(direction,delta);
+          if(Math.abs(den)<1e-8)continue;
+          const difference=sub(start,origin),t=cross(difference,delta)/den,u=cross(difference,direction)/den;
+          if(t>=0&&u>=0&&u<=1)gap=Math.min(gap,t);
+        }
       }
     }
-    waterGap = Math.min(waterGap, best);
-    push('beach-water-gap', [constraint.id, 'southern-estates'], Number.isFinite(best) ? `Minimum sampled open-water gap: ${best.toFixed(1)} m (required ${constraint.minimum} m)` : 'No facing land within sampled envelope', at, { gap: Number.isFinite(best) ? best : -1, minimum: constraint.minimum, xResolution: constraint.resolution, yResolution: 0.5 }, best < constraint.minimum ? 'error' : best < constraint.minimum + 5 ? 'warning' : 'info');
+    waterGap=Math.min(waterGap,gap);
+    push('water-gap',[constraint.id,constraint.fromLand,constraint.toLand],Number.isFinite(gap)?`Minimum directed water gap: ${gap.toFixed(1)} m (required ${constraint.minimum} m)`:'Cannot verify the directed water gap: no exposed source boundary faces the target land',a.outline[0],{gap:Number.isFinite(gap)?gap:-1,minimum:constraint.minimum},!Number.isFinite(gap)||gap<constraint.minimum?'error':gap<constraint.minimum+5?'warning':'info');
   }
-  return { revision: compiled.revision, findings, errors: findings.filter(f => f.severity === 'error').length, warnings: findings.filter(f => f.severity === 'warning').length, waterGap: Number.isFinite(waterGap) ? waterGap : null, resolution: { roads: 1, waterGap: document.constraints[0].resolution, footprintEdge: 0.5, tolerance: 0.04 } };
+  return { revision: compiled.revision, findings, errors: findings.filter(f => f.severity === 'error').length, warnings: findings.filter(f => f.severity === 'warning').length, waterGap: Number.isFinite(waterGap) ? waterGap : null, resolution: { roads: 1, waterGap: document.constraints[0]?.resolution ?? 1, footprintEdge: 0.5, tolerance: 0.04 } };
 }

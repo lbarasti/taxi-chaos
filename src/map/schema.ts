@@ -19,10 +19,21 @@ export type CountryProp = Owned & { position: Vec; kind: typeof countryPropKinds
 };
 export type Parking = Owned & { position: Vec; angle: number; occupied: boolean; lot: boolean; model: VehicleModel; color: string };
 export type TrafficSpawn = Owned & { position: Vec; angle: number; model: VehicleModel; color: string; path: Vec[] };
-export type AuthoredCollection = 'countryProps' | 'parking' | 'trafficSpawns';
-export type AuthoredDescriptor = CountryProp | Parking | TrafficSpawn;
+export type Region = Owned & { outline: Vec[] };
+export type TerrainRegion = Region & { surface: 'road' | 'sand' | 'paving'; priority: number };
+export type AccessArea = Region & { priority: number; driving: 'direct' | 'approach' };
+export type AccessNode = Owned & { position: Vec; road: boolean };
+export type AccessEdge = Owned & { fromNode: string; toNode: string; modes: ('walk' | 'drive')[] };
+export type ObjectPlacement = Owned & { type: string; position: Vec; angle: number; color: string; label: string; width?: number; height?: number; storeys?: number; artworkScale?: number; features?: readonly AttachedFeature[] };
+export type DistrictZone = Region & { name: string; priority: number };
+export type Resident = Owned & { position: Vec; color: string; wander: Vec };
+export type GroundMark = Owned & { points: Vec[]; color: string; width: number; fill: boolean };
+export type GroundLabel = Owned & { position: Vec; text: string; color: string; size: number };
+export const authoredCollections = ['countryProps', 'parking', 'trafficSpawns', 'objectPlacements', 'terrainRegions', 'landRegions', 'accessAreas', 'accessNodes', 'accessEdges', 'districtZones', 'residents', 'groundMarks', 'groundLabels'] as const;
+export type AuthoredCollection = typeof authoredCollections[number];
+export type AuthoredDescriptor = CountryProp | Parking | TrafficSpawn | ObjectPlacement | Region | TerrainRegion | AccessArea | AccessNode | AccessEdge | DistrictZone | Resident | GroundMark | GroundLabel;
 export type MapDocument = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   coordinates: 'metres-screen-south-positive-radians';
   envelope: { min: Vec; max: Vec };
   districts: { id: string; name: string; editable: boolean }[];
@@ -38,21 +49,23 @@ export type MapDocument = {
   golf: Owned & { center: Vec; width: number; height: number; clubhouse: Vec; route: Vec[]; path: Vec[]; holes: { tee: Vec; green: Vec; bunker: Vec }[] };
   ridges: (Owned & { points: Vec[] })[];
   labels: (Owned & { position: Vec; text: string; size: number; color: string })[];
-  beach: {
-    shore: string[]; left: number; right: number; top: number;
-    promenade: Owned & { left: number; right: number; top: number; bottom: number; entries: number[]; southEntries: number[] };
-    hotels: (Placement & { floors: number; width?: number; height?: number; type?: string; artworkScale?: number; features?: readonly AttachedFeature[] })[];
-    towers: (Owned & { position: Vec })[];
-    sets: (Owned & { position: Vec })[];
-    castles: (Owned & { position: Vec })[];
-  };
+  terrainRegions: TerrainRegion[];
+  landRegions: Region[];
+  objectPlacements: ObjectPlacement[];
+  accessAreas: AccessArea[];
+  accessNodes: AccessNode[];
+  accessEdges: AccessEdge[];
+  districtZones: DistrictZone[];
+  residents: Resident[];
+  groundMarks: GroundMark[];
+  groundLabels: GroundLabel[];
   generation: { ruralSeed: number; candidates: number };
-  constraints: { id: string; type: 'beach-water-gap'; minimum: number; resolution: number }[];
+  constraints: { id: string; type: 'water-gap'; fromLand: string; toLand: string; direction: Vec; minimum: number; resolution: number }[];
 };
 
 /** Strict shape checking also bounds imported workloads before any factory runs.
  * References are validated against the injected kind registry, so a custom catalogue
- * can be checked consistently across country, beach and city content. */
+ * can be checked consistently across authored and generated content. */
 export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): asserts value is MapDocument {
   const fail = (path: string, why: string): never => { throw new Error(`${path}: ${why}`); };
   const object = (v: unknown, keys: string[], path: string, optional: string[] = []): Record<string, unknown> => {
@@ -93,8 +106,8 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
     }
   };
   const placement = (v: unknown, path: string, extras: string[] = [], optional: string[] = []) => { const p = object(v, ['id', 'owner', 'position', 'name', 'color', ...extras], path, optional); owned(p, path); point(p.position, `${path}.position`); text(p.name, path); if (!/^#[0-9a-f]{6}$/i.test(text(p.color, path))) fail(path, 'expected hex colour'); return p; };
-  const root = object(value, ['schemaVersion', 'coordinates', 'envelope', 'districts', 'points', 'highlandOutline', 'roads', 'nodes', 'villas', 'countryProps', 'parking', 'trafficSpawns', 'stops', 'golf', 'ridges', 'labels', 'beach', 'generation', 'constraints'], 'map');
-  if (root.schemaVersion !== 3 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
+  const root = object(value, ['schemaVersion', 'coordinates', 'envelope', 'districts', 'points', 'highlandOutline', 'roads', 'nodes', 'villas', 'countryProps', 'parking', 'trafficSpawns', 'stops', 'golf', 'ridges', 'labels', 'terrainRegions', 'landRegions', 'objectPlacements', 'accessAreas', 'accessNodes', 'accessEdges', 'districtZones', 'residents', 'groundMarks', 'groundLabels', 'generation', 'constraints'], 'map');
+  if (root.schemaVersion !== 4 || root.coordinates !== 'metres-screen-south-positive-radians') fail('map', 'unsupported schema or coordinate convention');
   const env = object(root.envelope, ['min', 'max'], 'envelope'); point(env.min, 'envelope.min'); point(env.max, 'envelope.max');
   const bounds = env as unknown as MapDocument['envelope'];
   for (const axis of ['x', 'y'] as const) if (bounds.max[axis] <= bounds.min[axis] || bounds.max[axis] - bounds.min[axis] > 2000) fail('envelope', 'must have positive extent at most 2000 m');
@@ -135,27 +148,45 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
   for (const v of list(golf.holes, 'golf.holes', 1, 30)) { const h = object(v, ['tee', 'green', 'bunker'], 'hole'); Object.values(h).forEach(p => point(p, 'hole')); }
   for (const v of list(root.ridges, 'ridges', 0, 30)) { const p = object(v, ['id', 'owner', 'points'], 'ridge'); owned(p, 'ridge'); list(p.points, 'ridge.points', 5, 100).forEach(p => point(p, 'ridge.point')); }
   for (const v of list(root.labels, 'labels', 0, 100)) { const p = object(v, ['id', 'owner', 'position', 'text', 'size', 'color'], 'label'); owned(p, 'label'); point(p.position, 'label.position'); text(p.text, 'label.text'); text(p.color, 'label.color'); num(p.size, 'label.size', 0.1, 10); }
-  const beach = object(root.beach, ['shore', 'left', 'right', 'top', 'promenade', 'hotels', 'towers', 'sets', 'castles'], 'beach');
-  for (const key of ['left', 'right', 'top']) num(beach[key], `beach.${key}`);
-  const shore = list(beach.shore, 'beach.shore', 2, 100); shore.forEach(p => ref(p, 'beach.shore'));
-  const prom = object(beach.promenade, ['id', 'owner', 'left', 'right', 'top', 'bottom', 'entries', 'southEntries'], 'promenade'); owned(prom, 'promenade');
-  for (const key of ['left', 'right', 'top', 'bottom']) num(prom[key], `promenade.${key}`);
-  if ((prom.right as number) - (prom.left as number) < 10 || (prom.bottom as number) - (prom.top as number) < 2) fail('promenade', 'invalid dimensions');
-  for (const key of ['entries', 'southEntries']) { const xs = list(prom[key], `promenade.${key}`, 1, 30); xs.forEach((x, i) => { num(x, key, (prom.left as number) + 2.4, (prom.right as number) - 2.4); if (i && (x as number) - (xs[i - 1] as number) < 4.8) fail(key, 'entries must be ordered with 4.8 m spacing'); }); }
-  for (const v of list(beach.hotels, 'hotels', 1, 30)) {
-    const p = placement(v, 'hotel', ['floors'], ['width', 'height', 'type', 'artworkScale', 'features']);
-    num(p.floors, 'hotel.floors', 1, 50);
-    if (p.type !== undefined) kindOf(p.type, 'hotel.type', 'building');
-    if (p.width === undefined && p.type === undefined) fail('hotel', 'hotels need an explicit width or a catalogue type');
-    if ((p.width === undefined) !== (p.height === undefined)) fail('hotel', 'declare width and height together');
-    if (p.width !== undefined) num(p.width, 'hotel.width', 1, 100);
-    if (p.height !== undefined) num(p.height, 'hotel.height', 1, 100);
-    if (p.artworkScale !== undefined) num(p.artworkScale, 'hotel.artworkScale', 0.01, 100);
-    if (p.features !== undefined) features(p.features, 'hotel.features');
+  const polygon = (v: unknown, path: string) => {
+    const vertices = list(v, path, 3, 100); vertices.forEach(p => point(p, path));
+    const ring = vertices as Vec[];
+    if (ring.reduce((sum, a, i) => { const b = ring[(i + 1) % ring.length]; return sum + Math.hypot(a.x - b.x, a.y - b.y); }, 0) > 10000) fail(path, 'perimeter exceeds 10 km workload budget');
+  };
+  for (const key of ['terrainRegions', 'landRegions', 'accessAreas', 'districtZones'] as const) for (const v of list(root[key], key, 0, 100)) {
+    const extras = key === 'terrainRegions' ? ['surface', 'priority'] : key === 'accessAreas' ? ['driving', 'priority'] : key === 'districtZones' ? ['name', 'priority'] : [];
+    const p = object(v, ['id', 'owner', 'outline', ...extras], key); owned(p, key); polygon(p.outline, `${key}.outline`);
+    if (p.priority !== undefined) num(p.priority, `${key}.priority`, -1000, 1000);
+    if (key === 'terrainRegions' && !['road', 'sand', 'paving'].includes(p.surface as string)) fail(key, 'unknown surface');
+    if (key === 'accessAreas' && !['direct', 'approach'].includes(p.driving as string)) fail(key, 'unknown driving policy');
+    if (key === 'districtZones') text(p.name, `${key}.name`);
   }
-  for (const key of ['towers', 'sets', 'castles']) for (const v of list(beach[key], key, 0, 100)) { const p = object(v, ['id', 'owner', 'position'], key); owned(p, key); point(p.position, key); }
+  for (const v of list(root.objectPlacements, 'objectPlacements', 0, 500)) {
+    const p = object(v, ['id', 'owner', 'type', 'position', 'angle', 'color', 'label'], 'objectPlacement', ['width', 'height', 'storeys', 'artworkScale', 'features']);
+    owned(p, 'objectPlacement'); kindOf(p.type, 'objectPlacement.type'); point(p.position, 'objectPlacement.position'); num(p.angle, 'objectPlacement.angle', -Math.PI * 2, Math.PI * 2);
+    if (!/^#[0-9a-f]{6}$/i.test(text(p.color, 'objectPlacement.color'))) fail('objectPlacement', 'expected hex colour');
+    if (typeof p.label !== 'string' || p.label.length > 160) fail('objectPlacement.label', 'expected label (max 160)');
+    if ((p.width === undefined) !== (p.height === undefined)) fail('objectPlacement', 'declare width and height together');
+    if (p.width !== undefined) { num(p.width, 'objectPlacement.width', 0.2, 100); num(p.height, 'objectPlacement.height', 0.2, 100); }
+    if (p.storeys !== undefined) { if (kinds[p.type as string] !== 'building') fail('objectPlacement.storeys', 'only buildings have storeys'); num(p.storeys, 'objectPlacement.storeys', 1, 50); }
+    if (p.artworkScale !== undefined) num(p.artworkScale, 'objectPlacement.artworkScale', 0.01, 100);
+    if (p.features !== undefined) features(p.features, 'objectPlacement.features');
+  }
+  const nodeIds = new Set<string>();
+  for (const v of list(root.accessNodes, 'accessNodes', 0, 200)) { const p = object(v, ['id', 'owner', 'position', 'road'], 'accessNode'); owned(p, 'accessNode'); point(p.position, 'accessNode.position'); bool(p.road, 'accessNode.road'); nodeIds.add(p.id as string); }
+  let accessWork = 0;
+  for (const v of list(root.accessEdges, 'accessEdges', 0, 500)) {
+    const p = object(v, ['id', 'owner', 'fromNode', 'toNode', 'modes'], 'accessEdge'); owned(p, 'accessEdge');
+    if (!nodeIds.has(p.fromNode as string) || !nodeIds.has(p.toNode as string) || p.fromNode === p.toNode) fail('accessEdge', 'expected distinct known access nodes');
+    const modes = list(p.modes, 'accessEdge.modes', 1, 2); if (new Set(modes).size !== modes.length || modes.some(m => m !== 'walk' && m !== 'drive')) fail('accessEdge.modes', 'expected unique walk/drive modes');
+    const nodes = root.accessNodes as AccessNode[], a = nodes.find(n => n.id === p.fromNode)!.position, b = nodes.find(n => n.id === p.toNode)!.position; accessWork += Math.hypot(a.x-b.x, a.y-b.y);
+  }
+  if (accessWork > 10000) fail('accessEdges', 'total access route length exceeds 10 km workload budget');
+  for (const v of list(root.residents, 'residents', 0, 200)) { const p = object(v, ['id', 'owner', 'position', 'color', 'wander'], 'resident'); owned(p, 'resident'); point(p.position, 'resident.position'); text(p.color, 'resident.color'); point(p.wander, 'resident.wander'); num((p.wander as Vec).x, 'resident.wander.x', -10, 10); num((p.wander as Vec).y, 'resident.wander.y', -10, 10); }
+  for (const v of list(root.groundMarks, 'groundMarks', 0, 500)) { const p = object(v, ['id', 'owner', 'points', 'color', 'width', 'fill'], 'groundMark'); owned(p, 'groundMark'); list(p.points, 'groundMark.points', 2, 100).forEach(q => point(q, 'groundMark.point')); text(p.color, 'groundMark.color'); num(p.width, 'groundMark.width', 0.01, 10); bool(p.fill, 'groundMark.fill'); }
+  for (const v of list(root.groundLabels, 'groundLabels', 0, 100)) { const p = object(v, ['id', 'owner', 'position', 'text', 'size', 'color'], 'groundLabel'); owned(p, 'groundLabel'); point(p.position, 'groundLabel.position'); text(p.text, 'groundLabel.text'); text(p.color, 'groundLabel.color'); num(p.size, 'groundLabel.size', 0.1, 10); }
   const gen = object(root.generation, ['ruralSeed', 'candidates'], 'generation'); num(gen.ruralSeed, 'ruralSeed', 0, 2147483647); num(gen.candidates, 'candidates', 0, 5000); if (!Number.isInteger(gen.candidates)) fail('candidates', 'must be integer');
-  for (const v of list(root.constraints, 'constraints', 1, 20)) { const p = object(v, ['id', 'type', 'minimum', 'resolution'], 'constraint'); id(p.id, 'constraint.id'); if (p.type !== 'beach-water-gap') fail('constraint', 'unknown type'); num(p.minimum, 'minimum', 1, 500); num(p.resolution, 'resolution', 0.5, 10); }
+  for (const v of list(root.constraints, 'constraints', 0, 20)) { const p = object(v, ['id', 'type', 'fromLand', 'toLand', 'direction', 'minimum', 'resolution'], 'constraint'); id(p.id, 'constraint.id'); if (p.type !== 'water-gap') fail('constraint', 'unknown type'); const lands = ['generated-city', 'generated-highlands', 'generated-harbour', ...(root.landRegions as Region[]).map(r => r.id)]; if (!lands.includes(p.fromLand as string) || !lands.includes(p.toLand as string) || p.fromLand === p.toLand) fail('constraint', 'expected distinct known land regions'); point(p.direction, 'constraint.direction'); if (Math.abs(Math.hypot((p.direction as Vec).x,(p.direction as Vec).y)-1)>1e-6) fail('constraint.direction','expected a unit vector'); num(p.minimum, 'minimum', 1, 500); num(p.resolution, 'resolution', 0.5, 10); }
   if (owners.some(o => !districts.has(o))) fail('owner', 'unknown district');
   if (refs.some(r => !pointIds.has(r))) fail('reference', 'unknown geometry point');
   const doc = value as MapDocument, lookup = new Map(doc.points.map(p => [p.id, p.position]));
@@ -166,7 +197,7 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
     if (!p || p.editable || p.weight !== 0 || p.position.x !== x || p.position.y !== y || doc.nodes[index] !== id) fail(id, 'fixed bridge attachment cannot be changed');
   }
   for (const id of ['city', 'harbour']) if (!doc.districts.some(d => d.id === id && !d.editable)) fail(id, 'fixed context must be read-only');
-  for (const id of ['southern-estates', 'highlands', 'beach']) if (!doc.districts.some(d => d.id === id && d.editable)) fail(id, 'required editable district missing');
+  for (const id of ['southern-estates', 'highlands']) if (!doc.districts.some(d => d.id === id && d.editable)) fail(id, 'required editable district missing');
   let roadWork = 0;
   for (const road of doc.roads) {
     const anchors = [road.from, ...road.via, road.to].map(id => lookup.get(id)!);
@@ -177,7 +208,4 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
   if (trafficWork > 10000) fail('trafficSpawns', 'total initial route length exceeds 10 km workload budget');
   const ring = doc.highlandOutline.map(id => lookup.get(id)!);
   if (ring.reduce((sum, a, i) => { const b = ring[(i + 1) % ring.length]; return sum + Math.hypot(a.x - b.x, a.y - b.y); }, 0) > 10000) fail('highlandOutline', 'perimeter exceeds 10 km workload budget');
-  if (doc.beach.right <= doc.beach.left || doc.beach.right - doc.beach.left > 1000 || doc.beach.shore.some(id => lookup.get(id)!.y - doc.beach.top > 500)) fail('beach', 'beach must span at most 1000 × 500 m');
-  doc.beach.shore.forEach((id, i) => { const p = lookup.get(id)!; if (i && p.x <= lookup.get(doc.beach.shore[i - 1])!.x || p.y <= doc.beach.top) fail('beach.shore', 'must be x-ordered and below beach top'); });
-  if (lookup.get(doc.beach.shore[0])!.x !== doc.beach.left || lookup.get(doc.beach.shore.at(-1)!)!.x !== doc.beach.right) fail('beach.shore', 'endpoints must match beach left/right');
 }

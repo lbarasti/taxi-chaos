@@ -3,7 +3,7 @@ import { createVehicleBody, vehicleDefinition } from '../vehicles';
 import { objectDefinitions } from '../artwork/catalogue';
 import { objectKindRegistry, type KindRegistry, type ObjectCatalogue } from '../catalogue/schema';
 import { copyDefaultMap } from './default';
-import { assertMap, type AuthoredCollection, type AuthoredDescriptor, type CountryProp, type MapDocument } from './schema';
+import { authoredCollections, assertMap, type AuthoredCollection, type AuthoredDescriptor, type CountryProp, type MapDocument } from './schema';
 import { exportMap, importMap, revision } from './serialization';
 
 export type MapOperation =
@@ -18,15 +18,15 @@ export type MapOperation =
 export type MapBatch = { baseRevision: string; operations: MapOperation[] };
 
 export function entities(d: MapDocument) {
-  return [...d.points, ...d.villas, ...d.countryProps, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, d.beach.promenade, ...d.beach.hotels, ...d.beach.towers, ...d.beach.sets, ...d.beach.castles];
+  return [...d.points, ...d.villas, ...d.countryProps, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, ...d.objectPlacements, ...d.terrainRegions, ...d.landRegions, ...d.accessAreas, ...d.accessNodes, ...d.accessEdges, ...d.districtZones, ...d.residents, ...d.groundMarks, ...d.groundLabels];
 }
 export function authoredCollection(d: MapDocument, id: string): AuthoredCollection | undefined {
-  return (['countryProps', 'parking', 'trafficSpawns'] as const).find(key => d[key].some(e => e.id === id));
+  return authoredCollections.find(key => d[key].some(e => e.id === id));
 }
 /** Physical body for an authored descriptor. Typed country props and type-only hotel
  * placements resolve their footprint from the passed catalogue; a descriptor with
  * neither explicit dimensions nor a known type is a caller error, never a 0.2 m fallback. */
-export function descriptorBody(e: AuthoredDescriptor, catalogue: ObjectCatalogue = objectDefinitions): Body {
+export function descriptorBody(e: Extract<AuthoredDescriptor, { position: Vec; angle: number }>, catalogue: ObjectCatalogue = objectDefinitions): Body {
   if ('model' in e) return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
   const { width, height } = sizeOf(catalogue, e.type, e.width, e.height);
   const b = new Body(e.position.x, e.position.y, 1, width, height); b.angle = e.angle; return b;
@@ -45,7 +45,7 @@ export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   if ('center' in e) return { ...e.center };
   if ('point' in e) return entityPosition(d, e.point);
   if ('points' in e) return e.points.reduce((sum, p) => add(sum, scale(p, 1 / e.points.length)), vec());
-  if ('left' in e) return vec((e.left + e.right) / 2, (e.top + e.bottom) / 2);
+  if ('outline' in e) return e.outline.reduce((sum,p)=>add(sum,scale(p,1/e.outline.length)),vec());
 }
 export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue = objectDefinitions) {
   const district = d.districts.find(e => e.id === id), entity = entities(d).find(e => e.id === id), road = d.roads.find(e => e.id === id);
@@ -54,21 +54,18 @@ export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue 
   const positions: Vec[] = [];
   const rectangle = (p: Vec, w: number, h: number) => positions.push(vec(p.x - w / 2, p.y - h / 2), vec(p.x + w / 2, p.y + h / 2));
   for (const e of members) {
-    if (authoredCollection(d, e.id)) {
-      const authored = e as AuthoredDescriptor; positions.push(...descriptorBody(authored, catalogue).corners());
+    if ('angle' in e) {
+      const authored = e as Extract<AuthoredDescriptor, { position: Vec; angle: number }>; positions.push(...descriptorBody(authored, catalogue).corners());
       if ('occupied' in authored) { const bay = new Body(authored.position.x, authored.position.y, 1, 5.4, 2.6); bay.angle = authored.angle; positions.push(...bay.corners()); }
       if ('path' in authored) positions.push(...authored.path);
     }
     else if ('points' in e) positions.push(...e.points);
     else if ('center' in e) { rectangle(e.center, e.width + 14, e.height + 8); rectangle(add(e.center, e.clubhouse), 20, 22); positions.push(...[...e.route, ...e.path].map(p => add(e.center, p))); }
-    else if ('left' in e) positions.push(vec(e.left, e.top), vec(e.right, e.bottom));
+    else if ('outline' in e) positions.push(...e.outline);
     else {
-      const p = entityPosition(d, e.id), hotel = d.beach.hotels.find(h => h.id === e.id);
+      const p = entityPosition(d, e.id);
       if (p) {
         if (d.villas.some(v => v.id === e.id)) rectangle(p, 42, 34);
-        else if (hotel) { const size = sizeOf(catalogue, hotel.type, hotel.width, hotel.height); rectangle(p, size.width, size.height); }
-        else if (d.beach.towers.some(v => v.id === e.id)) rectangle(p, 4.6, 4.2);
-        else if (d.beach.sets.some(v => v.id === e.id)) rectangle(add(p, vec(0, 1.7)), 8, 7);
         else positions.push(p);
       }
     }
@@ -101,9 +98,8 @@ function moveEntity(d: MapDocument, id: string, delta: Vec, changed: Set<string>
   if ('position' in e) { e.position = add(e.position, delta); const spawn = d.trafficSpawns.find(s => s.id === id); if (spawn) spawn.path = spawn.path.map(p => add(p, delta)); }
   else if ('center' in e) e.center = add(e.center, delta);
   else if ('points' in e) e.points = e.points.map(p => add(p, delta));
-  else { e.left += delta.x; e.right += delta.x; e.top += delta.y; e.bottom += delta.y; e.entries = e.entries.map(x => x + delta.x); e.southEntries = e.southEntries.map(x => x + delta.x); }
-  if (id === d.beach.shore[0]) d.beach.left = (e as { position: Vec }).position.x;
-  if (id === d.beach.shore.at(-1)) d.beach.right = (e as { position: Vec }).position.x;
+  else if ('outline' in e) e.outline = e.outline.map(p => add(p,delta));
+  else throw new Error('Move access nodes to edit a connection');
   changed.add(id);
 }
 
@@ -118,13 +114,13 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
     const expected = op.type === 'add' ? ['type', 'collection', 'descriptor'] : op.type === 'replace' ? ['type', 'targetId', 'descriptor'] : op.type === 'delete' ? ['type', 'targetId'] : op.type === 'duplicate' ? ['type', 'targetId', 'newId', 'delta'] : op.type === 'envelope' ? ['type', 'min', 'max'] : op.type === 'resize' ? ['type', 'targetId', 'width', 'height'] : op.type === 'move' ? ['type', 'targetId', 'position'] : ['type', 'targetId', 'delta'];
     if (Object.keys(op).sort().join(',') !== expected.sort().join(',')) throw new Error('Unknown operation fields');
     if (op.type === 'add') {
-      if (!['countryProps', 'parking', 'trafficSpawns'].includes(op.collection)) throw new Error('Unknown authored collection');
+      if (!authoredCollections.includes(op.collection)) throw new Error('Unknown authored collection');
       if (!op.descriptor || typeof op.descriptor !== 'object') throw new Error('Malformed descriptor');
       (d[op.collection] as AuthoredDescriptor[]).push(structuredClone(op.descriptor));
       assertMap(d, kinds); changed.add(op.descriptor.id);
     } else if (op.type === 'delete' || op.type === 'duplicate' || op.type === 'replace') {
       const key = authoredCollection(d, op.targetId);
-      if (!key) throw new Error('Add/delete/duplicate/replace supports countryProps, parking and trafficSpawns only');
+      if (!key) throw new Error('Add/delete/duplicate/replace supports authored collections only');
       const items: AuthoredDescriptor[] = d[key], index = items.findIndex(e => e.id === op.targetId);
       if (op.type === 'delete') items.splice(index, 1);
       else if (op.type === 'replace') {
@@ -142,7 +138,7 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
       const district = d.districts.find(e => e.id === op.targetId);
       if (district) {
         if (district.id !== 'southern-estates') throw new Error('Only southern-estates supports whole-district translation; edit individual geometry in other districts');
-        for (const e of entities(d).filter(e => e.owner === district.id && !('point' in e))) {
+        for (const e of entities(d).filter(e => e.owner === district.id && !('point' in e) && !('fromNode' in e))) {
           const weight = d.points.find(p => p.id === e.id)?.weight ?? 1;
           if (weight) moveEntity(d, e.id, scale(op.delta, weight), changed);
         }
@@ -157,10 +153,9 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
       const e = entities(d).find(e => e.id === op.targetId);
       if (!e || !authoredCollection(d, e.id) && !d.districts.find(o => o.id === e.owner)!.editable) throw new Error('Unknown/read-only object');
       if (authoredCollection(d, e.id) === 'countryProps') { const country = e as CountryProp; country.width = op.width; country.height = op.height; }
-      else if (d.beach.hotels.some(h => h.id === e.id)) { const hotel = e as MapDocument['beach']['hotels'][number]; hotel.width = op.width; hotel.height = op.height; }
+      else if ('angle' in e && 'type' in e) { e.width = op.width; e.height = op.height; }
       else if ('width' in e) { e.width = op.width; e.height = op.height; }
-      else if ('left' in e) { const center = entityPosition(d, e.id)!; e.left = center.x - op.width / 2; e.right = center.x + op.width / 2; e.top = center.y - op.height / 2; e.bottom = center.y + op.height / 2; }
-      else throw new Error('Dimensions are editable only for country props, golf, hotels and promenade');
+      else throw new Error('Dimensions are editable only for object placements and golf');
       changed.add(e.id);
     } else throw new Error('Unknown operation type');
   }
@@ -173,7 +168,7 @@ export class MapHistory {
   private past: MapDocument[] = []; private future: MapDocument[] = [];
   private readonly kinds: KindRegistry;
   constructor(document = copyDefaultMap(), private readonly catalogue: ObjectCatalogue = objectDefinitions) { this.kinds = objectKindRegistry(catalogue); assertMap(document, this.kinds); this.document = structuredClone(document); }
-  snapshot() { return { schemaVersion: 3, revision: revision(this.document, this.kinds), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
+  snapshot() { return { schemaVersion: 4, revision: revision(this.document, this.kinds), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
   describe(id: string) { return describe(this.document, id, this.catalogue); }
   apply(batch: MapBatch) {
     const result = applyOperations(this.document, batch, this.catalogue);

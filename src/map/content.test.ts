@@ -57,7 +57,7 @@ describe('authored content transactions', () => {
   });
   it('rejects stale hotel style, unknown references and kind mismatches structurally', () => {
     const stale = copyDefaultMap();
-    Object.assign(stale.beach.hotels[0], { style: 'luxury-condo' });
+    Object.assign(stale.objectPlacements[0], { style: 'luxury-condo' });
     expect(() => assertMap(stale)).toThrow(/expected fields/);
 
     const unknownProp = copyDefaultMap();
@@ -65,7 +65,7 @@ describe('authored content transactions', () => {
     expect(() => assertMap(unknownProp)).toThrow(/unknown catalogue type no-such-type/);
 
     const unknownHotel = copyDefaultMap();
-    Object.assign(unknownHotel.beach.hotels[0], { type: 'no-such-type' });
+    Object.assign(unknownHotel.objectPlacements[0], { type: 'no-such-type' });
     expect(() => assertMap(unknownHotel)).toThrow(/unknown catalogue type no-such-type/);
 
     const wrongKind = copyDefaultMap();
@@ -73,8 +73,8 @@ describe('authored content transactions', () => {
     expect(() => assertMap(wrongKind)).toThrow(/catalogue type hospital is building, not crate/);
 
     const hotelWrongKind = copyDefaultMap();
-    Object.assign(hotelWrongKind.beach.hotels[0], { type: 'crate' });
-    expect(() => assertMap(hotelWrongKind)).toThrow(/catalogue type crate is crate, not building/);
+    Object.assign(hotelWrongKind.objectPlacements[0], { type: 'crate' });
+    expect(() => assertMap(hotelWrongKind)).toThrow(/only buildings have storeys/);
 
     const propKind = copyDefaultMap();
     Object.assign(propKind.countryProps[0], { kind: 'building', type: 'crate' });
@@ -92,11 +92,11 @@ describe('authored content transactions', () => {
 
   it('rejects version 1 and stale-style exports without upgrading them and retains canonical version 3 imports', () => {
     const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...previous } = d;
-    const old = { ...previous, schemaVersion: 1, beach: { ...previous.beach, pickup: vec(30, 249.5) } };
+    const old = { ...previous, schemaVersion: 1, beach: { pickup: vec(30, 249.5) } };
     expect(() => importMap(JSON.stringify(old))).toThrow();
     expect(() => importMap(JSON.stringify({ ...old, parking: [] }))).toThrow();
     expect(exportMap(importMap(exportMap(d)))).toBe(exportMap(d));
-    expect(d.schemaVersion).toBe(3);
+    expect(d.schemaVersion).toBe(4);
   });
 });
 
@@ -131,7 +131,7 @@ describe('content runtime integration and geometric findings', () => {
     const other = new Game(compileMap(h.snapshot().document), false), shed = other.world.props.find(p => p.sourceId === 'test-shed')!;
     expect(shed.body.angle).toBe(Math.PI / 2); expect(shed.hp).toBe(90);
     expect([...other.world.hash.query(new Body(280, 469, 1, 1, 1))].some(p => p === shed && contact(p.body, new Body(280, 469, 1, 1, 1)))).toBe(true);
-    expect(other.map.beach.BEACH_PICKUP).toEqual(vec(28, 250));
+    expect(other.map.document.parking.find(p=>p.id==='parking-73')!.position).toEqual(vec(28, 250));
     expect(other.vehicles.some(v => v.sourceId === 'parking-00')).toBe(false);
     expect(game.world.props.some(p => p.sourceId === 'test-shed')).toBe(false);
     other.resetRun(); expect(other.vehicles.find(v => v.sourceId === 'parking-73')!.body.position).toEqual(vec(28, 250));

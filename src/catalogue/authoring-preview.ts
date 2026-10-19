@@ -132,7 +132,7 @@ function renderHud(mounted: Mounted, report: AuthoringReport): void {
     </div>
     <section class="authoring-routes"><h2>NEARBY ROUTES <small>conflict?</small></h2><p>${routeText}</p></section>
     <section class="authoring-extra"><h2>BLOCKERS</h2><p>${blockerText}</p><h2>FINDINGS</h2>${findingText}</section>
-    <footer>${report.map.counts.countryProps} props · ${report.map.counts.roads} roads · ${report.map.withinBudgets ? 'within budgets' : 'OVER BUDGET'} · v3</footer>`;
+    <footer>${report.map.counts.countryProps + report.map.counts.objectPlacements} props · ${report.map.counts.roads} roads · ${report.map.withinBudgets ? 'within budgets' : 'OVER BUDGET'} · v${report.map.schemaVersion}</footer>`;
   mounted.legend.hidden = false;
 }
 

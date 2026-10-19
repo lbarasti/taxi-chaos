@@ -41,7 +41,7 @@ assert.equal(await page.evaluate(id=>__taxi.props().find(p=>p.id===id).alive,tar
 }
 await page.evaluate(()=>__taxi.teleport(35,260,0,0));await snap('destruction');
 await setup('promenade');const before=await page.evaluate(()=>__taxi.state().position);const walked=await step(2,['KeyD']);
-assert(walked.position.x>before.x+8);assert.equal(walked.surface,'promenade');assert.equal(walked.driverHealth,100);await snap('promenade');
+assert(walked.position.x>before.x+8);assert.equal(walked.surface,'paving');assert.equal(walked.driverHealth,100);await snap('promenade');
 await setup('beach');await page.evaluate(()=>__taxi.teleport(200.675,243.5,Math.PI/2,0));const stopped=await step(3,['KeyW','ShiftLeft']);assert(stopped.position.y<247);assert.equal(stopped.surface,'road');
 await setup('beach-pickup');await page.evaluate(()=>__taxi.teleport(64,270,Math.PI/2,25));const drowned=await step(3);assert.equal(drowned.mode,'wasted');assert.equal(drowned.wastedReason,'drowning');assert.equal(drowned.explosions,0);await snap('surf-sinking');
 await setup('promenade',22);await snap('promenade-night');
@@ -65,12 +65,12 @@ assert(perf.sandStrokesPerFrame>0&&perf.sandStrokesPerFrame<=4);console.log('60s
 // Preserve both primary fare cues while on sand, for cab and pickup.
 for(const name of ['beach','beach-pickup']){
 await setup(name);await page.evaluate(()=>__taxi.teleport(64,253,0,0));await step(0);
-assert.match(await page.locator('#mobile-hint').textContent(),/Stop in yellow to pick up/);
+assert.equal(await page.locator('.navigation-hud').getAttribute('data-target'),'pickup');
 const pickup=await page.evaluate(()=>__taxi.state().job.pickup);
 await page.evaluate(p=>__taxi.teleport(p.x,p.y,0,0),pickup);await step(1);
 assert.equal(await page.evaluate(()=>__taxi.state().job.stage),'dropoff');
 await page.evaluate(()=>__taxi.teleport(64,253,0,0));await step(0);
-assert.match(await page.locator('#mobile-hint').textContent(),/Stop in green to deliver/);
+assert.equal(await page.locator('.navigation-hud').getAttribute('data-target'),'dropoff');
 }
 assert.deepEqual(errors,[]);assert(requests.every(u=>u.startsWith('file:')||u.startsWith('data:')),'production must be self-contained');
 console.log('PASS: sand/pickup acceleration, real pickup entry, pickup door/jump/landing, four destructible classes, promenade walking/vehicle exclusion, surf death, night, three mobile viewports, 60s mobile sand rendering and preserved fare cues; offline with no page errors');

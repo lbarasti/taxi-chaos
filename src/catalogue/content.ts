@@ -59,7 +59,7 @@ export const objectRecords = [
   },
   {
     id: 'hotel', kind: 'building', width: 33, height: 11, storeys: 14,
-    fallback: 'commercial', sign: hotelSign, frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE',
+    fallback: 'resort', sign: hotelSign, frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE',
   },
   // Representative ordinary single-image building. `map/bakery-front.png` is the
   // genuine committed art; the type itself is all the catalogue needs. The authoring
@@ -91,6 +91,16 @@ export const objectRecords = [
   // `map/crate-shipping.png` (not an alias of an existing sprite) and attributed in
   // `src/assets/ATTRIBUTION.md`.
   { id: 'shipping-crate', kind: 'crate', width: 1.8, height: 1.8, image: 'map/crate-shipping.png' },
+  { id: 'lifeguard-tower', kind: 'lifeguard-tower', width: 4.6, height: 4.2 },
+  { id: 'parasol', kind: 'parasol', width: 3.4, height: 3.4 },
+  { id: 'beach-chair', kind: 'beach-chair', width: 1.1, height: 2.4 },
+  { id: 'sandcastle', kind: 'sandcastle', width: 1.8, height: 1.6 },
+  { id: 'bollard', kind: 'bollard', width: 0.6, height: 0.6 },
+  { id: 'promenade-edge', kind: 'promenade-edge', width: 4, height: 0.6 },
+  { id: 'pedestrian-gate', kind: 'pedestrian-gate', width: 4.8, height: 0.6 },
+  { id: 'lamp', kind: 'lamp', width: 0.6, height: 0.6 },
+  { id: 'bench', kind: 'bench', width: 2.4, height: 0.75 },
+  { id: 'kiosk', kind: 'kiosk', width: 4, height: 2.8 },
 ] as const satisfies readonly ObjectRecord[];
 
 /** Type identity → behaviour kind for strict, asset-free map import validation. */

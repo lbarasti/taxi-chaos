@@ -21,5 +21,5 @@ export function importMap(json: string, kinds: KindRegistry = objectKinds): MapD
 export function revision(document: MapDocument, kinds: KindRegistry = objectKinds): string {
   const text = exportMap(document, kinds); let hash = 2166136261;
   for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
-  return `v3-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+  return `v4-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }

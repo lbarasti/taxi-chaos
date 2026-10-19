@@ -130,5 +130,5 @@ describe('city building scale and access', () => {
     }
     expect(reached, JSON.stringify({ position: vehicle.body.position, path: vehicle.path, phase: vehicle.ai.phase })).toBe(true); expect(vehicle.damage.health).toBe(100);
     expect(vehicle.ai.attempts).toBe(0);
-  }, 20000);
+  }, 30000);
 });

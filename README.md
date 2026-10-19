@@ -69,7 +69,19 @@ The checker exits 1 for structural errors or geometric errors, and may export a
 structurally valid draft that still needs repair. Invoke `node tools/map-check.mjs`
 directly for JSON stdout without npm's banner.
 
-Only version-3 documents are accepted. An older revision, a stale hotel `style`,
+Terrain (`terrainRegions`), dry land (`landRegions`), catalogue objects
+(`objectPlacements`), walking/vehicle access (`accessAreas`, `accessNodes`,
+`accessEdges`), residents, district zones and ground presentation are independent
+collections. Higher terrain priority wins; equal priorities use stable ID order.
+The terrain renderer and tyre sampler use that same order. Materials never grant
+access or create land. Legacy city, harbour, bridge and countryside generators
+contribute their geometry to the shared land union. Access edges declare travel
+modes and road connection nodes; validation sweeps real bodies along them.
+`src/map/fixtures/second-coast.json` is an executable data-only coastal composition
+used by the regression tests. All these collections support transactional
+add/replace/delete/duplicate and movement through the same map operations.
+
+Only version-4 documents are accepted. An older revision, a stale hotel `style`,
 or an unknown catalogue `type` (or one whose behaviour does not match its `kind`)
 is rejected structurally on import and in operations rather than upgraded.
 
@@ -121,7 +133,7 @@ npm run authoring:preview -- --input tools/examples/map-authoring.json --entity 
 npm run authoring:preview -- --input tools/examples/map-authoring.json --entity authoring-bakery --resize 24,16 --drive-from 240,450
 ```
 
-Any stable entity ID in any version-3 map can be inspected; there is no per-image
+Any stable entity ID in any version-4 map can be inspected; there is no per-image
 command or script. `--input` accepts a full strict map or a small placement list (a JSON
 array of country props) composed onto `--base`, so the fixture cannot drift when the
 baseline map changes. `--list` prints the catalogue types and every inspectable ID;

@@ -146,9 +146,8 @@ function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: nu
 
 /** Customers hold near home; ordinary civilians keep the prior local sinusoidal wander. */
 function wanderTarget(world: World, person: Person, time: number): Vec {
-  const { onPromenade } = world.map.beach;
   if (person.role === 'customer') return person.home;
-  return add(person.home, onPromenade(person.home) ? vec(Math.sin(time * 0.3 + person.phase) * 5, 0) : vec(0, Math.sin(time * 0.3 + person.phase) * 4));
+  return add(person.home, scale(person.wander ?? vec(0,4), Math.sin(time * 0.3 + person.phase)));
 }
 
 /** Integrate a corpse with drag, static separation and bounded speed. */

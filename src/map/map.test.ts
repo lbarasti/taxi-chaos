@@ -28,7 +28,7 @@ describe('map document and transactional editing', () => {
     if (kind === 'dimension') d.golf.width = 0;
     if (kind === 'extra') Object.assign(d, { surprise: true });
     if (kind === 'pinned') d.points.find(p => p.id === 'node-00')!.position.y++;
-    if (kind === 'ordering') d.points.find(p => p.id === 'beach-shore-1')!.position.x = -45;
+    if (kind === 'ordering') d.landRegions[0].outline = Array.from({length:101},()=>vec());
     if (kind === 'workload') d.roads.forEach(r => r.via = Array.from({ length: 20 }, (_, i) => i % 2 ? 'shore-00' : 'shore-10'));
     expect(() => assertMap(d)).toThrow();
   });
@@ -75,8 +75,8 @@ describe('map document and transactional editing', () => {
     const map = compileMap(h.snapshot().document);
     expect(map.country.HIGHLAND_STOPS[5].position).toEqual(vec(134, 460));
     expect(map.country.COUNTRY_ROADS.find(r => r.id === 'fairway-drive')!.points.at(-1)).toEqual(vec(134, 460));
-    expect(map.beach.BEACH_HOTELS[0].position.x).toBe(163);
-    expect(map.beach.PROMENADE_GATES[0].position.y).toBe(248);
+    expect(map.objects['hotel-sandpiper'].position.x).toBe(163);
+    expect(map.terrain.regions.find(r=>r.id==='ocean-walk')!.bounds.min.y).toBe(248);
   });
   it('imports as one undoable transaction and failed imports preserve history', () => {
     const h = new MapHistory(), original = h.export(), other = new MapHistory(); translate(other);
@@ -115,7 +115,7 @@ describe('map compilation, gameplay and validation', () => {
   });
   it('keeps invalid geometry editable and reports clearance, envelope and intersections', () => {
     const h = new MapHistory(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'translate', targetId: 'southern-estates', delta: vec(0, -35) }] });
-    expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'beach-water-gap' && f.severity === 'error')).toBe(true);
+    expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'water-gap' && f.severity === 'error')).toBe(true);
     expect(() => createPreview(h.snapshot().document)).toThrow(/blocked/);
     h.undo(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'move', targetId: 'shore-17', position: vec(500, 530) }] });
     expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'self-intersecting-land')).toBe(true);
@@ -153,7 +153,7 @@ describe('map compilation, gameplay and validation', () => {
     const pool = game.world.pools[6]; game.player.body.position = { ...pool.position };
     game.update(1 / 120); expect(game.player.sinking?.pool).toBe(pool);
     game.resetRun(); game.settings.noPolice = true;
-    game.player.body.position = vec(64, game.map.beach.beachShoreY(64) + 2);
+    game.player.body.position = vec(64, 280);
     game.update(1 / 120); expect(game.player.sinking).toBeDefined(); expect(game.player.sinking?.pool).toBeUndefined();
   });
 });
