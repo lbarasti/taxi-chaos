@@ -9,9 +9,11 @@ import type { Parking } from './map/schema';
 import { CITY_GRID, CITY_SIZE, citySegmentOpen, type CityBlock, type CityBuilding } from './city';
 import { createCityDetour, type StreetAccess } from './city-navigation';
 import type { PropArtwork } from './artwork/catalogue';
-import { HARBOUR, PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, inHarbour, onPortRoad, portAccess, portNeighbours, portNode, portPath } from './harbour';
+import { PORT_CONTAINERS, PORT_CONNECTIONS, PORT_GATES, SWAP_CONTAINER, portAccess, portNeighbours, portNode, portPath } from './harbour';
 
 export type { PropKind } from './catalogue/schema';
+// Guardrail breakage uses normal approach speed; glancing hits slide.
+export const RAIL_BREAK_SPEED = 12;
 export const isStructural = (kind: PropKind) => kind === 'shed' || kind === 'barracks' || kind === 'station';
 export const isRigidObstacle = (kind: PropKind) => ['building', 'rock', 'guardrail', 'container', 'fence', 'port-gate', 'lifeguard-tower', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) || isStructural(kind) || kind === 'pump' || kind === 'tree';
 export const blocksWalking = (kind: PropKind) => kind !== 'pedestrian-gate';
@@ -26,7 +28,7 @@ export function district(p: Vec, map = defaultCompiledMap) {
   const { SOUTH_WOODS_Y } = map.country;
   const zone = [...map.document.districtZones].sort(regionOrder).reverse().find(z => contains(z.outline,p));
   if (zone) return zone.name;
-  return inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
+  return map.harbour.inHarbour(p) ? 'NORTHSTAR HARBOUR' : p.y >= SOUTH_WOODS_Y ? (p.x < 110 ? 'CEDAR WOODS' : p.x < 225 ? 'FAIRWAY CLUB' : 'WOODLAND ESTATES') : p.x > 440 ? 'EAGLE HIGHLANDS' : p.x >= 296 ? 'PINE WOODS' : p.x > 254 ? 'EAST RIVER' : p.x < 80 ? (p.y < 100 ? 'OLD TOWN' : 'MARKET QUARTER') : p.x < 160 ? (p.y < 100 ? 'MIDTOWN' : 'GARDEN DISTRICT') : (p.y < 100 ? 'THE DOCKS' : 'EAST VILLAGE');
 }
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
@@ -47,7 +49,6 @@ export class World {
   }
   constructor(public readonly map: CompiledMap = defaultCompiledMap) {
     const { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, inCountryClearing, inHighlands } = map.country;
-    const { COAST_RAILS } = map.coast;
     this.parking = map.document.parking.map(p => ({ ...structuredClone(p), sourceId: p.id }));
     this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
     this.blocks = map.city.blocks;
@@ -95,7 +96,11 @@ export class World {
     for (const site of map.city.campuses) for (const prop of site.props) {
       this.add(prop.kind, prop.position.x, prop.position.y, prop.width, prop.height, prop.color, '', prop.angle ?? 0);
     }
-    for (const rail of COAST_RAILS) this.add('guardrail', rail.position.x, rail.position.y, rail.width, 0.8, '#a7b9b1', '', rail.angle);
+    for (const p of map.presentation.placements) {
+      const o=map.objects[p.id];
+      const prop=this.add(o.kind,p.position.x,p.position.y,o.width,o.height,p.color,p.label,p.angle);
+      Object.assign(prop,{sourceId:p.id,storeys:o.storeys,artwork:o.artwork,presentation:o.presentation,features:o.features});
+    }
     for (const y of BRIDGE_Y) {
       for (const side of [-1, 1]) {
         this.add('lamp', 249, y + side * 9, 0.6, 0.6, '#a7bfbb');
@@ -115,18 +120,19 @@ export class World {
     const ruralRandom = seeded(map.document.generation.ruralSeed);
     // Keep the original candidate lattice/RNG draws; carry the southern stream in
     // local coordinates. Envelope edits never reshuffle the fixed city/highlands.
-    const southernIds = defaultMap.points.filter(p => p.owner === 'southern-estates' && defaultMap.highlandOutline.includes(p.id)).map(p => p.id);
+    const southernIds = map.document.generation.translationPoints;
     const shift = southernIds.reduce((sum, id) => {
-      const old = defaultMap.points.find(p => p.id === id)!.position, now = map.document.points.find(p => p.id === id)?.position ?? old;
+      const now = map.document.points.find(p => p.id === id)!.position, old = defaultMap.points.find(p => p.id === id)?.position ?? now;
       return vec(sum.x + (now.x - old.x) / southernIds.length, sum.y + (now.y - old.y) / southernIds.length);
     }, vec());
     for (let i = 0; i < map.document.generation.candidates; i++) {
-      const p = vec(ruralRandom() * 530, ruralRandom() * 550);
+      const bounds=map.document.generation.candidateBounds;
+      const p = vec(bounds.min.x+ruralRandom() * (bounds.max.x-bounds.min.x), bounds.min.y+ruralRandom() * (bounds.max.y-bounds.min.y));
       const baseline = defaultCompiledMap.country;
       if (!baseline.inHighlands(p) || baseline.countryAccess(p).distance < 12 || baseline.inCountryClearing(p) || baseline.HIGHLAND_STOPS.some(s => dist(s.position, p) < 15)) continue;
       // Optional RNG draws depend on the baseline stream, never current edits.
       const rock = i % 8 === 0, size = rock ? 3 + ruralRandom() * 4 : 1.6, angle = ruralRandom() * Math.PI;
-      if (p.y >= 392) { p.x += shift.x; p.y += shift.y; }
+      if (p.y >= defaultCompiledMap.country.SOUTH_WOODS_Y) { p.x += shift.x; p.y += shift.y; }
       if (!inHighlands(p) || countryAccess(p).distance < 12 || inCountryClearing(p) || HIGHLAND_STOPS.some(s => dist(s.position, p) < 15)) continue;
       this.add(rock ? 'rock' : 'tree', p.x, p.y, size, rock ? size * 0.8 : size, rock ? '#788278' : ['#3d654f', '#426e58', '#315747'][i % 3], '', angle);
     }
@@ -161,7 +167,7 @@ export class World {
     // Gate islands leave two 10 m lanes. Per-vehicle access prevents tailgating
     // a permitted freight NPC through the player's security collider.
     for (const [a, b] of [[72, 194], [206, 214], [226, 252]]) this.add('fence', (a + b) / 2, -17, b - a, 0.5, '#839c9b');
-    for (const x of [HARBOUR.left, HARBOUR.right]) this.add('fence', x, -76, 0.5, 118, '#839c9b');
+    for (const x of [map.harbour.left, map.harbour.right]) this.add('fence', x, -76, 0.5, 118, '#839c9b');
     for (const p of PORT_GATES) this.add('port-gate', p.x, p.y, 12, 0.65, '#e3c883', 'SECURITY');
     this.add('building', 210, -24, 6, 6, '#788c89', 'PORT SECURITY');
     this.add('building', 163, -28, 28, 12, '#647977', 'BONDED WAREHOUSE');
@@ -188,6 +194,7 @@ export class World {
 // Prefer simple orthogonal routes; the compiled road graph supplies detours
 // around authored sites that replace former grid streets.
 export function createNavigation(map: CompiledMap, collisionGeometry?: AccessGeometry) {
+const { onPortRoad } = map.harbour;
 const { ROAD_NODES, countryAccess, countryNeighbours, countryNode, countryPath, isCountry } = map.country;
 // Standalone map consumers build the same complete world lazily when they need
 // access clearance. A live World supplies its own collision index after spawning.

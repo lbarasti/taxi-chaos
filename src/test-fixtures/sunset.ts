@@ -6,7 +6,7 @@ export const BEACH_PICKUP = map.document.parking.find((p) => p.id === 'parking-7
 export const BEACH_HOTELS = map.document.objectPlacements
   .filter((p) => map.objects[p.id].kind === 'building')
   .map((p) => ({ ...p, ...map.objects[p.id], name: p.label }));
-const outline = map.document.landRegions.find((r) => r.id === 'sunset-land')!.outline;
+const outline = map.land.landRegions.find((r) => r.id === 'sunset-land')!.outline;
 const shore = outline.slice(2).reverse();
 export function beachShoreY(x: number): number {
   for (let i = 1; i < shore.length; i++) {

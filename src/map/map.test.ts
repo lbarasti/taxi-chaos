@@ -28,7 +28,7 @@ describe('map document and transactional editing', () => {
     if (kind === 'dimension') d.golf.width = 0;
     if (kind === 'extra') Object.assign(d, { surprise: true });
     if (kind === 'pinned') d.points.find(p => p.id === 'node-00')!.position.y++;
-    if (kind === 'ordering') d.landRegions[0].outline = Array.from({length:101},()=>vec());
+    if (kind === 'ordering') d.landRegions[0] = { id:'test-land', owner:'beach', outline:Array.from({length:101},()=>vec()) };
     if (kind === 'workload') d.roads.forEach(r => r.via = Array.from({ length: 20 }, (_, i) => i % 2 ? 'shore-00' : 'shore-10'));
     expect(() => assertMap(d)).toThrow();
   });
@@ -96,9 +96,9 @@ describe('map compilation, gameplay and validation', () => {
     const probe = new Body(105, 434, 1, 16, 10);
     expect([...preview.world.hash.query(probe)].some(p => p.sourceId === 'villa-the-laurels' && contact(probe, p.body))).toBe(true);
     expect([...original.world.hash.query(probe)].some(p => p.sourceId === 'villa-the-laurels' && contact(probe, p.body))).toBe(false);
-    expect(preview.map.coast.inOcean(vec(132, 478))).toBe(false);
+    expect(preview.map.land.inOcean(vec(132, 478))).toBe(false);
     const route = preview.world.navigation.roadPath(vec(242, 470), vec(132, 478));
-    expect(route.at(-1)).toEqual(vec(132, 478)); expect(route.every(p => !preview.map.coast.inOcean(p))).toBe(true);
+    expect(route.at(-1)).toEqual(vec(132, 478)); expect(route.every(p => !preview.map.land.inOcean(p))).toBe(true);
   });
   it('preserves unrelated seeded scenery and repeatable compilation', () => {
     const original = new World(), h = new MapHistory(); translate(h);
@@ -113,20 +113,24 @@ describe('map compilation, gameplay and validation', () => {
     const h = new MapHistory(d); translate(h); const result = validateMap(h.snapshot().document);
     expect(result.errors).toBe(0); expect(result.waterGap! - baseline.waterGap!).toBeCloseTo(20);
   });
-  it('keeps invalid geometry editable and reports clearance, envelope and intersections', () => {
+  it('keeps insufficient clearance editable and blocks invalid gameplay previews', () => {
     const h = new MapHistory(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'translate', targetId: 'southern-estates', delta: vec(0, -35) }] });
     expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'water-gap' && f.severity === 'error')).toBe(true);
     expect(() => createPreview(h.snapshot().document)).toThrow(/blocked/);
-    h.undo(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'move', targetId: 'shore-17', position: vec(500, 530) }] });
+  });
+  it('reports self-intersections in a shared land ring', () => {
+    const h = new MapHistory(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'move', targetId: 'shore-17', position: vec(500, 530) }] });
     expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'self-intersecting-land')).toBe(true);
-    h.undo(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'translate', targetId: 'southern-estates', delta: vec(0, 30) }] });
+  });
+  it('reports translated content outside the map envelope', () => {
+    const h = new MapHistory(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'translate', targetId: 'southern-estates', delta: vec(0, 30) }] });
     expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'outside-envelope')).toBe(true);
   });
   it('detects road anchor water, disconnected access, object overlaps and blocked walking entrance', () => {
     const d = copyDefaultMap(), h = new MapHistory(d);
     h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'move', targetId: 'fairway-a', position: vec(208, 310) }] });
     expect(validateMap(h.snapshot().document).findings.some(f => f.code === 'road-enters-water' && f.measured?.length === 7.8)).toBe(true);
-    const detached = copyDefaultMap(); detached.roads = detached.roads.filter(r => r.id !== 'southwoods-drive' && r.id !== 'highland-descent');
+    const detached = copyDefaultMap(); detached.roads = detached.roads.filter(r => r.id !== 'southwoods-drive' && r.id !== 'highland-descent'); detached.boundaryPlacements.forEach(rule=>rule.excludeRoads=rule.excludeRoads.filter(id=>detached.roads.some(r=>r.id===id)));
     expect(validateMap(detached).findings.some(f => f.code === 'disconnected-road')).toBe(true);
     h.undo(); h.apply({ baseRevision: h.snapshot().revision, operations: [{ type: 'move', targetId: 'hotel-sandpiper', position: vec(181, 263) }] });
     const result = validateMap(h.snapshot().document);

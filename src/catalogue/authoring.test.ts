@@ -198,3 +198,19 @@ describe('authoring map schema discipline', () => {
     expect(() => inspectAuthoring({ ...document, schemaVersion: 2 } as never, 'authoring-bakery', objectDefinitions)).toThrow(/unsupported schema/);
   });
 });
+
+describe('schema 5 coastal authoring reports',()=>{
+  it('inspects stable rule children and the explicit bridge catalogue placements',()=>{
+    const document=copyDefaultMap();
+    const rule=document.boundaryPlacements[0];
+    const report=inspectAuthoring(document,rule.id,objectDefinitions);
+    expect(report.map.schemaVersion).toBe(5);
+    expect(report.entity.collection).toBe('boundaryPlacements');
+    expect(report.entity.bodies.length).toBeGreaterThan(1);
+    const child=inspectAuthoring(document,`${rule.id}-edge-0-slot-1`,objectDefinitions);
+    expect(child.entity.kind).toBe('guardrail');
+    const bridge=inspectAuthoring(document,document.coastalPlacements[0].id,objectDefinitions);
+    expect(bridge.entity.collection).toBe('coastalPlacements');
+    expect(listAuthoring(document,objectDefinitions).entities.find(e=>e.id===rule.id)?.bodies).toBe(report.entity.bodies.length);
+  });
+});

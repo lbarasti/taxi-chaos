@@ -5,7 +5,8 @@ import { World, district, roadDistance, roadNeighbours, roadNode, roadPath, road
 import { Game } from './game';
 import { loadScenario } from './lab';
 import { beachShoreY } from './test-fixtures/sunset';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
+const { inOcean } = defaultCompiledMap.land;
 
 const woodlandStops = HIGHLAND_STOPS.slice(4);
 

@@ -71,19 +71,66 @@ directly for JSON stdout without npm's banner.
 
 Terrain (`terrainRegions`), dry land (`landRegions`), catalogue objects
 (`objectPlacements`), walking/vehicle access (`accessAreas`, `accessNodes`,
-`accessEdges`), residents, district zones and ground presentation are independent
+`accessEdges`), residents, district zones and presentation are independent
 collections. Higher terrain priority wins; equal priorities use stable ID order.
 The terrain renderer and tyre sampler use that same order. Materials never grant
-access or create land. Legacy city, harbour, bridge and countryside generators
-contribute their geometry to the shared land union. Access edges declare travel
-modes and road connection nodes; validation sweeps real bodies along them.
-`src/map/fixtures/second-coast.json` is an executable data-only coastal composition
-used by the regression tests. All these collections support transactional
-add/replace/delete/duplicate and movement through the same map operations.
+access or create land, and adding land creates neither access nor a material.
 
-Only version-4 documents are accepted. An older revision, a stale hotel `style`,
-or an unknown catalogue `type` (or one whose behaviour does not match its `kind`)
-is rejected structurally on import and in operations rather than upgraded.
+Schema 5 puts **every** land boundary in `landRegions`, including the original
+city, countryside, harbour and bridge decks. Each owned region has exactly one
+boundary source: `outline: [{ x, y }, ...]` or `pointRefs: ["shore-00", ...]`.
+The latter resolves the existing named points, so ownership, weighted Southern
+Estates seams and pinned attachments keep their existing meaning. There is no
+separate highland outline. The generic `src/land.ts` compiler accepts resolved
+polygons with arbitrary IDs; its detached union supplies bounds, inclusive dry-land
+queries, exposed segments, outward normals and all contributing source identities.
+World and minimap drawing clip to that same polygon union, including overlaps.
+
+Legacy generators receive explicit source references in `generation`: `cityLand`,
+`countryLand`, `harbourLand` and `bridgeLands`. Their IDs have no engine meaning.
+`translationPoints` identifies the rural stream's Southern Estates frame, and
+`candidateBounds` preserves its seeded sampling lattice independently of envelope
+edits. Existing city blocks, road graphs and harbour missions remain generators;
+these references supply their land-dependent inputs rather than granting access.
+Read-only ownership policy is separate: city/harbour land and bridge attachments
+stay pinned in operations. Strict imports still allow inspection of invalid drafts,
+but validation must pass before gameplay preview.
+
+Coastal composition is explicit, bounded data:
+
+- `landPresentation` references a land ID for ground colour and optional asphalt
+  artwork. It changes neither collision nor tyre material.
+- `surf` references a land ID and selected ring `edges` (zero-based indices).
+  Only exposed portions draw foam; removing surf leaves land and collisions intact.
+- `boundaryPlacements` references a land ID and a guardrail catalogue type. A run
+  declares `maxLength`, inward `inset`, a `panels`/`period` repeat (open slots),
+  `excludeLand`, and explicit `excludeRoads`/`clearance` openings. At most 20 runs
+  and 2,000 candidate slots are accepted. Child IDs are
+  `<rule-id>-edge-<index>-slot-<index>`; openings never renumber surviving children.
+- `coastalPlacements` contains ordinary catalogue placements in the historical
+  early spawn phase. The bridge's continuous panels are explicit records here;
+  their clearances and runtime ordering are preserved.
+
+Access edges declare modes and connect independently owned nodes; moving a district
+moves each owned endpoint once and leaves the coordinate-free edge unchanged.
+Validation and runtime routing sweep real bodies against the complete live world.
+Directed water-gap constraints resolve **any** two distinct land IDs. A measurement
+must leave the union at the source and reach the target through water; hidden or
+unobservable targets produce blocking findings rather than infinite clearance.
+
+`src/map/fixtures/second-coast.json` is an executable data-only island and pedestrian
+connection with terrain, buildings, presentation and access. Its regression composes
+records using transactional add operations. Collections support add/replace/delete
+and duplicate; moving reference-only presentation requires moving its geometry.
+Shared-ring duplication creates independent named points. Export/import and exact
+undo/redo include the whole composition. `__taxi.map.describe(id)` reports resolved
+land bounds and named-point seams; the authoring CLI can inspect individual rail
+children or an entire boundary-placement run by stable ID.
+
+Only version-5 documents are accepted, with `v5-` revision fingerprints. Older
+schemas, stale fields, missing land/point references and unknown catalogue types
+are rejected structurally rather than upgraded. Refresh each CLI example's
+`baseRevision` from `map:check` after changing the baseline.
 
 Browser automation exposes `__taxi.map`: `open`, `snapshot`, `describe`, `select`,
 `apply`, `validate`, `undo`, `redo`, `import`, `export`, `preview`, `step`,
@@ -133,7 +180,7 @@ npm run authoring:preview -- --input tools/examples/map-authoring.json --entity 
 npm run authoring:preview -- --input tools/examples/map-authoring.json --entity authoring-bakery --resize 24,16 --drive-from 240,450
 ```
 
-Any stable entity ID in any version-4 map can be inspected; there is no per-image
+Any stable entity ID in any version-5 map can be inspected; there is no per-image
 command or script. `--input` accepts a full strict map or a small placement list (a JSON
 array of country props) composed onto `--base`, so the fixture cannot drift when the
 baseline map changes. `--list` prints the catalogue types and every inspectable ID;

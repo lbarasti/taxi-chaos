@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
-import { COAST_RAILS, inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
+const { inOcean } = defaultCompiledMap.land;
+const COAST_RAILS = defaultCompiledMap.presentation.placements;
 import { Body, contact, dist, length, vec } from './physics';
 import { HOSPITAL, World } from './world';
 import { HIGHLAND_OUTLINE } from './countryside';
@@ -23,7 +25,7 @@ describe('coastal geography', () => {
   });
   it('replaces perimeter walls and cliffs with short breakable panels and wide gaps on city and country shores', () => {
     const world = new World();
-    const rails = world.props.filter(p => p.kind === 'guardrail' && !p.sourceId);
+    const rails = world.props.filter(p => p.kind === 'guardrail' && COAST_RAILS.some(r=>r.id===p.sourceId));
     expect(rails.length).toBe(COAST_RAILS.length);
     expect(rails.every(p => p.hp === 24 && p.body.w <= 8)).toBe(true);
     expect(world.props.filter(p => p.kind === 'building').every(p => !!p.label)).toBe(true);

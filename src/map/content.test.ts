@@ -90,13 +90,13 @@ describe('authored content transactions', () => {
     expect(() => history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'countryProps', descriptor: { ...typed, id: 'broken-crate', type: 'missing' } }] })).toThrow(/unknown catalogue type missing/);
   });
 
-  it('rejects version 1 and stale-style exports without upgrading them and retains canonical version 3 imports', () => {
+  it('rejects old exports without upgrading them and retains lossless current imports', () => {
     const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...previous } = d;
     const old = { ...previous, schemaVersion: 1, beach: { pickup: vec(30, 249.5) } };
     expect(() => importMap(JSON.stringify(old))).toThrow();
     expect(() => importMap(JSON.stringify({ ...old, parking: [] }))).toThrow();
     expect(exportMap(importMap(exportMap(d)))).toBe(exportMap(d));
-    expect(d.schemaVersion).toBe(4);
+    expect(d.schemaVersion).toBe(5);
   });
 });
 

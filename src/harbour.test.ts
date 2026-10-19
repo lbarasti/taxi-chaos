@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Game } from './game';
 import { Body, contact, dist, length, vec } from './physics';
 import { World, district, roadDistance, roadPath } from './world';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
+const { inOcean } = defaultCompiledMap.land;
 import { HARBOUR, FREIGHT_ROUTE, PORT_ENTRY, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, craneLoad, portPath } from './harbour';
 import { loadScenario } from './lab';
 

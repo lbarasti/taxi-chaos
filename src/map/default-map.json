@@ -769,7 +769,39 @@
   },
   "generation": {
     "candidates": 1050,
-    "ruralSeed": 8642
+    "ruralSeed": 8642,
+    "countryLand": "generated-highlands",
+    "cityLand": "generated-city",
+    "harbourLand": "generated-harbour",
+    "bridgeLands": [
+      "generated-bridge-0",
+      "generated-bridge-1"
+    ],
+    "translationPoints": [
+      "shore-07",
+      "shore-08",
+      "shore-09",
+      "shore-10",
+      "shore-11",
+      "shore-12",
+      "shore-13",
+      "shore-14",
+      "shore-15",
+      "shore-16",
+      "shore-17",
+      "shore-18",
+      "shore-19"
+    ],
+    "candidateBounds": {
+      "min": {
+        "x": 0,
+        "y": 0
+      },
+      "max": {
+        "x": 530,
+        "y": 550
+      }
+    }
   },
   "golf": {
     "center": {
@@ -869,32 +901,6 @@
     ],
     "width": 96
   },
-  "highlandOutline": [
-    "shore-00",
-    "shore-01",
-    "shore-02",
-    "shore-03",
-    "shore-04",
-    "shore-05",
-    "shore-06",
-    "shore-07",
-    "shore-08",
-    "shore-09",
-    "shore-10",
-    "shore-11",
-    "shore-12",
-    "shore-13",
-    "shore-14",
-    "shore-15",
-    "shore-16",
-    "shore-17",
-    "shore-18",
-    "shore-19",
-    "shore-20",
-    "shore-21",
-    "shore-22",
-    "shore-23"
-  ],
   "labels": [
     {
       "color": "#a7bd9180",
@@ -3135,7 +3141,7 @@
       ]
     }
   ],
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "stops": [
     {
       "id": "pine-junction",
@@ -3948,6 +3954,124 @@
     }
   ],
   "landRegions": [
+    {
+      "id": "generated-city",
+      "owner": "city",
+      "outline": [
+        {
+          "x": -14,
+          "y": -14
+        },
+        {
+          "x": 254,
+          "y": -14
+        },
+        {
+          "x": 254,
+          "y": 254
+        },
+        {
+          "x": -14,
+          "y": 254
+        }
+      ]
+    },
+    {
+      "id": "generated-highlands",
+      "owner": "highlands",
+      "pointRefs": [
+        "shore-00",
+        "shore-01",
+        "shore-02",
+        "shore-03",
+        "shore-04",
+        "shore-05",
+        "shore-06",
+        "shore-07",
+        "shore-08",
+        "shore-09",
+        "shore-10",
+        "shore-11",
+        "shore-12",
+        "shore-13",
+        "shore-14",
+        "shore-15",
+        "shore-16",
+        "shore-17",
+        "shore-18",
+        "shore-19",
+        "shore-20",
+        "shore-21",
+        "shore-22",
+        "shore-23"
+      ]
+    },
+    {
+      "id": "generated-harbour",
+      "owner": "harbour",
+      "outline": [
+        {
+          "x": 72,
+          "y": -134
+        },
+        {
+          "x": 252,
+          "y": -134
+        },
+        {
+          "x": 252,
+          "y": -14
+        },
+        {
+          "x": 72,
+          "y": -14
+        }
+      ]
+    },
+    {
+      "id": "generated-bridge-0",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 240,
+          "y": 72.5
+        },
+        {
+          "x": 310,
+          "y": 72.5
+        },
+        {
+          "x": 310,
+          "y": 87.5
+        },
+        {
+          "x": 240,
+          "y": 87.5
+        }
+      ]
+    },
+    {
+      "id": "generated-bridge-1",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 240,
+          "y": 192.5
+        },
+        {
+          "x": 310,
+          "y": 192.5
+        },
+        {
+          "x": 310,
+          "y": 207.5
+        },
+        {
+          "x": 240,
+          "y": 207.5
+        }
+      ]
+    },
     {
       "id": "sunset-land",
       "owner": "beach",
@@ -6309,6 +6433,621 @@
       "text": "BEACH PATROL / OFF-ROAD PARKING",
       "size": 0.6,
       "color": "#84744e"
+    }
+  ],
+  "landPresentation": [
+    {
+      "id": "ground-0",
+      "owner": "city",
+      "land": "generated-city",
+      "color": "#364443",
+      "texture": "asphalt"
+    },
+    {
+      "id": "ground-1",
+      "owner": "highlands",
+      "land": "generated-highlands",
+      "color": "#45634a"
+    },
+    {
+      "id": "ground-2",
+      "owner": "harbour",
+      "land": "generated-harbour",
+      "color": "#778982"
+    },
+    {
+      "id": "ground-3",
+      "owner": "city",
+      "land": "generated-bridge-0",
+      "color": "#7d8985"
+    },
+    {
+      "id": "ground-4",
+      "owner": "city",
+      "land": "generated-bridge-1",
+      "color": "#7d8985"
+    },
+    {
+      "id": "ground-5",
+      "owner": "beach",
+      "land": "sunset-land",
+      "color": "#71876d"
+    }
+  ],
+  "surf": [
+    {
+      "id": "sunset-surf",
+      "owner": "beach",
+      "land": "sunset-land",
+      "edges": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    }
+  ],
+  "boundaryPlacements": [
+    {
+      "id": "shore-panels-0",
+      "owner": "city",
+      "land": "generated-city",
+      "type": "coastal-guardrail",
+      "maxLength": 8,
+      "inset": 0.9,
+      "panels": 3,
+      "period": 5,
+      "excludeLand": [
+        "generated-bridge-0",
+        "generated-bridge-1"
+      ],
+      "excludeRoads": [],
+      "clearance": 10
+    },
+    {
+      "id": "shore-panels-1",
+      "owner": "highlands",
+      "land": "generated-highlands",
+      "type": "coastal-guardrail",
+      "maxLength": 8,
+      "inset": 0.9,
+      "panels": 3,
+      "period": 5,
+      "excludeLand": [
+        "generated-bridge-0",
+        "generated-bridge-1"
+      ],
+      "excludeRoads": [
+        "pine-bridge",
+        "fern-bridge",
+        "pine-road",
+        "eagle-ridge",
+        "summit-loop",
+        "lodge-road",
+        "fern-road",
+        "woodland-pass",
+        "southwoods-drive",
+        "highland-descent",
+        "millionaires-row",
+        "fairway-drive",
+        "cedar-crescent-road",
+        "cedar-loop",
+        "country-club-way",
+        "lake-drive",
+        "woodland-rise"
+      ],
+      "clearance": 10
+    }
+  ],
+  "coastalPlacements": [
+    {
+      "id": "bridge-panel-80-0-0",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 249.66666666666666,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-1",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 257.0,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-2",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 264.3333333333333,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-3",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 271.6666666666667,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-4",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 279.0,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-5",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 286.3333333333333,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-6",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 293.6666666666667,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-7",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 301.0,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-0-8",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 308.3333333333333,
+        "y": 72.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-0",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 249.66666666666666,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-1",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 257.0,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-2",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 264.3333333333333,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-3",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 271.6666666666667,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-4",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 279.0,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-5",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 286.3333333333333,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-6",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 293.6666666666667,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-7",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 301.0,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-80-2-8",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 308.3333333333333,
+        "y": 87.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-0",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 249.66666666666666,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-1",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 257.0,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-2",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 264.3333333333333,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-3",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 271.6666666666667,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-4",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 279.0,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-5",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 286.3333333333333,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-6",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 293.6666666666667,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-7",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 301.0,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-0-8",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 308.3333333333333,
+        "y": 192.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-0",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 249.66666666666666,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-1",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 257.0,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-2",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 264.3333333333333,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-3",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 271.6666666666667,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-4",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 279.0,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-5",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 286.3333333333333,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-6",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 293.6666666666667,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-7",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 301.0,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
+    },
+    {
+      "id": "bridge-panel-200-2-8",
+      "owner": "city",
+      "type": "coastal-guardrail",
+      "position": {
+        "x": 308.3333333333333,
+        "y": 207.5
+      },
+      "width": 7.333333333333333,
+      "height": 0.8,
+      "angle": 0,
+      "color": "#a7b9b1",
+      "label": ""
     }
   ]
 }

@@ -16,7 +16,7 @@ function assertDrySweep(world: World, a: Vec, b: Vec) {
       0.7,
       0.7,
     );
-    expect(probe.corners().some(world.map.coast.inOcean)).toBe(false);
+    expect(probe.corners().some(world.map.land.inOcean)).toBe(false);
   }
 }
 
@@ -139,7 +139,7 @@ describe('PR 51 review regressions', () => {
     ];
     const map = compileMap(document);
     for (const id of ['generated-city', 'generated-highlands', 'generated-harbour'])
-      expect(map.coast.landBoundaries.some((s) => s.landId === id)).toBe(true);
+      expect(map.land.landBoundaries.some((s) => s.sources.some(source=>source.landId===id))).toBe(true);
     const result = validateMap(document, map),
       finding = result.findings.find((f) => f.entityIds.includes('city-inlet-clearance'))!;
     expect(finding).toMatchObject({ code: 'water-gap', severity: 'error' });

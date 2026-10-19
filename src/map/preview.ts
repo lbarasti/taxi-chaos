@@ -16,7 +16,7 @@ export function createPreview(document: MapDocument, spawnId = 'fairway-club') {
   const spawn = candidates.map(position => {
     const access = map.country.countryAccess(position), a = access.road.points[Math.max(0, access.segment - 1)], b = access.road.points[access.segment], angle = Math.atan2(b.y - a.y, b.x - a.x);
     return { position, angle, body: createVehicleBody(vehicleDefinition('car'), position, angle) };
-  }).find(({ body }) => !body.corners().some(map.coast.inOcean) && ![...game.world.hash.query(body)].some(p => contact(body, p.body)) && !game.world.pools.some(p => contact(body, p)) && !game.vehicles.some(v => v !== game.player && contact(body, v.body)));
+  }).find(({ body }) => !body.corners().some(map.land.inOcean) && ![...game.world.hash.query(body)].some(p => contact(body, p.body)) && !game.world.pools.some(p => contact(body, p)) && !game.vehicles.some(v => v !== game.player && contact(body, v.body)));
   if (!spawn) throw new Error('No clear car-sized preview spawn within 20 m of selected road access');
   game.player.body.position = { ...spawn.position }; game.player.body.angle = spawn.angle; game.player.body.velocity = vec();
   game.settings.noPolice = true;
@@ -30,7 +30,7 @@ export function createPreview(document: MapDocument, spawnId = 'fairway-club') {
     const ahead = game.world.navigation.roadPath(spawn.position, dropoff.position).find(p => dist(p, spawn.position) > 3);
     if (ahead) {
       const angle = Math.atan2(ahead.y - spawn.position.y, ahead.x - spawn.position.x), probe = createVehicleBody(vehicleDefinition('car'), spawn.position, angle);
-       if (!probe.corners().some(map.coast.inOcean) && ![...game.world.hash.query(probe)].some(p => contact(probe, p.body)) && !game.world.pools.some(p => contact(probe, p)) && !game.vehicles.some(v => v !== game.player && contact(probe, v.body))) game.player.body.angle = angle;
+       if (!probe.corners().some(map.land.inOcean) && ![...game.world.hash.query(probe)].some(p => contact(probe, p.body)) && !game.world.pools.some(p => contact(probe, p)) && !game.vehicles.some(v => v !== game.player && contact(probe, v.body))) game.player.body.angle = angle;
     }
   }
   game.start(); return game;

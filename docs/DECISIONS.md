@@ -236,3 +236,35 @@ with body-clearance validation, and protected areas declare roadside approaches.
 Inlet clearance is a directed geometric constraint between land regions. Imports
 reject older schemas; no implicit migration is performed. The second-coast fixture
 exercises composition without location-specific engine branches.
+
+
+## D16 — Author all land once and separate coastal composition
+
+**Decision:** Supersede D15's mixed authored/generated land union and version-4
+contract with strict schema 5. Every region, including city, highlands, harbour and
+bridge decks, belongs to `landRegions`. A boundary is either coordinates or shared
+named-point references, never both. Remove `highlandOutline` and `coast.ts`.
+The DOM-free land compiler has no generator, district, object or presentation policy.
+
+**Reason:** A second place was compositional, but the original land still depended
+on engine coordinates and prescribed IDs. Editing or renaming a region must affect
+the same geometry used by drowning, validation, countryside queries, drawing and
+coastal attachments. Ownership/read-only policy does not establish a second owner
+for physical geometry.
+
+**Consequences:** Generators receive data-authored source references. Weighted seams
+remain named points; the countryside outline and presentation share the resolved
+canonical ring. Frozen compiled maps remain detached from imports. World and minimap
+use polygon-union clipping; exposed union edges retain all source identities.
+Directed gap observations must cross water to the target, and unobservable gaps
+block preview. Terrain and access remain independent of land coverage.
+
+Guardrails are catalogue placements: explicit bridge panels plus a narrowly bounded
+shore-panel rule with geometry references, openings, insets and stable edge/slot
+children. This is not a general procedural-content language. Their historical early
+spawn phase and seeded rural candidate stream are preserved. Joined panels retain
+existing physical contacts at corners and with generated scenery; validation still
+uses every panel for physical clearance and access sweeps. Surf and ground appearance
+are explicit references independent of coverage. Adding land creates neither rail
+objects nor surf. Imports reject older schemas; operations, descriptions, CLI
+fingerprints and fixtures use the current contract together.

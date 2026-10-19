@@ -3,7 +3,8 @@ import { Body, contact, dist, vec, type Vec } from './physics';
 import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_STOPS, ROAD_NODES, countryAccess, pathLength } from './countryside';
 import { World, district, roadDistance, roadNeighbours, roadPath, roadProjection } from './world';
 import { Game } from './game';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
+const { inOcean } = defaultCompiledMap.land;
 import { loadScenario } from './lab';
 import { killPedestrian, updatePedestrians } from './pedestrians';
 

@@ -2,7 +2,7 @@ import { Body, contact, dist, vec, type Vec } from '../physics';
 import { World } from '../world';
 import { artworkFor, artRadius } from '../artwork/catalogue';
 import { compileMap, type CompiledMap } from '../map/compile';
-import { descriptorBody, entities } from '../map/operations';
+import { authoredCollection, descriptorBody, entities, entityPosition } from '../map/operations';
 import type { AuthoredDescriptor, MapDocument } from '../map/schema';
 import { validateMap, type Finding, type Validation } from '../map/validation';
 import { artworkInline, artworkSources } from './generated';
@@ -88,7 +88,7 @@ export type AuthoringReport = Readonly<{
   validation: Validation;
   preview: Readonly<{ allowed: boolean; reason: string | null }>;
   map: Readonly<{
-    schemaVersion: 4;
+    schemaVersion: 5;
     counts: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; objectPlacements: number; points: number; roads: number }>;
     budgets: Readonly<{ countryProps: number; parking: number; trafficSpawns: number; objectPlacements: number; routeLength: number }>;
     withinBudgets: boolean;
@@ -138,6 +138,7 @@ function descriptorLabel(value: unknown, fallback: string): string {
 }
 
 function collectionOf(document: MapDocument, id: string): string | null {
+  const authored=authoredCollection(document,id); if(authored)return authored;
   if (document.countryProps.some(p => p.id === id)) return 'countryProps';
   if (document.objectPlacements.some(h => h.id === id)) return 'objectPlacements';
   if (document.villas.some(v => v.id === id)) return 'villas';
@@ -148,17 +149,6 @@ function collectionOf(document: MapDocument, id: string): string | null {
   if (document.ridges.some(r => r.id === id)) return 'ridges';
   if (document.labels.some(l => l.id === id)) return 'labels';
   return null;
-}
-
-function entityPosition(document: MapDocument, id: string): Vec | undefined {
-  const entity = entities(document).find(e => e.id === id);
-  if (!entity) return undefined;
-  if ('position' in entity) return { ...entity.position };
-  if ('center' in entity) return { ...entity.center };
-  if ('point' in entity) return entityPosition(document, entity.point);
-  if ('points' in entity) return entity.points.reduce((sum, p) => vec(sum.x + p.x / entity.points.length, sum.y + p.y / entity.points.length), vec());
-  if ('outline' in entity) return entity.outline.reduce((sum,p)=>vec(sum.x+p.x/entity.outline.length,sum.y+p.y/entity.outline.length),vec());
-  return undefined;
 }
 
 function bodySummary(prop: World['props'][number]): AuthoringBody {
@@ -267,7 +257,8 @@ export function inspectAuthoring(
   const world = context.world ?? new World(map);
   const validation = context.validation ?? validateMap(document, map, world);
   const compiled = map.objects[entityId];
-  const props = world.props.filter(prop => prop.sourceId === entityId);
+  const childIds = new Set(map.presentation.placements.filter(p=>p.ruleId===entityId).map(p=>p.id));
+  const props = world.props.filter(prop => prop.sourceId === entityId || prop.sourceId && childIds.has(prop.sourceId));
   const cityBuilding = map.city.buildings.find(building => building.id === entityId);
   const descriptor = entities(document).find(entity => entity.id === entityId);
   const position = compiled?.position ?? props[0]?.body.position ?? entityPosition(document, entityId);
@@ -278,7 +269,7 @@ export function inspectAuthoring(
     : compiled
       ? [objectBody(compiled, null)]
       : [];
-  if (!bodies.length && descriptor && ('model' in descriptor || descriptorType(descriptor) || collectionOf(document, entityId) === 'countryProps')) {
+  if (!bodies.length && descriptor && 'position' in descriptor && ('model' in descriptor || descriptorType(descriptor) || collectionOf(document, entityId) === 'countryProps')) {
     // Parking bays and traffic spawns are physical vehicles rather than catalogue
     // artwork; they still have a stable ID and a shared descriptor body.
     const physical = descriptor as Extract<AuthoredDescriptor, { position: Vec; angle: number }>;
@@ -337,7 +328,7 @@ export function inspectAuthoring(
       reason: blocked ? `${validation.errors} map validation error${validation.errors === 1 ? '' : 's'} block gameplay preview; fix the named findings first.` : null,
     },
     map: {
-      schemaVersion: 4,
+      schemaVersion: 5,
       counts,
       budgets,
       withinBudgets: counts.countryProps <= budgets.countryProps && counts.parking <= budgets.parking
@@ -380,6 +371,11 @@ export function listAuthoring(document: MapDocument, catalogue: ObjectCatalogue,
       position: clonePoint(prop.body.position),
       bodies: 1,
     });
+  }
+  for (const rule of document.boundaryPlacements) {
+    const children=new Set(map.presentation.placements.filter(p=>p.ruleId===rule.id).map(p=>p.id));
+    const props=world.props.filter(p=>p.sourceId&&children.has(p.sourceId));
+    if(props.length)byId.set(rule.id,{id:rule.id,type:rule.type,kind:props[0].kind,collection:'boundaryPlacements',label:rule.id,position:clonePoint(props[0].body.position),bodies:props.length});
   }
   for (const id of ['parking', 'trafficSpawns'] as const) for (const descriptor of document[id]) {
     if (byId.has(descriptor.id)) continue;

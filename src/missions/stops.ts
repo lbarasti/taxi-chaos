@@ -56,7 +56,7 @@ const inside = (p: Vec, center: Vec, width: number, height: number, margin: numb
 export function compileStops(raw: unknown, map: CompiledMap, strict = true): CompiledStops {
   assertStops(raw);
   const navigation = createNavigation(map);
-  const { inOcean } = map.coast;
+  const { inOcean } = map.land;
   const { min, max } = map.document.envelope;
   const fail = (id: string, why: string): never => { throw new Error(`stop ${id}: ${why}`); };
 

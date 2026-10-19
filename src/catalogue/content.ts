@@ -30,6 +30,7 @@ const condoSign: BuildingSign = { width: 8.6, inset: 0.95, size: 0.72, color: '#
  * `as const` keeps the authored IDs literal, so `BuildingType` remains a checked union
  * rather than collapsing to `string`. */
 export const objectRecords = [
+  { id: 'coastal-guardrail', kind: 'guardrail', width: 8, height: 0.8 },
   {
     id: 'shop', kind: 'building', width: 10, height: 10, storeys: 2,
     fallback: 'shop',

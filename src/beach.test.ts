@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BEACH_HOTELS, BEACH_PICKUP, PROMENADE_ENTRIES, beachShoreY, inBeach, inSand, onPromenade, sandHandling } from './test-fixtures/sunset';
 import { PORT_ENTRY, PORT_FEE } from './harbour';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
+const { inOcean } = defaultCompiledMap.land;
 import { Game } from './game';
 import { loadScenario } from './lab';
 import { Body, contact, dist, length, vec } from './physics';

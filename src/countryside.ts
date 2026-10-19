@@ -1,12 +1,13 @@
 import { add, clamp, dist, dot, scale, sub, vec, type Vec } from './physics';
 import { defaultMap } from './map/default';
+import { compileLand, type LandGeometry } from './land';
+import { regionBounds } from './regions';
+import { resolveLandRegions } from './map/land-references';
 import type { MapDocument } from './map/schema';
 
 // Historical compatibility helpers; authored map data contains resolved positions.
 export const SOUTH_COAST_OFFSET = 120;
 export const southPoint = (x: number, y: number) => vec(x, y + SOUTH_COAST_OFFSET);
-export const BRIDGE_Y = [80, 200] as const;
-export const isCountry = (p: Vec) => p.x > 246 || p.y > 246;
 export type CountryRoad = { id: string; from: number; to: number; points: Vec[]; bridge: boolean; name: string; length: number; bounds: { min: Vec; max: Vec } };
 export type RoadAccess = { road: CountryRoad; point: Vec; segment: number; along: number; distance: number };
 export function pathLength(points: Vec[]) { return points.reduce((sum, p, i) => sum + (i ? dist(points[i - 1], p) : 0), 0); }
@@ -26,11 +27,13 @@ function curve(anchors: Vec[]): Vec[] {
   points.push({ ...anchors.at(-1)! }); return points;
 }
 
-export function createCountryside(document: MapDocument) {
+export function createCountryside(document: MapDocument, land: LandGeometry = compileLand(resolveLandRegions(document))) {
   const lookup = new Map(document.points.map(p => [p.id, p.position]));
   const point = (id: string) => ({ ...lookup.get(id)! });
-  const HIGHLAND_OUTLINE = document.highlandOutline.map(point);
-  const SOUTH_WOODS_Y = Math.min(...document.points.filter(p => p.owner === 'southern-estates' && document.highlandOutline.includes(p.id)).map(p => p.position.y));
+  const HIGHLAND_OUTLINE = land.landRegions.find(r=>r.id===document.generation.countryLand)!.outline;
+  const isCountry = (p: Vec) => !land.regionContains(document.generation.cityLand,p);
+  const BRIDGE_Y = document.generation.bridgeLands.map(id=>{ const b=regionBounds(land.landRegions.find(r=>r.id===id)!.outline); return (b.min.y+b.max.y)/2; });
+  const SOUTH_WOODS_Y = Math.min(...document.points.filter(p => document.generation.translationPoints.includes(p.id)).map(p => p.position.y));
   const MAP_WIDTH = document.envelope.max.x, MAP_HEIGHT = document.envelope.max.y;
   const HIGHLAND_STOPS = document.stops.map(s => ({ ...s, position: point(s.point) }));
   const ROAD_NODES = document.nodes.map(point), VILLAS = structuredClone(document.villas);
@@ -112,15 +115,10 @@ export function createCountryside(document: MapDocument) {
     return routes.length ? routes.reduce((best, route) => pathLength(route) < pathLength(best) ? route : best) : [from];
   }
   function inHighlands(p: Vec): boolean {
-    let inside = false;
-    for (let i = 0, j = HIGHLAND_OUTLINE.length - 1; i < HIGHLAND_OUTLINE.length; j = i++) {
-      const a = HIGHLAND_OUTLINE[i], b = HIGHLAND_OUTLINE[j];
-      if ((a.y > p.y) !== (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
-    }
-    return inside;
+    return land.regionContains(document.generation.countryLand,p);
   }
   return { BRIDGE_Y, isCountry, HIGHLAND_OUTLINE, SOUTH_WOODS_Y, MAP_WIDTH, MAP_HEIGHT, HIGHLAND_STOPS, ROAD_NODES, VILLAS, GOLF_COURSE, VILLA_POOLS, GOLF_CART_ROUTE, GOLF_PATH, GOLF_HOLES, RIDGES, LABELS, COUNTRY_ROADS, VILLA_DRIVES, estateDrive, inCountryClearing, countryAccess, countryNode, countryNeighbours, countryPath, inHighlands };
 }
 export type Countryside = ReturnType<typeof createCountryside>;
 // Immutable-in-practice default adapters retained for existing callers/tests.
-export const { HIGHLAND_OUTLINE, SOUTH_WOODS_Y, MAP_WIDTH, MAP_HEIGHT, HIGHLAND_STOPS, ROAD_NODES, VILLAS, GOLF_COURSE, VILLA_POOLS, GOLF_CART_ROUTE, GOLF_HOLES, COUNTRY_ROADS, VILLA_DRIVES, estateDrive, inCountryClearing, countryAccess, countryNode, countryNeighbours, countryPath, inHighlands } = createCountryside(defaultMap);
+export const { BRIDGE_Y, isCountry, HIGHLAND_OUTLINE, SOUTH_WOODS_Y, MAP_WIDTH, MAP_HEIGHT, HIGHLAND_STOPS, ROAD_NODES, VILLAS, GOLF_COURSE, VILLA_POOLS, GOLF_CART_ROUTE, GOLF_HOLES, COUNTRY_ROADS, VILLA_DRIVES, estateDrive, inCountryClearing, countryAccess, countryNode, countryNeighbours, countryPath, inHighlands } = createCountryside(defaultMap);

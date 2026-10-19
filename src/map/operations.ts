@@ -2,6 +2,7 @@ import { Body, add, scale, sub, vec, type Vec } from '../physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles';
 import { objectDefinitions } from '../artwork/catalogue';
 import { objectKindRegistry, type KindRegistry, type ObjectCatalogue } from '../catalogue/schema';
+import { referencedLand, resolveLandRegion } from './land-references';
 import { copyDefaultMap } from './default';
 import { authoredCollections, assertMap, type AuthoredCollection, type AuthoredDescriptor, type CountryProp, type MapDocument } from './schema';
 import { exportMap, importMap, revision } from './serialization';
@@ -18,7 +19,7 @@ export type MapOperation =
 export type MapBatch = { baseRevision: string; operations: MapOperation[] };
 
 export function entities(d: MapDocument) {
-  return [...d.points, ...d.villas, ...d.countryProps, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, ...d.objectPlacements, ...d.terrainRegions, ...d.landRegions, ...d.accessAreas, ...d.accessNodes, ...d.accessEdges, ...d.districtZones, ...d.residents, ...d.groundMarks, ...d.groundLabels];
+  return [...d.points, ...d.villas, ...d.countryProps, ...d.parking, ...d.trafficSpawns, ...d.stops, d.golf, ...d.ridges, ...d.labels, ...d.objectPlacements, ...d.terrainRegions, ...d.landRegions, ...d.accessAreas, ...d.accessNodes, ...d.accessEdges, ...d.districtZones, ...d.residents, ...d.groundMarks, ...d.groundLabels, ...d.landPresentation, ...d.surf, ...d.boundaryPlacements, ...d.coastalPlacements];
 }
 export function authoredCollection(d: MapDocument, id: string): AuthoredCollection | undefined {
   return authoredCollections.find(key => d[key].some(e => e.id === id));
@@ -45,6 +46,8 @@ export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   if ('center' in e) return { ...e.center };
   if ('point' in e) return entityPosition(d, e.point);
   if ('points' in e) return e.points.reduce((sum, p) => add(sum, scale(p, 1 / e.points.length)), vec());
+  if ('pointRefs' in e) return resolveLandRegion(d,e).outline.reduce((sum,p)=>add(sum,scale(p,1/e.pointRefs.length)),vec());
+  if ('land' in e) return entityPosition(d,e.land);
   if ('outline' in e) return e.outline.reduce((sum,p)=>add(sum,scale(p,1/e.outline.length)),vec());
 }
 export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue = objectDefinitions) {
@@ -61,6 +64,8 @@ export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue 
     }
     else if ('points' in e) positions.push(...e.points);
     else if ('center' in e) { rectangle(e.center, e.width + 14, e.height + 8); rectangle(add(e.center, e.clubhouse), 20, 22); positions.push(...[...e.route, ...e.path].map(p => add(e.center, p))); }
+    else if ('pointRefs' in e) positions.push(...resolveLandRegion(d,e).outline);
+    else if ('land' in e) positions.push(...referencedLand(d,e.land).outline);
     else if ('outline' in e) positions.push(...e.outline);
     else {
       const p = entityPosition(d, e.id);
@@ -70,18 +75,17 @@ export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue 
       }
     }
   }
-  if (id === 'city') positions.push(vec(-14, -14), vec(254, 254));
-  if (id === 'harbour') positions.push(vec(72, -136), vec(252, -16));
   if (road) positions.push(...[road.from, ...road.via, road.to].map(id => entityPosition(d, id)!));
-  const connections = d.roads.filter(r => r.id === id || [r.from, ...r.via, r.to].some(p => members.some(m => m.id === p)));
-  return structuredClone({ id, kind: district ? 'district' : road ? 'road' : 'point' in entity! ? 'destination' : 'position' in entity! && 'weight' in entity! ? 'point' : 'object',
-    editable: district ? id === 'southern-estates' : road ? false : authoredCollection(d, id) ? true : 'editable' in entity! ? entity.editable : d.districts.find(o => o.id === entity!.owner)!.editable,
+  const ringPoints = new Set(members.flatMap(e=>'pointRefs' in e ? e.pointRefs : 'land' in e ? (d.landRegions.find(r=>r.id===e.land) as {pointRefs?:string[]}).pointRefs ?? [] : []));
+  const connections = d.roads.filter(r => r.id === id || [r.from, ...r.via, r.to].some(p => members.some(m => m.id === p) || ringPoints.has(p)));
+  return structuredClone({ id, kind: district ? 'district' : road ? 'road' : authoredCollection(d,id)==='landRegions' ? 'land' : 'point' in entity! ? 'destination' : 'position' in entity! && 'weight' in entity! ? 'point' : 'object',
+    editable: district ? id === 'southern-estates' : road ? false : d.landRegions.some(r=>r.id===id) ? d.districts.find(o=>o.id===entity!.owner)!.editable : authoredCollection(d, id) ? true : 'editable' in entity! ? entity.editable : d.districts.find(o => o.id === entity!.owner)!.editable,
     collection: authoredCollection(d, id),
     descriptor: district ?? entity ?? road,
     position: district || road ? undefined : entityPosition(d, id),
     bounds: positions.length ? { min: vec(Math.min(...positions.map(p => p.x)), Math.min(...positions.map(p => p.y))), max: vec(Math.max(...positions.map(p => p.x)), Math.max(...positions.map(p => p.y))) } : undefined,
     members: members.map(e => e.id), connections: connections.map(r => r.id),
-    seams: d.points.filter(p => members.some(e => e.id === p.id) || district && connections.some(r => [r.from, ...r.via, r.to].includes(p.id))).map(p => ({ id: p.id, weight: p.weight, owner: p.owner, editable: p.editable })),
+    seams: d.points.filter(p => members.some(e => e.id === p.id) || ringPoints.has(p.id) || district && connections.some(r => [r.from, ...r.via, r.to].includes(p.id))).map(p => ({ id: p.id, weight: p.weight, owner: p.owner, editable: p.editable })),
     constraints: d.constraints,
     policy: district ? id === 'southern-estates' ? 'Translate owned placements once; named points use explicit weights; north attachments stay fixed. Expand envelope separately.' : 'District translation is pinned; editable child geometry is selectable.' : 'points' in (entity ?? {}) ? 'Ridge vertices translate together.' : 'point' in (entity ?? {}) ? 'Destination shares its named road node.' : 'Composite children derive from this placement.',
   });
@@ -93,7 +97,10 @@ function finitePoint(p: unknown): asserts p is Vec {
 function moveEntity(d: MapDocument, id: string, delta: Vec, changed: Set<string>) {
   const e = entities(d).find(e => e.id === id);
   if (!e) throw new Error(`Unknown movable ID: ${id}`);
+  if (d.landRegions.some(r=>r.id===id) && !d.districts.find(o=>o.id===e.owner)!.editable) throw new Error(`${id} is read-only`);
   if (!authoredCollection(d, id) && ('editable' in e && !e.editable || !d.districts.find(o => o.id === e.owner)!.editable)) throw new Error(`${id} is read-only`);
+  if ('pointRefs' in e) { for (const point of e.pointRefs) moveEntity(d,point,delta,changed); changed.add(id); return; }
+  if ('land' in e) { if(delta.x || delta.y) throw new Error('Move the referenced land geometry to move dependent presentation'); changed.add(id); return; }
   if ('point' in e) { moveEntity(d, e.point, delta, changed); changed.add(id); return; }
   if ('position' in e) { e.position = add(e.position, delta); const spawn = d.trafficSpawns.find(s => s.id === id); if (spawn) spawn.path = spawn.path.map(p => add(p, delta)); }
   else if ('center' in e) e.center = add(e.center, delta);
@@ -121,6 +128,8 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
     } else if (op.type === 'delete' || op.type === 'duplicate' || op.type === 'replace') {
       const key = authoredCollection(d, op.targetId);
       if (!key) throw new Error('Add/delete/duplicate/replace supports authored collections only');
+      const target = entities(d).find(e=>e.id===op.targetId)!;
+      if (key === 'landRegions' && !d.districts.find(o=>o.id===target.owner)!.editable) throw new Error(`${op.targetId} is read-only`);
       const items: AuthoredDescriptor[] = d[key], index = items.findIndex(e => e.id === op.targetId);
       if (op.type === 'delete') items.splice(index, 1);
       else if (op.type === 'replace') {
@@ -128,7 +137,13 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
         items[index] = structuredClone(op.descriptor);
       } else {
         finitePoint(op.delta);
-        const e = structuredClone(items[index]); e.id = op.newId; items.push(e);
+        const e = structuredClone(items[index]); e.id = op.newId;
+        if ('pointRefs' in e) e.pointRefs = e.pointRefs.map((id,i)=>{
+          const point=structuredClone(d.points.find(p=>p.id===id)!);
+          if(!point.editable) throw new Error('Cannot duplicate pinned shared points');
+          point.id=`${op.newId}-point-${i}`; d.points.push(point); return point.id;
+        });
+        items.push(e);
         assertMap(d, kinds); moveEntity(d, e.id, op.delta, changed);
       }
       assertMap(d, kinds); changed.add(op.targetId);
@@ -138,7 +153,7 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
       const district = d.districts.find(e => e.id === op.targetId);
       if (district) {
         if (district.id !== 'southern-estates') throw new Error('Only southern-estates supports whole-district translation; edit individual geometry in other districts');
-        for (const e of entities(d).filter(e => e.owner === district.id && !('point' in e) && !('fromNode' in e))) {
+        for (const e of entities(d).filter(e => e.owner === district.id && !('point' in e) && !('fromNode' in e) && !('land' in e) && !('pointRefs' in e))) {
           const weight = d.points.find(p => p.id === e.id)?.weight ?? 1;
           if (weight) moveEntity(d, e.id, scale(op.delta, weight), changed);
         }
@@ -159,6 +174,8 @@ export function applyOperations(input: MapDocument, batch: MapBatch, catalogue: 
       changed.add(e.id);
     } else throw new Error('Unknown operation type');
   }
+  for (const region of d.landRegions) if ('pointRefs' in region && region.pointRefs.some(id=>changed.has(id))) changed.add(region.id);
+  for (const e of [...d.landPresentation,...d.surf,...d.boundaryPlacements]) if (changed.has(e.land)) changed.add(e.id);
   assertMap(d, kinds);
   return { document: d, revision: revision(d, kinds), changedIds: [...changed].sort(), affectedConnections: d.roads.filter(r => [r.from, ...r.via, r.to].some(id => changed.has(id))).map(r => r.id) };
 }
@@ -168,7 +185,7 @@ export class MapHistory {
   private past: MapDocument[] = []; private future: MapDocument[] = [];
   private readonly kinds: KindRegistry;
   constructor(document = copyDefaultMap(), private readonly catalogue: ObjectCatalogue = objectDefinitions) { this.kinds = objectKindRegistry(catalogue); assertMap(document, this.kinds); this.document = structuredClone(document); }
-  snapshot() { return { schemaVersion: 4, revision: revision(this.document, this.kinds), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
+  snapshot() { return { schemaVersion: 5, revision: revision(this.document, this.kinds), document: structuredClone(this.document), canUndo: this.past.length > 0, canRedo: this.future.length > 0 }; }
   describe(id: string) { return describe(this.document, id, this.catalogue); }
   apply(batch: MapBatch) {
     const result = applyOperations(this.document, batch, this.catalogue);

@@ -1,7 +1,7 @@
 import type { Renderer } from './renderer';
 import type { Prop } from './world';
 import { dist, vec } from './physics';
-import { CONTAINER_COLORS, FREIGHT_ROUTE, HARBOUR, PORT_CONTAINERS, PORT_CRANES, PORT_ENTRY, PORT_FEE, PORT_SHIPS, SWAP_CONTAINER, craneLoad } from './harbour';
+import { CONTAINER_COLORS, FREIGHT_ROUTE, PORT_CONTAINERS, PORT_CRANES, PORT_ENTRY, PORT_FEE, PORT_SHIPS, SWAP_CONTAINER, craneLoad } from './harbour';
 
 function line(r: Renderer, points: { x: number; y: number }[], color: string, width: number) {
   const c = r.ctx; c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.strokeStyle = color; c.lineWidth = width; c.stroke();
@@ -21,7 +21,7 @@ function box(r: Renderer, x: number, y: number, w: number, h: number, color: str
 
 export function drawHarbourGround(r: Renderer) {
   const c = r.ctx;
-  r.rect(HARBOUR.left, HARBOUR.top, HARBOUR.right - HARBOUR.left, HARBOUR.bottom - HARBOUR.top, '#778982', '#cbd4b5');
+
   // Concrete joints, patched asphalt and freight lanes break up the apron.
   for (let x = 76; x < 252; x += 12) for (let y = -132; y < -17; y += 12) {
     r.rect(x, y, 11.8, 11.8, (x + y) % 3 ? '#82958b18' : '#30464b18');

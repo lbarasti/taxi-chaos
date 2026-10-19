@@ -399,7 +399,7 @@ test('map authoring automation applies typed placements and isolates previews', 
         closed: { active: api.previewState(), state: lab.state().lab },
       };
     });
-    assert.equal(result.opened, 4);
+    assert.equal(result.opened, 5);
     assert.ok(result.applied.includes('automation-bakery'));
     assert.equal(result.roundTrip.revision, true);
     assert.equal(result.roundTrip.valid, 0);

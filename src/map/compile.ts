@@ -1,6 +1,9 @@
 import { createCountryside } from '../countryside';
 import { createTerrain } from '../terrain';
-import { createCoast } from '../coast';
+import { compileLand } from '../land';
+import { resolveLandRegions } from './land-references';
+import { compileCoastalContent } from './coastal-content';
+import { createHarbourGeometry } from '../harbour';
 import { createCity } from '../city';
 import { objectDefinitions } from '../artwork/catalogue';
 import { compileObjectPlacement } from '../catalogue/compile';
@@ -14,7 +17,7 @@ import { revision } from './serialization';
 export function resolveObjectPlacements(document: MapDocument, catalogue: ObjectCatalogue): Record<string, CompiledObject> {
   const objects: Record<string, CompiledObject> = {};
   for (const p of document.countryProps) if (p.type) objects[p.id] = compileObjectPlacement({ id: p.id, type: p.type, position: p.position, angle: p.angle, width: p.width, height: p.height, artworkScale: p.artworkScale, features: p.features }, catalogue);
-  for (const p of document.objectPlacements) objects[p.id] = { ...compileObjectPlacement(p, catalogue), ...(p.storeys === undefined ? {} : { storeys: p.storeys }) };
+  for (const p of [...document.objectPlacements,...document.coastalPlacements]) objects[p.id] = { ...compileObjectPlacement(p, catalogue), ...(p.storeys === undefined ? {} : { storeys: p.storeys }) };
   return objects;
 }
 
@@ -22,8 +25,11 @@ export function compileMap(input: MapDocument, catalogue: ObjectCatalogue = obje
   assertMap(input, objectKindRegistry(catalogue));
   const document = structuredClone(input);
   const objects = resolveObjectPlacements(document, catalogue);
-  const country = createCountryside(document), terrain = createTerrain(document), city = createCity(undefined, catalogue);
-  return freezeGeometry({ document, revision: revision(document, objectKindRegistry(catalogue)), city, country, terrain, coast: createCoast(country, document), objects });
+  const land = compileLand(resolveLandRegions(document));
+  const country = createCountryside(document,land), terrain = createTerrain(document), city = createCity(undefined, catalogue);
+  const presentation = compileCoastalContent(document, land, country);
+  for (const p of presentation.placements) objects[p.id] ??= compileObjectPlacement(p,catalogue);
+  return freezeGeometry({ document, revision: revision(document, objectKindRegistry(catalogue)), city, country, terrain, land, presentation, harbour: createHarbourGeometry(land.landRegions.find(r=>r.id===document.generation.harbourLand)!), objects });
 }
 export type CompiledMap = ReturnType<typeof compileMap>;
 export const defaultCompiledMap = compileMap(defaultMap);

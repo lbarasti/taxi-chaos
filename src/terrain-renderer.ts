@@ -1,5 +1,7 @@
 import type { Renderer } from './renderer';
 import type { CompiledMap } from './map/compile';
+import { artworkImages } from './artwork/images';
+import { regionBounds } from './regions';
 import { surfaces } from './terrain';
 import { add, dist, scale, vec, type Vec } from './physics';
 
@@ -15,9 +17,9 @@ function label(r: Renderer, text: string, p: Vec, size: number, color: string) {
   c.restore();
 }
 /** Normalize winding so overlapping land polygons form a union in Canvas too. */
-function clipLand(c: CanvasRenderingContext2D, map: CompiledMap) {
+export function clipLand(c: CanvasRenderingContext2D, map: CompiledMap) {
   c.beginPath();
-  for (const land of map.coast.landRegions) {
+  for (const land of map.land.landRegions) {
     const ring = land.outline;
     const area = ring.reduce((sum, a, i) => {
       const b = ring[(i + 1) % ring.length];
@@ -29,16 +31,20 @@ function clipLand(c: CanvasRenderingContext2D, map: CompiledMap) {
   }
   c.clip();
 }
-function authoredLand(c: CanvasRenderingContext2D, map: CompiledMap) {
-  for (const land of map.document.landRegions) {
-    trace(c, land.outline);
-    c.closePath();
-    c.fillStyle = '#71876d';
-    c.fill();
+/** Coverage always draws from canonical rings, with optional authored appearance. */
+export function drawLandGround(c: CanvasRenderingContext2D, map: CompiledMap, textured = false) {
+  for (const land of map.land.landRegions) {
+    trace(c,land.outline); c.closePath(); c.fillStyle='#71876d'; c.fill();
+  }
+  for (const p of map.presentation.ground) {
+    c.save(); trace(c,p.region.outline); c.closePath(); c.clip();
+    const b=regionBounds(p.region.outline), width=b.max.x-b.min.x, height=b.max.y-b.min.y;
+    c.fillStyle=p.color; c.fillRect(b.min.x,b.min.y,width,height);
+    if(textured && p.texture==='asphalt') artworkImages.ground(c,{x:b.min.x,y:b.min.y,width,height});
+    c.restore();
   }
 }
 export function drawTerrainMiniMap(c: CanvasRenderingContext2D, map: CompiledMap) {
-  authoredLand(c, map);
   c.save();
   clipLand(c, map);
   for (const region of map.terrain.regions) {
@@ -52,7 +58,6 @@ export function drawTerrainMiniMap(c: CanvasRenderingContext2D, map: CompiledMap
 export function drawTerrainGround(r: Renderer) {
   const c = r.ctx,
     map = r.game.map;
-  authoredLand(c, map);
   c.save();
   clipLand(c, map);
   // Painter order is exactly the sampler's low-to-high priority order.
@@ -100,7 +105,7 @@ export function drawTerrainGround(r: Renderer) {
   c.restore();
   // Surf is derived from the union's exposed edges, never district names or an
   // assumed downward coast. The same geometry determines dry land and drowning.
-  for (const edge of map.coast.shorelines)
+  for (const edge of map.presentation.shorelines)
     for (const offset of [0.25, 1.25]) {
       const points: Vec[] = [],
         steps = Math.max(1, Math.ceil(dist(edge.a, edge.b) / 0.8));

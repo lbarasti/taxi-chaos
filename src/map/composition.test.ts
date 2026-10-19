@@ -24,9 +24,9 @@ describe('compositional map content', () => {
     expect(validateMap(document, map, world).errors).toBe(0);
     expect(map.terrain.sample(vec(-15, -50))).toBe('sand');
     expect(map.terrain.sample(vec(-3, -50))).toBe('paving');
-    expect(map.coast.inOcean(vec(15, -45))).toBe(false);
-    expect(map.coast.inOcean(vec(25, -45))).toBe(true);
-    expect(map.coast.shorelines.some((s) => s.landId === 'cove-land')).toBe(true);
+    expect(map.land.inOcean(vec(15, -45))).toBe(false);
+    expect(map.land.inOcean(vec(25, -45))).toBe(true);
+    expect(map.presentation.shorelines.some((s) => s.landId === 'cove-land')).toBe(true);
     expect(world.props.find((p) => p.sourceId === 'cove-hotel')).toMatchObject({
       kind: 'building',
       presentation: { fallback: 'resort' },
@@ -48,7 +48,7 @@ describe('compositional map content', () => {
           0.7,
           0.7,
         );
-        expect(probe.corners().some(map.coast.inOcean)).toBe(false);
+        expect(probe.corners().some(map.land.inOcean)).toBe(false);
         expect(
           [...world.hash.query(probe)].some((p) => blocksWalking(p.kind) && contact(probe, p.body)),
         ).toBe(false);
@@ -88,7 +88,7 @@ describe('compositional map content', () => {
     ];
     const water = compileMap(document);
     expect(water.terrain.sample(vec(5, -95))).toBe('sand');
-    expect(water.coast.inOcean(vec(5, -95))).toBe(true);
+    expect(water.land.inOcean(vec(5, -95))).toBe(true);
   });
   it('resolves overlaps identically after document reordering and detaches/freeze inputs', () => {
     const document = secondCoast(),

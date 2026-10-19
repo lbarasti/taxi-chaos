@@ -9,15 +9,13 @@ import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from './day-night';
 import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from './motorcycle';
 import { doorOpenness, LANDING_TIME } from './vehicle-exit';
-import { isCountry } from './countryside';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
-import { CITY_SHORE } from './coast';
 import { artworkImages } from './artwork/images';
 import { artworkFor, artRadius, fallbackScale } from './artwork/catalogue';
 
-import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
-import { drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
+import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
+import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
 import { drawObjectFallback } from './object-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
@@ -274,11 +272,10 @@ export class Renderer {
     }
     // The base palette was authored for a night city; lift it toward daylight so morning/afternoon
     // do not read as a darker night before the ambient lighting pass is applied.
-    this.rect(CITY_SHORE.min, CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, CITY_SHORE.max - CITY_SHORE.min, mixHex('#253033', '#53615f', this.daylight * 0.45), '#bac2a5');
-    artworkImages.ground(c, { x: CITY_SHORE.min, y: CITY_SHORE.min, width: CITY_SHORE.max - CITY_SHORE.min, height: CITY_SHORE.max - CITY_SHORE.min });
+    drawLandGround(c,g.map,true);
+    c.save(); clipLand(c,g.map);
     this.countrysideGround();
     drawHarbourGround(this);
-    drawTerrainMiniMap(c,g.map);
     for (const b of g.world.blocks) {
       if (b.campusId) continue;
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
@@ -342,15 +339,16 @@ export class Renderer {
     this.label('H A R B O U R   A V E', 64, -2.2, 1.1, '#81908f');
     c.save(); c.translate(-2.3, 72); c.rotate(-Math.PI / 2); this.label('W E S T   S T R E E T', 0, 0, 1.1, '#81908f'); c.restore();
     this.label('M A R K E T   S T R E E T', 62, 117.7, 1.1, '#81908f');
+    c.restore();
     drawTerrainGround(this);
+    c.save(); clipLand(c,g.map);
     // Workshop's apron, immediately beside the starting cab.
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
+    c.restore();
   }
   countrysideGround() {
-    const { HIGHLAND_OUTLINE, RIDGES, HIGHLAND_STOPS, COUNTRY_ROADS, BRIDGE_Y, LABELS } = this.game.map.country;
+    const { RIDGES, HIGHLAND_STOPS, COUNTRY_ROADS, BRIDGE_Y, LABELS } = this.game.map.country;
     const c = this.ctx;
-    trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = mixHex('#29483a', '#6b835e', this.daylight * 0.35); c.fill();
-    c.strokeStyle = '#9da17b'; c.lineWidth = 2; c.stroke();
     for (const [i, ridge] of RIDGES.entries()) {
       trace(c, ridge, true); c.fillStyle = mixHex('#47554a', '#949080', this.daylight * 0.5); c.fill();
       const center = ridge.reduce((a, p) => add(a, scale(p, 1 / ridge.length)), vec());
@@ -590,7 +588,7 @@ export class Renderer {
       // matches the typed artwork and collider rather than a fixed sprite size.
       const s = fallbackScale(prop); c.save(); c.scale(s.x, s.y);
       this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80');
-      if (isCountry(b.position)) {
+      if (this.game.map.country.isCountry(b.position)) {
         for (const r of [2.4, 1.7, 1]) {
           const needles = Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8; return vec(Math.cos(a) * r * (i % 2 ? 0.6 : 1), Math.sin(a) * r * (i % 2 ? 0.6 : 1) - (2.4 - r) * 0.2); });
           trace(c, needles, true); c.fillStyle = r === 2.4 ? '#233f36' : r === 1.7 ? prop.color : '#63816a'; c.fill();
@@ -893,7 +891,7 @@ export class Renderer {
     this.label(`${Math.round(dist(g.target, g.actor.position))} m`, x, y + 24, 11, '#e9e9da', '600');
   }
   minimap() {
-    const { HIGHLAND_OUTLINE, RIDGES, GOLF_COURSE, VILLAS, COUNTRY_ROADS } = this.game.map.country;
+    const { RIDGES, GOLF_COURSE, VILLAS, COUNTRY_ROADS } = this.game.map.country;
     const { roadPath } = this.game.world.navigation;
     const width = this.map.clientWidth, height = this.map.clientHeight;
     if (!width || !height) return; // Hidden or unmounted radar needs no drawing work.
@@ -907,9 +905,9 @@ export class Renderer {
     c.fillStyle = '#0b1b24'; c.fillRect(0, 0, width, height);
     c.save();
     c.translate(view.offset.x, view.offset.y); c.scale(s, s);
-    trace(c, HIGHLAND_OUTLINE, true); c.fillStyle = '#45634a'; c.fill();
+    drawLandGround(c,g.map);
+    c.save(); clipLand(c,g.map);
     for (const ridge of RIDGES) { trace(c, ridge, true); c.fillStyle = '#717566'; c.fill(); }
-    c.fillStyle = '#6f8983'; c.fillRect(HARBOUR.left, HARBOUR.top, HARBOUR.right - HARBOUR.left, HARBOUR.bottom - HARBOUR.top);
     for (const box of PORT_CONTAINERS) { c.fillStyle = box.color; c.fillRect(box.position.x - 7, box.position.y - 2.8, 14, 5.6); }
     c.fillStyle = '#a3ddc2'; c.fillRect(SWAP_CONTAINER.x - 5, SWAP_CONTAINER.y - 3, 10, 6); c.fillRect(PORT_ENTRY.x - 3, PORT_ENTRY.y - 3, 6, 6);
     c.fillStyle = '#90a66b'; c.fillRect(GOLF_COURSE.center.x - GOLF_COURSE.width / 2, GOLF_COURSE.center.y - GOLF_COURSE.height / 2, GOLF_COURSE.width, GOLF_COURSE.height);
@@ -927,6 +925,7 @@ export class Renderer {
       c.fillStyle = '#64726d'; c.fillRect(building.position.x - building.width / 2, building.position.y - building.height / 2, building.width, building.height);
     }
     for (const prop of g.map.document.objectPlacements) { const object=g.map.objects[prop.id]; if(object.kind!=='building')continue; c.save();c.translate(prop.position.x,prop.position.y);c.rotate(object.angle);c.fillStyle=prop.color;c.fillRect(-object.width/2,-object.height/2,object.width,object.height);c.restore(); }
+    c.restore();
     if (this.navigationRouteVisible) { c.strokeStyle = navigationTargetColours[this.targetKind()]; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
     c.restore();
     // Screen-space markers keep one size and one meaning at every radar size. The wheel
