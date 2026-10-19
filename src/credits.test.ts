@@ -24,8 +24,15 @@ describe('credits page', () => {
     expect(html).toContain('SIL Open Font License 1.1');
     expect(html).toContain('https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt');
     expect(html).toContain('Drawn procedurally, not texture-based.');
-    expect(html).toContain('User-supplied PNG portraits for Mia, Frankie, Rosa, Celia, Adrian Vale and Bea.');
-    expect(html).toContain('original provisional vector art created for Taxi Chaos.');
+    expect(html).toContain('User-supplied PNG portraits for the Open Shore cast');
+    expect(html).toContain('plus the bundled officer portrait');
+    expect(html).toContain('original neutral placeholder cards (legacy-mia.png, legacy-frankie.png) created for Taxi Chaos');
+    // No stale vector-identity claim, and no separate "identity cards" category, survives
+    // the raster migration: those nine supplied PNGs are part of the cast above.
+    expect(html).not.toContain('SVG identity cards');
+    expect(html).not.toContain('original provisional vector art');
+    expect(html).not.toContain('nine identity cards');
+    expect(html).not.toContain('Identity cards');
   });
 
   it('groups content by functional role with an accessible heading per group', () => {

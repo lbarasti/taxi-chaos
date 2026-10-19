@@ -32,7 +32,9 @@ describe('authored pickup conversations', () => {
     // The view resolves the display name and raster portrait from the character catalogue.
     const speaker = messageCharacter(g.dialogue.active!.message);
     expect(speaker.name).toBe('Mia');
-    expect(resolvePortrait(speaker)).toMatchObject({ source: 'mia.png', format: 'png' });
+    // `mia` keeps its stable id and display name, but resolves its own neutral legacy
+    // placeholder rather than borrowing another cast member's supplied portrait.
+    expect(resolvePortrait(speaker)).toMatchObject({ source: 'legacy-mia.png', format: 'png' });
     const active = g.dialogue.active;
     run(g, 1); expect(g.dialogue.active).toBe(active); expect(g.dialogue.letters).toBeGreaterThan(STORY_LETTERS_PER_SECOND);
   });
@@ -62,11 +64,13 @@ describe('authored pickup conversations', () => {
     expect(g.dialogue.active?.elapsed).toBe(0);
   });
 
-  it('clears on completion, abandonment and explicit story reset; recurring Mia fares are not story missions', () => {
+  it('clears on completion, abandonment and explicit story reset; recurring ordinary fares are not story missions', () => {
     const g = make(); collect(g);
     g.player.body.position = { ...g.job.dropoff }; run(g, 0.9);
     expect(g.jobsDone).toBe(1); expect(g.dialogue.active).toBeNull();
-    g.offer = 7; g.newJob(); expect(g.job.name).toBe('Mia'); expect(g.job.missionId).toBeUndefined(); collect(g);
+    // Ordinary fares draw their name from the ambient passenger pool, which no longer
+    // carries the story cast, so they stay plain jobs with no mission id.
+    g.offer = 7; g.newJob(); expect(g.job.name).toBe('Cleo'); expect(g.job.missionId).toBeUndefined(); collect(g);
     expect(g.dialogue.active).toBeNull();
     // A new shift preserves persistent story; the opening mission does not replay.
     g.resetRun(); expect(g.dialogue.active).toBeNull(); collect(g);

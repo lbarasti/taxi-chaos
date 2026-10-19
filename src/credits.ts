@@ -46,7 +46,7 @@ export function creditsMarkup() {
       `<p class="credit-note">Distributed under the ${link('SIL Open Font License 1.1', 'https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt')} and embedded in the standalone build.</p>`)}
     ${section('credits-art', 'Art & characters',
       row('City art', 'Drawn procedurally, not texture-based.') +
-      row('Portraits', 'User-supplied PNG portraits for Mia, Frankie, Rosa, Celia, Adrian Vale and Bea.') +
-      row('Identity cards', 'Nine Open Shore SVG identity cards (Mara, Eli, Victor, Leila, Harker, Lena, Iris, Tom and Ruth) are original provisional vector art created for Taxi Chaos.'),
+      row('Portraits', 'User-supplied PNG portraits for the Open Shore cast, plus the bundled officer portrait.') +
+      row('Legacy placeholders', 'Mia and Frankie keep their stable ids on original neutral placeholder cards (legacy-mia.png, legacy-frankie.png) created for Taxi Chaos; no supplied portrait art is shipped for them.'),
       '<p class="credit-note">Every portrait is bundled inline as a data URL, with no external image service.</p>')}`;
 }
