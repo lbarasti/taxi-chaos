@@ -21,7 +21,7 @@ npm run build
 npm run map:check -- --input src/map/default-map.json --json
 ```
 
-`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding; `npm run artwork:test` covers the prep CLI offline.
+`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding; `npm run artwork:test` covers the prep CLI offline. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs, and `npm run authoring:test` covers the DOM-free report and offline screenshot CLI.
 
 For interactive testing, open **http://localhost:5173/?debug=1** or press **F2**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
 
@@ -68,6 +68,10 @@ The checker exits 1 for structural errors or geometric errors, and may export a
 structurally valid draft that still needs repair. Invoke `node tools/map-check.mjs`
 directly for JSON stdout without npm's banner.
 
+Only version-3 documents are accepted. An older revision, a stale hotel `style`,
+or an unknown catalogue `type` (or one whose behaviour does not match its `kind`)
+is rejected structurally on import and in operations rather than upgraded.
+
 Browser automation exposes `__taxi.map`: `open`, `snapshot`, `describe`, `apply`,
 `validate`, `undo`, `redo`, `import`, `export`, `preview`, `step`, `previewState`,
 `live`, `edit` and `close`. Apply batches as `{ baseRevision, operations }`;
@@ -106,6 +110,26 @@ padding it trimmed. There is no import list, artwork record or asset union to ed
 hand. Artwork geometry is stored as fractions of the resolved footprint, so resizing a
 type default or a placement moves collision and drawing together; `artworkScale` changes
 the drawing alone. Keep provenance in asset attribution.
+
+### Authoring previews
+
+```sh
+npm run authoring:preview -- --list --input tools/examples/map-authoring.json
+npm run authoring:preview -- --input tools/examples/map-authoring.json --entity authoring-bakery --json
+npm run authoring:preview -- --input tools/examples/map-authoring.json --entity authoring-bakery --resize 24,16 --drive-from 240,450
+```
+
+Any stable entity ID in any version-3 map can be inspected; there is no per-image
+command or script. `--input` accepts a full strict map or a small placement list (a JSON
+array of country props) composed onto `--base`, so the fixture cannot drift when the
+baseline map changes. `--list` prints the catalogue types and every inspectable ID;
+`--json` returns the DOM-free report without Chromium. PNG mode records real frames with
+art bounds, collision, shadow, light blocker, culling radius, attached features and
+findings, plus a `manifest.json`, into `scenario-runs/authoring/ENTITY-TIMESTAMP` by
+default (override with `--output`). `--resize W,H`, `--artwork-scale N` and
+`--type-size W,H` preview instance or type changes without editing committed records, and
+`--drive-from X,Y` proves a physical hit on the selected entity's own body. Run
+`npm run authoring:test` for the DOM-free report and offline CLI.
 
 To publish a reviewed map change, export the validated draft to `src/map/default-map.json`, run the map check, tests, and build, then open a pull request with affected fixtures updated. Merging to `main` triggers the Pages deployment workflow.
 

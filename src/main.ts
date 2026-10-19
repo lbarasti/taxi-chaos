@@ -21,6 +21,7 @@ import './navigation-hud.css';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
 import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
+import { createAuthoringPreview } from './catalogue/authoring-preview';
 
 const arrowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -40,10 +41,11 @@ document.querySelector('#app')!.innerHTML = `
 `;
 const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
 const scenarioPreviewMode = new URLSearchParams(location.search).has('scenario-preview');
+const authoringPreviewMode = new URLSearchParams(location.search).has('authoring-preview');
 // Decode embedded map art before the first playable frame; failures keep procedural fallbacks.
 await artworkImages.load();
-const hasSavedCampaign = !dialoguePreviewMode && !scenarioPreviewMode && savedCampaignAvailable();
-let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode);
+const hasSavedCampaign = !dialoguePreviewMode && !scenarioPreviewMode && !authoringPreviewMode && savedCampaignAvailable();
+let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode && !authoringPreviewMode);
 const audio = new AudioFX();
 const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCanvasElement, game);
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
@@ -217,12 +219,16 @@ function pollController() {
   previousPadButtons = pressed;
   previousPadAxes = pad ? [...pad.axes] : [];
 }
-let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode || scenarioPreviewMode, timeScale = 1;
+let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode || scenarioPreviewMode || authoringPreviewMode, timeScale = 1;
 const STEP = 1 / 120;
 function frame(now: number) {
   // Scenario mode renders only at explicit command boundaries. Wall-clock RAFs
   // must never move the simulation, reveal dialogue or change a captured scene.
   if (scenarioPreviewMode) return;
+  // Authoring previews freeze while the CLI captures a deterministic frame, but the
+  // animation loop must stay alive: returning here without rescheduling would kill it, so
+  // `realtime()` could never resume the restored game. Simulation and painting stay frozen.
+  if (authoringPreviewMode && externalClock) { last = now; requestAnimationFrame(frame); return; }
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
   if (!externalClock) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
   pollController();
@@ -258,6 +264,10 @@ function ensureLab() {
   return lab;
 }
 if (new URLSearchParams(location.search).has('debug')) { ensureLab().open(); game.start(); }
+// The authoring preview replaces this game while it is open. Start it up front so the
+// handoff restores a live, playable world, and `realtime()` can be verified with real
+// physics instead of a splash that automation cannot dismiss.
+if (authoringPreviewMode) game.start();
 
 // Opt-in CLI screenshot entry point. Uses the actual HUD, inbox, story panel and
 // portrait renderer; each shot replaces only this isolated page's unsaved game.
@@ -303,4 +313,25 @@ if (scenarioPreviewMode) {
     // QA: paint a world frame and report the on-board aura the renderer actually drew.
     aura: () => { show('world'); return renderer.lastAura ? { ...renderer.lastAura } : null; },
   } });
+}
+
+// Authoring previews use the same standalone build and actual renderer as normal play.
+// The DOM-free checker compiles/validates the supplied document, and this hook only
+// activates the resulting game and paints report geometry over it.
+if (authoringPreviewMode) {
+  const originalGame = game, originalCamera = { ...renderer.camera }, originalZoom = renderer.zoom;
+  Object.assign(window, { __authoringPreview: createAuthoringPreview({
+    renderer,
+    activate: next => { game = next; renderer.game = next; bindGame(); },
+    restore: () => { game = originalGame; renderer.game = originalGame; renderer.camera = { ...originalCamera }; renderer.zoom = originalZoom; bindGame(); },
+    freeze: frozen => { externalClock = frozen; accumulator = 0; },
+    draw: () => renderer.draw(0),
+    refreshChrome: () => { drawer.reset(); $('mission-inbox').hidden = true; modal(); hud(); },
+    silence: () => audio.silence(game),
+    realtime: () => { externalClock = false; accumulator = 0; modal(); hud(); renderer.draw(0); $('city').focus(); },
+    focus: () => $('city').focus(),
+    // Read the live main game, so a handoff can be verified with real physics and time
+    // rather than a restored boolean or a screenshot difference.
+    probe: () => ({ mode: game.mode, time: game.time, position: { ...game.actor.position } }),
+  }) });
 }

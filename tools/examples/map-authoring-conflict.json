@@ -1,0 +1,12 @@
+[
+  {
+    "angle": 0,
+    "color": "#596b70",
+    "id": "authoring-bakery-conflict",
+    "kind": "building",
+    "label": "BAKERY",
+    "owner": "southern-estates",
+    "position": { "x": 225, "y": 438 },
+    "type": "bakery"
+  }
+]

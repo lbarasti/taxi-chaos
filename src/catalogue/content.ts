@@ -61,6 +61,16 @@ export const objectRecords = [
     id: 'hotel', kind: 'building', width: 33, height: 11, storeys: 14,
     fallback: 'commercial', sign: hotelSign, frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE',
   },
+  // Representative ordinary single-image building. `map/bakery-front.png` is the
+  // genuine committed art; the type itself is all the catalogue needs. The authoring
+  // fixture in tools/examples supplies placements without changing this default map.
+  {
+    id: 'bakery', kind: 'building', width: 12, height: 8, storeys: 3,
+    fallback: 'shop',
+    sign: { width: 9, inset: 1, size: 0.7, color: '#ffeedd' },
+    image: 'map/bakery-front.png',
+    artwork: { fit: 'stretch', width: 12.6 / 12, height: 8.4 / 8, outline: 'bounds', occluder: true },
+  },
   // Representative existing-behaviour props. The tree reuses shared artwork with a
   // normalized outline; the crate has no imported art and keeps procedural drawing.
   {
@@ -69,6 +79,14 @@ export const objectRecords = [
     artwork: { fit: 'stretch', width: 5.2 / 1.8, height: 5.2 / 1.8, outline: { shape: 'circle', radius: 2.4 / 2.6 } },
   },
   { id: 'crate', kind: 'crate', width: 1.4, height: 1.4 },
+  // A representative prop kind that already has a procedural district renderer: a typed
+  // placement draws this decoded PNG instead of the beach pass, so the generic artwork
+  // dispatch is exercised by real committed art with no engine change. Original pixel art.
+  {
+    id: 'palm', kind: 'palm', width: 0.8, height: 0.8,
+    image: 'map/palm-canopy.png',
+    artwork: { fit: 'stretch', width: 6 / 0.8, height: 6 / 0.8, outline: { shape: 'circle', radius: 1 } },
+  },
   // A representative single-image crate whose original pixel art is committed at
   // `map/crate-shipping.png` (not an alias of an existing sprite) and attributed in
   // `src/assets/ATTRIBUTION.md`.

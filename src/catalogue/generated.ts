@@ -8,7 +8,9 @@ import artwork3 from '../assets/map/tree-worn.png?inline';
 import artwork4 from '../assets/map/asphalt.svg?inline';
 import artwork5 from '../assets/map/hospital-structure.png?inline';
 import artwork6 from '../assets/map/luxury-condo.png?inline';
-import artwork7 from '../assets/map/crate-shipping.png?inline';
+import artwork7 from '../assets/map/bakery-front.png?inline';
+import artwork8 from '../assets/map/palm-canopy.png?inline';
+import artwork9 from '../assets/map/crate-shipping.png?inline';
 import type { ArtworkSource } from './schema';
 
 /** One inline module URL per referenced image, keyed by stable artwork ID. */
@@ -20,7 +22,9 @@ export const artworkInline: Readonly<Record<string, string>> = {
   'asphalt': artwork4,
   'hospital': artwork5,
   'condo': artwork6,
-  'shipping-crate': artwork7,
+  'bakery': artwork7,
+  'palm': artwork8,
+  'shipping-crate': artwork9,
 };
 
 /** Measured source pixels and transparent-padding crop for every referenced PNG. */
@@ -31,5 +35,7 @@ export const artworkSources: Readonly<Record<string, ArtworkSource>> = {
   'tree-worn': { width: 192, height: 192, crop: { x: 0, y: 0, width: 192, height: 192 } },
   'hospital': { width: 787, height: 1997, crop: { x: 33, y: 16, width: 726, height: 1951 } },
   'condo': { width: 1254, height: 1254, crop: { x: 0, y: 17, width: 1160, height: 1213 } },
+  'bakery': { width: 48, height: 48, crop: { x: 0, y: 0, width: 48, height: 48 } },
+  'palm': { width: 32, height: 32, crop: { x: 5, y: 1, width: 24, height: 30 } },
   'shipping-crate': { width: 32, height: 32, crop: { x: 0, y: 0, width: 32, height: 32 } },
 };

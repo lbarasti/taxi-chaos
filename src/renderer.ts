@@ -439,11 +439,24 @@ export class Renderer {
     else { c.beginPath(); c.arc(0, 0, 5 + Math.sin(g.time * 3) * 0.2, 0, Math.PI * 2); c.fill(); c.stroke(); c.beginPath(); c.arc(0, 0, 4.6, -Math.PI / 2, -Math.PI / 2 + g.job.wait / 0.8 * Math.PI * 2); c.lineWidth = 0.45; c.stroke(); this.label(g.job.stage === 'pickup' ? '↓' : '✓', 0, 0, 2.4, color, '700'); }
     this.label(label, 0, garage ? 6 : -6.5, 0.9, color, '700'); c.restore();
   }
+  /** Live fire feedback for one prop kind, drawn in the prop's local frame. Shared by the
+   * catalogue-sprite path and the procedural passes, so a typed station/pump keeps its
+   * flames instead of losing them to the sprite branch's early return. Deterministic in
+   * (time, id): it draws no RNG and changes no simulation state. */
+  private propFire(prop: Prop) {
+    if (prop.fire <= 0) return;
+    const c = this.ctx;
+    if (prop.kind === 'station') { drawFire(c, vec(), 2.8, this.game.time, prop.id); drawSmoke(c, vec(0, -2), 3, this.game.time, prop.id); return; }
+    drawFire(c, vec(), 1.4, this.game.time, prop.id);
+  }
   prop(prop: Prop) {
-    if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
-    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+    // Destruction is authoritative and comes first: a district renderer's own wreck art
+    // (torn canvas, splintered fence) runs before the generic rubble pass, and a dead prop
+    // never reaches its live catalogue sprite.
     if (!prop.alive) {
+      if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
+      c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
       if (prop.kind === 'guardrail') {
         // Broken ends remain legible while the middle becomes a drivable gap.
         for (const side of [-1, 1]) {
@@ -462,6 +475,10 @@ export class Renderer {
     }
     const art = artworkFor(prop);
     if (art && artworkImages.has(art.image)) {
+      // Any alive prop with decoded catalogue artwork draws that sprite ahead of the
+      // district renderers, so a typed palm/fence/container is never overpainted by the
+      // procedural pass. There is no per-asset or per-image-name branch here.
+      c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
       // Structure artwork shares the old prop pass. Destruction above stays authoritative.
       if (art.castsShadow !== false) {
         c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
@@ -484,8 +501,13 @@ export class Renderer {
           c.restore();
         }
       }
+      // A burning station/pump draws its flames over the sprite, exactly as the
+      // procedural pass does, so live damage feedback survives the typed catalogue path.
+      this.propFire(prop);
       c.restore(); return;
     }
+    if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
+    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
     if (prop.kind === 'guardrail') {
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#314847');
@@ -554,13 +576,13 @@ export class Renderer {
         c.strokeStyle = '#212f34'; c.lineWidth = 0.17;
         for (let i = 0; i < 5 * (1 - ratio); i++) { c.beginPath(); c.moveTo(-3 + i * 2, -3); c.lineTo(-1 + i, -1); c.lineTo(-2 + i, 0); c.lineTo(i, 3); c.stroke(); }
       }
-      if (prop.fire > 0) { drawFire(c, vec(), 2.8, this.game.time, prop.id); drawSmoke(c, vec(0, -2), 3, this.game.time, prop.id); }
+      this.propFire(prop);
     } else if (prop.kind === 'pump') {
       this.shadowRect(-0.75 + so.x, -1.35 + so.y, 1.5, 2.7, '#1b2d3250'); this.rect(-0.6, -1.2, 1.2, 2.4, prop.color, '#e5c691');
       this.rect(-0.4, -0.8, 0.8, 0.65, '#233d44'); this.rect(-0.3, -0.7, 0.6, 0.3, '#a7ccb6');
       this.circle(vec(0, -1.35), 0.3, '#ffe4a8');
       c.strokeStyle = '#26383c'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(0.6, 0); c.lineTo(1.2, 0); c.lineTo(1.2, 0.8); c.lineTo(0.6, 0.8); c.stroke();
-      if (prop.fire > 0) drawFire(c, vec(), 1.4, this.game.time, prop.id);
+      this.propFire(prop);
     } else if (prop.kind === 'tree') {
       // Missing or failed PNG: draw the canopy at the resolved extent so the fallback
       // matches the typed artwork and collider rather than a fixed sprite size.

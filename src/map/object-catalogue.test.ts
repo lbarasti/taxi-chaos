@@ -9,6 +9,7 @@ import { inlineEntries } from '../catalogue/generate';
 import { measureArtworkSources } from '../catalogue/png';
 import { objectKindRegistry, type ObjectCatalogue, type ObjectRecord } from '../catalogue/schema';
 import { World } from '../world';
+import { createBeach } from '../beach';
 import { compileMap } from './compile';
 import { copyDefaultMap } from './default';
 import { MapHistory, countryPropDescriptor } from './operations';
@@ -210,6 +211,22 @@ describe('generic object placements through map, world and render', () => {
     expect(countryPropDescriptor(undefined, edits).features).toBeUndefined();
   });
 
+  it('keeps user features through a type change and surfaces them as validation findings', () => {
+    const d = copyDefaultMap();
+    d.countryProps.push({ id: 'feature-swap', owner: 'southern-estates', kind: 'tree', type: 'tree', position: vec(300, 470), angle: 0, color: '#426e58', label: '', artworkScale: 1.5, features: [{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }] });
+    const history = new MapHistory(d, catalogue);
+    const existing = history.snapshot().document.countryProps.find(p => p.id === 'feature-swap')!;
+    const edits = { id: existing.id, owner: existing.owner, position: existing.position, angle: existing.angle, color: '#bc9465', kind: 'crate' as const, type: 'crate-png', label: '' };
+    history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'replace', targetId: 'feature-swap', descriptor: countryPropDescriptor(existing, edits) }] });
+    const after = history.snapshot().document.countryProps.find(p => p.id === 'feature-swap')!;
+    // The form does not edit features, so an untouched replace must not delete them.
+    expect(after).toMatchObject({ type: 'crate-png', artworkScale: 1.5 });
+    expect(after.features).toEqual([{ id: 'tree-sign', role: 'sign', offset: vec(0.2, 0.1), label: 'PARK' }]);
+    // A sign feature on a crate is inert, so the shared validation reports it by ID.
+    const findings = validateMap(history.snapshot().document, compileMap(history.snapshot().document, catalogue)).findings;
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'sign-feature-unsupported', entityIds: ['feature-swap', 'feature-swap/tree-sign'] }));
+  });
+
   it('scales procedural crate and tree fallbacks onto the resolved geometry', () => {
     const body = (w: number, h = w) => ({ position: vec(0, 0), w, h });
     // Crate fallbacks are drawn to the resolved collider, never a fixed 1.4 m box.
@@ -336,6 +353,27 @@ describe('beach hotels use the shared catalogue', () => {
     // The condo was drawn by the generic building sign before the migration; the catalogue
     // record keeps that exact look instead of inheriting the hotel sign.
     expect(objectDefinitions.condo.presentation?.sign).toEqual({ width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' });
+  });
+
+  it('applies a per-hotel artworkScale through compileMap, createBeach and the editor', () => {
+    const base = compileMap(copyDefaultMap(), catalogue);
+    const baseline = base.objects['hotel-sandpiper'].artwork!.bounds.width;
+    const scaled = copyDefaultMap();
+    (scaled.beach.hotels.find(h => h.id === 'hotel-sandpiper') as { artworkScale: number }).artworkScale = 1.5;
+    const map = compileMap(scaled, catalogue);
+    // The drawing scales while the collision footprint stays at the resolved size.
+    expect(map.objects['hotel-sandpiper'].artwork!.bounds.width).toBeCloseTo(baseline * 1.5);
+    expect([map.objects['hotel-sandpiper'].width, map.objects['hotel-sandpiper'].height]).toEqual([base.objects['hotel-sandpiper'].width, base.objects['hotel-sandpiper'].height]);
+    // The independent `createBeach` path (no precompiled objects) reads the same field.
+    expect(createBeach(scaled, catalogue).BEACH_HOTELS.find(h => h.id === 'hotel-sandpiper')!.artwork!.bounds.width).toBeCloseTo(baseline * 1.5);
+    // The editor's atomic resize preserves the visual-only field.
+    const history = new MapHistory(scaled, catalogue);
+    history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'resize', targetId: 'hotel-sandpiper', width: 20, height: 10 }] });
+    expect(history.snapshot().document.beach.hotels.find(h => h.id === 'hotel-sandpiper')).toMatchObject({ width: 20, height: 10, artworkScale: 1.5 });
+    // The strict schema accepts the new optional field and still rejects a bad scale.
+    const bad = copyDefaultMap();
+    (bad.beach.hotels[0] as { artworkScale: number }).artworkScale = 0;
+    expect(() => compileMap(bad, catalogue)).toThrow(/hotel.artworkScale/);
   });
 
   it('reuses the map compiler precompiled hotel objects instead of compiling them twice', () => {

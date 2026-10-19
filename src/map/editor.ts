@@ -54,6 +54,14 @@ export class MapEditor {
   /** Blank inputs are an omitted optional override, not an error. */
   private optionalNumber(key: string) { const input = this.q<HTMLInputElement>(key); if (!input.value.trim()) return undefined; if (!Number.isFinite(input.valueAsNumber)) throw new Error(`Enter a finite number for ${key}`); return input.valueAsNumber; }
   private status(text: string, error = false) { this.q('status').textContent = text; this.q('status').classList.toggle('editor-error', error); }
+  /** Footprint hints follow the picked catalogue type: an empty override field means
+   * "use the type default", so the placeholder must show the metres that will be
+   * resolved. Without a type the field has to be filled in, and says so. */
+  private propTypeHints(type: string) {
+    const definition = objectDefinitions[type];
+    this.q<HTMLInputElement>('prop-width').placeholder = definition ? String(definition.width) : 'required';
+    this.q<HTMLInputElement>('prop-height').placeholder = definition ? String(definition.height) : 'required';
+  }
   private attempt(action: () => unknown) { try { action(); } catch (error) { this.status((error as Error).message, true); } }
   private rebuild() { this.compiled = compileMap(this.history.snapshot().document); this.world = new World(this.compiled); this.validation = validateMap(this.compiled.document, this.compiled, this.world); this.refresh(); this.draw(); }
   private draw() { if (this.editing) this.view.draw(this.compiled, this.world, this.validation, this.selection, this.measure, this.gesture?.pan ? undefined : this.gesture?.delta); }
@@ -119,6 +127,7 @@ export class MapEditor {
     // applies; an untyped placement still needs explicit dimensions.
     this.q<HTMLInputElement>('prop-width').value = explicitWidth !== undefined ? String(explicitWidth) : typed ? '' : '1.6';
     this.q<HTMLInputElement>('prop-height').value = descriptor && 'height' in descriptor && descriptor.height !== undefined ? String(descriptor.height) : typed ? '' : '1.6';
+    this.propTypeHints(this.q<HTMLSelectElement>('prop-type').value);
     this.q<HTMLInputElement>('label').value = descriptor && 'label' in descriptor ? descriptor.label : '';
     this.q<HTMLInputElement>('angle').value = String(descriptor?.angle ?? 0);
     // Catalogue angles include exact π/2 values, so a decimal step anchored to
@@ -160,9 +169,17 @@ export class MapEditor {
     on('zoom-in', () => this.zoom(1.4)); on('zoom-out', () => this.zoom(1 / 1.4));
     on('undo', () => this.api.undo()); on('redo', () => this.api.redo());
     this.q<HTMLSelectElement>('collection').addEventListener('change', () => { this.authorForm(this.q<HTMLSelectElement>('collection').value as AuthoredCollection); this.q<HTMLButtonElement>('properties').disabled = this.history.describe(this.selection).collection !== this.q<HTMLSelectElement>('collection').value; });
-    // Choosing a catalogue type also selects its behaviour kind, so kind mismatches are
-    // not typed by hand.
-    this.q<HTMLSelectElement>('prop-type').addEventListener('change', () => { const definition = objectDefinitions[this.q<HTMLSelectElement>('prop-type').value]; if (definition) this.q<HTMLSelectElement>('prop-kind').value = definition.kind; });
+    // Choosing a catalogue type also selects its behaviour kind and adopts its default
+    // footprint: the explicit override fields clear (so the type default resolves) and
+    // their hints show that default. Entering metres again overrides it for this
+    // instance only, and the next type choice clears them once more.
+    this.q<HTMLSelectElement>('prop-type').addEventListener('change', () => {
+      const type = this.q<HTMLSelectElement>('prop-type').value, definition = objectDefinitions[type];
+      if (definition) this.q<HTMLSelectElement>('prop-kind').value = definition.kind;
+      this.q<HTMLInputElement>('prop-width').value = '';
+      this.q<HTMLInputElement>('prop-height').value = '';
+      this.propTypeHints(type);
+    });
     on('add', () => { const id = this.q<HTMLInputElement>('new-id').value; this.apply([{ type: 'add', collection: this.q<HTMLSelectElement>('collection').value as AuthoredCollection, descriptor: this.authoredDescriptor(id, this.view.camera) }]); this.api.select(id); });
     on('properties', () => this.apply([{ type: 'replace', targetId: this.selection, descriptor: this.authoredDescriptor(this.selection, this.history.describe(this.selection).position!) }]));
     on('duplicate', () => { const id = this.q<HTMLInputElement>('new-id').value; this.apply([{ type: 'duplicate', targetId: this.selection, newId: id, delta: vec(this.number('dx'), this.number('dy')) }]); this.api.select(id); });

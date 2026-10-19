@@ -59,21 +59,35 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   // beyond the allowed attachment band, naming the parent and stable feature ID. The
   // `service` role feeds the single city recovery entrance, so it is only consumed on
   // city buildings; elsewhere it would be silently inert, so report it by stable ID.
-  const checkFeatures = (id: string, features: readonly ResolvedFeature[] | undefined, service: boolean) => {
+  // Sign features are drawn by the generic building renderer only when the building has
+  // catalogue artwork and the feature carries a label. Validation can see the declared
+  // catalogue artwork, not whether the browser decoded its image, so it reports the
+  // inert combinations rather than promising a drawn label.
+  const checkFeatures = (id: string, features: readonly ResolvedFeature[] | undefined, support: { service: boolean; sign: boolean }) => {
     for (const feature of features ?? []) {
       if (Math.abs(feature.offset.x) > 0.75 || Math.abs(feature.offset.y) > 0.75) push('feature-outside-bounds', [id, `${id}/${feature.id}`], `Attached ${feature.role} ${feature.id} lies outside its placement`, feature.position);
-      if (feature.role === 'service' && !service) push('service-feature-unsupported', [id, `${id}/${feature.id}`], `Service feature ${feature.id} is only consumed by the city recovery entrance`, feature.position);
+      if (feature.role === 'service' && !support.service) push('service-feature-unsupported', [id, `${id}/${feature.id}`], `Service feature ${feature.id} is only consumed by the city recovery entrance`, feature.position);
+      if (feature.role === 'sign') {
+        if (!feature.label?.trim()) push('sign-feature-unlabelled', [id, `${id}/${feature.id}`], `Sign feature ${feature.id} has no label, so the renderer draws nothing for it`, feature.position, undefined, 'warning');
+        if (!support.sign) push('sign-feature-unsupported', [id, `${id}/${feature.id}`], `Sign feature ${feature.id} is only rendered for buildings with catalogue artwork`, feature.position);
+      }
     }
   };
   for (const p of document.countryProps) {
     const compiledObject = compiled.objects[p.id];
     const body = compiledObject ? compiledBody(compiledObject) : descriptorBody(p);
     checkLand(p.id, body, q => !coast.inOcean(q));
-    if (compiledObject) checkFeatures(p.id, compiledObject.features, false);
+    if (compiledObject) checkFeatures(p.id, compiledObject.features, { service: false, sign: compiledObject.kind === 'building' && !!compiledObject.artwork });
+    // Features resolve against a catalogue type; an untyped prop has nowhere to attach
+    // them, so report the inert data instead of importing it silently.
+    else if (p.features?.length) push('features-need-catalogue-type', [p.id], 'Attached features need a catalogue type to resolve', p.position);
     if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
   }
-  for (const hotel of document.beach.hotels) checkFeatures(hotel.id, compiled.objects[hotel.id]?.features, false);
-  for (const building of compiled.city.buildings) checkFeatures(building.id, building.features, true);
+  for (const hotel of document.beach.hotels) {
+    const object = compiled.objects[hotel.id];
+    checkFeatures(hotel.id, object?.features, { service: false, sign: object?.kind === 'building' && !!object.artwork });
+  }
+  for (const building of compiled.city.buildings) checkFeatures(building.id, building.features, { service: true, sign: !!building.artwork });
   const vehiclePlacements = [...document.parking, ...document.trafficSpawns].map(e => ({ e, body: descriptorBody(e) }));
   for (const block of compiled.city.blocks) for (const home of block.residentHomes ?? []) {
     const body = new Body(home.x, home.y, 75, 0.7, 0.7);

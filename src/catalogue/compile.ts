@@ -18,9 +18,9 @@ export function appearanceSeed(identity: string): number {
 
 /** Deep-freeze compiled catalogue geometry. Templates and their arrays are shared by
  * every placement and must never be mutated by a renderer or preview. */
-function frozen<T>(value: T): T {
+export function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) frozen(child);
+    for (const child of Object.values(value)) deepFreeze(child);
     Object.freeze(value);
   }
   return value;
@@ -158,7 +158,7 @@ export function compileArtworkCatalogue(records: readonly ArtworkRecord[], sourc
       ground[record.id] = { image: record.id, layer: 'ground', tileMetres: record.tileMetres };
     } else structures[record.id] = compileStructureArtwork(record, sources[record.id]);
   }
-  return frozen({ structures, ground });
+  return deepFreeze({ structures, ground });
 }
 
 function validatePresentation(presentation: ArtworkPresentation, id: string): void {
@@ -179,7 +179,7 @@ function artworkTemplate(id: string, image: string, crop: PixelCrop | undefined,
   const aspect = crop ? crop.width / crop.height : undefined;
   const fit = presentation.fit ?? 'contain';
   if (fit === 'contain' && !aspect) throw new Error(`Object ${id}: a centred aspect fit needs a measured source or explicit artwork width and height`);
-  return frozen({
+  return deepFreeze({
     image,
     ...(crop && !isWholeSource(crop, source) ? { source: crop } : {}),
     aspect: aspect ?? 1,
@@ -218,6 +218,9 @@ export function compileObjectCatalogue(
     if (record.kind === 'building') validateBuilding(record);
     else if (record.storeys !== undefined || record.fallback !== undefined || record.sign !== undefined) throw new Error(`Object ${record.id}: only buildings declare storeys, fallback or sign`);
     if (record.artworkScale !== undefined && (!Number.isFinite(record.artworkScale) || record.artworkScale <= 0)) throw new Error(`Object ${record.id}: invalid artwork scale`);
+    // Validate type-level features eagerly, so a bad default cannot wait for the first
+    // placement to fail (or for a custom catalogue to skip the check entirely).
+    validateFeatureList(record.features, record.id);
 
     const presentation = record.artwork ?? {};
     validatePresentation(presentation, record.id);
@@ -248,7 +251,7 @@ export function compileObjectCatalogue(
       throw new Error(`Object ${record.id}: artwork presentation needs an image or variants`);
     }
 
-    definitions[record.id] = frozen({
+    definitions[record.id] = deepFreeze({
       id: record.id,
       kind: record.kind,
       width: record.width,
@@ -278,7 +281,7 @@ export function compileBuildingCatalogue(
   for (const [id, definition] of Object.entries(objects)) {
     if (definition.kind === 'building') buildings[id] = definition as BuildingDefinition;
   }
-  return frozen(buildings);
+  return deepFreeze(buildings);
 }
 
 /** Resolve immutable normalized artwork against one concrete footprint. The returned
@@ -301,7 +304,10 @@ export function deriveArtwork(template: ArtworkTemplate, width: number, height: 
   if (!Number.isFinite(artWidth) || !Number.isFinite(artHeight) || artWidth <= 0 || artHeight <= 0) throw new Error(`Artwork ${template.image}: invalid resolved size`);
   const centerX = template.offset.x * width, centerY = template.offset.y * height;
   const bounds = { x: centerX - artWidth / 2, y: centerY - artHeight / 2, width: artWidth, height: artHeight };
-  const silhouette = resolveOutline(template.outline, artWidth, artHeight);
+  // The outline is authored around the art rectangle's centre, so an offset art centre
+  // translates the silhouette (and the shared light blocker) with the bounds. Otherwise a
+  // shifted drawing would report a shadow/occluder that no longer sits over its sprite.
+  const silhouette = resolveOutline(template.outline, artWidth, artHeight).map(p => vec(p.x + centerX, p.y + centerY));
   return {
     image: template.image,
     layer: 'structure',
@@ -321,19 +327,28 @@ function validSign(sign: Partial<BuildingSign> | undefined): void {
   if (sign.offset !== undefined && (!Number.isFinite(sign.offset.x) || !Number.isFinite(sign.offset.y) || Math.abs(sign.offset.x) > 0.5 || Math.abs(sign.offset.y) > 0.5)) throw new Error('invalid sign offset');
 }
 
+/** Validate an attached-feature list eagerly, before a type or placement reaches the map.
+ * The same rules protect authored type defaults and per-instance overrides. */
+function validateFeatureList(features: readonly AttachedFeature[] | undefined, owner: string): void {
+  if (features === undefined) return;
+  if (!Array.isArray(features) || features.length > 8) throw new Error(`Object ${owner}: expected at most 8 attached features`);
+  const seen = new Set<string>();
+  for (const feature of features) {
+    if (!feature || typeof feature.id !== 'string' || feature.id.length > 60 || !/^[a-z][a-z0-9-]*$/.test(feature.id)) throw new Error(`Object ${owner}: invalid attached feature ID`);
+    if (seen.has(feature.id)) throw new Error(`Object ${owner}: duplicate attached feature ${feature.id}`);
+    seen.add(feature.id);
+    if (feature.role !== 'service' && feature.role !== 'sign') throw new Error(`Object ${owner}: feature ${feature.id} has an unknown role`);
+    if (!feature.offset || !Number.isFinite(feature.offset.x) || !Number.isFinite(feature.offset.y)) throw new Error(`Object ${owner}: feature ${feature.id} needs a finite offset`);
+    if (feature.label !== undefined && (typeof feature.label !== 'string' || feature.label.length > 160)) throw new Error(`Object ${owner}: feature ${feature.id} label must be at most 160 characters`);
+  }
+}
+
 /** Resolve a placement's local attached features against one concrete footprint. IDs stay
  * stable, offsets stay finite and unique; bounds are reported by `validateMap`. */
 export function resolveFeatures(features: readonly AttachedFeature[] | undefined, id: string, width: number, height: number, position: Vec, angle: number): readonly ResolvedFeature[] {
   if (features === undefined) return [];
-  if (!Array.isArray(features) || features.length > 8) throw new Error(`Object ${id}: expected at most 8 attached features`);
-  const seen = new Set<string>();
+  validateFeatureList(features, id);
   return features.map(feature => {
-    if (!feature || typeof feature.id !== 'string' || feature.id.length > 60 || !/^[a-z][a-z0-9-]*$/.test(feature.id)) throw new Error(`Object ${id}: invalid attached feature ID`);
-    if (seen.has(feature.id)) throw new Error(`Object ${id}: duplicate attached feature ${feature.id}`);
-    seen.add(feature.id);
-    if (feature.role !== 'service' && feature.role !== 'sign') throw new Error(`Object ${id}: feature ${feature.id} has an unknown role`);
-    if (!feature.offset || !Number.isFinite(feature.offset.x) || !Number.isFinite(feature.offset.y)) throw new Error(`Object ${id}: feature ${feature.id} needs a finite offset`);
-    if (feature.label !== undefined && (typeof feature.label !== 'string' || feature.label.length > 160)) throw new Error(`Object ${id}: feature ${feature.id} label must be at most 160 characters`);
     const local = vec(feature.offset.x * width, feature.offset.y * height), cos = Math.cos(angle), sin = Math.sin(angle);
     return {
       id: feature.id, role: feature.role, offset: { x: feature.offset.x, y: feature.offset.y },

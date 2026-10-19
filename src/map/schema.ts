@@ -41,7 +41,7 @@ export type MapDocument = {
   beach: {
     shore: string[]; left: number; right: number; top: number;
     promenade: Owned & { left: number; right: number; top: number; bottom: number; entries: number[]; southEntries: number[] };
-    hotels: (Placement & { floors: number; width?: number; height?: number; type?: string; features?: readonly AttachedFeature[] })[];
+    hotels: (Placement & { floors: number; width?: number; height?: number; type?: string; artworkScale?: number; features?: readonly AttachedFeature[] })[];
     towers: (Owned & { position: Vec })[];
     sets: (Owned & { position: Vec })[];
     castles: (Owned & { position: Vec })[];
@@ -143,13 +143,14 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
   if ((prom.right as number) - (prom.left as number) < 10 || (prom.bottom as number) - (prom.top as number) < 2) fail('promenade', 'invalid dimensions');
   for (const key of ['entries', 'southEntries']) { const xs = list(prom[key], `promenade.${key}`, 1, 30); xs.forEach((x, i) => { num(x, key, (prom.left as number) + 2.4, (prom.right as number) - 2.4); if (i && (x as number) - (xs[i - 1] as number) < 4.8) fail(key, 'entries must be ordered with 4.8 m spacing'); }); }
   for (const v of list(beach.hotels, 'hotels', 1, 30)) {
-    const p = placement(v, 'hotel', ['floors'], ['width', 'height', 'type', 'features']);
+    const p = placement(v, 'hotel', ['floors'], ['width', 'height', 'type', 'artworkScale', 'features']);
     num(p.floors, 'hotel.floors', 1, 50);
     if (p.type !== undefined) kindOf(p.type, 'hotel.type', 'building');
     if (p.width === undefined && p.type === undefined) fail('hotel', 'hotels need an explicit width or a catalogue type');
     if ((p.width === undefined) !== (p.height === undefined)) fail('hotel', 'declare width and height together');
     if (p.width !== undefined) num(p.width, 'hotel.width', 1, 100);
     if (p.height !== undefined) num(p.height, 'hotel.height', 1, 100);
+    if (p.artworkScale !== undefined) num(p.artworkScale, 'hotel.artworkScale', 0.01, 100);
     if (p.features !== undefined) features(p.features, 'hotel.features');
   }
   for (const key of ['towers', 'sets', 'castles']) for (const v of list(beach[key], key, 0, 100)) { const p = object(v, ['id', 'owner', 'position'], key); owned(p, key); point(p.position, key); }

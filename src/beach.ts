@@ -60,7 +60,7 @@ const BEACH_HOTELS = document.beach.hotels.map(hotel => {
   // When the map compiler already resolved this placement, reuse that detached object
   // instead of compiling the hotel a second time.
   const type = hotel.type ?? 'hotel';
-  const object = compiledObjects?.[hotel.id] ?? compileObjectPlacement({ id: hotel.id, type, position: hotel.position, angle: 0, width: hotel.width, height: hotel.height, features: hotel.features }, catalogue);
+  const object = compiledObjects?.[hotel.id] ?? compileObjectPlacement({ id: hotel.id, type, position: hotel.position, angle: 0, width: hotel.width, height: hotel.height, artworkScale: hotel.artworkScale, features: hotel.features }, catalogue);
   return { ...structuredClone(hotel), width: object.width, height: object.height, artwork: object.artwork, presentation: object.presentation, features: object.features };
 });
 const LIFEGUARD_TOWERS = document.beach.towers.map(t => ({ ...t.position }));

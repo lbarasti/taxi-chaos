@@ -72,12 +72,13 @@ try {
 
   const report = entries.filter(entry => !only || entry.id === only).map(entry => {
     const legacy = legacyById.get(entry.id);
+    const object = objectRecords.find(record => record.id === entry.id);
     const measured = measurements.get(entry.png);
     return {
       id: entry.id, png: entry.png, layer: legacy?.layer ?? 'structure',
       source: measured ? { width: measured.width, height: measured.height } : null,
       padding: measured?.padding ?? null,
-      crop: override && entry.id === only ? sources[entry.id].crop : legacy?.crop ?? measuredSources[entry.id]?.crop ?? null,
+      crop: override && entry.id === only ? sources[entry.id].crop : legacy?.crop ?? object?.crop ?? measuredSources[entry.id]?.crop ?? null,
       bounds: catalogue.structures[entry.id]?.bounds ?? defaultArtwork(entry.id)?.bounds ?? null,
     };
   });

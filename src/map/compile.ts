@@ -14,7 +14,7 @@ import { revision } from './serialization';
 export function resolveObjectPlacements(document: MapDocument, catalogue: ObjectCatalogue): Record<string, CompiledObject> {
   const objects: Record<string, CompiledObject> = {};
   for (const p of document.countryProps) if (p.type) objects[p.id] = compileObjectPlacement({ id: p.id, type: p.type, position: p.position, angle: p.angle, width: p.width, height: p.height, artworkScale: p.artworkScale, features: p.features }, catalogue);
-  for (const hotel of document.beach.hotels) objects[hotel.id] = compileObjectPlacement({ id: hotel.id, type: hotel.type ?? 'hotel', position: hotel.position, width: hotel.width, height: hotel.height, features: hotel.features }, catalogue);
+  for (const hotel of document.beach.hotels) objects[hotel.id] = compileObjectPlacement({ id: hotel.id, type: hotel.type ?? 'hotel', position: hotel.position, width: hotel.width, height: hotel.height, artworkScale: hotel.artworkScale, features: hotel.features }, catalogue);
   return objects;
 }
 

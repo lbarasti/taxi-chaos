@@ -2,11 +2,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { vec, type Vec } from '../physics';
-import { propArtwork, asphaltArtwork } from '../artwork/catalogue';
+import { propArtwork, asphaltArtwork, objectDefinitions } from '../artwork/catalogue';
 import { buildingDefinitions } from '../buildings';
 import { artworkRecords, objectRecords } from './content';
 import { compileArtworkCatalogue, compileBuildingCatalogue, compileObjectCatalogue, compileObjectPlacement, compilePlacement, deriveArtwork } from './compile';
 import { inlineEntries } from './generate';
+import { artworkInline } from './generated';
 import { measureArtworkSources } from './png';
 import type { ArtworkRecord, BuildingCatalogue, BuildingSign, ObjectRecord } from './schema';
 
@@ -41,6 +42,21 @@ describe('shared catalogue compiler', () => {
     expect(building.artwork?.bounds.x).toBeCloseTo(-building.artwork!.bounds.width / 2);
     expect(building.artwork?.bounds.y).toBeCloseTo(-9);
     expect(objectRecords.some(record => (record.id as string) === 'clinic')).toBe(false);
+  });
+
+  it('translates an offset silhouette and its light blocker with the art bounds', () => {
+    // A nonzero, asymmetric art offset must move the drawing rectangle, the shadow
+    // silhouette and the shared light blocker together: a silhouette left at the origin
+    // would report a shadow that no longer sits over its sprite.
+    const offset: ObjectRecord = { ...clinic(), artwork: { fit: 'stretch', width: 1, height: 1, offset: { x: 0.25, y: -0.1 }, outline: 'bounds', occluder: true } };
+    const art = deriveArtwork(compileObjectCatalogue([offset], sourcesFor([offset])).clinic.artwork![0], 20, 18);
+    expect(art.bounds).toEqual({ x: -5, y: -10.8, width: 20, height: 18 });
+    const centre = (points: readonly Vec[]) => points.reduce((sum, p) => vec(sum.x + p.x / points.length, sum.y + p.y / points.length), vec());
+    expect(centre(art.silhouette).x).toBeCloseTo(5);
+    expect(centre(art.silhouette).y).toBeCloseTo(-1.8);
+    expect(art.occluder).toBe(art.silhouette);
+    // The outline keeps its authored extent; only its centre moves.
+    expect(art.silhouette[0]).toEqual(vec(-5, -10.8));
   });
 
   it('fits artwork to the footprint by default and stretches or offsets it only when declared', () => {
@@ -225,9 +241,11 @@ describe('shared catalogue compiler', () => {
     expect(buildingDefinitions.hospital.presentation).toEqual({ fallback: 'wards', sign: { width: 14, inset: 1.4, size: 0.9, color: '#f0dfae' } });
     expect(buildingDefinitions.condo.presentation).toMatchObject({ frontage: 'RESIDENTS ONLY' });
     expect(buildingDefinitions.hotel.presentation).toMatchObject({ frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE' });
-    expect(artworkRecords.map(record => record.id)).toEqual(['shop-tar', 'shop-rust', 'shop-concrete', 'tree-worn', 'asphalt']);
-    expect(objectRecords.map(record => record.id)).toEqual(['shop', 'commercial', 'landmark', 'hospital', 'condo', 'hotel', 'tree', 'crate', 'shipping-crate']);
-    expect(Object.keys(buildingDefinitions)).toEqual(['shop', 'commercial', 'landmark', 'hospital', 'condo', 'hotel']);
+    // Inventory is derived from the authored records and the generated manifest, so a new
+    // record or PNG needs no test edit. The concrete art regressions above stay.
+    expect(Object.keys(artworkInline)).toEqual(inlineEntries(artworkRecords, objectRecords).map(entry => entry.id));
+    expect(Object.keys(objectDefinitions)).toEqual(objectRecords.map(record => record.id));
+    expect(Object.keys(buildingDefinitions)).toEqual(objectRecords.filter(record => record.kind === 'building').map(record => record.id));
   });
 
   it('compiles a non-building placement generically and rejects it through the building compiler', () => {

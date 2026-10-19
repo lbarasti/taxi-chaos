@@ -46,7 +46,8 @@ by Lorenzo for the Ocean Walk condos. It is embedded unchanged; only transparent
 export padding is cropped at draw time. The same asset appears at two beachfront
 plots, with a procedural building fallback if image decoding fails.
 
-`map/crate-shipping.png` and `map/bakery-front.png` are original pixel art created
-for Taxi Chaos (simple generated artwork, no third-party source) for the shared
-catalogue's representative crate and bakery building records. Both are small,
-fully opaque sprites bundled inline with the other map artwork.
+`map/crate-shipping.png`, `map/bakery-front.png` and `map/palm-canopy.png` are original
+pixel art created for Taxi Chaos (simple generated artwork, no third-party source) for the
+shared catalogue's representative crate, bakery building and typed palm records. All are
+small sprites bundled inline with the other map artwork; the palm keeps a transparent
+background, and transparent export padding is cropped at draw time.

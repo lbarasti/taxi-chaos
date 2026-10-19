@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ArtworkImages } from './images';
 import { propArtwork } from './catalogue';
+import { artworkInline } from '../catalogue/generated';
 
 const bounds = { x: -12, y: -12, width: 264, height: 264 };
+/** Manifest order is the load order, so derive each sprite's slot instead of hardcoding
+ * an index that a new record would silently shift. */
+const inlineIds = Object.keys(artworkInline);
+const indexOf = (id: string) => inlineIds.indexOf(id);
 function canvasContext() {
   const pattern = { setTransform: vi.fn() };
   const calls = { createPattern: vi.fn((): typeof pattern | null => pattern), save: vi.fn(), restore: vi.fn(), fillRect: vi.fn(), drawImage: vi.fn(), rotate: vi.fn() };
@@ -38,10 +43,10 @@ describe('artwork image caching', () => {
     const loading = art.load();
     expect(art.load()).toBe(loading);
     await loading;
-    expect(images).toHaveLength(8);
+    expect(images).toHaveLength(inlineIds.length);
     expect(createElement).toHaveBeenCalledExactlyOnceWith('canvas');
     expect(tile).toMatchObject({ width: 768, height: 384 });
-    expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[4], 0, 0);
+    expect(raster.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[indexOf('asphalt')], 0, 0);
     for (let frame = 0; frame < 30; frame++) art.ground(main.ctx, bounds);
     // Passing the live SVG image here regresses the entire GPU world/lighting compositor.
     expect(main.calls.createPattern).toHaveBeenCalledExactlyOnceWith(tile, 'repeat');
@@ -80,7 +85,7 @@ describe('artwork image caching', () => {
     await art.load();
     expect(art.has('shop-rust')).toBe(true);
     expect(art.draw(main.ctx, propArtwork['shop-rust'])).toBe(true);
-    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[1], -5.3, -5.3, 10.6, 10.6);
+    expect(main.calls.drawImage).toHaveBeenCalledExactlyOnceWith(images[indexOf('shop-rust')], -5.3, -5.3, 10.6, 10.6);
     expect(main.calls.rotate).toHaveBeenCalledExactlyOnceWith(0);
   });
 
@@ -105,7 +110,7 @@ describe('artwork image caching', () => {
     await art.load();
     expect(art.draw(main.ctx, propArtwork.hospital)).toBe(true);
     const args = main.calls.drawImage.mock.calls[0];
-    expect(args.slice(0, 5)).toEqual([images[5], 33, 16, 726, 1951]);
+    expect(args.slice(0, 5)).toEqual([images[indexOf('hospital')], 33, 16, 726, 1951]);
     expect(args[5]).toBeCloseTo(-13.3);
     expect(args[6]).toBeCloseTo(-33.3);
     expect(args[7]).toBeCloseTo(26.6);

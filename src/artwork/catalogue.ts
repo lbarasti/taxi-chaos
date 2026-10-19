@@ -1,7 +1,7 @@
 import { vec, type Vec } from '../physics';
 import { artworkRecords, objectRecords } from '../catalogue/content';
 import { artworkSources } from '../catalogue/generated';
-import { appearanceSeed, compileArtworkCatalogue, compileObjectCatalogue, deriveArtwork, scaleArtwork } from '../catalogue/compile';
+import { appearanceSeed, compileArtworkCatalogue, compileObjectCatalogue, deepFreeze, deriveArtwork, scaleArtwork } from '../catalogue/compile';
 import type { ArtBounds, ObjectCatalogue, PropArtwork } from '../catalogue/schema';
 
 export type { ArtBounds, PropArtwork } from '../catalogue/schema';
@@ -34,10 +34,21 @@ const shops = [propArtwork['shop-tar'], propArtwork['shop-rust'], propArtwork['s
 
 /** Existing-behaviour tree artwork comes from the generic object compiler at the
  * prop's actual footprint, so resizing the body scales the canopy, shadow silhouette
- * and culling radius. The four deterministic orientations remain a kind mechanic. */
-function treeArtwork(w: number, h: number): PropArtwork | undefined {
+ * and culling radius. The four deterministic orientations remain a kind mechanic.
+ *
+ * Procedural city/countryside trees resolve this every frame. Cache the derived
+ * template on the prop's own body (a WeakMap, so lifetime is bounded by the world)
+ * and invalidate it only when that body's finite size changes. The cached geometry is
+ * deep-frozen, so a caller can never mutate another frame's canopy; no string cache and
+ * no shared mutable geometry: `deriveArtwork` still returns a detached outline. */
+const treeArtworkCache = new WeakMap<object, { width: number; height: number; artwork?: PropArtwork }>();
+function treeArtwork(body: object, w: number, h: number): PropArtwork | undefined {
+  const cached = treeArtworkCache.get(body);
+  if (cached && cached.width === w && cached.height === h) return cached.artwork;
   const template = objectDefinitions.tree?.artwork?.[0];
-  return template ? deriveArtwork(template, w, h, objectDefinitions.tree.artworkScale ?? 1) : undefined;
+  const artwork = template ? deepFreeze(deriveArtwork(template, w, h, objectDefinitions.tree.artworkScale ?? 1)) : undefined;
+  treeArtworkCache.set(body, { width: w, height: h, artwork });
+  return artwork;
 }
 
 export function artworkFor(prop: ArtProp): PropArtwork | undefined {
@@ -51,7 +62,7 @@ export function artworkFor(prop: ArtProp): PropArtwork | undefined {
   const seed = appearanceSeed(prop.sourceId ?? String(prop.id ?? `${p.x},${p.y}`));
   if (prop.kind === 'building' && w === 10 && h === 10) return shops[seed % shops.length];
   if (prop.kind === 'tree') {
-    const art = treeArtwork(w, h);
+    const art = treeArtwork(prop.body, w, h);
     return art && { ...art, rotation: rotation(seed) };
   }
 }

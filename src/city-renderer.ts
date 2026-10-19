@@ -7,11 +7,19 @@ import { artworkImages } from './artwork/images';
  * stretching shop sprites (which would also enlarge doors, vents and skylights). */
 export function drawCityBuilding(r: Renderer, prop: Prop, shadow: Vec, shadowAlpha: number): boolean {
   const building = prop.building;
-  if (!building || building.presentation.fallback === 'shop' && building.width === 10 && building.height === 10) return false;
-  const c = r.ctx, w = building.width, h = building.height;
+  // City buildings carry `prop.building`; a typed non-city building carries the same
+  // presentation through the shared catalogue. Either way the authored `fallback` picks
+  // the silhouette, so a country `wards` or `terraced` type reads like its declared shape
+  // instead of the generic small-shop pass.
+  const presentation = building?.presentation ?? (prop.kind === 'building' ? prop.presentation : undefined);
+  if (!presentation) return false;
+  const c = r.ctx, w = building?.width ?? prop.body.w, h = building?.height ?? prop.body.h;
   const left = -w / 2, top = -h / 2 - 0.6, right = w / 2, bottom = h / 2;
-  const landmark = building.presentation.fallback === 'terraced' && w >= 10 && h >= 12, wards = building.presentation.fallback === 'wards' && w >= 10 && h >= 12;
-  const sign = building.presentation.sign;
+  // The small-shop fallback keeps its own drawing pass: city 10 m shops and every typed
+  // non-city shop-fallback building. Other fallbacks reuse this generic renderer.
+  if (presentation.fallback === 'shop' && (!building || w === 10 && h === 10)) return false;
+  const landmark = presentation.fallback === 'terraced' && w >= 10 && h >= 12, wards = presentation.fallback === 'wards' && w >= 10 && h >= 12;
+  const sign = presentation.sign;
   c.save(); c.globalAlpha *= shadowAlpha;
   r.rect(left + shadow.x + 0.8, top + shadow.y + 1.3, w + 0.5, h + 0.5, '#13212880'); c.restore();
   c.save(); c.beginPath(); c.rect(left - 0.25, top, w + 0.25, h + 0.6); c.clip();
