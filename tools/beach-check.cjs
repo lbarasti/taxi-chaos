@@ -2,6 +2,7 @@
 const {chromium}=require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const fs=require('node:fs'), assert=require('node:assert/strict'), path=require('node:path');
 const root=path.resolve(__dirname,'..');
+const screenshotRoot=process.env.SCREENSHOT_DIR || path.join(root,'scenario-runs/beach');
 (async()=>{
 const browser=await chromium.launch({...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {}),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
 const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
@@ -9,9 +10,9 @@ await page.addInitScript(()=>{window.requestAnimationFrame=()=>1;});
 const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
 await page.goto('file://'+root+'/dist/index.html?debug=1');await page.waitForFunction(()=>!!window.__taxi);
 await page.context().setOffline(true);await page.reload();await page.waitForFunction(()=>!!window.__taxi);
-fs.mkdirSync(root+'/docs/screenshots/beach',{recursive:true});
+fs.mkdirSync(screenshotRoot,{recursive:true});
 const setup=async(name,hour=14)=>page.evaluate(({name,hour})=>{__taxi.scenario(name);__taxi.dayNight({hour,frozen:true});__taxi.close();document.querySelector('#debug-panel').hidden=true;__taxi.step(0);}, {name,hour});
-const snap=async name=>page.screenshot({path:root+'/docs/screenshots/beach/'+name+'.png'});
+const snap=async name=>page.screenshot({path:path.join(screenshotRoot,name+'.png')});
 const step=async(seconds,keys=[])=>page.evaluate(({seconds,keys})=>__taxi.step(seconds,keys),{seconds,keys});
 await setup('beach');await snap('beach');
 const speeds={};

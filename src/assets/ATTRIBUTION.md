@@ -22,16 +22,24 @@ accessible from the game's welcome/pause settings.
 `map/shop-tar.png`, `map/shop-rust.png`, `map/shop-concrete.png`, and
 `map/tree-worn.png` were generated for Taxi Chaos with OpenAI's built-in image
 generation tool, using a user-supplied urban scene as a style reference. Prompt
-specifications are in `docs/map-artwork-prompts.md`. Transparent sprites are trimmed
-and resized for gameplay. `map/asphalt.svg` is original vector surface detail.
+direction was straight orthographic overhead, muted weathered materials, blank
+runtime sign panels and no baked cast shadows. The three roofs use patched tar,
+rusted corrugated metal and aged concrete; the tree uses an irregular olive/sage
+canopy. Transparent export margins were trimmed and sprites resized to 256 px
+roofs and a 192 px tree. Exact original prompts remain in Git history.
+`map/asphalt.svg` is original vector surface detail.
 These assets require no external fonts, images or runtime services.
 
 `map/hospital-structure.png` adapts the user-supplied
 `hospital-structure-v2.png` for the two-block Midtown Hospital. OpenAI's built-in
 image-generation tool extended the roof vertically and retained its weathered
 concrete, skylights, pipes and teal helipad. The original upload remains unchanged.
-The adaptation prompt and sprite alignment are recorded in
-`docs/hospital-artwork.md`. The PNG is bundled inline with a procedural fallback.
+The adaptation requested a 26:66 footprint by adding matching roof sections,
+preserving the circular helipad rather than stretching it, removing the red
+cutout fringe and leaving a transparent background without external cast shadows.
+Exact original prompts remain in Git history; current crop, metre bounds and
+light outline are defined in `src/artwork/catalogue.ts`. The PNG is bundled
+inline with a procedural fallback.
 
 `map/luxury-condo.png` is the original straight-overhead transparent PNG supplied
 by Lorenzo for the Ocean Walk condos. It is embedded unchanged; only transparent

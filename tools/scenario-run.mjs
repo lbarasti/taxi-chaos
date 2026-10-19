@@ -9,7 +9,7 @@ import { chromium } from 'playwright';
 
 const help = `Run stateful gameplay scenarios and capture the actual app as PNGs.
 
-Usage: npm run scenario:run -- --scenario docs/scenarios/open-shore.json [options]
+Usage: npm run scenario:run -- --scenario src/scenarios/fixtures/open-shore.json [options]
        node tools/scenario-run.mjs --stdin [options] < commands.jsonl
 
   --scenario PATH  Version 1 JSON scenario (one persistent game, ordered steps)
@@ -22,9 +22,42 @@ Usage: npm run scenario:run -- --scenario docs/scenarios/open-shore.json [option
   --touch          Touch/mobile media queries
   --help           Show this help
 
-Commands: facts, advance, place, step, mode, route, pickup, deliver, read,
-ordinary, abandon, reload, photo, sleep, submit, publish, expect, capture.
-Use --list and docs/scenario-cli.md for the JSON format and complete examples.
+Scenario format:
+  { "version": 1, "name": "Frontage", "options": { "traffic": "quiet", "noPolice": true },
+    "steps": [ { "op": "advance", "event": "cafe-boarded" },
+               { "op": "place", "at": "garden-cafe" }, { "op": "photo" },
+               { "op": "expect", "path": "materialIds", "includes": "cafe-photo" } ] }
+Examples: src/scenarios/fixtures/{open-shore,missed-cafe,tenant-hearing}.json
+Use --list for valid IDs. Every command accepts an optional label.
+
+Commands and fields (each object starts with "op"):
+  facts     facts: { flags: {id: boolean}, choices: {group: id}, cash, heat, health }
+            Inject hypotheses; cannot grant sources or overwrite committed choices.
+  advance   Exactly one of minutes, to: {day, hour?, minute?}, or event: id.
+            Resolves intervening calendar events without physics. No backwards time.
+  place     at: stop-id | "pickup" | "dropoff" | "garage" | "newsroom" | {x,y}; angle?
+  step      seconds (0-30), keys?: ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft", ...]
+            Real 120 Hz physics; keys are cleared after this command.
+  mode      mode: intro | playing | paused | garage | arrested | wasted
+  route     mission: id; routes an eligible pickup without committing its choice.
+  pickup    Fixture placement at the routed pickup, then real acceptance updates.
+  deliver   Fixture placement at the aboard destination, then real delivery updates.
+  read      Reveal and retain active dialogue; no invented travel beats.
+  ordinary  Ask for an ordinary fare; abandon an aboard ride explicitly first.
+  abandon   Abandon the ride through its normal lifecycle.
+  reload    Serialize and validate the save, then reconstruct the isolated game.
+  photo     observation?: id; collect through real proximity, speed and scene gates.
+  sleep     Use safe Pit Stop sleep; place at garage and set paused first.
+  submit    material: id; requires the possessed source and newsroom proximity.
+  publish   allegation: id; editorial approval still waits for the edition to print.
+  expect    path: dotted snapshot field; exactly one of equals, includes, length,
+            exists, gte, lte. Object/array comparisons use deep equality.
+  capture   name: unique lowercase filename stem; view?: world|story|texts|notebook|pause,
+            panelOnly?: boolean (panel views only), focus?: site-id|actor, zoom?: 5-24.
+route, photo, sleep, submit and publish may use expected:false for a rejected action;
+invalid IDs still fail. pickup/deliver/place are fixture placement, not evidence of
+a physically driven route. Use step with driving keys for that.
+Limits: 500 commands, 120 total physics seconds; advance handles longer calendar waits.
 
 PNG mode uses one isolated headless Chromium context with normal saves disabled.
 Install once: npx playwright install chromium

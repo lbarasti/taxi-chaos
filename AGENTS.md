@@ -4,6 +4,21 @@ The user gave standing authorization on 2026-10-10 to raise pull requests for re
 
 Complete the requested implementation, run appropriate tests and the production build, and open a PR with a clear description and relevant screenshots. Follow the user's current instructions for any subsequent merge or deployment.
 
+## Documentation policy
+
+`docs/DECISIONS.md` is the only file under `docs/`. Treat it as a historical
+decision log: append an entry only when a task introduces or supersedes a
+consequential architectural, product or operational decision. Preserve previous
+entries and identify superseded decisions explicitly. Routine fixes, refactors,
+implementation details and test results do not require a log update.
+
+Do not create feature notes, plans, changelogs or replacement documentation files
+elsewhere unless the user explicitly requests them. Update existing README
+workflows, HOW_TO player instructions or asset attribution only when the task
+changes that information. Keep validation results and review screenshots in the
+PR or ignored artifact directories; browser captures default to `scenario-runs/`.
+Keep executable examples and fixtures beside their tools or tests.
+
 ## Current principles
 
 1. **Keep delivery standalone and offline.** Taxi Chaos is a frontend-only TypeScript and Canvas game, built as one self-contained HTML artifact with embedded scripts, styles, fonts and sound. Avoid external runtime requests and preserve asset attribution and licences.

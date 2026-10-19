@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdir, readFile } from 'node:fs/promises';
 import { openGame, waitForDrawer, tapToConfirm } from './helpers/drawer.mjs';
-const output = process.env.SCREENSHOT_DIR || 'docs/screenshots/start-pause';
+const output = process.env.SCREENSHOT_DIR || 'scenario-runs/start-pause';
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
 const problems = { errors: [], requests: [] };
