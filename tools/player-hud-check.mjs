@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const output = process.env.SCREENSHOT_DIR ?? path.join(root, 'docs/screenshots/minimal-player-hud');
+const output = process.env.SCREENSHOT_DIR ?? path.join(root, 'scenario-runs/minimal-player-hud');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const errors = [], externalRequests = [];
 async function screenshot(page, name, prefix = '') {

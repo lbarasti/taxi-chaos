@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { ScenarioRunner, parseCommand, parseScenario } from './runner';
 import { dayMinute } from '../campaign/clock';
 
-const example = (name: string) => parseScenario(JSON.parse(readFileSync(new URL(`../../docs/scenarios/${name}.json`, import.meta.url), 'utf8')));
+const example = (name: string) => parseScenario(JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), 'utf8')));
 const pass = (runner: ScenarioRunner, command: unknown) => {
   const reply = runner.execute(command);
   expect(reply.status, reply.error).toBe('passed');

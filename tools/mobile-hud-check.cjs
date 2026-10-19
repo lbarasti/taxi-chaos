@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');const path=require('node:path');
 const playwrightPath=process.env.PLAYWRIGHT_PATH || (process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright') : 'playwright');
 const{chromium}=require(playwrightPath);
 const root=path.resolve(__dirname,'..');
-const screenshotRoot=process.env.SCREENSHOT_DIR || path.join(root,'docs/screenshots/mobile-controls');
+const screenshotRoot=process.env.SCREENSHOT_DIR || path.join(root,'scenario-runs/mobile-controls');
 (async()=>{
 require('node:fs').mkdirSync(screenshotRoot,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,headless:true,args:['--no-sandbox']});

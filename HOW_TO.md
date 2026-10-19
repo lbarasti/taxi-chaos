@@ -24,7 +24,7 @@ On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/
 
 Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to the **green ring** for base pay plus possible time and comfort tips. A late delivery can still be completed; the timer affects the bonus, not whether you get paid. Drifts and near-misses earn small skill bonuses, and nitro recharges automatically.
 
-You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Wallet, upgrades, and completed-job progress persist between runs. The pause menu's **Shift stats** shows earnings, completed jobs, smashed objects, and pedestrian fatalities.
+You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Upgrades belong to the individual vehicle: repairs preserve them, another vehicle has its own levels, and explosion or sinking destroys them. Wallet and completed-job progress persist between runs, along with upgrades on surviving invested vehicles. The pause menu's **Shift stats** shows earnings, completed jobs, smashed objects, and pedestrian fatalities.
 
 ### Open Shore, texts and your notebook
 
@@ -49,8 +49,12 @@ Route to the newsroom at **Old Town South**, stop nearby and leave selected
 copies from the notebook. Source checks take **three game hours** and need
 independent material. Return to ask Ruth to run a ready story in the next
 **06:00 edition**. Publication and later public responses are separate; originals
-remain in the notebook. The last edition is **Day 14 at 06:00**. See the
-[campaign guide](docs/open-shore.md) for the calendar and editor workflow.
+remain in the notebook. The last edition is **Day 14 at 06:00**. The newsroom
+shortcut opens its panel; routing is an explicit action inside it. Sources are
+grouped into To submit, Being checked and Checked sources. General notes stay
+in the notebook. Near an eligible observation site, activate the camera shortcut
+to collect the scene deliberately; seeing it alone adds no record. The calendar
+continues through fourteen nights, ending on Day 15 at 07:00.
 
 ## Explore the city
 
@@ -75,8 +79,8 @@ covers the map.
 
 The **shortcut menu** is separate from the map. The dispatcher button routes the
 next fare or hides fare guidance, the speech bubble opens your texts, and the
-newspaper routes to the newsroom. On a desktop the shortcuts sit on the right
-edge; in a narrow desktop window (about 701–1100 px wide) they move just to the
+newspaper opens the newsroom panel, where you can choose a route. On a desktop
+the shortcuts sit on the right edge; in a narrow desktop window (about 701–1100 px wide) they move just to the
 right of the map instead, clear of the right-hand conversation; on a portrait
 phone they stack on the left above BOOST and DRIFT; on a landscape phone they
 form a row across the top centre, shrinking the map so the two never overlap.
@@ -87,11 +91,17 @@ again to route the fare. Hiding guidance does not cancel a booking or prevent a
 physical pickup. Pressing it while the newsroom is routed clears that guidance
 and returns to the fare.
 
-- **Eastern bridges and highlands:** take the northern crossing to Pine Woods or the southern crossing to Eagle Highlands. Curved roads connect Pine Junction, Fern Hollow, Highland Lodge, and Eagle Lookout. F2 → **Eastern bridges / highlands** starts at Pine Bridge with a delivery to Eagle Lookout. See [screenshots and map notes](docs/eastern-highlands.md).
-- **Woodland villas and Fairway Country Club:** explore the southern loop through Millionaires Row, Woodland Estates, and Cedar Woods, with private villa drives and a golf club. F2 → **Woodland villas / golf club** starts in Woodland Estates with a passenger for Fairway Club. See the [map overview](docs/woodland-estates.md).
-- **Sunset Beach and Ocean Walk:** head to the southern waterfront for soft sand, breakable beach furniture, and a promenade between the beach and hotels. Road tyres lose traction in sand; the beach patrol pickup has off-road tyres. F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or **Ocean Walk / hotel promenade**. See the [beach guide](docs/beach.md).
-- **Northstar Harbour:** press **H** to navigate to security. Pay while in a car and out of police sight to enter and exchange your vehicle for a healthy one, clearing police heat. Wallet, upgrades, and any current fare carry over. F2 → **Northstar Harbour / car exchange**. See the [harbour guide](docs/harbour.md).
-- **Commercial traffic:** delivery vans, flatbeds, freight trucks, and fuel trucks share the roads as NPCs. F2 → **Vans / freight traffic** or **Flammable cargo / impact**. See the [vehicle guide](docs/vehicles.md).
+- **Eastern bridges and highlands:** take the northern crossing to Pine Woods or the southern crossing to Eagle Highlands. Curved roads connect Pine Junction, Fern Hollow, Highland Lodge, and Eagle Lookout. F2 → **Eastern bridges / highlands** starts at Pine Bridge with a delivery to Eagle Lookout.
+- **Woodland villas and Fairway Country Club:** explore the southern loop through Millionaires Row, Woodland Estates, and Cedar Woods, with private villa drives and a golf club. F2 → **Woodland villas / golf club** starts in Woodland Estates with a passenger for Fairway Club.
+- **Sunset Beach and Ocean Walk:** head to the southern waterfront for soft sand, breakable beach furniture, and a promenade between the beach and hotels. Road tyres lose traction in sand; the beach patrol pickup has off-road tyres. Promenade gaps admit pedestrians, while bollards block vehicles. Surf and pools can drown the actor or sink a vehicle. F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or **Ocean Walk / hotel promenade**.
+- **Northstar Harbour:** press **H** to navigate to security. In a healthy, non-burning car, stop out of police sight and pay **$75** with E or the mobile action. Follow cyan to **C-76**, drive fully inside and stay below 0.8 m/s for 2.5 seconds while concealed. The stock replacement clears police heat and retains your wallet and current fare; the exchanged car and its upgrades are no longer available. Another visit requires another payment. F2 → **Northstar Harbour / car exchange**.
+- **Commercial traffic:** delivery vans, flatbeds, freight trucks, and fuel trucks share the roads as NPCs. Fuel cargo can ignite and cause a larger chain explosion. These vehicles cannot be taken by the player. F2 → **Vans / freight traffic** or **Flammable cargo / impact**.
+
+A hard motorbike crash can separate the rider and bike. A healthy fallen bike
+must be lifted before mounting; lifting does not repair it. A badly damaged or
+burning bike cannot start. Use the nearby tow/repair action or find another ride.
+Moving exits preserve momentum and may injure the rider on landing; at rest,
+dismounting is immediate.
 
 ## Settings and sound
 

@@ -36,33 +36,105 @@ __taxi.vehicles();
 __taxi.realtime(); // restore interactive play after automation
 ```
 
-Other useful harness methods include `step`, `scenario`, `spawnVehicle`, `contacts`, `configure`, `upgrades`, `traffic`, `damageVehicle`, `repair`, `props`, `people`, `audio`, `sound`, `dayNight`, and `resetSave`. Map authoring and its browser/CLI API are documented in the [Map studio guide](docs/map-editor.md).
+Other useful harness methods include `step`, `scenario`, `spawnVehicle`, `contacts`, `configure`, `upgrades`, `traffic`, `damageVehicle`, `repair`, `props`, `people`, `audio`, `sound`, `dayNight`, and `resetSave`.
 
 Automated browser tests should use an isolated browser context, especially when working with shared browser sessions or saved progress. The test API supports deterministic stepping without wall-clock waits. `loadScenario(game, name)` in `src/lab.ts` is also available to Node tests without a DOM.
 
 After building, `node tools/text-messages-check.mjs` checks the inbox offline on desktop and three touch layouts, including date grouping, loading older texts, read tracking, live countdowns and expired pickups. Screenshots go to `scenario-runs/text-messages/`; pass a directory argument to choose another destination. Set `CHROMIUM_PATH` to use an existing Chromium installation.
 
+Browser checks write generated captures to ignored `scenario-runs/` directories.
+The splash, player HUD, mobile HUD and beach checks accept `SCREENSHOT_DIR` to
+override their destination. Attach relevant captures to the PR. Historical
+rationale belongs in [the decision log](docs/DECISIONS.md); routine changes need
+no decision entry or separate feature document.
+
 ## Map development
 
-[`src/map/default-map.json`](src/map/default-map.json) is the authored source for the shipped map. Validate it with `npm run map:check -- --input src/map/default-map.json --json`. Map studio drafts are in memory until exported; the [Map studio guide](docs/map-editor.md) covers editing, validation, preview, import/export, and CLI workflows.
+[`src/map/default-map.json`](src/map/default-map.json) is the authored source for
+the shipped map. Open **F2 → Map studio** to select geometry, edit positions,
+inspect findings, undo/redo, import/export and preview. Drafts stay in memory;
+export before reloading. Invalid geometry remains editable but blocks preview.
 
-To publish a reviewed map change, export the validated draft to `src/map/default-map.json`, run the map check, tests, and build, then open a pull request with any affected fixtures and documentation updated. Merging to `main` triggers the Pages deployment workflow.
+```sh
+npm run map:check -- --input src/map/default-map.json --json
+npm run map:check -- --input src/map/default-map.json \
+  --operations tools/examples/map-move-estates.json --output /tmp/taxi-map-moved.json --json
+```
+
+Operation output must name a new file. Take `baseRevision` from the current
+checker report after editing the baseline; examples are tied to their baseline.
+`tools/examples/map-invalid-road.json` demonstrates a rejected road placement.
+The checker exits 1 for structural errors or geometric errors, and may export a
+structurally valid draft that still needs repair. Invoke `node tools/map-check.mjs`
+directly for JSON stdout without npm's banner.
+
+Browser automation exposes `__taxi.map`: `open`, `snapshot`, `describe`, `apply`,
+`validate`, `undo`, `redo`, `import`, `export`, `preview`, `step`, `previewState`,
+`live`, `edit` and `close`. Apply batches as `{ baseRevision, operations }`;
+operation types are defined in [`src/map/operations.ts`](src/map/operations.ts).
+`preview({ spawnId: 'fairway-club' })` starts an isolated game; `edit()` discards
+it and `close()` restores the original game. `live()` restores realtime preview
+after fixed stepping.
+
+For city buildings, edit reusable types in [`src/buildings.ts`](src/buildings.ts)
+and placements/campuses in [`src/city-content.ts`](src/city-content.ts). A matching
+placement ID replaces one generated building; `replaceBlock` or campus ownership
+replaces whole blocks. Campus bounds derive street closures; relocate affected
+parking/traffic descriptors in the map. Declare resident homes and an exterior
+recovery entrance explicitly. [`src/buildings.test.ts`](src/buildings.test.ts)
+contains examples. Register new inline images in `src/artwork/images.ts`, their
+bounds and outlines in `src/artwork/catalogue.ts`, and provenance in asset attribution.
+
+To publish a reviewed map change, export the validated draft to `src/map/default-map.json`, run the map check, tests, and build, then open a pull request with affected fixtures updated. Merging to `main` triggers the Pages deployment workflow.
 
 ## Mission development
 
 The default story is **Open Shore**, an optional waterfront investigation across
 fourteen continuously advancing days. Its typed authored content lives in
-[`src/campaign/content.ts`](src/campaign/content.ts); see the
-[campaign guide](docs/open-shore.md) for mixed dispatch, timed world events, safe sleep and the notebook/editor workflow.
+[`src/campaign/content.ts`](src/campaign/content.ts); player instructions are in
+[HOW_TO.md](HOW_TO.md#open-shore-texts-and-your-notebook).
 It compiles through the same immutable, DOM-free mission engine as the original
 JSON catalogue in [`src/missions/catalogue.json`](src/missions/catalogue.json).
 Stops and cast
 metadata are in [`src/missions/stops.json`](src/missions/stops.json) and
 [`src/characters.json`](src/characters.json). New chapters, side quests,
 dialogue and characters need only config plus portrait assets — no game or view
-code. See the [mission authoring guide](docs/missions.md) for the schema,
-conditions, effects, choices, repeat/retry policies, stop validation and
-current-format progress validation.
+code. [`CampaignDefinition`](src/campaign/model.ts) defines world keys,
+materials, claims, operations, observations, scene layers and lifecycle handlers.
+Ride dialogue lives in `src/campaign/content-rides.ts`; presentation lives in
+`src/campaign/content-presentation.ts`. The independent Lantern Festival fixture
+in [`src/campaign/engine.test.ts`](src/campaign/engine.test.ts) demonstrates a
+campaign without Open Shore identities.
+
+For missions, use stable stop, character and dialogue IDs; `requires` controls
+availability, while `chapter` ranks offers. Declare repeat/retry policy and the
+pickup or completion boundary for choices and effects. Schema and executable
+examples are in [`src/missions/schema.ts`](src/missions/schema.ts),
+[`catalogue.json`](src/missions/catalogue.json) and the adjacent tests. Campaign
+content extends these with shared conditions/effects and chronological operations.
+Add portraits to `src/assets/characters/`, declare filenames in
+`src/portrait-manifest.json`, and metadata/attribution in `src/characters.json`.
+The eager inline registry supports SVG, PNG and JPEG; catalogue tests validate
+references and portrait framing without importing browser assets.
+
+### Stateful scenario checks
+
+```sh
+node tools/scenario-run.mjs --scenario src/scenarios/fixtures/open-shore.json --json
+npm run scenario:run -- --scenario src/scenarios/fixtures/open-shore.json
+node tools/scenario-run.mjs --stdin --json < commands.jsonl
+node tools/scenario-run.mjs --help
+```
+
+The same persistent game runs ordered commands headlessly or with actual-app
+PNG checkpoints. `--list` shows valid IDs; `--help` describes command fields and
+scenario format. Examples under `src/scenarios/fixtures/` cover the investigation,
+missed events and hearing outcomes and are exercised by the runner tests.
+`advance` skips calendar time without physics; `step` runs 120 Hz inputs.
+`place`, `pickup` and `deliver` use explicit fixture placement and cannot establish
+physical route clearance. Output goes to a new ignored `scenario-runs/` directory;
+`--output` must not already exist. JSON-lines input replies once per command and
+stops at the first failure. Run `npm run scenario:test` for CLI/browser parity.
 
 ### Dialogue PNG previews
 
