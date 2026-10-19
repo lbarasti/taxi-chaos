@@ -136,7 +136,7 @@ test('invalid selections fail loudly', () => {
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--resize', '0,16', '--json']).stderr, /positive W,H/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--artwork-scale', '0', '--json']).stderr, /--artwork-scale/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--type-size', '24', '--json']).stderr, /--type-size needs positive W,H/);
-  assert.match(run(['--input', example, '--entity', 'villa-cedar-house', '--artwork-scale', '2', '--json']).stderr, /--artwork-scale applies to a country prop or beach hotel/);
+  assert.match(run(['--input', example, '--entity', 'villa-cedar-house', '--artwork-scale', '2', '--json']).stderr, /--artwork-scale applies to a country prop or object/);
   assert.match(run(['--input', example, '--entity', 'villa-cedar-house', '--type-size', '2,2', '--json']).stderr, /--type-size needs an --entity with a catalogue type/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--drive-angle', '0']).stderr, /require --drive-from/);
   assert.match(run(['--input', example, '--entity', 'authoring-bakery', '--layout', 'nope']).stderr, /Unknown layout/);
@@ -399,7 +399,7 @@ test('map authoring automation applies typed placements and isolates previews', 
         closed: { active: api.previewState(), state: lab.state().lab },
       };
     });
-    assert.equal(result.opened, 3);
+    assert.equal(result.opened, 4);
     assert.ok(result.applied.includes('automation-bakery'));
     assert.equal(result.roundTrip.revision, true);
     assert.equal(result.roundTrip.valid, 0);

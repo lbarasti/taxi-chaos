@@ -77,7 +77,7 @@ export type ArtworkCatalogue = Readonly<{
  * vocabulary and one compiler serve both buildings and later beach/countryside props. */
 export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
 
-export type BuildingFallback = 'shop' | 'commercial' | 'terraced' | 'wards';
+export type BuildingFallback = 'shop' | 'commercial' | 'terraced' | 'wards' | 'resort';
 export type BuildingSign = Readonly<{
   width: number;
   inset: number;

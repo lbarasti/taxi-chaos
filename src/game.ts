@@ -444,7 +444,7 @@ export class Game {
     this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.');
   }
   walk(dt: number) {
-    const { inOcean } = this.map.coast, { inSand } = this.map.beach;
+    const { inOcean } = this.map.coast, { leavesTracks: inSand } = this.map.terrain;
     const tumbling = this.tumble;
     if (tumbling) {
       tumbling.elapsed += dt;
@@ -1053,7 +1053,7 @@ export class Game {
     return true;
   }
   update(dt: number) {
-    const { sandHandling, inSand } = this.map.beach, { inOcean } = this.map.coast;
+    const { handling: surfaceHandling, leavesTracks: inSand } = this.map.terrain, { inOcean } = this.map.coast;
     if (this.mode === 'wasted') { this.effects(dt); return; }
     if (this.mode !== 'playing') return;
     const campaignBucket = Math.floor(this.save.story.campaignSeconds / 5);
@@ -1095,7 +1095,7 @@ export class Game {
         v.dynamics.engineForce = (v.kind === 'police' ? this.rules.copEngine : v.baseEngine) * performance.engine *
           (v.model === 'motorcycle' && !motorcycleEngineWorks(v.damage) ? 0 : 1);
         v.dynamics.grip = v.baseGrip * performance.grip;
-        v.dynamics.surface = sandHandling(v.body, v.definition.physics.tyres, v.definition.terrain.sand);
+        v.dynamics.surface = surfaceHandling(v.body, v.definition.physics.tyres, v.definition.terrain);
         const forwardSpeed = rotate(v.body.velocity, -v.body.angle).x;
         const coasting = v.parked && (v.coastUntil ?? 0) > this.time;
         const controls = coasting ? { throttle: 0, turn: v.exitSteer ?? 0, handbrake: false }
@@ -1157,7 +1157,7 @@ export class Game {
     this.updateHarbour(dt); this.jobs(dt); this.law(dt); this.effects(dt); this.maintenance(dt);
   }
   private recordSandRuts() {
-    const { inSand } = this.map.beach;
+    const { leavesTracks: inSand } = this.map.terrain;
     if (this.onFoot || this.player.sinking || this.speed <= 0.8 || this.rutVehicleId !== this.player.id) {
       this.sandRuts = []; this.rutVehicleId = this.player.id;
       if (this.onFoot || this.player.sinking || this.speed <= 0.8) return;
@@ -1293,7 +1293,7 @@ export class Game {
     }
   }
   law(dt: number) {
-    const { roadNode } = this.world.navigation, { ROAD_NODES } = this.map.country, { inBeach } = this.map.beach;
+    const { roadNode } = this.world.navigation, { ROAD_NODES } = this.map.country, { areaAt: inAccessArea } = this.world.navigation.access;
     if (this.mode !== 'playing' || this.settings.noPolice) return;
     if (!this.onFoot && this.speed > 24) { this.speedingTime += dt; if (this.speedingTime > 2) this.crime(dt * 3); }
     else this.speedingTime = 0;
@@ -1301,7 +1301,7 @@ export class Game {
       const rules = difficulties[this.settings.difficulty], desired = Math.min(rules.maxPolice, this.stars + (this.settings.difficulty === 'chaos' ? 3 : 1));
       if (this.police.length < desired) {
         const p = this.actor.position, node = roadNode(p);
-        const candidates = (isCountry(p) && !inBeach(p) ? ROAD_NODES.filter(n => isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
+        const candidates = (isCountry(p) && !inAccessArea(p) ? ROAD_NODES.filter(n => isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
         const spawn = candidates[Math.floor(this.world.random() * candidates.length)] ?? vec(240, 240);
         const firstPatrol = this.police.length === 0;
         if (firstPatrol) this.policeIntel = { position: { ...p }, velocity: { ...this.actor.velocity }, seenAt: this.time };
@@ -1323,8 +1323,8 @@ export class Game {
     for (const s of this.skids) s.life -= dt; this.skids = this.skids.filter(s => s.life > 0).slice(-4500);
   }
   snapshot() {
-    const { inSand, onPromenade, sandHandling } = this.map.beach, { roadPath } = this.world.navigation;
-    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: inSand(this.actor.position) ? 'sand' : onPromenade(this.actor.position) ? 'promenade' : 'road', sandCoverage: sandHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain.sand).coverage, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
+    const { sample, handling: surfaceHandling } = this.map.terrain, { roadPath } = this.world.navigation;
+    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: sample(this.actor.position), sandCoverage: surfaceHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain).coverage, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
       health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, water: this.player.sinking ? this.player.sinking.pool ? 'pool' : 'ocean' : null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,

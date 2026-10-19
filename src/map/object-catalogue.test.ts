@@ -9,7 +9,6 @@ import { inlineEntries } from '../catalogue/generate';
 import { measureArtworkSources } from '../catalogue/png';
 import { objectKindRegistry, type ObjectCatalogue, type ObjectRecord } from '../catalogue/schema';
 import { World } from '../world';
-import { createBeach } from '../beach';
 import { compileMap } from './compile';
 import { copyDefaultMap } from './default';
 import { MapHistory } from './operations';
@@ -142,7 +141,7 @@ describe('generic object placements through map, world and render', () => {
     expect(() => compileMap(mismatch, catalogue)).toThrow(/catalogue type crate-png is crate, not rock/);
 
     const staleHotel = copyDefaultMap();
-    Object.assign(staleHotel.beach.hotels[0], { style: 'luxury-condo' });
+    Object.assign(staleHotel.objectPlacements[0], { style: 'luxury-condo' });
     expect(() => compileMap(staleHotel, catalogue)).toThrow(/expected fields/);
 
     const oldVersion = { ...copyDefaultMap(), schemaVersion: 2 } as unknown as ReturnType<typeof copyDefaultMap>;
@@ -338,10 +337,10 @@ describe('beach hotels use the shared catalogue', () => {
 
   it('uses the same injected catalogue for a custom beach hotel type', () => {
     const d = copyDefaultMap();
-    (d.beach.hotels.find(h => h.id === 'hotel-pacific-palm') as { type: string }).type = 'beach-lodge';
+    (d.objectPlacements.find(h => h.id === 'hotel-pacific-palm') as { type: string }).type = 'beach-lodge';
     const map = compileMap(d, catalogue);
     expect(map.objects['hotel-pacific-palm']).toMatchObject({ type: 'beach-lodge', width: 33, height: 11 });
-    expect(map.beach.BEACH_HOTELS.find(h => h.id === 'hotel-pacific-palm')?.presentation).toMatchObject({ frontage: 'LODGE' });
+    expect(map.objects['hotel-pacific-palm'].presentation).toMatchObject({ frontage: 'LODGE' });
     expect(validateMap(d, map).errors).toBe(0);
   });
 
@@ -355,26 +354,27 @@ describe('beach hotels use the shared catalogue', () => {
     const base = compileMap(copyDefaultMap(), catalogue);
     const baseline = base.objects['hotel-sandpiper'].artwork!.bounds.width;
     const scaled = copyDefaultMap();
-    (scaled.beach.hotels.find(h => h.id === 'hotel-sandpiper') as { artworkScale: number }).artworkScale = 1.5;
+    (scaled.objectPlacements.find(h => h.id === 'hotel-sandpiper') as { artworkScale: number }).artworkScale = 1.5;
     const map = compileMap(scaled, catalogue);
     // The drawing scales while the collision footprint stays at the resolved size.
     expect(map.objects['hotel-sandpiper'].artwork!.bounds.width).toBeCloseTo(baseline * 1.5);
     expect([map.objects['hotel-sandpiper'].width, map.objects['hotel-sandpiper'].height]).toEqual([base.objects['hotel-sandpiper'].width, base.objects['hotel-sandpiper'].height]);
     // The independent `createBeach` path (no precompiled objects) reads the same field.
-    expect(createBeach(scaled, catalogue).BEACH_HOTELS.find(h => h.id === 'hotel-sandpiper')!.artwork!.bounds.width).toBeCloseTo(baseline * 1.5);
+    expect(new World(map).props.find(h => h.sourceId === 'hotel-sandpiper')!.artwork!.bounds.width).toBeCloseTo(baseline * 1.5);
     // An atomic resize preserves the visual-only field.
     const history = new MapHistory(scaled, catalogue);
     history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'resize', targetId: 'hotel-sandpiper', width: 20, height: 10 }] });
-    expect(history.snapshot().document.beach.hotels.find(h => h.id === 'hotel-sandpiper')).toMatchObject({ width: 20, height: 10, artworkScale: 1.5 });
+    expect(history.snapshot().document.objectPlacements.find(h => h.id === 'hotel-sandpiper')).toMatchObject({ width: 20, height: 10, artworkScale: 1.5 });
     // The strict schema accepts the new optional field and still rejects a bad scale.
     const bad = copyDefaultMap();
-    (bad.beach.hotels[0] as { artworkScale: number }).artworkScale = 0;
-    expect(() => compileMap(bad, catalogue)).toThrow(/hotel.artworkScale/);
+    (bad.objectPlacements[0] as { artworkScale: number }).artworkScale = 0;
+    expect(() => compileMap(bad, catalogue)).toThrow(/objectPlacement.artworkScale/);
   });
 
   it('reuses the map compiler precompiled hotel objects instead of compiling them twice', () => {
     const map = compileMap(copyDefaultMap(), catalogue);
-    for (const hotel of map.document.beach.hotels) expect(map.beach.BEACH_HOTELS.find(h => h.id === hotel.id)!.artwork).toBe(map.objects[hotel.id].artwork);
+    const world=new World(map);
+    for (const placement of map.document.objectPlacements) expect(world.props.find(p=>p.sourceId===placement.id)!.artwork).toBe(map.objects[placement.id].artwork);
     // A standalone beach (the module singleton path) still compiles its own objects.
     expect(new World(compileMap(copyDefaultMap(), catalogue)).props.some(p => p.sourceId === 'hotel-sandpiper' && p.artwork?.image === 'condo')).toBe(true);
   });

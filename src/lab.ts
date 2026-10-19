@@ -243,7 +243,7 @@ function parked(game: Game, kind: Vehicle['kind'], x: number, y: number, angle: 
 
 /** Apply a scenario to a live Game. Returns the name so callers can chain/assert. */
 export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer): ScenarioName {
-  const { HIGHLAND_STOPS } = game.map.country, { BEACH_PICKUP } = game.map.beach;
+  const { HIGHLAND_STOPS } = game.map.country;
   prepare(game, name === 'woodland-estates');
   const player = game.player;
   switch (name) {
@@ -321,7 +321,7 @@ export function loadScenario(game: Game, name: ScenarioName, renderer?: Renderer
         player.alive = false; game.applyUpgrades();
       }
       pose(game, renderer, game.player, 64, 249, EAST, 6);
-      if (name === 'beach') game.spawnVehicle({ model: 'pickup', position: BEACH_PICKUP, parked: true, driverExited: true });
+      if (name === 'beach') game.spawnVehicle({ model: 'pickup', position: game.map.document.parking.find(p => p.id === 'parking-73')?.position ?? vec(28,249.5), parked: true, driverExited: true });
       game.settings.noPolice = true;
       game.notify(name === 'beach' ? 'Soft sand: road tyres struggle. E to take the beach pickup, or smash the beach props.' : 'Off-road pickup: more traction on sand. Head east for Ocean Walk; stay clear of the surf.');
       break;

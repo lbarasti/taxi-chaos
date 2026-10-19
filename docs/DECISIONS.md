@@ -215,3 +215,24 @@ through commands and automation.
 persistence-disabled game. `edit()` restores the prior game and camera and freezes
 drafting; `close()` additionally restores the prior live/frozen clock. The DOM-free
 map engine, validation operations and CLI remain the only authoring paths.
+
+## D15 — Compose places from independent map collections
+
+**Decision:** Supersede D13's version-3 map contract with strict version 4. Remove
+`beach.ts` and its dedicated map field/runtime renderer. Author Sunset Beach as
+independent terrain, land, catalogue placements, residents, access graph, district
+zones and ground presentation. Use explicit furniture placements with stable child
+IDs rather than introducing a general prefab language.
+
+**Reason:** Sand is a material; a beach is a composition. Material, dry land and
+travel permission must not imply one another. A second coastal area must work
+entirely through data, including buildings and pedestrian access.
+
+**Consequences:** All tyre physics, tracks and surface snapshots use the shared
+terrain sampler. Low-to-high priority and stable-ID ties determine both sampling
+and drawing. Water queries and exposed shoreline rendering share a union of authored
+land and existing generator geometry. Walking access is an explicit bounded graph
+with body-clearance validation, and protected areas declare roadside approaches.
+Inlet clearance is a directed geometric constraint between land regions. Imports
+reject older schemas; no implicit migration is performed. The second-coast fixture
+exercises composition without location-specific engine branches.

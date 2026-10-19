@@ -19,6 +19,18 @@ changes that information. Keep validation results and review screenshots in the
 PR or ignored artifact directories; browser captures default to `scenario-runs/`.
 Keep executable examples and fixtures beside their tools or tests.
 
+## Browser runtime policy
+
+Treat browser installation as environment provisioning, not feature work. Before
+browser QA, check `CHROMIUM_PATH` and Playwright's installed executable and try one
+blank-page launch. Reuse the working executable for every check in the task.
+
+If neither executable works, continue the available tests and build and report
+browser QA as blocked in the PR. Do not download browsers, retry browser downloads,
+install alternative browser packages or expand the task into browser setup unless
+the user explicitly requests environment setup. Do not claim browser checks passed
+when they could not run. Provision a compatible cached browser before future tasks.
+
 ## Current principles
 
 1. **Keep delivery standalone and offline.** Taxi Chaos is a frontend-only TypeScript and Canvas game, built as one self-contained HTML artifact with embedded scripts, styles, fonts and sound. Avoid external runtime requests and preserve asset attribution and licences.

@@ -36,9 +36,9 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
 }
 
 function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: number } | undefined {
-  const { roadNode } = c.world.navigation, { inBeach } = c.world.map.beach, { countryAccess } = c.world.map.country;
+  const { roadNode } = c.world.navigation, { areaAt: inAccessArea } = c.world.navigation.access, { countryAccess } = c.world.map.country;
   const node = roadNode(body.position), points: Vec[] = [];
-  if (onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (isCountry(body.position) && !inBeach(body.position)) {
+  if (onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (isCountry(body.position) && !inAccessArea(body.position)) {
     for (const point of countryAccess(body.position).road.points) if (dist(point, body.position) >= 5 && dist(point, body.position) <= 24) points.push(point);
   } else {
     // Alley exits preserve the open channel rather than cutting through a building.
@@ -63,7 +63,7 @@ function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: 
 }
 
 function beginRecovery(v: Vehicle, c: AIContext): boolean {
-  const { sandHandling } = c.world.map.beach, { inOcean } = c.world.map.coast, { roadDistance } = c.world.navigation;
+  const { handling: surfaceHandling } = c.world.map.terrain, { inOcean } = c.world.map.coast, { roadDistance } = c.world.navigation;
   if (v.ai.failures >= 4) {
     v.ai.phase = 'waiting'; v.ai.phaseTime = 8;
     if (dist(v.body.position, c.actor.position) > 75) v.alive = false; // off-screen roadside clearance; never pop a visible car
@@ -77,7 +77,7 @@ function beginRecovery(v: Vehicle, c: AIContext): boolean {
     const body = new Body(v.body.position.x, v.body.position.y, v.body.mass, v.body.w, v.body.h); body.angle = v.body.angle; body.velocity = { ...v.body.velocity }; body.angularVelocity = v.body.angularVelocity;
     const dynamics = createVehicleDynamics(v.definition); dynamics.engineForce = v.dynamics.engineForce; dynamics.grip = v.dynamics.grip; let penalty = 0;
     for (let i = 0; i < 60; i++) {
-      dynamics.surface = sandHandling(body, v.definition.physics.tyres, v.definition.terrain.sand);
+      dynamics.surface = surfaceHandling(body, v.definition.physics.tyres, v.definition.terrain);
       dynamics.apply(body, { throttle: -0.65, turn, handbrake: false }, 1 / 30); body.integrate(1 / 30);
       if (inOcean(body.position)) penalty += 100;
       for (const prop of c.world.hash.query(body)) { const hit = contact(body, prop.body); if (hit && hit.depth > 0.06) penalty += hit.depth * 12; }
@@ -136,7 +136,7 @@ function policeGoal(v: Vehicle, c: AIContext): Vec {
 }
 
 export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
-  const { GOLF_CART_ROUTE } = c.world.map.country, { beachVehicleTarget } = c.world.map.beach, { roadDistance, roadPath } = c.world.navigation;
+  const { GOLF_CART_ROUTE } = c.world.map.country, { vehicleTarget } = c.world.navigation.access, { roadDistance, roadPath } = c.world.navigation;
   if (v.cart) {
     // Carts patrol the fairways; never feed them into the city road/rejoin planner.
     if (dist(v.body.position, GOLF_CART_ROUTE[v.cart.waypoint]) < 3) v.cart.waypoint = (v.cart.waypoint + 1) % GOLF_CART_ROUTE.length;
@@ -185,7 +185,7 @@ export function driveNPC(v: Vehicle, c: AIContext, dt: number): Controls {
   v.routeTimer -= dt;
   if (state.phase === 'drive') {
     if (v.kind === 'police' && (v.routeTimer <= 0 || !v.path.length)) {
-      const goal = beachVehicleTarget(policeGoal(v, c));
+      const goal = vehicleTarget(policeGoal(v, c));
       v.path = dist(body.position, goal) < 22 && c.lineOfSight(body.position, goal) ? [goal] : roadPath(body.position, goal).slice(1);
       v.routeTimer = 0.9;
     }

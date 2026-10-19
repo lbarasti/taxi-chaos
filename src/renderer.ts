@@ -17,7 +17,8 @@ import { artworkImages } from './artwork/images';
 import { artworkFor, artRadius, fallbackScale } from './artwork/catalogue';
 
 import { HARBOUR, PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
-import { drawBeachGround, drawBeachProp } from './beach-renderer';
+import { drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
+import { drawObjectFallback } from './object-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
@@ -277,6 +278,7 @@ export class Renderer {
     artworkImages.ground(c, { x: CITY_SHORE.min, y: CITY_SHORE.min, width: CITY_SHORE.max - CITY_SHORE.min, height: CITY_SHORE.max - CITY_SHORE.min });
     this.countrysideGround();
     drawHarbourGround(this);
+    drawTerrainMiniMap(c,g.map);
     for (const b of g.world.blocks) {
       if (b.campusId) continue;
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
@@ -340,7 +342,7 @@ export class Renderer {
     this.label('H A R B O U R   A V E', 64, -2.2, 1.1, '#81908f');
     c.save(); c.translate(-2.3, 72); c.rotate(-Math.PI / 2); this.label('W E S T   S T R E E T', 0, 0, 1.1, '#81908f'); c.restore();
     this.label('M A R K E T   S T R E E T', 62, 117.7, 1.1, '#81908f');
-    drawBeachGround(this);
+    drawTerrainGround(this);
     // Workshop's apron, immediately beside the starting cab.
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
   }
@@ -455,7 +457,7 @@ export class Renderer {
     // (torn canvas, splintered fence) runs before the generic rubble pass, and a dead prop
     // never reaches its live catalogue sprite.
     if (!prop.alive) {
-      if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
+      if (drawObjectFallback(this, prop) || drawPortProp(this, prop)) return;
       c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
       if (prop.kind === 'guardrail') {
         // Broken ends remain legible while the middle becomes a drivable gap.
@@ -506,7 +508,7 @@ export class Renderer {
       this.propFire(prop);
       c.restore(); return;
     }
-    if (drawBeachProp(this, prop) || drawPortProp(this, prop)) return;
+    if (drawObjectFallback(this, prop) || drawPortProp(this, prop)) return;
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
     if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
     if (prop.kind === 'guardrail') {
@@ -892,7 +894,6 @@ export class Renderer {
   }
   minimap() {
     const { HIGHLAND_OUTLINE, RIDGES, GOLF_COURSE, VILLAS, COUNTRY_ROADS } = this.game.map.country;
-    const { BEACH_OUTLINE, PROMENADE, BEACH_HOTELS } = this.game.map.beach;
     const { roadPath } = this.game.world.navigation;
     const width = this.map.clientWidth, height = this.map.clientHeight;
     if (!width || !height) return; // Hidden or unmounted radar needs no drawing work.
@@ -914,8 +915,7 @@ export class Renderer {
     c.fillStyle = '#90a66b'; c.fillRect(GOLF_COURSE.center.x - GOLF_COURSE.width / 2, GOLF_COURSE.center.y - GOLF_COURSE.height / 2, GOLF_COURSE.width, GOLF_COURSE.height);
     for (const villa of VILLAS) { c.fillStyle = '#dcc4a1'; c.fillRect(villa.position.x - 5, villa.position.y - 3, 10, 6); }
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
-    trace(c, BEACH_OUTLINE, true); c.fillStyle = '#d9bd88'; c.fill();
-    c.fillStyle = '#d8d5c3'; c.fillRect(PROMENADE.left, PROMENADE.top, PROMENADE.right - PROMENADE.left, PROMENADE.bottom - PROMENADE.top);
+    drawTerrainMiniMap(c,g.map);
     for (const b of g.world.blocks) {
       if (b.campusId) continue;
       c.fillStyle = b.park ? '#456955' : '#293b40'; c.fillRect(b.x + 7, b.y + 7, 26, 26);
@@ -926,7 +926,7 @@ export class Renderer {
     for (const building of g.map.city.buildings) {
       c.fillStyle = '#64726d'; c.fillRect(building.position.x - building.width / 2, building.position.y - building.height / 2, building.width, building.height);
     }
-    for (const hotel of BEACH_HOTELS) { c.fillStyle = hotel.color; c.fillRect(hotel.position.x - hotel.width / 2, hotel.position.y - hotel.height / 2, hotel.width, hotel.height); }
+    for (const prop of g.map.document.objectPlacements) { const object=g.map.objects[prop.id]; if(object.kind!=='building')continue; c.save();c.translate(prop.position.x,prop.position.y);c.rotate(object.angle);c.fillStyle=prop.color;c.fillRect(-object.width/2,-object.height/2,object.width,object.height);c.restore(); }
     if (this.navigationRouteVisible) { c.strokeStyle = navigationTargetColours[this.targetKind()]; c.lineWidth = 2 / s; c.beginPath(); c.moveTo(g.actor.position.x, g.actor.position.y); for (const p of roadPath(g.actor.position, g.target, g.onFoot ? 'walk' : 'drive')) c.lineTo(p.x, p.y); c.stroke(); }
     c.restore();
     // Screen-space markers keep one size and one meaning at every radar size. The wheel

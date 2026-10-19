@@ -41,7 +41,7 @@ describe('programmatic map workspace lifecycle', () => {
     const { calls, renderer, workspace, setClock } = setup(false);
     setClock(false);
     const before = workspace.api.open();
-    expect(before.schemaVersion).toBe(3);
+    expect(before.schemaVersion).toBe(4);
     expect(calls).toContain('freeze:true');
     expect(calls).toContain('lock:true:true');
 

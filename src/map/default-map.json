@@ -1,185 +1,16 @@
 {
-  "beach": {
-    "castles": [
-      {
-        "id": "sandcastle-1",
-        "owner": "beach",
-        "position": {
-          "x": -2,
-          "y": 267
-        }
-      },
-      {
-        "id": "sandcastle-2",
-        "owner": "beach",
-        "position": {
-          "x": 40,
-          "y": 268
-        }
-      },
-      {
-        "id": "sandcastle-3",
-        "owner": "beach",
-        "position": {
-          "x": 86,
-          "y": 267
-        }
-      },
-      {
-        "id": "sandcastle-4",
-        "owner": "beach",
-        "position": {
-          "x": 130,
-          "y": 266
-        }
-      }
-    ],
-    "hotels": [
-      {
-        "color": "#e4c391",
-        "floors": 12,
-        "height": 26,
-        "id": "hotel-sandpiper",
-        "name": "AZURE RESIDENCES",
-        "owner": "beach",
-        "position": {
-          "x": 162,
-          "y": 259
-        },
-        "width": 28,
-        "type": "condo"
-      },
-      {
-        "color": "#b2d4cb",
-        "floors": 14,
-        "id": "hotel-pacific-palm",
-        "name": "PACIFIC PALM HOTEL",
-        "owner": "beach",
-        "position": {
-          "x": 200,
-          "y": 263.5
-        },
-        "type": "hotel"
-      },
-      {
-        "color": "#dfa7a0",
-        "floors": 16,
-        "height": 26,
-        "id": "hotel-ocean-sunset",
-        "name": "OCEAN CREST CONDOS",
-        "owner": "beach",
-        "position": {
-          "x": 237,
-          "y": 259
-        },
-        "width": 28,
-        "type": "condo"
-      }
-    ],
-    "left": -42,
-    "promenade": {
-      "bottom": 256,
-      "entries": [
-        180,
-        200,
-        220
-      ],
-      "id": "ocean-walk",
-      "left": 177.6,
-      "owner": "beach",
-      "right": 222.4,
-      "southEntries": [
-        180,
-        220
-      ],
-      "top": 247
-    },
-    "right": 254,
-    "sets": [
-      {
-        "id": "beach-set-1",
-        "owner": "beach",
-        "position": {
-          "x": 8,
-          "y": 257
-        }
-      },
-      {
-        "id": "beach-set-2",
-        "owner": "beach",
-        "position": {
-          "x": 32,
-          "y": 258
-        }
-      },
-      {
-        "id": "beach-set-3",
-        "owner": "beach",
-        "position": {
-          "x": 76,
-          "y": 256
-        }
-      },
-      {
-        "id": "beach-set-4",
-        "owner": "beach",
-        "position": {
-          "x": 98,
-          "y": 258
-        }
-      },
-      {
-        "id": "beach-set-5",
-        "owner": "beach",
-        "position": {
-          "x": 136,
-          "y": 258
-        }
-      }
-    ],
-    "shore": [
-      "beach-shore-0",
-      "beach-shore-1",
-      "beach-shore-2",
-      "beach-shore-3",
-      "beach-shore-4",
-      "beach-shore-5",
-      "beach-shore-6"
-    ],
-    "top": 246,
-    "towers": [
-      {
-        "id": "tower-1",
-        "owner": "beach",
-        "position": {
-          "x": -18,
-          "y": 263
-        }
-      },
-      {
-        "id": "tower-2",
-        "owner": "beach",
-        "position": {
-          "x": 52,
-          "y": 263
-        }
-      },
-      {
-        "id": "tower-3",
-        "owner": "beach",
-        "position": {
-          "x": 120,
-          "y": 261
-        }
-      }
-    ]
-  },
   "constraints": [
     {
       "id": "open-beachfront",
+      "type": "water-gap",
+      "fromLand": "sunset-land",
+      "toLand": "generated-highlands",
       "minimum": 110,
       "resolution": 1,
-      "type": "beach-water-gap"
+      "direction": {
+        "x": 0,
+        "y": 1
+      }
     }
   ],
   "coordinates": "metres-screen-south-positive-radians",
@@ -2915,76 +2746,6 @@
         "y": 440
       },
       "weight": 1
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-0",
-      "owner": "beach",
-      "position": {
-        "x": -42,
-        "y": 264
-      },
-      "weight": 0
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-1",
-      "owner": "beach",
-      "position": {
-        "x": -22,
-        "y": 271
-      },
-      "weight": 0
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-2",
-      "owner": "beach",
-      "position": {
-        "x": 32,
-        "y": 274
-      },
-      "weight": 0
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-3",
-      "owner": "beach",
-      "position": {
-        "x": 108,
-        "y": 270
-      },
-      "weight": 0
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-4",
-      "owner": "beach",
-      "position": {
-        "x": 162,
-        "y": 274
-      },
-      "weight": 0
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-5",
-      "owner": "beach",
-      "position": {
-        "x": 214,
-        "y": 274
-      },
-      "weight": 0
-    },
-    {
-      "editable": true,
-      "id": "beach-shore-6",
-      "owner": "beach",
-      "position": {
-        "x": 254,
-        "y": 273
-      },
-      "weight": 0
     }
   ],
   "ridges": [
@@ -3374,7 +3135,7 @@
       ]
     }
   ],
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "stops": [
     {
       "id": "pine-junction",
@@ -4184,6 +3945,2370 @@
         "x": 97,
         "y": 487
       }
+    }
+  ],
+  "landRegions": [
+    {
+      "id": "sunset-land",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": -42,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 273
+        },
+        {
+          "x": 214,
+          "y": 274
+        },
+        {
+          "x": 162,
+          "y": 274
+        },
+        {
+          "x": 108,
+          "y": 270
+        },
+        {
+          "x": 32,
+          "y": 274
+        },
+        {
+          "x": -22,
+          "y": 271
+        },
+        {
+          "x": -42,
+          "y": 264
+        }
+      ]
+    }
+  ],
+  "terrainRegions": [
+    {
+      "id": "sunset-sand",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": -42,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 273
+        },
+        {
+          "x": 214,
+          "y": 274
+        },
+        {
+          "x": 162,
+          "y": 274
+        },
+        {
+          "x": 108,
+          "y": 270
+        },
+        {
+          "x": 32,
+          "y": 274
+        },
+        {
+          "x": -22,
+          "y": 271
+        },
+        {
+          "x": -42,
+          "y": 264
+        }
+      ],
+      "surface": "sand",
+      "priority": 10
+    },
+    {
+      "id": "ocean-walk",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": 177.6,
+          "y": 247
+        },
+        {
+          "x": 222.4,
+          "y": 247
+        },
+        {
+          "x": 222.4,
+          "y": 256
+        },
+        {
+          "x": 177.6,
+          "y": 256
+        }
+      ],
+      "surface": "paving",
+      "priority": 20
+    }
+  ],
+  "districtZones": [
+    {
+      "id": "sunset-zone",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": -42,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 273
+        },
+        {
+          "x": 214,
+          "y": 274
+        },
+        {
+          "x": 162,
+          "y": 274
+        },
+        {
+          "x": 108,
+          "y": 270
+        },
+        {
+          "x": 32,
+          "y": 274
+        },
+        {
+          "x": -22,
+          "y": 271
+        },
+        {
+          "x": -42,
+          "y": 264
+        }
+      ],
+      "name": "SUNSET BEACH",
+      "priority": 10
+    },
+    {
+      "id": "ocean-zone",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": 177.6,
+          "y": 247
+        },
+        {
+          "x": 254,
+          "y": 247
+        },
+        {
+          "x": 254,
+          "y": 274
+        },
+        {
+          "x": 177.6,
+          "y": 274
+        }
+      ],
+      "name": "OCEAN WALK",
+      "priority": 20
+    }
+  ],
+  "objectPlacements": [
+    {
+      "color": "#e4c391",
+      "height": 26,
+      "id": "hotel-sandpiper",
+      "owner": "beach",
+      "position": {
+        "x": 162,
+        "y": 259
+      },
+      "width": 28,
+      "type": "condo",
+      "label": "AZURE RESIDENCES",
+      "storeys": 12,
+      "angle": 0
+    },
+    {
+      "color": "#b2d4cb",
+      "id": "hotel-pacific-palm",
+      "owner": "beach",
+      "position": {
+        "x": 200,
+        "y": 263.5
+      },
+      "type": "hotel",
+      "label": "PACIFIC PALM HOTEL",
+      "storeys": 14,
+      "angle": 0
+    },
+    {
+      "color": "#dfa7a0",
+      "height": 26,
+      "id": "hotel-ocean-sunset",
+      "owner": "beach",
+      "position": {
+        "x": 237,
+        "y": 259
+      },
+      "width": 28,
+      "type": "condo",
+      "label": "OCEAN CREST CONDOS",
+      "storeys": 16,
+      "angle": 0
+    },
+    {
+      "id": "tower-1",
+      "owner": "beach",
+      "type": "lifeguard-tower",
+      "position": {
+        "x": -18,
+        "y": 263
+      },
+      "angle": 0,
+      "color": "#9cced1",
+      "label": "LIFEGUARD 01"
+    },
+    {
+      "id": "tower-2",
+      "owner": "beach",
+      "type": "lifeguard-tower",
+      "position": {
+        "x": 52,
+        "y": 263
+      },
+      "angle": 0,
+      "color": "#e0b0ba",
+      "label": "LIFEGUARD 02"
+    },
+    {
+      "id": "tower-3",
+      "owner": "beach",
+      "type": "lifeguard-tower",
+      "position": {
+        "x": 120,
+        "y": 261
+      },
+      "angle": 0,
+      "color": "#bdd6b0",
+      "label": "LIFEGUARD 03"
+    },
+    {
+      "id": "beach-set-1",
+      "owner": "beach",
+      "type": "parasol",
+      "position": {
+        "x": 8,
+        "y": 257
+      },
+      "angle": 0,
+      "color": "#df8976",
+      "label": ""
+    },
+    {
+      "id": "beach-set-1-chair-left",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 5.2,
+        "y": 259.8
+      },
+      "angle": -0.2,
+      "color": "#e2a18b",
+      "label": ""
+    },
+    {
+      "id": "beach-set-1-chair-right",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 10.8,
+        "y": 259.8
+      },
+      "angle": 0.2,
+      "color": "#e2a18b",
+      "label": ""
+    },
+    {
+      "id": "beach-set-2",
+      "owner": "beach",
+      "type": "parasol",
+      "position": {
+        "x": 32,
+        "y": 258
+      },
+      "angle": 0,
+      "color": "#78b9c0",
+      "label": ""
+    },
+    {
+      "id": "beach-set-2-chair-left",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 29.2,
+        "y": 260.8
+      },
+      "angle": -0.2,
+      "color": "#b9d4d0",
+      "label": ""
+    },
+    {
+      "id": "beach-set-2-chair-right",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 34.8,
+        "y": 260.8
+      },
+      "angle": 0.2,
+      "color": "#b9d4d0",
+      "label": ""
+    },
+    {
+      "id": "beach-set-3",
+      "owner": "beach",
+      "type": "parasol",
+      "position": {
+        "x": 76,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#efc468",
+      "label": ""
+    },
+    {
+      "id": "beach-set-3-chair-left",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 73.2,
+        "y": 258.8
+      },
+      "angle": -0.2,
+      "color": "#e2a18b",
+      "label": ""
+    },
+    {
+      "id": "beach-set-3-chair-right",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 78.8,
+        "y": 258.8
+      },
+      "angle": 0.2,
+      "color": "#e2a18b",
+      "label": ""
+    },
+    {
+      "id": "beach-set-4",
+      "owner": "beach",
+      "type": "parasol",
+      "position": {
+        "x": 98,
+        "y": 258
+      },
+      "angle": 0,
+      "color": "#a3a5cb",
+      "label": ""
+    },
+    {
+      "id": "beach-set-4-chair-left",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 95.2,
+        "y": 260.8
+      },
+      "angle": -0.2,
+      "color": "#b9d4d0",
+      "label": ""
+    },
+    {
+      "id": "beach-set-4-chair-right",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 100.8,
+        "y": 260.8
+      },
+      "angle": 0.2,
+      "color": "#b9d4d0",
+      "label": ""
+    },
+    {
+      "id": "beach-set-5",
+      "owner": "beach",
+      "type": "parasol",
+      "position": {
+        "x": 136,
+        "y": 258
+      },
+      "angle": 0,
+      "color": "#80b5a2",
+      "label": ""
+    },
+    {
+      "id": "beach-set-5-chair-left",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 133.2,
+        "y": 260.8
+      },
+      "angle": -0.2,
+      "color": "#e2a18b",
+      "label": ""
+    },
+    {
+      "id": "beach-set-5-chair-right",
+      "owner": "beach",
+      "type": "beach-chair",
+      "position": {
+        "x": 138.8,
+        "y": 260.8
+      },
+      "angle": 0.2,
+      "color": "#e2a18b",
+      "label": ""
+    },
+    {
+      "id": "sandcastle-1",
+      "owner": "beach",
+      "type": "sandcastle",
+      "position": {
+        "x": -2,
+        "y": 267
+      },
+      "angle": 0,
+      "color": "#c6a36e",
+      "label": ""
+    },
+    {
+      "id": "sandcastle-2",
+      "owner": "beach",
+      "type": "sandcastle",
+      "position": {
+        "x": 40,
+        "y": 268
+      },
+      "angle": 0,
+      "color": "#c6a36e",
+      "label": ""
+    },
+    {
+      "id": "sandcastle-3",
+      "owner": "beach",
+      "type": "sandcastle",
+      "position": {
+        "x": 86,
+        "y": 267
+      },
+      "angle": 0,
+      "color": "#c6a36e",
+      "label": ""
+    },
+    {
+      "id": "sandcastle-4",
+      "owner": "beach",
+      "type": "sandcastle",
+      "position": {
+        "x": 130,
+        "y": 266
+      },
+      "angle": 0,
+      "color": "#c6a36e",
+      "label": ""
+    },
+    {
+      "id": "walk-pedestrian-gate-00",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 180,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 4.8,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-00",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 178.65,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-01",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 180,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-02",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 181.35,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-pedestrian-gate-01",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 200,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 4.8,
+      "height": 0.6
+    },
+    {
+      "id": "walk-promenade-edge-01",
+      "owner": "beach",
+      "type": "promenade-edge",
+      "position": {
+        "x": 190.0,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#e2d9c2",
+      "label": "",
+      "width": 15.199999999999989,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-03",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 198.65,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-04",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 200,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-05",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 201.35,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-pedestrian-gate-02",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 220,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 4.8,
+      "height": 0.6
+    },
+    {
+      "id": "walk-promenade-edge-02",
+      "owner": "beach",
+      "type": "promenade-edge",
+      "position": {
+        "x": 210.0,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#e2d9c2",
+      "label": "",
+      "width": 15.199999999999989,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-06",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 218.65,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-07",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 220,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-08",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 221.35,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-pedestrian-gate-03",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 180,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 4.8,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-09",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 178.65,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-10",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 180,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-11",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 181.35,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-pedestrian-gate-04",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 220,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 4.8,
+      "height": 0.6
+    },
+    {
+      "id": "walk-promenade-edge-05",
+      "owner": "beach",
+      "type": "promenade-edge",
+      "position": {
+        "x": 200.0,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#e2d9c2",
+      "label": "",
+      "width": 35.19999999999999,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-12",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 218.65,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-13",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 220,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-14",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 221.35,
+        "y": 256
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-pedestrian-gate-05",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 177.6,
+        "y": 251.5
+      },
+      "angle": 1.5707963267948966,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 9,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-15",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-16",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 248.35
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-17",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 249.7
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-18",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 251.04999999999998
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-19",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 252.39999999999998
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-20",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 253.74999999999997
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-21",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 177.6,
+        "y": 255.09999999999997
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-pedestrian-gate-06",
+      "owner": "beach",
+      "type": "pedestrian-gate",
+      "position": {
+        "x": 222.4,
+        "y": 251.5
+      },
+      "angle": 1.5707963267948966,
+      "color": "#d8c4a1",
+      "label": "",
+      "width": 9,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-22",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 247
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-23",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 248.35
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-24",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 249.7
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-25",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 251.04999999999998
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-26",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 252.39999999999998
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-27",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 253.74999999999997
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bollard-28",
+      "owner": "beach",
+      "type": "bollard",
+      "position": {
+        "x": 222.4,
+        "y": 255.09999999999997
+      },
+      "angle": 0,
+      "color": "#758e8b",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-palm-00",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": -6,
+        "y": 247.8
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-palm-01",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": 16,
+        "y": 247.8
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-palm-02",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": 44,
+        "y": 247.8
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-palm-03",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": 100,
+        "y": 247.8
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-palm-04",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": 195.52,
+        "y": 254.3
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-palm-05",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": 204.48,
+        "y": 254.3
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-palm-06",
+      "owner": "beach",
+      "type": "palm",
+      "position": {
+        "x": 215.232,
+        "y": 254.3
+      },
+      "angle": 0,
+      "color": "#547f66",
+      "label": "",
+      "width": 0.8,
+      "height": 0.8
+    },
+    {
+      "id": "walk-lamp-00",
+      "owner": "beach",
+      "type": "lamp",
+      "position": {
+        "x": 184.768,
+        "y": 248.5
+      },
+      "angle": 0,
+      "color": "#a7bfbb",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-lamp-01",
+      "owner": "beach",
+      "type": "lamp",
+      "position": {
+        "x": 195.52,
+        "y": 248.5
+      },
+      "angle": 0,
+      "color": "#a7bfbb",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-lamp-02",
+      "owner": "beach",
+      "type": "lamp",
+      "position": {
+        "x": 204.48,
+        "y": 248.5
+      },
+      "angle": 0,
+      "color": "#a7bfbb",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-lamp-03",
+      "owner": "beach",
+      "type": "lamp",
+      "position": {
+        "x": 215.232,
+        "y": 248.5
+      },
+      "angle": 0,
+      "color": "#a7bfbb",
+      "label": "",
+      "width": 0.6,
+      "height": 0.6
+    },
+    {
+      "id": "walk-bench-00",
+      "owner": "beach",
+      "type": "bench",
+      "position": {
+        "x": 192.384,
+        "y": 254.4
+      },
+      "angle": 0,
+      "color": "#c29b76",
+      "label": "",
+      "width": 2.4,
+      "height": 0.75
+    },
+    {
+      "id": "walk-bench-01",
+      "owner": "beach",
+      "type": "bench",
+      "position": {
+        "x": 207.616,
+        "y": 254.4
+      },
+      "angle": 0,
+      "color": "#c29b76",
+      "label": "",
+      "width": 2.4,
+      "height": 0.75
+    },
+    {
+      "id": "walk-kiosk-00",
+      "owner": "beach",
+      "type": "kiosk",
+      "position": {
+        "x": 187.904,
+        "y": 253.8
+      },
+      "angle": 0,
+      "color": "#76b9b6",
+      "label": "SURF / RENTALS",
+      "width": 4,
+      "height": 2.8
+    },
+    {
+      "id": "walk-kiosk-01",
+      "owner": "beach",
+      "type": "kiosk",
+      "position": {
+        "x": 212.096,
+        "y": 253.8
+      },
+      "angle": 0,
+      "color": "#d9a578",
+      "label": "JUICE / COFFEE",
+      "width": 4,
+      "height": 2.8
+    }
+  ],
+  "residents": [
+    {
+      "id": "walk-resident-0",
+      "owner": "beach",
+      "position": {
+        "x": 184.32,
+        "y": 251.5
+      },
+      "color": "#df8976",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-1",
+      "owner": "beach",
+      "position": {
+        "x": 188.8,
+        "y": 251.5
+      },
+      "color": "#78b9c0",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-2",
+      "owner": "beach",
+      "position": {
+        "x": 193.28,
+        "y": 251.5
+      },
+      "color": "#efc468",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-3",
+      "owner": "beach",
+      "position": {
+        "x": 197.76,
+        "y": 251.5
+      },
+      "color": "#df8976",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-4",
+      "owner": "beach",
+      "position": {
+        "x": 202.24,
+        "y": 251.5
+      },
+      "color": "#78b9c0",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-5",
+      "owner": "beach",
+      "position": {
+        "x": 206.72,
+        "y": 251.5
+      },
+      "color": "#efc468",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-6",
+      "owner": "beach",
+      "position": {
+        "x": 211.2,
+        "y": 251.5
+      },
+      "color": "#df8976",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "walk-resident-7",
+      "owner": "beach",
+      "position": {
+        "x": 215.68,
+        "y": 251.5
+      },
+      "color": "#78b9c0",
+      "wander": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    {
+      "id": "sand-resident-0",
+      "owner": "beach",
+      "position": {
+        "x": -8,
+        "y": 253
+      },
+      "color": "#dcaa84",
+      "wander": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "id": "sand-resident-1",
+      "owner": "beach",
+      "position": {
+        "x": 20,
+        "y": 253
+      },
+      "color": "#dcaa84",
+      "wander": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "id": "sand-resident-2",
+      "owner": "beach",
+      "position": {
+        "x": 64,
+        "y": 253
+      },
+      "color": "#dcaa84",
+      "wander": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "id": "sand-resident-3",
+      "owner": "beach",
+      "position": {
+        "x": 88,
+        "y": 253
+      },
+      "color": "#dcaa84",
+      "wander": {
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "id": "sand-resident-4",
+      "owner": "beach",
+      "position": {
+        "x": 110,
+        "y": 253
+      },
+      "color": "#dcaa84",
+      "wander": {
+        "x": 0,
+        "y": 4
+      }
+    }
+  ],
+  "accessAreas": [
+    {
+      "id": "sunset-access",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": -42,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 246
+        },
+        {
+          "x": 254,
+          "y": 273
+        },
+        {
+          "x": 214,
+          "y": 274
+        },
+        {
+          "x": 162,
+          "y": 274
+        },
+        {
+          "x": 108,
+          "y": 270
+        },
+        {
+          "x": 32,
+          "y": 274
+        },
+        {
+          "x": -22,
+          "y": 271
+        },
+        {
+          "x": -42,
+          "y": 264
+        }
+      ],
+      "priority": 10,
+      "driving": "direct"
+    },
+    {
+      "id": "walk-access",
+      "owner": "beach",
+      "outline": [
+        {
+          "x": 174.6,
+          "y": 247
+        },
+        {
+          "x": 254,
+          "y": 247
+        },
+        {
+          "x": 254,
+          "y": 274
+        },
+        {
+          "x": 174.6,
+          "y": 274
+        }
+      ],
+      "priority": 20,
+      "driving": "approach"
+    }
+  ],
+  "accessNodes": [
+    {
+      "id": "road-access-0",
+      "owner": "beach",
+      "position": {
+        "x": 0,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-0",
+      "owner": "beach",
+      "position": {
+        "x": 0,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "road-access-1",
+      "owner": "beach",
+      "position": {
+        "x": 40,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-1",
+      "owner": "beach",
+      "position": {
+        "x": 40,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "road-access-2",
+      "owner": "beach",
+      "position": {
+        "x": 80,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-2",
+      "owner": "beach",
+      "position": {
+        "x": 80,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "road-access-3",
+      "owner": "beach",
+      "position": {
+        "x": 120,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-3",
+      "owner": "beach",
+      "position": {
+        "x": 120,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "road-access-4",
+      "owner": "beach",
+      "position": {
+        "x": 160,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-4",
+      "owner": "beach",
+      "position": {
+        "x": 160,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "road-access-5",
+      "owner": "beach",
+      "position": {
+        "x": 200,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-5",
+      "owner": "beach",
+      "position": {
+        "x": 200,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "road-access-6",
+      "owner": "beach",
+      "position": {
+        "x": 240,
+        "y": 240
+      },
+      "road": true
+    },
+    {
+      "id": "apron-access-6",
+      "owner": "beach",
+      "position": {
+        "x": 240,
+        "y": 243
+      },
+      "road": false
+    },
+    {
+      "id": "walk-north-0",
+      "owner": "beach",
+      "position": {
+        "x": 180.675,
+        "y": 245.5
+      },
+      "road": false
+    },
+    {
+      "id": "walk-mid-0",
+      "owner": "beach",
+      "position": {
+        "x": 180.675,
+        "y": 251.5
+      },
+      "road": false
+    },
+    {
+      "id": "walk-north-1",
+      "owner": "beach",
+      "position": {
+        "x": 200.675,
+        "y": 245.5
+      },
+      "road": false
+    },
+    {
+      "id": "walk-mid-1",
+      "owner": "beach",
+      "position": {
+        "x": 200.675,
+        "y": 251.5
+      },
+      "road": false
+    },
+    {
+      "id": "walk-north-2",
+      "owner": "beach",
+      "position": {
+        "x": 220.675,
+        "y": 245.5
+      },
+      "road": false
+    },
+    {
+      "id": "walk-mid-2",
+      "owner": "beach",
+      "position": {
+        "x": 220.675,
+        "y": 251.5
+      },
+      "road": false
+    },
+    {
+      "id": "walk-south-0",
+      "owner": "beach",
+      "position": {
+        "x": 180.675,
+        "y": 257
+      },
+      "road": false
+    },
+    {
+      "id": "walk-surf-0",
+      "owner": "beach",
+      "position": {
+        "x": 180.675,
+        "y": 272.6
+      },
+      "road": false
+    },
+    {
+      "id": "walk-south-1",
+      "owner": "beach",
+      "position": {
+        "x": 220.675,
+        "y": 257
+      },
+      "road": false
+    },
+    {
+      "id": "walk-surf-1",
+      "owner": "beach",
+      "position": {
+        "x": 220.675,
+        "y": 272.6
+      },
+      "road": false
+    },
+    {
+      "id": "east-return",
+      "owner": "beach",
+      "position": {
+        "x": 253,
+        "y": 244
+      },
+      "road": false
+    },
+    {
+      "id": "east-end",
+      "owner": "beach",
+      "position": {
+        "x": 253,
+        "y": 254
+      },
+      "road": false
+    },
+    {
+      "id": "west-access",
+      "owner": "beach",
+      "position": {
+        "x": 0,
+        "y": 248
+      },
+      "road": false
+    }
+  ],
+  "accessEdges": [
+    {
+      "id": "link-road-access-0-apron-access-0",
+      "owner": "beach",
+      "fromNode": "road-access-0",
+      "toNode": "apron-access-0",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-access-1-apron-access-1",
+      "owner": "beach",
+      "fromNode": "road-access-1",
+      "toNode": "apron-access-1",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-apron-access-0-apron-access-1",
+      "owner": "beach",
+      "fromNode": "apron-access-0",
+      "toNode": "apron-access-1",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-access-2-apron-access-2",
+      "owner": "beach",
+      "fromNode": "road-access-2",
+      "toNode": "apron-access-2",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-apron-access-1-apron-access-2",
+      "owner": "beach",
+      "fromNode": "apron-access-1",
+      "toNode": "apron-access-2",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-access-3-apron-access-3",
+      "owner": "beach",
+      "fromNode": "road-access-3",
+      "toNode": "apron-access-3",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-apron-access-2-apron-access-3",
+      "owner": "beach",
+      "fromNode": "apron-access-2",
+      "toNode": "apron-access-3",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-access-4-apron-access-4",
+      "owner": "beach",
+      "fromNode": "road-access-4",
+      "toNode": "apron-access-4",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-apron-access-3-apron-access-4",
+      "owner": "beach",
+      "fromNode": "apron-access-3",
+      "toNode": "apron-access-4",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-access-5-apron-access-5",
+      "owner": "beach",
+      "fromNode": "road-access-5",
+      "toNode": "apron-access-5",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-apron-access-4-apron-access-5",
+      "owner": "beach",
+      "fromNode": "apron-access-4",
+      "toNode": "apron-access-5",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-access-6-apron-access-6",
+      "owner": "beach",
+      "fromNode": "road-access-6",
+      "toNode": "apron-access-6",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-apron-access-5-apron-access-6",
+      "owner": "beach",
+      "fromNode": "apron-access-5",
+      "toNode": "apron-access-6",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-walk-north-0-walk-mid-0",
+      "owner": "beach",
+      "fromNode": "walk-north-0",
+      "toNode": "walk-mid-0",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-north-0-apron-access-5",
+      "owner": "beach",
+      "fromNode": "walk-north-0",
+      "toNode": "apron-access-5",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-north-1-walk-mid-1",
+      "owner": "beach",
+      "fromNode": "walk-north-1",
+      "toNode": "walk-mid-1",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-north-1-apron-access-5",
+      "owner": "beach",
+      "fromNode": "walk-north-1",
+      "toNode": "apron-access-5",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-mid-0-walk-mid-1",
+      "owner": "beach",
+      "fromNode": "walk-mid-0",
+      "toNode": "walk-mid-1",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-north-2-walk-mid-2",
+      "owner": "beach",
+      "fromNode": "walk-north-2",
+      "toNode": "walk-mid-2",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-north-2-apron-access-6",
+      "owner": "beach",
+      "fromNode": "walk-north-2",
+      "toNode": "apron-access-6",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-mid-1-walk-mid-2",
+      "owner": "beach",
+      "fromNode": "walk-mid-1",
+      "toNode": "walk-mid-2",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-south-0-walk-surf-0",
+      "owner": "beach",
+      "fromNode": "walk-south-0",
+      "toNode": "walk-surf-0",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-south-0-walk-mid-0",
+      "owner": "beach",
+      "fromNode": "walk-south-0",
+      "toNode": "walk-mid-0",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-south-1-walk-surf-1",
+      "owner": "beach",
+      "fromNode": "walk-south-1",
+      "toNode": "walk-surf-1",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-south-1-walk-mid-2",
+      "owner": "beach",
+      "fromNode": "walk-south-1",
+      "toNode": "walk-mid-2",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-walk-surf-0-walk-surf-1",
+      "owner": "beach",
+      "fromNode": "walk-surf-0",
+      "toNode": "walk-surf-1",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-east-return-road-access-6",
+      "owner": "beach",
+      "fromNode": "east-return",
+      "toNode": "road-access-6",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "link-east-return-east-end",
+      "owner": "beach",
+      "fromNode": "east-return",
+      "toNode": "east-end",
+      "modes": [
+        "walk"
+      ]
+    },
+    {
+      "id": "road-approach-1",
+      "owner": "beach",
+      "fromNode": "road-access-0",
+      "toNode": "road-access-1",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "road-approach-2",
+      "owner": "beach",
+      "fromNode": "road-access-1",
+      "toNode": "road-access-2",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "road-approach-3",
+      "owner": "beach",
+      "fromNode": "road-access-2",
+      "toNode": "road-access-3",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "road-approach-4",
+      "owner": "beach",
+      "fromNode": "road-access-3",
+      "toNode": "road-access-4",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "road-approach-5",
+      "owner": "beach",
+      "fromNode": "road-access-4",
+      "toNode": "road-access-5",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "road-approach-6",
+      "owner": "beach",
+      "fromNode": "road-access-5",
+      "toNode": "road-access-6",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "west-road-link",
+      "owner": "beach",
+      "fromNode": "west-access",
+      "toNode": "road-access-0",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    }
+  ],
+  "groundMarks": [
+    {
+      "id": "volley-lines",
+      "owner": "beach",
+      "points": [
+        {
+          "x": -36,
+          "y": 250
+        },
+        {
+          "x": -21,
+          "y": 250
+        },
+        {
+          "x": -21,
+          "y": 259
+        },
+        {
+          "x": -36,
+          "y": 259
+        },
+        {
+          "x": -36,
+          "y": 250
+        }
+      ],
+      "color": "#fff0c8",
+      "width": 0.13,
+      "fill": false
+    },
+    {
+      "id": "volley-net",
+      "owner": "beach",
+      "points": [
+        {
+          "x": -28.5,
+          "y": 250
+        },
+        {
+          "x": -28.5,
+          "y": 259
+        }
+      ],
+      "color": "#b28c61",
+      "width": 0.12,
+      "fill": false
+    },
+    {
+      "id": "towel-0",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 7,
+          "y": 260
+        },
+        {
+          "x": 8.8,
+          "y": 260
+        },
+        {
+          "x": 8.8,
+          "y": 262.2
+        },
+        {
+          "x": 7,
+          "y": 262.2
+        }
+      ],
+      "color": "#88b8be69",
+      "width": 0.12,
+      "fill": true
+    },
+    {
+      "id": "towel-1",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 31,
+          "y": 261
+        },
+        {
+          "x": 32.8,
+          "y": 261
+        },
+        {
+          "x": 32.8,
+          "y": 263.2
+        },
+        {
+          "x": 31,
+          "y": 263.2
+        }
+      ],
+      "color": "#cf877859",
+      "width": 0.12,
+      "fill": true
+    },
+    {
+      "id": "towel-2",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 75,
+          "y": 259
+        },
+        {
+          "x": 76.8,
+          "y": 259
+        },
+        {
+          "x": 76.8,
+          "y": 261.2
+        },
+        {
+          "x": 75,
+          "y": 261.2
+        }
+      ],
+      "color": "#88b8be69",
+      "width": 0.12,
+      "fill": true
+    },
+    {
+      "id": "towel-3",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 97,
+          "y": 261
+        },
+        {
+          "x": 98.8,
+          "y": 261
+        },
+        {
+          "x": 98.8,
+          "y": 263.2
+        },
+        {
+          "x": 97,
+          "y": 263.2
+        }
+      ],
+      "color": "#cf877859",
+      "width": 0.12,
+      "fill": true
+    },
+    {
+      "id": "towel-4",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 135,
+          "y": 261
+        },
+        {
+          "x": 136.8,
+          "y": 261
+        },
+        {
+          "x": 136.8,
+          "y": 263.2
+        },
+        {
+          "x": 135,
+          "y": 263.2
+        }
+      ],
+      "color": "#88b8be69",
+      "width": 0.12,
+      "fill": true
+    },
+    {
+      "id": "entry-paint-0",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 180,
+          "y": 244.7
+        },
+        {
+          "x": 180,
+          "y": 246.3
+        }
+      ],
+      "color": "#f4ebcf",
+      "width": 0.2,
+      "fill": false
+    },
+    {
+      "id": "entry-paint-1",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 200,
+          "y": 244.7
+        },
+        {
+          "x": 200,
+          "y": 246.3
+        }
+      ],
+      "color": "#f4ebcf",
+      "width": 0.2,
+      "fill": false
+    },
+    {
+      "id": "entry-paint-2",
+      "owner": "beach",
+      "points": [
+        {
+          "x": 220,
+          "y": 244.7
+        },
+        {
+          "x": 220,
+          "y": 246.3
+        }
+      ],
+      "color": "#f4ebcf",
+      "width": 0.2,
+      "fill": false
+    }
+  ],
+  "groundLabels": [
+    {
+      "id": "volley-label",
+      "owner": "beach",
+      "position": {
+        "x": -28.5,
+        "y": 248.8
+      },
+      "text": "BEACH VOLLEY",
+      "size": 0.6,
+      "color": "#866b47"
+    },
+    {
+      "id": "sunset-label",
+      "owner": "beach",
+      "position": {
+        "x": 68,
+        "y": 248.2
+      },
+      "text": "S U N S E T   B E A C H",
+      "size": 1.05,
+      "color": "#947c52"
+    },
+    {
+      "id": "sand-advice",
+      "owner": "beach",
+      "position": {
+        "x": 76,
+        "y": 251
+      },
+      "text": "SOFT SAND / PICKUP RECOMMENDED",
+      "size": 0.56,
+      "color": "#a08b63"
+    },
+    {
+      "id": "walk-label",
+      "owner": "beach",
+      "position": {
+        "x": 200.0,
+        "y": 251.5
+      },
+      "text": "O C E A N   W A L K",
+      "size": 0.9,
+      "color": "#647d7a"
+    },
+    {
+      "id": "walk-advice",
+      "owner": "beach",
+      "position": {
+        "x": 200.0,
+        "y": 248.2
+      },
+      "text": "PEDESTRIANS ONLY",
+      "size": 0.55,
+      "color": "#647d7a"
+    },
+    {
+      "id": "patrol-label",
+      "owner": "beach",
+      "position": {
+        "x": 28,
+        "y": 246.8
+      },
+      "text": "BEACH PATROL / OFF-ROAD PARKING",
+      "size": 0.6,
+      "color": "#84744e"
     }
   ]
 }

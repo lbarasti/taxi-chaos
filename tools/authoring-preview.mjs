@@ -158,18 +158,17 @@ try {
     if (artworkScale !== undefined) {
       // A visual-only per-instance multiplier; collision stays untouched.
       const prop = document.countryProps.find(p => p.id === values.entity);
-      const hotel = document.beach.hotels.find(h => h.id === values.entity);
+      const hotel = document.objectPlacements.find(h => h.id === values.entity);
       if (prop) prop.artworkScale = artworkScale;
       else if (hotel) hotel.artworkScale = artworkScale;
-      else fail('--artwork-scale applies to a country prop or beach hotel placement');
+      else fail('--artwork-scale applies to a country prop or object placement');
     }
     // A type-default preview keeps the committed records untouched: only the in-memory
     // catalogue handed to the report and the browser preview is overridden.
     let catalogue = objectDefinitions;
     if (typeSize) {
       const type = document.countryProps.find(p => p.id === values.entity)?.type
-        ?? document.beach.hotels.find(h => h.id === values.entity)?.type
-        ?? (document.beach.hotels.some(h => h.id === values.entity) ? 'hotel' : undefined);
+        ?? document.objectPlacements.find(h => h.id === values.entity)?.type;
       if (!type || !objectDefinitions[type]) fail('--type-size needs an --entity with a catalogue type');
       catalogue = { ...objectDefinitions, [type]: { ...objectDefinitions[type], width: typeSize.width, height: typeSize.height } };
     }

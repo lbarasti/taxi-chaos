@@ -7,7 +7,7 @@ import type {
 } from './schema';
 
 const CIRCLE_POINTS = 12;
-const FALLBACKS: readonly BuildingFallback[] = ['shop', 'commercial', 'terraced', 'wards'];
+const FALLBACKS: readonly BuildingFallback[] = ['shop', 'commercial', 'terraced', 'wards', 'resort'];
 
 /** Appearance uses stable identity, never the simulation's random stream or display labels. */
 export function appearanceSeed(identity: string): number {
