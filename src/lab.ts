@@ -14,12 +14,10 @@ import { Game, upgradeInfo, type Upgrade, type Vehicle } from './game';
 import type { Renderer } from './renderer';
 import type { OnBoardCue } from './onboard-cue';
 import type { Settings } from './rules';
-import { difficulties } from './rules';
 import { clamp, contact, vec, type Vec } from './physics';
 import { createAI } from './ai';
 import { createVehicleDamage, igniteVehicle, tickVehicleDamage, type VehicleDamage } from './damage';
 import type { AudioFX } from './audio';
-import { audioMarkup, bindAudioControls, refreshAudioControls } from './audio-controls';
 import { isSoundCue, soundLabels, type SoundCue } from './sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
 import { MotorcycleDynamics } from './motorcycle';
@@ -600,19 +598,14 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
 
       ${hooks.audio ? `<section class="lab-sec" aria-label="Sound FX audition">
         <h4>Sound FX audition</h4>
-        ${audioMarkup(hooks.audio)}
         <div class="lab-row"><select data-lab="sound-cue" aria-label="Choose sound FX">${Object.entries(soundLabels).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select><button data-lab="sound-play">Audition</button><button data-lab="sound-stop">Stop</button></div>
-        <p class="lab-hint">Audition isolates one FX for 2 seconds. Mute and volume still apply. Fixed stepping is silent; use Live to hear scenarios.</p>
+        <p class="lab-hint">Audition isolates one FX for 2 seconds. Adjust mute and volume in Pause → Settings. Fixed stepping is silent; use Live to hear scenarios.</p>
         <p class="lab-hint" data-lab="sound-state"></p>
       </section>` : ''}
 
       <section class="lab-sec" aria-label="Cheats">
-        <h4>Cheats &amp; difficulty</h4>
-        <label class="lab-field">Difficulty
-          <select id="lab-difficulty" name="lab-difficulty" data-lab="difficulty" aria-label="Difficulty"></select>
-        </label>
+        <h4>Cheats &amp; debug views</h4>
         <div class="lab-checks">
-          <label><input id="lab-gore" name="lab-gore" type="checkbox" data-cheat="gore"> Gore</label>
           <label><input id="lab-invincible" name="lab-invincible" type="checkbox" data-cheat="invincible"> God mode</label>
           <label><input id="lab-infinite" name="lab-infinite" type="checkbox" data-cheat="infiniteBoost"> Infinite boost</label>
           <label><input id="lab-nopolice" name="lab-nopolice" type="checkbox" data-cheat="noPolice"> No police</label>
@@ -658,7 +651,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
 
   const scenarioSelect = q<HTMLSelectElement>('scenario')!;
   const scenarioDesc = q<HTMLParagraphElement>('scenario-desc')!;
-  const difficultySelect = q<HTMLSelectElement>('difficulty')!;
   const trafficInput = q<HTMLInputElement>('traffic')!;
   const trafficValue = q<HTMLOutputElement>('traffic-value')!;
   const upgradeHost = q<HTMLDivElement>('upgrades')!;
@@ -677,8 +669,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
 
   scenarioSelect.innerHTML = scenarioInfo.map(s => `<option value="${s.name}">${s.label}</option>`).join('');
   scenarioSelect.value = scenarioNames[0];
-  difficultySelect.innerHTML = (Object.keys(difficulties) as (keyof typeof difficulties)[])
-    .map(key => `<option value="${key}">${difficulties[key].name}</option>`).join('');
   upgradeHost.innerHTML = (Object.keys(upgradeInfo) as Upgrade[])
     .map(key => `<label class="lab-up"><span>${upgradeInfo[key].name}</span><input id="lab-up-${key}" name="lab-up-${key}" type="range" min="0" max="3" step="1" value="0" data-upgrade="${key}" aria-label="${upgradeInfo[key].name} level"><output data-upgrade-out="${key}">0</output></label>`)
     .join('');
@@ -697,7 +687,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
 
   function refreshUI() {
     if (hooks.audio) {
-      refreshAudioControls(hooks.audio);
       const state = hooks.audio.state();
       q<HTMLElement>('sound-state')!.textContent = `${state.status.toUpperCase()} · ${state.decoded}/${state.total} samples · ${state.loops.length} loops / ${state.voices} one-shots · ${state.lastCue || 'no one-shot yet'}`;
     }
@@ -714,7 +703,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     // Fuse length follows the chosen difficulty (rules.fireFuse), never a hard-coded 7 s.
     igniteButton.textContent = `Ignite cab (${game.rules.fireFuse}s fuse)`;
 
-    updateSelect(difficultySelect, game.settings.difficulty);
     updateInput(trafficInput, String(desiredTraffic));
     trafficValue.textContent = String(desiredTraffic);
 
@@ -727,7 +715,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     for (const button of presetButtons) button.classList.toggle('is-active', button.dataset.dnPreset === dn.period);
 
     for (const input of qa<HTMLInputElement>('cheat')) {
-      const key = input.dataset.cheat as 'gore' | 'invincible' | 'infiniteBoost' | 'noPolice';
+      const key = input.dataset.cheat as 'invincible' | 'infiniteBoost' | 'noPolice';
       updateChecked(input, game.settings[key]);
     }
     const colliders = panel.querySelector<HTMLInputElement>('[data-debug="colliders"]');
@@ -747,10 +735,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   }
 
   function updateInput(input: HTMLInputElement | HTMLSelectElement, value: string) {
-    if (document.activeElement === input) return;
-    if (input.value !== value) input.value = value;
-  }
-  function updateSelect(input: HTMLSelectElement, value: string) {
     if (document.activeElement === input) return;
     if (input.value !== value) input.value = value;
   }
@@ -934,7 +918,6 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   q<HTMLButtonElement>('campaign-advance')?.addEventListener('click', () => api.campaign(dayMinute(clamp(Number(q<HTMLInputElement>('campaign-day')!.value) || 1, 1, 15))));
   expandButton.addEventListener('click', () => api.toggle());
   if (hooks.audio) {
-    bindAudioControls(panel, hooks.audio);
     q<HTMLButtonElement>('sound-play')!.addEventListener('click', () => { void api.sound(q<HTMLSelectElement>('sound-cue')!.value as SoundCue); });
     q<HTMLButtonElement>('sound-stop')!.addEventListener('click', api.stopSound);
   }
@@ -956,10 +939,9 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     hooks.setTimeScale(timeScale);
     hooks.refresh(); refreshUI();
   });
-  difficultySelect.addEventListener('change', () => api.configure({ difficulty: difficultySelect.value as Settings['difficulty'] }));
   for (const input of qa<HTMLInputElement>('cheat')) {
     input.addEventListener('change', () => {
-      const key = input.dataset.cheat as 'gore' | 'invincible' | 'infiniteBoost' | 'noPolice';
+      const key = input.dataset.cheat as 'invincible' | 'infiniteBoost' | 'noPolice';
       api.configure({ [key]: input.checked } as Partial<Settings>);
     });
   }
