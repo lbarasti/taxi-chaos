@@ -263,6 +263,67 @@ test('--drive-from rejects a run that only damages the taxi on an unrelated prop
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('--drive-from rejects a nearby run that only damages the taxi on the neighbour', { skip: !chromiumReady, timeout: 240000 }, async () => {
+  const root = temporary();
+  try {
+    const output = path.join(root, 'bakery-near-miss');
+    // The taxi starts only a few metres clear of the bakery's east face and drives east
+    // into the neighbouring `authoring-crate`, so it is damaged while the selected bakery
+    // is never touched. Proximity to the selected entity must not read as contact.
+    const result = run(['--input', example, '--entity', 'authoring-bakery', '--drive-from', '250,430', '--drive-angle', '0', '--layout', 'desktop', '--output', output, '--standalone', await standaloneHtml()], 240000);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Drive proof did not collide physically/);
+    assert.match(result.stderr, /failed manifest written to/);
+    const manifest = JSON.parse(readFileSync(path.join(output, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.status, 'failed');
+    assert.equal(manifest.drive.passed, false);
+    assert.equal(manifest.drive.contacted, false);
+    assert.equal(manifest.drive.checks.physicalContact, false);
+    assert.equal(manifest.drive.entityDamage, 0);
+    assert.equal(manifest.drive.overlapDepth, 0);
+    assert.equal(manifest.drive.swept, false);
+    assert.equal(manifest.drive.checks.droveForward, true, 'the taxi drove; it simply never touched the bakery');
+    // Starting beside the bakery does not matter: the neighbour's damage is not evidence.
+    assert.ok(manifest.drive.damage > 0, `the neighbouring crate damages the taxi: ${JSON.stringify(manifest.drive)}`);
+    assert.equal(manifest.shots.length, 2, 'the entity frame and the impact frame are still saved');
+    assert.equal(readFileSync(path.join(output, manifest.shots[1].file)).subarray(1, 4).toString(), 'PNG');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('--drive-from rejects a distant run that never reaches the selected bakery', { skip: !chromiumReady, timeout: 240000 }, async () => {
+  const root = temporary();
+  try {
+    const output = path.join(root, 'bakery-distant');
+    // The concrete reproduction: the taxi starts far from the bakery at 240,430 and is
+    // given only 1.5 s, so it moves under its own power but cannot arrive. Nothing touches
+    // the selected building. Unlike the near and wrong-crate negatives above, a distant run
+    // may never touch anything at all, so taxi damage is not required here.
+    const result = run(['--input', example, '--entity', 'authoring-bakery', '--drive-from', '7,14', '--drive-seconds', '1.5', '--layout', 'desktop', '--output', output, '--standalone', await standaloneHtml()], 240000);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Drive proof did not collide physically/);
+    assert.match(result.stderr, /failed manifest written to/);
+    const manifest = JSON.parse(readFileSync(path.join(output, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.status, 'failed');
+    assert.equal(manifest.drive.passed, false);
+    assert.equal(manifest.drive.contacted, false);
+    assert.equal(manifest.drive.checks.physicalContact, false);
+    // The taxi still moved under its own power; a distant start is not a stuck vehicle.
+    assert.equal(manifest.drive.checks.droveForward, true, 'the taxi drove, it just never reached the bakery');
+    assert.equal(manifest.drive.checks.noMidDriveTeleport, true);
+    assert.equal(manifest.drive.checks.stockVehicle, true);
+    // The selected entity is untouched: no overlap, no sweep, no hp loss, no destruction.
+    assert.equal(manifest.drive.entityDamage, 0);
+    assert.equal(manifest.drive.overlapDepth, 0);
+    assert.equal(manifest.drive.swept, false);
+    assert.equal(manifest.drive.destroyed, false);
+    // The taxi may never have hit anything, so its own damage is only required to be a
+    // finite number, never a positive one.
+    assert.ok(Number.isFinite(manifest.drive.damage) && manifest.drive.damage >= 0, `taxi damage is a finite number: ${JSON.stringify(manifest.drive.damage)}`);
+    assert.equal(manifest.shots.length, 2, 'the entity frame and the impact frame are still saved');
+    assert.equal(readFileSync(path.join(output, manifest.shots[1].file)).subarray(1, 4).toString(), 'PNG');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('the Map studio adopts a catalogue type default footprint', { skip: !chromiumReady, timeout: 240000 }, async () => {
   const errors = [], requests = [];
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
