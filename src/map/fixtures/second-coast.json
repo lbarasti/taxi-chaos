@@ -252,5 +252,26 @@
       "width": 0.13,
       "fill": false
     }
+  ],
+  "surf": [
+    {
+      "id": "cove-surf",
+      "owner": "highlands",
+      "land": "cove-land",
+      "edges": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "landPresentation": [
+    {
+      "id": "cove-ground",
+      "owner": "highlands",
+      "land": "cove-land",
+      "color": "#71876d"
+    }
   ]
 }

@@ -1,9 +1,11 @@
+import { defaultCompiledMap } from './map/compile';
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
 import { Body, CarDynamics, contact, dist, length, rotate, sub, vec } from './physics';
 import { igniteVehicle } from './damage';
 import { loadScenario } from './lab';
-import { HOSPITAL } from './world';
+
+const HOSPITAL=defaultCompiledMap.city.recovery!;
 
 const run = (g: Game, seconds: number, keys: string[] = []) => { g.keys = new Set(keys); for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); g.keys.clear(); };
 const make = () => { const g = new Game(); loadScenario(g, 'cab-fire'); return g; };

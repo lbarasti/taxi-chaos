@@ -4,7 +4,8 @@ import { vehicleDefinition, createVehicleBody } from '../vehicles';
 import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';
 import { compileMap, type CompiledMap } from './compile';
 import type { MapDocument } from './schema';
-import { contains, ringDistance } from '../regions';
+import { directedWaterGap } from '../land';
+import { contains } from '../regions';
 import { descriptorBody } from './operations';
 
 export type Finding = { code: string; severity: 'error' | 'warning' | 'info'; entityIds: string[]; position?: Vec; message: string; measured?: Record<string, number> };
@@ -21,9 +22,9 @@ function intersects(a: Vec, b: Vec, c: Vec, d: Vec) {
   return orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0 || on(c, a, b) || on(d, a, b) || on(a, c, d) || on(b, c, d);
 }
 export function validateMap(document: MapDocument, compiled: CompiledMap = compileMap(document), world = new World(compiled)): Validation {
-  const findings: Finding[] = [], { country, coast } = compiled;
+  const findings: Finding[] = [], { country, land } = compiled;
   const push = (code: string, entityIds: string[], message: string, position?: Vec, measured?: Record<string, number>, severity: Finding['severity'] = 'error') => findings.push({ code, severity, entityIds, message, position, measured });
-  for (const [id, ring, refs] of [['highland-land', country.HIGHLAND_OUTLINE, document.highlandOutline], ...[...document.landRegions,...document.terrainRegions,...document.accessAreas,...document.districtZones].map(r => [r.id,r.outline,[r.id]])] as [string, Vec[], string[]][]) {
+  for (const [id, ring, refs] of [...[...land.landRegions,...document.terrainRegions,...document.accessAreas,...document.districtZones].map(r => [r.id,r.outline,[r.id,...(document.landRegions.find(l=>l.id===r.id) as { pointRefs?: string[] } | undefined)?.pointRefs ?? []]])] as [string, Vec[], string[]][]) {
     const area = Math.abs(ring.reduce((sum, a, i) => sum + cross(a, ring[(i + 1) % ring.length]), 0)) / 2;
     if (area < 1) push('degenerate-land', refs, `${id} has less than 1 m² area`, ring[0], { area });
     for (let i = 0; i < ring.length; i++) {
@@ -47,7 +48,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       for (let j = 1; j <= steps; j++) for (const lane of [-3, 0, 3]) for (const model of ['car', 'truck-loaded'] as const) {
         const p = add(add(a, scale(sub(b, a), j / steps)), vec(-Math.sin(angle) * lane, Math.cos(angle) * lane));
         const body = createVehicleBody(vehicleDefinition(model), p, angle);
-        const wet = footprint(body).find(coast.inOcean);
+        const wet = footprint(body).find(land.inOcean);
         if (wet && !reported.has(`water-${model}`)) { reported.add(`water-${model}`); push('road-enters-water', [road.id], `${model} footprint crosses ocean on lane ${lane} m`, wet, { lane, length: body.w, width: body.h }); }
         const obstacle = [...world.hash.query(body)].find(prop => isRigidObstacle(prop.kind) && prop.kind !== 'pedestrian-gate' && (contact(body, prop.body)?.depth ?? 0) > 0.04);
         if (obstacle && !reported.has(`solid-${model}`)) { reported.add(`solid-${model}`); push('road-blocked', [road.id, obstacle.sourceId ?? `runtime-prop-${obstacle.id}`], `${model} driving footprint intersects ${obstacle.label || obstacle.kind}`, p, { length: body.w, width: body.h }); }
@@ -74,19 +75,9 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       }
     }
   };
-  for (const p of document.countryProps) {
-    const compiledObject = compiled.objects[p.id];
-    const body = compiledObject ? compiledBody(compiledObject) : descriptorBody(p);
-    checkLand(p.id, body, q => !coast.inOcean(q));
-    if (compiledObject) checkFeatures(p.id, compiledObject.features, { service: false, sign: compiledObject.kind === 'building' && !!compiledObject.artwork });
-    // Features resolve against a catalogue type; an untyped prop has nowhere to attach
-    // them, so report the inert data instead of importing it silently.
-    else if (p.features?.length) push('features-need-catalogue-type', [p.id], 'Attached features need a catalogue type to resolve', p.position);
-    if (world.pools.some(pool => contact(body, pool))) push('pool-overlap', [p.id], 'Country prop intersects a pool', p.position);
-  }
   for (const p of document.objectPlacements) {
     const object=compiled.objects[p.id],body=compiledBody(object);
-    checkLand(p.id,body,q=>!coast.inOcean(q));
+    checkLand(p.id,body,q=>!land.inOcean(q));
     checkFeatures(p.id,object.features,{service:false,sign:object.kind==='building'&&!!object.artwork});
     if(world.pools.some(pool=>contact(body,pool)))push('pool-overlap',[p.id],'Object intersects a pool',p.position);
   }
@@ -96,15 +87,15 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     const body = new Body(home.x, home.y, 75, 0.7, 0.7);
     const solid = [...world.hash.query(body)].find(p => blocksWalking(p.kind) && contact(body, p.body));
     if (solid) push('resident-home-blocked', [block.id, solid.sourceId ?? `runtime-prop-${solid.id}`], 'Authored resident home overlaps a collision footprint', home);
-    if (coast.inOcean(home)) push('resident-home-water', [block.id], 'Authored resident home is in water', home);
+    if (land.inOcean(home)) push('resident-home-water', [block.id], 'Authored resident home is in water', home);
   }
   for (const building of compiled.city.buildings) if (building.recoveryEntrance) {
     const p = building.recoveryEntrance, body = new Body(p.x, p.y, 75, 0.7, 0.7);
     const solid = [...world.hash.query(body)].find(prop => blocksWalking(prop.kind) && contact(body, prop.body));
-    if (solid || coast.inOcean(p)) push('recovery-entrance-blocked', [building.id], 'Recovery entrance must be clear and on dry land', p);
+    if (solid || land.inOcean(p)) push('recovery-entrance-blocked', [building.id], 'Recovery entrance must be clear and on dry land', p);
   }
   const checkVehicleClearance = (id: string, body: Body, code: string) => {
-    const wet = footprint(body).find(coast.inOcean);
+    const wet = footprint(body).find(land.inOcean);
     if (wet) push(code, [id], 'Vehicle footprint crosses water', wet);
     const prop = [...world.hash.query(body)].find(p => (contact(body, p.body)?.depth ?? 0) > 0.04);
     if (prop) push(code, [id, prop.sourceId ?? `runtime-prop-${prop.id}`], `Vehicle footprint intersects ${prop.label || prop.kind}`, body.position);
@@ -130,7 +121,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       const distance = dist(from, to), angle = Math.atan2(to.y - from.y, to.x - from.x), steps = Math.ceil(distance);
       for (let i = 0; i <= steps && !reported; i++) {
         const q = add(from, scale(sub(to, from), i / (steps || 1))), body = createVehicleBody(vehicleDefinition(spawn.model), q, angle);
-        if (footprint(body).some(coast.inOcean) || [...world.hash.query(body)].some(p => (contact(body, p.body)?.depth ?? 0) > 0.04) || world.pools.some(p => contact(body, p))) {
+        if (footprint(body).some(land.inOcean) || [...world.hash.query(body)].some(p => (contact(body, p.body)?.depth ?? 0) > 0.04) || world.pools.some(p => contact(body, p))) {
           push('traffic-route-blocked', [spawn.id], 'Initial traffic route crosses water or a collision footprint', q); reported = true;
         }
       }
@@ -143,7 +134,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     const pool = country.VILLA_POOLS[i]; checkLand(villa.id, new Body(pool.position.x, pool.position.y, 1, pool.width, pool.height), country.inHighlands);
     const drive = country.VILLA_DRIVES[i]; let blocked: Vec | undefined;
     const angle = Math.atan2(drive[1].y - drive[0].y, drive[1].x - drive[0].x), steps = Math.ceil(dist(...drive as [Vec, Vec]));
-    for (let j = 0; j <= steps; j++) { const q = add(drive[0], scale(sub(drive[1], drive[0]), j / (steps || 1))), body = createVehicleBody(vehicleDefinition('car'), q, angle); if (footprint(body).some(coast.inOcean) || [...world.hash.query(body)].some(prop => isRigidObstacle(prop.kind) && prop.sourceId !== villa.id && (contact(body, prop.body)?.depth ?? 0) > 0.04)) { blocked = q; break; } }
+    for (let j = 0; j <= steps; j++) { const q = add(drive[0], scale(sub(drive[1], drive[0]), j / (steps || 1))), body = createVehicleBody(vehicleDefinition('car'), q, angle); if (footprint(body).some(land.inOcean) || [...world.hash.query(body)].some(prop => isRigidObstacle(prop.kind) && prop.sourceId !== villa.id && (contact(body, prop.body)?.depth ?? 0) > 0.04)) { blocked = q; break; } }
     if (blocked) push('villa-drive-blocked', [villa.id], 'Car-sized access drive intersects water or another solid object', blocked);
   }
   const golf = country.GOLF_COURSE;
@@ -151,9 +142,11 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   checkLand(golf.id, new Body(golf.clubhouse.x, golf.clubhouse.y, 1, 20, 22), country.inHighlands);
   for (const p of [...country.GOLF_CART_ROUTE, ...country.GOLF_HOLES.flatMap(h => [h.tee, h.green, h.bunker])]) checkLand(golf.id, new Body(p.x, p.y, 1, 3, 3), country.inHighlands);
   const overlaps = new Set<string>();
-  const countryPropIds = new Set([...document.countryProps,...document.objectPlacements].filter(p => compiled.objects[p.id]?.kind !== 'pedestrian-gate').map(p => p.id));
-  for (const prop of world.props.filter(p => p.sourceId && (isRigidObstacle(p.kind) || countryPropIds.has(p.sourceId)))) for (const other of world.hash.query(prop.body)) {
-    if (prop.kind === 'pedestrian-gate' || prop === other || prop.sourceId === other.sourceId || !countryPropIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
+  const placementIds = new Set(document.objectPlacements.filter(p => compiled.objects[p.id]?.kind !== 'pedestrian-gate').map(p => p.id));
+  const ruleParents=new Map(compiled.boundaryPlacements.map(p=>[p.id,p.ruleId]));
+  for (const prop of world.props.filter(p => p.sourceId && (isRigidObstacle(p.kind) || placementIds.has(p.sourceId)))) for (const other of world.hash.query(prop.body)) {
+    if(prop.sourceId && other.sourceId && ruleParents.get(prop.sourceId) && ruleParents.get(prop.sourceId)===ruleParents.get(other.sourceId))continue;
+    if (prop.kind === 'pedestrian-gate' || prop === other || prop.sourceId === other.sourceId || !placementIds.has(prop.sourceId!) && !isRigidObstacle(other.kind) || other.kind === 'pedestrian-gate') continue;
     const depth = contact(prop.body, other.body)?.depth ?? 0, ids = [prop.sourceId!, other.sourceId ?? `runtime-prop-${other.id}`].sort(), key = ids.join(':');
     if (depth > 0.04 && !overlaps.has(key)) { overlaps.add(key); push('object-overlap', ids, 'Authored solid overlaps another collision footprint (same-composite attachments are allowed)', prop.body.position, { penetration: depth }); }
   }
@@ -164,7 +157,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   }
   for (const stop of country.HIGHLAND_STOPS) {
     const body = createVehicleBody(vehicleDefinition('car'), stop.position, 0), access = country.countryAccess(stop.position);
-    if (access.distance > 6 || footprint(body).some(coast.inOcean) || !seen.has(access.road.from)) push('unreachable-stop', [stop.id, stop.point], 'Fare destination lacks a dry reachable driving lane', stop.position, { roadDistance: access.distance });
+    if (access.distance > 6 || footprint(body).some(land.inOcean) || !seen.has(access.road.from)) push('unreachable-stop', [stop.id, stop.point], 'Fare destination lacks a dry reachable driving lane', stop.position, { roadDistance: access.distance });
     if (!world.props.some(p => p.sourceId === stop.id && p.kind === 'kiosk')) push('stop-clearing-unavailable', [stop.id], 'No dry kiosk clearing can be generated beside this stop', stop.position);
   }
   // Sweep authored access with actual bodies and shared water coverage. Runtime
@@ -184,40 +177,25 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   }
   for(const resident of document.residents) {
     const body=new Body(resident.position.x,resident.position.y,75,.7,.7);
-    if(footprint(body).some(coast.inOcean)||[...world.hash.query(body)].some(p=>blocksWalking(p.kind)&&contact(body,p.body)))push('resident-home-blocked',[resident.id],'Resident home crosses water or a collision footprint',resident.position);
+    if(footprint(body).some(land.inOcean)||[...world.hash.query(body)].some(p=>blocksWalking(p.kind)&&contact(body,p.body)))push('resident-home-blocked',[resident.id],'Resident home crosses water or a collision footprint',resident.position);
   }
   const env = document.envelope, outside = (p: Vec) => p.x < env.min.x - 0.001 || p.x > env.max.x + 0.001 || p.y < env.min.y - 0.001 || p.y > env.max.y + 0.001;
   for (const { e, body } of vehiclePlacements) {
     const p = footprint(body).find(outside); if (p) push('outside-envelope', [e.id], 'Vehicle footprint is outside the map envelope', p);
-    if ('lot' in e) { const bay = new Body(e.position.x, e.position.y, 1, 5.4, 2.6); bay.angle = e.angle; const edge = footprint(bay).find(outside); if (edge) push('outside-envelope', [e.id], 'Parking marking is outside the map envelope', edge); checkLand(e.id, bay, q => !coast.inOcean(q)); }
+    if ('lot' in e) { const bay = new Body(e.position.x, e.position.y, 1, 5.4, 2.6); bay.angle = e.angle; const edge = footprint(bay).find(outside); if (edge) push('outside-envelope', [e.id], 'Parking marking is outside the map envelope', edge); checkLand(e.id, bay, q => !land.inOcean(q)); }
     if ('path' in e) { const q = e.path.find(outside); if (q) push('outside-envelope', [e.id], 'Traffic waypoint is outside the envelope', q); }
   }
   for (const p of document.points) if (outside(p.position)) push('outside-envelope', [p.id], 'Authored point is outside the map envelope', p.position);
   for (const prop of world.props) { const p = prop.body.corners().find(outside); if (p) push('outside-envelope', [prop.sourceId ?? `runtime-prop-${prop.id}`], 'Generated collision footprint is outside the map envelope', p); }
   for (const ridge of document.ridges) { const p = ridge.points.find(outside); if (p) push('outside-envelope', [ridge.id], 'Decorative ridge lies outside the envelope', p); }
-  for(const region of [...document.landRegions,...document.terrainRegions,...document.accessAreas,...document.districtZones]) { const p=region.outline.find(outside);if(p)push('outside-envelope',[region.id],'Region is outside the map envelope',p); }
+  for(const region of [...land.landRegions,...document.terrainRegions,...document.accessAreas,...document.districtZones]) { const p=region.outline.find(outside);if(p)push('outside-envelope',[region.id],'Region is outside the map envelope',p); }
   for(const node of document.accessNodes)if(outside(node.position))push('outside-envelope',[node.id],'Access node is outside the envelope',node.position);
   let waterGap=Infinity;
   for(const constraint of document.constraints) {
-    const a=coast.landRegions.find(r=>r.id===constraint.fromLand)!,b=coast.landRegions.find(r=>r.id===constraint.toLand)!;
-    let gap=ringDistance(a.outline,b.outline)===0?0:Infinity;
-    // Directed inlet clearance, sampled along exposed facing shoreline segments.
-    // The direction belongs to the authored constraint, not a named district.
-    const direction=constraint.direction;
-    for(const shore of coast.landBoundaries.filter(s=>s.landId===a.id && s.normal.x*direction.x+s.normal.y*direction.y>1e-6)) {
-      const steps=Math.ceil(dist(shore.a,shore.b)/constraint.resolution);
-      for(let i=0;i<=steps;i++) {
-        const origin=add(shore.a,scale(sub(shore.b,shore.a),i/(steps||1)));
-        for(let j=0;j<b.outline.length;j++) {
-          const start=b.outline[j],delta=sub(b.outline[(j+1)%b.outline.length],start),den=cross(direction,delta);
-          if(Math.abs(den)<1e-8)continue;
-          const difference=sub(start,origin),t=cross(difference,delta)/den,u=cross(difference,direction)/den;
-          if(t>=0&&u>=0&&u<=1)gap=Math.min(gap,t);
-        }
-      }
-    }
+    const a=land.landRegions.find(r=>r.id===constraint.fromLand)!,b=land.landRegions.find(r=>r.id===constraint.toLand)!;
+    const gap=directedWaterGap(land,a.id,b.id,constraint.direction,constraint.resolution) ?? Infinity;
     waterGap=Math.min(waterGap,gap);
-    push('water-gap',[constraint.id,constraint.fromLand,constraint.toLand],Number.isFinite(gap)?`Minimum directed water gap: ${gap.toFixed(1)} m (required ${constraint.minimum} m)`:'Cannot verify the directed water gap: no exposed source boundary faces the target land',a.outline[0],{gap:Number.isFinite(gap)?gap:-1,minimum:constraint.minimum},!Number.isFinite(gap)||gap<constraint.minimum?'error':gap<constraint.minimum+5?'warning':'info');
+    push('water-gap',[constraint.id,constraint.fromLand,constraint.toLand],Number.isFinite(gap)?`Minimum directed water gap: ${gap.toFixed(1)} m (required ${constraint.minimum} m)`:'Cannot verify the directed water gap: no exposed water path from source to target land',a.outline[0],{gap:Number.isFinite(gap)?gap:-1,minimum:constraint.minimum},!Number.isFinite(gap)||gap<constraint.minimum?'error':gap<constraint.minimum+5?'warning':'info');
   }
   return { revision: compiled.revision, findings, errors: findings.filter(f => f.severity === 'error').length, warnings: findings.filter(f => f.severity === 'warning').length, waterGap: Number.isFinite(waterGap) ? waterGap : null, resolution: { roads: 1, waterGap: document.constraints[0]?.resolution ?? 1, footprintEdge: 0.5, tolerance: 0.04 } };
 }

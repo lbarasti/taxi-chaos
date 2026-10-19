@@ -1,11 +1,16 @@
+import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
 import { Body, contact, dist, vec } from './physics';
-import { COUNTRY_ROADS, GOLF_COURSE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, countryAccess, inCountryClearing, inHighlands, pathLength } from './countryside';
-import { World, district, roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } from './world';
+import { pathLength } from './countryside';
+import { World, district } from './world';
 import { Game } from './game';
 import { loadScenario } from './lab';
 import { beachShoreY } from './test-fixtures/sunset';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
+
+const { COUNTRY_ROADS, GOLF_COURSE, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, countryAccess, inCountryClearing, inHighlands } = defaultCompiledMap.country;
+const { roadDistance, roadNeighbours, roadNode, roadPath, roadProjection } = createNavigation(defaultCompiledMap);
+const { inOcean } = defaultCompiledMap.land;
 
 const woodlandStops = HIGHLAND_STOPS.slice(4);
 

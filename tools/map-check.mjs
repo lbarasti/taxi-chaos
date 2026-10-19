@@ -2,7 +2,7 @@ import { createServer } from 'vite';
 import { readFile, writeFile } from 'node:fs/promises';
 
 // Vite's module runner resolves the same TS/JSON graph as the embedded browser.
-const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' });
+const server = await createServer({ logLevel: 'error', server: { middlewareMode: true, hmr: false }, appType: 'custom' });
 try {
   const args = process.argv.slice(2), allowed = new Set(['--input', '--operations', '--output', '--json']);
   for (let i = 0; i < args.length; i++) { if (!allowed.has(args[i])) throw new Error(`Unknown argument: ${args[i]}`); if (args[i] !== '--json' && (!args[++i] || args[i].startsWith('--'))) throw new Error('Missing argument value'); }

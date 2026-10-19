@@ -5,31 +5,31 @@ import { World } from '../world';
 import { copyDefaultMap } from './default';
 import { compileMap } from './compile';
 import { MapHistory, entities } from './operations';
-import { assertMap, type CountryProp } from './schema';
+import { assertMap, type ObjectPlacement } from './schema';
 import { exportMap, importMap } from './serialization';
 import { validateMap } from './validation';
 import { createPreview } from './preview';
 
-const prop = (): CountryProp => ({ id: 'test-shed', owner: 'southern-estates', position: vec(280, 469), kind: 'shed', width: 6, height: 3, angle: Math.PI / 2, color: '#987c59', label: 'COUNTRY SHED' });
+const prop = (): ObjectPlacement => ({ id: 'test-shed', owner: 'southern-estates', position: vec(280, 469), type: 'shed', width: 6, height: 3, angle: Math.PI / 2, color: '#987c59', label: 'COUNTRY SHED' });
 const apply = (h: MapHistory, operations: Parameters<MapHistory['apply']>[0]['operations']) => h.apply({ baseRevision: h.snapshot().revision, operations });
 
 describe('authored content transactions', () => {
   it('adds, duplicates, replaces, moves and deletes with detached data and exact history', () => {
     const h = new MapHistory(), before = h.export(), descriptor = prop();
-    apply(h, [{ type: 'add', collection: 'countryProps', descriptor }, { type: 'duplicate', targetId: descriptor.id, newId: 'test-copy', delta: vec(10, 0) }]);
+    apply(h, [{ type: 'add', collection: 'objectPlacements', descriptor }, { type: 'duplicate', targetId: descriptor.id, newId: 'test-copy', delta: vec(10, 0) }]);
     descriptor.position.x = 0;
     expect(h.describe('test-copy').position).toEqual(vec(290, 469));
     expect(h.describe('test-shed').bounds).toEqual({ min: vec(278.5, 466), max: vec(281.5, 472) });
-    apply(h, [{ type: 'replace', targetId: 'test-copy', descriptor: { ...prop(), id: 'test-copy', kind: 'crate', position: vec(290, 469), width: 1, height: 1 } }, { type: 'resize', targetId: 'test-copy', width: 2, height: 3 }, { type: 'move', targetId: 'test-shed', position: vec(281, 469) }, { type: 'delete', targetId: 'test-copy' }]);
+    apply(h, [{ type: 'replace', targetId: 'test-copy', descriptor: { ...prop(), id: 'test-copy', type: 'crate', position: vec(290, 469), width: 1, height: 1 } }, { type: 'resize', targetId: 'test-copy', width: 2, height: 3 }, { type: 'move', targetId: 'test-shed', position: vec(281, 469) }, { type: 'delete', targetId: 'test-copy' }]);
     expect(entities(h.snapshot().document).some(e => e.id === 'test-copy')).toBe(false);
     const after = h.export(); h.undo(); h.undo(); expect(h.export()).toBe(before);
     h.redo(); h.redo(); expect(h.export()).toBe(after);
   });
   it('rejects invalid collections, ID collisions, replacements and pinned deletions atomically', () => {
-    const h = new MapHistory(); apply(h, [{ type: 'add', collection: 'countryProps', descriptor: prop() }]); h.undo();
+    const h = new MapHistory(); apply(h, [{ type: 'add', collection: 'objectPlacements', descriptor: prop() }]); h.undo();
     const before = h.snapshot();
     for (const operations of [
-      [{ type: 'add', collection: 'countryProps', descriptor: prop() }, { type: 'delete', targetId: 'node-00' }],
+      [{ type: 'add', collection: 'objectPlacements', descriptor: prop() }, { type: 'delete', targetId: 'node-00' }],
       [{ type: 'add', collection: 'parking', descriptor: prop() }],
       [{ type: 'duplicate', targetId: 'parking-00', newId: 'node-00', delta: vec() }],
       [{ type: 'replace', targetId: 'parking-00', descriptor: { ...before.document.parking[0], id: 'renamed' } }],
@@ -44,13 +44,13 @@ describe('authored content transactions', () => {
     expect(h.snapshot().document.trafficSpawns[0].position).toEqual(copyDefaultMap().trafficSpawns[0].position);
   });
   it.each(['count', 'model', 'kind', 'owner', 'angle', 'dimension', 'route', 'extra'])('bounds content imports: %s', kind => {
-    const d = copyDefaultMap(); d.countryProps.push(prop());
+    const d = copyDefaultMap(); d.objectPlacements.push(prop());
     if (kind === 'count') d.parking = Array.from({ length: 201 }, (_, i) => ({ ...d.parking[0], id: `bay-${i}` }));
     if (kind === 'model') Object.assign(d.trafficSpawns[0], { model: 'golf-cart' });
-    if (kind === 'kind') Object.assign(d.countryProps[0], { kind: 'unknown' });
+    if (kind === 'kind') Object.assign(d.objectPlacements[0], { kind: 'unknown' });
     if (kind === 'owner') d.parking[0].owner = 'missing';
     if (kind === 'angle') d.parking[0].angle = Infinity;
-    if (kind === 'dimension') d.countryProps[0].width = 101;
+    if (kind === 'dimension') d.objectPlacements[0].width = 101;
     if (kind === 'route') d.trafficSpawns[0].path = Array.from({ length: 40 }, (_, i) => vec(i % 2 ? 9000 : -9000, 0));
     if (kind === 'extra') Object.assign(d.parking[0], { surprise: true });
     expect(() => assertMap(d)).toThrow();
@@ -61,7 +61,7 @@ describe('authored content transactions', () => {
     expect(() => assertMap(stale)).toThrow(/expected fields/);
 
     const unknownProp = copyDefaultMap();
-    Object.assign(unknownProp.countryProps[0], { kind: 'crate', type: 'no-such-type' });
+    Object.assign(unknownProp.objectPlacements[0], { type: 'no-such-type' });
     expect(() => assertMap(unknownProp)).toThrow(/unknown catalogue type no-such-type/);
 
     const unknownHotel = copyDefaultMap();
@@ -69,46 +69,46 @@ describe('authored content transactions', () => {
     expect(() => assertMap(unknownHotel)).toThrow(/unknown catalogue type no-such-type/);
 
     const wrongKind = copyDefaultMap();
-    Object.assign(wrongKind.countryProps[0], { kind: 'crate', type: 'hospital' });
-    expect(() => assertMap(wrongKind)).toThrow(/catalogue type hospital is building, not crate/);
+    Object.assign(wrongKind.objectPlacements[0], { kind: 'crate', type: 'hospital' });
+    expect(() => assertMap(wrongKind)).toThrow(/expected fields/);
 
     const hotelWrongKind = copyDefaultMap();
-    Object.assign(hotelWrongKind.objectPlacements[0], { type: 'crate' });
+    Object.assign(hotelWrongKind.objectPlacements.find(p=>p.storeys)! , { type: 'crate' });
     expect(() => assertMap(hotelWrongKind)).toThrow(/only buildings have storeys/);
 
     const propKind = copyDefaultMap();
-    Object.assign(propKind.countryProps[0], { kind: 'building', type: 'crate' });
-    expect(() => assertMap(propKind)).toThrow(/catalogue type crate is crate, not building/);
+    Object.assign(propKind.objectPlacements[0], { kind: 'building', type: 'crate' });
+    expect(() => assertMap(propKind)).toThrow(/expected fields/);
   });
 
   it('accepts the current catalogue type references through import and ops', () => {
     const d = copyDefaultMap(), history = new MapHistory(d);
-    const typed = { id: 'typed-crate', owner: 'southern-estates' as const, kind: 'crate' as const, position: vec(300, 470), angle: 0, color: '#bc9465', label: '', type: 'crate' };
-    history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'countryProps', descriptor: typed }] });
+    const typed = { id: 'typed-crate', owner: 'southern-estates' as const,  position: vec(300, 470), angle: 0, color: '#bc9465', label: '', type: 'crate' };
+    history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'objectPlacements', descriptor: typed }] });
     expect(exportMap(importMap(history.export()))).toBe(history.export());
     // An unknown type is rejected by the same structural gate, not a draft warning.
-    expect(() => history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'countryProps', descriptor: { ...typed, id: 'broken-crate', type: 'missing' } }] })).toThrow(/unknown catalogue type missing/);
+    expect(() => history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'add', collection: 'objectPlacements', descriptor: { ...typed, id: 'broken-crate', type: 'missing' } }] })).toThrow(/unknown catalogue type missing/);
   });
 
-  it('rejects version 1 and stale-style exports without upgrading them and retains canonical version 3 imports', () => {
-    const d = copyDefaultMap(), { countryProps, parking, trafficSpawns, ...previous } = d;
+  it('rejects old exports without upgrading them and retains lossless current imports', () => {
+    const d = copyDefaultMap(), { objectPlacements, parking, trafficSpawns, ...previous } = d;
     const old = { ...previous, schemaVersion: 1, beach: { pickup: vec(30, 249.5) } };
     expect(() => importMap(JSON.stringify(old))).toThrow();
     expect(() => importMap(JSON.stringify({ ...old, parking: [] }))).toThrow();
     expect(exportMap(importMap(exportMap(d)))).toBe(exportMap(d));
-    expect(d.schemaVersion).toBe(4);
+    expect(d.schemaVersion).toBe(5);
   });
 });
 
 describe('content runtime integration and geometric findings', () => {
   it('instantiates the Eagle Ridge activity pack with stable sources and clear rural vehicles', () => {
     const d = copyDefaultMap(), game = new Game(compileMap(d), false);
-    const props = d.countryProps.filter(p => p.owner === 'highlands' && !p.id.startsWith('bridge-lamp-'));
+    const props = d.objectPlacements.filter(p => p.owner === 'highlands' && !p.id.startsWith('bridge-lamp-'));
     const parking = d.parking.filter(p => p.owner === 'highlands');
     const traffic = d.trafficSpawns.filter(p => p.owner === 'highlands');
     expect(props).toHaveLength(47); expect(parking).toHaveLength(8);
     expect(traffic.map(p => p.id)).toEqual(['traffic-eagle-tour', 'traffic-pine-service', 'traffic-lodge-pickup', 'traffic-ridge-motorcycle']);
-    for (const prop of props) expect(game.world.props.find(p => p.sourceId === prop.id)).toMatchObject({ kind: prop.kind, label: prop.label });
+    for (const prop of props) expect(game.world.props.find(p => p.sourceId === prop.id)).toMatchObject({ kind: game.map.objects[prop.id].kind, label: prop.label });
     expect(game.world.parking.filter(p => p.owner === 'highlands').map(p => p.sourceId)).toEqual(parking.map(p => p.id));
     for (const spawn of traffic) {
       const vehicle = game.vehicles.find(v => v.sourceId === spawn.id)!;
@@ -127,7 +127,7 @@ describe('content runtime integration and geometric findings', () => {
     expect(game.vehicles.filter(v => v.parked)).toHaveLength(d.parking.filter(p => p.occupied).length);
     expect(game.vehicles.filter(v => v.sourceId?.startsWith('traffic-'))).toHaveLength(d.trafficSpawns.length);
     for (const spawn of d.trafficSpawns) expect(game.vehicles.find(v => v.sourceId === spawn.id)).toMatchObject({ model: spawn.model, color: spawn.color, body: { position: spawn.position, angle: spawn.angle }, path: spawn.path });
-    const h = new MapHistory(d); apply(h, [{ type: 'move', targetId: 'parking-73', position: vec(28, 250) }, { type: 'delete', targetId: 'parking-00' }, { type: 'add', collection: 'countryProps', descriptor: prop() }]);
+    const h = new MapHistory(d); apply(h, [{ type: 'move', targetId: 'parking-73', position: vec(28, 250) }, { type: 'delete', targetId: 'parking-00' }, { type: 'add', collection: 'objectPlacements', descriptor: prop() }]);
     const other = new Game(compileMap(h.snapshot().document), false), shed = other.world.props.find(p => p.sourceId === 'test-shed')!;
     expect(shed.body.angle).toBe(Math.PI / 2); expect(shed.hp).toBe(90);
     expect([...other.world.hash.query(new Body(280, 469, 1, 1, 1))].some(p => p === shed && contact(p.body, new Body(280, 469, 1, 1, 1)))).toBe(true);
@@ -147,7 +147,7 @@ describe('content runtime integration and geometric findings', () => {
   });
   it('reports selectable IDs for water, pool, static, vehicle and route/envelope failures', () => {
     const d = copyDefaultMap();
-    d.countryProps.push({ ...prop(), position: vec(119.25, 417) });
+    d.objectPlacements.push({ ...prop(), position: vec(119.25, 417) });
     d.parking[0].position = { ...d.parking[3].position };
     d.parking[1].position = vec(200, 330); // ocean
     d.trafficSpawns[0].path = [vec(60, 54)]; // barracks
@@ -157,7 +157,7 @@ describe('content runtime integration and geometric findings', () => {
     expect(() => createPreview(d)).toThrow(/blocked/);
   });
   it('detects rotated arbitrary props against existing soft and solid footprints', () => {
-    const d = copyDefaultMap(); d.countryProps.push({ ...prop(), position: vec(105, 414), angle: 0 });
+    const d = copyDefaultMap(); d.objectPlacements.push({ ...prop(), position: vec(105, 414), angle: 0 });
     expect(validateMap(d).findings.some(f => f.code === 'object-overlap' && f.entityIds.includes('test-shed') && f.entityIds.includes('villa-the-laurels'))).toBe(true);
     const world = new World(compileMap(d)); expect(world.props.find(p => p.sourceId === 'test-shed')!.label).toBe('COUNTRY SHED');
   });

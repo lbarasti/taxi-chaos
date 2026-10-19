@@ -1,5 +1,5 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, HOSPITAL, World, blocksWalking, isStructural, type Person, type Prop } from './world';
+import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from './world';
 import { createAI, driveNPC, type AIState } from './ai';
 import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './damage';
@@ -31,12 +31,12 @@ import { CAMPAIGN_START, CAMPAIGN_END, calendarLabel, nextMorning } from './camp
 import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
 import { cityBulletin } from './campaign/bulletin';
 import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
-import { isCountry, pathLength } from './countryside';
-import { RAIL_BREAK_SPEED } from './coast';
+import { pathLength } from './countryside';
+import { RAIL_BREAK_SPEED } from './world';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from './vehicle-upgrades';
 import { saveCar, parseGarage, legacyGarage, type GarageSave, type SavedCar } from './garage-save';
-import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, inHarbour } from './harbour';
+import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from './harbour';
 
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -294,7 +294,7 @@ export class Game {
     this.vehicles.push(v); return v;
   }
   private canSpawnTraffic(body: Body, margin = 2) {
-    const { inOcean } = this.map.coast;
+    const { inOcean } = this.map.land;
     return !inOcean(body.position) && !this.vehicles.some(v => v.alive && bodiesNear(body, v.body, margin)) && ![...this.world.hash.query(body)].some(prop => contact(body, prop.body)) && !this.world.pools.some(pool => contact(body, pool)) && !this.world.parking.some(spot => {
       if (!spot.occupied) return false;
       const parked = createVehicleBody(vehicleDefinition(spot.model), spot.position, spot.angle);
@@ -338,7 +338,7 @@ export class Game {
     && length(this.player.body.velocity) < 2 && dist(this.driver.position, this.player.body.position) < 6; }
   get enterableCar() { if (this.tumble) return undefined; const v = this.nearestCar; return v && dist(v.body.position, this.driver.position) < 4 && this.clearWalk(this.driver.position, v.body.position) ? v : undefined; }
   clearWalk(a: Vec, b: Vec) {
-    const { inOcean } = this.map.coast;
+    const { inOcean } = this.map.land;
     const steps = Math.ceil(dist(a, b) / 0.35);
     for (let i = 0; i <= steps; i++) { const p = add(a, scale(sub(b, a), i / (steps || 1))), probe = new Body(p.x, p.y, 1, 0.7, 0.7); if (inOcean(p) || [...this.world.hash.query(probe)].some(prop => blocksWalking(prop.kind) && contact(probe, prop.body)) || this.world.pools.some(pool => contact(probe, pool))) return false; }
     return true;
@@ -444,7 +444,7 @@ export class Game {
     this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.');
   }
   walk(dt: number) {
-    const { inOcean } = this.map.coast, { leavesTracks: inSand } = this.map.terrain;
+    const { inOcean } = this.map.land, { leavesTracks: inSand } = this.map.terrain;
     const tumbling = this.tumble;
     if (tumbling) {
       tumbling.elapsed += dt;
@@ -541,8 +541,8 @@ export class Game {
     if (this.mode !== 'playing' || h.vehicleId === null) return;
     const admitted = this.vehicles.find(v => v.id === h.vehicleId && v.alive);
     if (!admitted || admitted.sinking || admitted.damage.status === 'wreck') { h.vehicleId = null; h.progress = 0; return; }
-    if (inHarbour(admitted.body.position)) h.entered = true;
-    if (h.entered && !inHarbour(admitted.body.position)) { h.vehicleId = null; h.progress = 0; this.navToHarbour = false; return; }
+    if (this.map.harbour.inHarbour(admitted.body.position)) h.entered = true;
+    if (h.entered && !this.map.harbour.inHarbour(admitted.body.position)) { h.vehicleId = null; h.progress = 0; this.navToHarbour = false; return; }
     if (h.exchanged || h.vehicleId !== this.player.id) return;
     const safe = this.insideSwap && this.speed < 0.8 && !this.controls.throttle && !this.policeVisible && this.player.damage.status !== 'burning';
     h.progress = safe ? h.progress + dt : 0;
@@ -614,7 +614,7 @@ export class Game {
   private makeMissionJob(missionId: MissionId): Job {
     const mission = this.missions.mission(missionId), { roadPath } = this.world.navigation;
     const pickup = { ...mission.stops.pickup }, dropoff = { ...mission.stops.dropoff };
-    const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
+    const distance = this.map.country.isCountry(pickup) || this.map.country.isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const destination = this.missions.catalogue.stops.byId[mission.stopIds.dropoff].name;
     const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55', mission.offer ? { phase: 0, angle: 0 } : undefined) : undefined;
@@ -727,7 +727,7 @@ export class Game {
     // Dispatch follows the driver after hospital respawn, not the abandoned wreck.
     if (dist(pickup, this.actor.position) > 160) pickup = stops.reduce((a, b) => dist(a, this.actor.position) < dist(b, this.actor.position) ? a : b);
     if (!first && dist(pickup, dropoff) < 10) pickup = stops.filter(p => dist(p, dropoff) >= 10).reduce((a, b) => dist(a, this.actor.position) < dist(b, this.actor.position) ? a : b);
-    const distance = isCountry(pickup) || isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
+    const distance = this.map.country.isCountry(pickup) || this.map.country.isCountry(dropoff) ? pathLength(roadPath(pickup, dropoff)) : dist(pickup, dropoff), time = 28 + distance / 3;
     const storefront = this.world.props.filter(p => p.kind === 'building' && p.label && p.label !== 'PIT STOP').reduce((a, b) => dist(a.body.position, dropoff) < dist(b.body.position, dropoff) ? a : b);
     const destination = this.missions.catalogue.stops.destinations.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? PLACES[this.jobsDone % PLACES.length];
     const type = this.player.definition.access.job;
@@ -779,7 +779,8 @@ export class Game {
       if (this.player.dynamics instanceof MotorcycleDynamics && !this.player.dynamics.fallen) this.player.dynamics.resetLean();
       const passenger = this.world.people.find(p => p.id === this.job.customerId);
       if (passenger?.aboard) { passenger.aboard = false; passenger.alive = !this.player.sinking; passenger.position = { ...this.player.body.position }; passenger.home = add(passenger.position, vec(0, 18)); passenger.panic = 3; }
-      this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...(this.map.city.recovery ?? HOSPITAL) }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
+      if(!this.map.city.recovery) throw new Error('Map has no recovery entrance');
+      this.pendingExit = null; this.tumble = null; this.onFoot = true; this.driver.position = { ...this.map.city.recovery }; this.driver.velocity = vec(); this.driver.angularVelocity = 0; this.driver.angle = Math.PI / 2;
       this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear();
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = []; this.roadMarkVehicleId = -1;
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
@@ -1053,7 +1054,7 @@ export class Game {
     return true;
   }
   update(dt: number) {
-    const { handling: surfaceHandling, leavesTracks: inSand } = this.map.terrain, { inOcean } = this.map.coast;
+    const { handling: surfaceHandling, leavesTracks: inSand } = this.map.terrain, { inOcean } = this.map.land;
     if (this.mode === 'wasted') { this.effects(dt); return; }
     if (this.mode !== 'playing') return;
     const campaignBucket = Math.floor(this.save.story.campaignSeconds / 5);
@@ -1301,7 +1302,7 @@ export class Game {
       const rules = difficulties[this.settings.difficulty], desired = Math.min(rules.maxPolice, this.stars + (this.settings.difficulty === 'chaos' ? 3 : 1));
       if (this.police.length < desired) {
         const p = this.actor.position, node = roadNode(p);
-        const candidates = (isCountry(p) && !inAccessArea(p) ? ROAD_NODES.filter(n => isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
+        const candidates = (this.map.country.isCountry(p) && !inAccessArea(p) ? ROAD_NODES.filter(n => this.map.country.isCountry(n) && dist(n, p) > 45 && dist(n, p) < 170) : [vec(node.x + 80, node.y), vec(node.x - 80, node.y), vec(node.x, node.y + 80), vec(node.x, node.y - 80)].filter(n => n.x >= 0 && n.x <= 240 && n.y >= 0 && n.y <= 240)).filter(n => this.police.every(v => dist(v.body.position, n) > 12));
         const spawn = candidates[Math.floor(this.world.random() * candidates.length)] ?? vec(240, 240);
         const firstPatrol = this.police.length === 0;
         if (firstPatrol) this.policeIntel = { position: { ...p }, velocity: { ...this.actor.velocity }, seenAt: this.time };
@@ -1335,6 +1336,6 @@ export class Game {
       playerRecords: this.save.playerRecords,
       missionOffers: [...this.missionOffers.values()],
       recoveries: this.vehicles.reduce((n, v) => n + v.ai.attempts, 0), burning: this.vehicles.filter(v => v.damage.status === 'burning').map(v => ({ id: v.id, position: v.body.position, fuse: v.damage.fuse })),
-      job: this.job, upgrades: this.player.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.navToNewsroom ? 'newsroom' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
+      job: this.job, upgrades: this.player.upgrades, deliveries: this.save.deliveries, jobsDone: this.jobsDone, harbour: { ...this.harbour, fee: PORT_FEE, policeVisible: this.policeVisible, inside: this.map.harbour.inHarbour(this.actor.position), insideContainer: this.insideSwap, prompt: this.harbourPrompt }, navigation: this.onFoot ? 'replacement' : this.navToNewsroom ? 'newsroom' : this.harbour.vehicleId === this.player.id || this.navToHarbour ? 'harbour' : this.navToGarage ? 'garage' : 'fare', route: roadPath(this.actor.position, this.target, this.onFoot ? 'walk' : 'drive'), settings: this.settings, events: [...this.eventLog], dayNight: this.dayNight.snapshot() });
   }
 }

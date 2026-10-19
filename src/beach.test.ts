@@ -1,12 +1,16 @@
+import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
 import { BEACH_HOTELS, BEACH_PICKUP, PROMENADE_ENTRIES, beachShoreY, inBeach, inSand, onPromenade, sandHandling } from './test-fixtures/sunset';
 import { PORT_ENTRY, PORT_FEE } from './harbour';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
 import { Game } from './game';
 import { loadScenario } from './lab';
 import { Body, contact, dist, length, vec } from './physics';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleModel } from './vehicles';
-import { blocksWalking, district, isRigidObstacle, roadPath } from './world';
+import { blocksWalking, district, isRigidObstacle } from './world';
+
+const { roadPath } = createNavigation(defaultCompiledMap);
+const { inOcean } = defaultCompiledMap.land;
 
 function quiet() {
   const g = new Game(); g.start(); g.settings.noPolice = true;

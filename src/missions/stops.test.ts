@@ -31,7 +31,7 @@ describe('authored stop registry', () => {
 
   it('rejects points without road clearance and inside static props', () => {
     expect(() => compileStops(stops([city('mid-block', 14, 14)]), defaultCompiledMap)).toThrow(/drivable road/);
-    const prop = defaultCompiledMap.document.countryProps[0];
+    const prop = defaultCompiledMap.document.objectPlacements[0];
     expect(() => compileStops(stops([city('on-a-tree', prop.position.x, prop.position.y)]), defaultCompiledMap)).toThrow(/overlaps a static prop/);
   });
 });

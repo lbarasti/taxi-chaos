@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { Body, vec, type Vec } from '../physics';
 import { artworkFor, fallbackScale, objectDefinitions, TREE_CANOPY_METRES } from '../artwork/catalogue';
 import { copyDefaultMap } from '../map/default';
-import type { CountryProp } from '../map/schema';
+import type { ObjectPlacement } from '../map/schema';
 import { objectKindRegistry, type ObjectCatalogue, type ObjectRecord } from './schema';
 import { compileObjectCatalogue, compileObjectPlacement } from './compile';
 import { inlineEntries } from './generate';
@@ -16,12 +16,12 @@ const read = (png: string) => {
   catch { return undefined; }
 };
 
-const bakery = { id: 'authoring-bakery', owner: 'southern-estates' as const, kind: 'building' as const, type: 'bakery', position: vec(240, 430), angle: 0, color: '#596b70', label: 'BAKERY' };
-const crate = { id: 'authoring-crate', owner: 'southern-estates' as const, kind: 'crate' as const, type: 'shipping-crate', position: vec(260, 430), angle: 0, color: '#bc9465', label: '' };
+const bakery = { id: 'authoring-bakery', owner: 'southern-estates' as const,  type: 'bakery', position: vec(240, 430), angle: 0, color: '#596b70', label: 'BAKERY' };
+const crate = { id: 'authoring-crate', owner: 'southern-estates' as const,  type: 'shipping-crate', position: vec(260, 430), angle: 0, color: '#bc9465', label: '' };
 const conflict = { ...bakery, id: 'authoring-conflict', position: vec(225, 438) };
-const withPlacements = (...placements: CountryProp[]) => {
+const withPlacements = (...placements: ObjectPlacement[]) => {
   const document = copyDefaultMap();
-  document.countryProps.push(...placements.map(placement => structuredClone(placement)));
+  document.objectPlacements.push(...placements.map(placement => structuredClone(placement)));
   return document;
 };
 
@@ -29,7 +29,7 @@ describe('DOM-free authoring report', () => {
   it('inspects a real catalogue PNG entity through the shared manifest and compiled map', () => {
     const report = inspectAuthoring(withPlacements(bakery, crate), 'authoring-bakery', objectDefinitions);
     expect(report.preview.allowed).toBe(true);
-    expect(report.entity).toMatchObject({ id: 'authoring-bakery', type: 'bakery', kind: 'building', collection: 'countryProps' });
+    expect(report.entity).toMatchObject({ id: 'authoring-bakery', type: 'bakery', kind: 'building', collection: 'objectPlacements' });
     expect(report.entity.bodies).toHaveLength(1);
     expect([report.entity.bodies[0].width, report.entity.bodies[0].height]).toEqual([12, 8]);
     expect(report.artwork?.image).toBe('bakery');
@@ -50,7 +50,7 @@ describe('DOM-free authoring report', () => {
   it('moves collision, artwork, shadow, blocker and culling together for one instance resize', () => {
     const base = inspectAuthoring(withPlacements(bakery, crate), 'authoring-bakery', objectDefinitions);
     const resizedDocument = withPlacements(bakery, crate);
-    const resizedPlacement = resizedDocument.countryProps.find(placement => placement.id === 'authoring-bakery')!;
+    const resizedPlacement = resizedDocument.objectPlacements.find(placement => placement.id === 'authoring-bakery')!;
     resizedPlacement.width = 24; resizedPlacement.height = 16;
     const resized = inspectAuthoring(resizedDocument, 'authoring-bakery', objectDefinitions);
     expect([resized.entity.bodies[0].width, resized.entity.bodies[0].height]).toEqual([24, 16]);
@@ -126,7 +126,7 @@ describe('DOM-free authoring report', () => {
     const list = listAuthoring(withPlacements(bakery, crate), objectDefinitions);
     expect(list.types.find(type => type.id === 'bakery')).toMatchObject({ kind: 'building', image: 'bakery', artwork: true });
     expect(list.types.find(type => type.id === 'shipping-crate')).toMatchObject({ image: 'shipping-crate' });
-    expect(list.entities.find(entity => entity.id === 'authoring-bakery')).toMatchObject({ type: 'bakery', collection: 'countryProps' });
+    expect(list.entities.find(entity => entity.id === 'authoring-bakery')).toMatchObject({ type: 'bakery', collection: 'objectPlacements' });
     expect(list.entities.find(entity => entity.id === 'authoring-crate')).toMatchObject({ type: 'shipping-crate' });
   });
 });
@@ -152,14 +152,7 @@ describe('type feature validation', () => {
     expect(report.preview.allowed).toBe(false);
   });
 
-  it('reports features on an untyped prop that could never resolve', () => {
-    const document = withPlacements({
-      id: 'authoring-untyped', owner: 'southern-estates', kind: 'crate', position: vec(280, 430), angle: 0, color: '#bc9465', label: '', width: 2, height: 2,
-      features: [{ id: 'untyped-sign', role: 'sign', offset: vec(0, 0), label: 'STRAY' }],
-    });
-    const report = inspectAuthoring(document, 'authoring-untyped', objectDefinitions);
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: 'features-need-catalogue-type', entityIds: ['authoring-untyped'] }));
-  });
+
 });
 
 describe('bounded procedural tree artwork', () => {
@@ -196,5 +189,21 @@ describe('authoring map schema discipline', () => {
     const kinds = objectKindRegistry(objectDefinitions);
     expect(kinds.bakery).toBe('building');
     expect(() => inspectAuthoring({ ...document, schemaVersion: 2 } as never, 'authoring-bakery', objectDefinitions)).toThrow(/unsupported schema/);
+  });
+});
+
+describe('schema 5 coastal authoring reports',()=>{
+  it('inspects stable rule children and the explicit bridge catalogue placements',()=>{
+    const document=copyDefaultMap();
+    const rule=document.boundaryPlacements[0];
+    const report=inspectAuthoring(document,rule.id,objectDefinitions);
+    expect(report.map.schemaVersion).toBe(5);
+    expect(report.entity.collection).toBe('boundaryPlacements');
+    expect(report.entity.bodies.length).toBeGreaterThan(1);
+    const child=inspectAuthoring(document,`${rule.id}-edge-0-slot-1`,objectDefinitions);
+    expect(child.entity.kind).toBe('guardrail');
+    const bridge=inspectAuthoring(document,document.boundaryPlacements[2].id,objectDefinitions);
+    expect(bridge.entity.collection).toBe('boundaryPlacements');
+    expect(listAuthoring(document,objectDefinitions).entities.find(e=>e.id===rule.id)?.bodies).toBe(report.entity.bodies.length);
   });
 });

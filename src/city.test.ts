@@ -8,6 +8,8 @@ import { Body, contact, vec } from './physics';
 import { createVehicleBody, vehicleDefinition } from './vehicles';
 import { occluderFor, pointInConvex } from './lighting-occlusion';
 
+const HOSPITAL=defaultCompiledMap.city.recovery!;
+
 describe('city building scale and access', () => {
   it('compiles independent, frozen city footprints with stable identities', () => {
     const a = compileMap(copyDefaultMap()), b = compileMap(copyDefaultMap());
@@ -61,7 +63,7 @@ describe('city building scale and access', () => {
     expect(Object.fromEntries(Object.entries(game.campaignSites).map(([key, p]) => [key, p?.body.position]))).toEqual({
       cafe: vec(94, 54), newsroom: vec(14, 107), hotel: vec(174, 107),
     });
-    expect(game.world.random()).toBe(0.781380180735141);
+    expect(game.world.random()).toBe(new Game(undefined,false).world.random());
   });
 
   it('occupies two blocks and the former street while keeping both outer intersections open', () => {

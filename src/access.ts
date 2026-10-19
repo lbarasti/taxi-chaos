@@ -32,7 +32,7 @@ export function createAccess(map: CompiledMap, collisionGeometry: () => AccessGe
     }
     return undefined;
   };
-  const land = map.coast.inOcean;
+  const land = map.land.inOcean;
   function clear(
     a: Vec,
     b: Vec,

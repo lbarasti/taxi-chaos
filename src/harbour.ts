@@ -1,15 +1,20 @@
 import { add, clamp, dist, dot, scale, sub, vec, type Vec } from './physics';
 
-// One shared footprint for dry land, artwork, security and navigation.
-export const HARBOUR = { left: 72, right: 252, top: -134, bottom: -14 };
+import type { ResolvedLand } from './land';
+import { contains, regionBounds } from './regions';
+/** Harbour queries use the compiled map's explicit source region. */
+export function createHarbourGeometry(region: ResolvedLand) {
+  const bounds=regionBounds(region.outline);
+  const inHarbour=(p: Vec)=>contains(region.outline,p);
+  const onPortRoad=(p: Vec)=>inHarbour(p) || p.y < -6 && p.y >= -14 && (Math.abs(p.x-200)<=6 || Math.abs(p.x-220)<=6);
+  return { region, left:bounds.min.x, right:bounds.max.x, top:bounds.min.y, bottom:bounds.max.y, inHarbour, onPortRoad };
+}
 export const PORT_FEE = 75;
 export const PORT_ENTRY = vec(200, -8);
 export const PORT_EXIT = vec(220, -8);
 export const SWAP_CONTAINER = vec(108, -40);
 export const SWAP_EXIT = vec(121, -40);
 export const SWAP_SECONDS = 2.5;
-export const inHarbour = (p: Vec) => p.x >= HARBOUR.left && p.x <= HARBOUR.right && p.y >= HARBOUR.top && p.y <= HARBOUR.bottom;
-export const onPortRoad = (p: Vec) => inHarbour(p) || p.y < -6 && p.y >= -14 && (Math.abs(p.x - 200) <= 6 || Math.abs(p.x - 220) <= 6);
 export const PORT_GATES = [vec(200, -17), vec(220, -17)];
 export const CONTAINER_COLORS = ['#cf7755', '#61a5a1', '#d4ad5e', '#7d8dab', '#a26668'];
 export const PORT_CONTAINERS = [-72, -88, -104].flatMap((y, row) => [100, 120, 140, 160, 180].map((x, col) => ({ position: vec(x, y), color: CONTAINER_COLORS[(row + col) % 5], label: `${['PACIFIC', 'NORTHSTAR', 'TIDELINE', 'CARGO 76', 'MARINER'][col]} ${row + 1} / ${col + 1}`, tiers: 2 + (row + col) % 2 })));

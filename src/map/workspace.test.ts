@@ -41,7 +41,7 @@ describe('programmatic map workspace lifecycle', () => {
     const { calls, renderer, workspace, setClock } = setup(false);
     setClock(false);
     const before = workspace.api.open();
-    expect(before.schemaVersion).toBe(4);
+    expect(before.schemaVersion).toBe(5);
     expect(calls).toContain('freeze:true');
     expect(calls).toContain('lock:true:true');
 
@@ -114,8 +114,8 @@ describe('programmatic map workspace lifecycle', () => {
     const opened = workspace.api.open();
     const exported = workspace.api.export();
     const added = workspace.api.apply({ baseRevision: opened.revision, operations: [{
-      type: 'add', collection: 'countryProps',
-      descriptor: { id: 'workspace-bakery', owner: 'southern-estates', position: vec(166, 450), kind: 'building', angle: 0, color: '#426e58', label: '', type: 'bakery' },
+      type: 'add', collection: 'objectPlacements',
+      descriptor: { id: 'workspace-bakery', owner: 'southern-estates', position: vec(166, 450),  angle: 0, color: '#426e58', label: '', type: 'bakery' },
     }] });
     expect(added.changedIds).toContain('workspace-bakery');
     const bounds = workspace.api.describe('workspace-bakery').bounds!;
@@ -124,9 +124,9 @@ describe('programmatic map workspace lifecycle', () => {
     expect(workspace.api.validate().errors).toBe(0);
 
     workspace.api.undo();
-    expect(workspace.api.snapshot().document.countryProps.some(p => p.id === 'workspace-bakery')).toBe(false);
+    expect(workspace.api.snapshot().document.objectPlacements.some(p => p.id === 'workspace-bakery')).toBe(false);
     workspace.api.redo();
-    expect(workspace.api.snapshot().document.countryProps.some(p => p.id === 'workspace-bakery')).toBe(true);
+    expect(workspace.api.snapshot().document.objectPlacements.some(p => p.id === 'workspace-bakery')).toBe(true);
 
     const imported = workspace.api.import(exported);
     expect(imported.revision).toBe(opened.revision);

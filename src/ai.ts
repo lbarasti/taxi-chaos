@@ -1,10 +1,9 @@
 import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from './physics';
 import { createVehicleDynamics } from './vehicles';
 import { GRID, SIZE, World, isRigidObstacle } from './world';
-import { isCountry } from './countryside';
 import type { Vehicle } from './game';
 import { difficulties, type Difficulty } from './rules';
-import { FREIGHT_ROUTE, PORT_NODES, onPortRoad } from './harbour';
+import { FREIGHT_ROUTE, PORT_NODES } from './harbour';
 
 export type AIState = {
   anchor: Vec; progressClock: number; stalled: number; phase: 'drive' | 'reverse' | 'rejoin' | 'waiting'; phaseTime: number; reverseTurn: number; attempts: number; failures: number;
@@ -15,7 +14,7 @@ export const createAI = (p: Vec, id: number): AIState => ({ anchor: { ...p }, pr
 export type AIContext = { world: World; vehicles: Vehicle[]; player: Vehicle; actor: Body; time: number; stars: number; speed: number; settings: { difficulty: Difficulty }; recoveryBudget: { used: number; rejoin: number }; policeIntel: { position: Vec; velocity: Vec; seenAt: number }; lineOfSight(a: Vec, b: Vec): boolean };
 
 function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignoreSoft = false): boolean {
-  const { inOcean } = c.world.map.coast;
+  const { inOcean } = c.world.map.land;
   const delta = sub(target, body.position), distance = length(delta), heading = Math.atan2(delta.y, delta.x);
   for (let d = 1.2; d <= distance; d += 1.2) {
     const p = add(body.position, scale(delta, d / distance));
@@ -38,7 +37,7 @@ function clearCorridor(v: Vehicle, body: Body, target: Vec, c: AIContext, ignore
 function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: number } | undefined {
   const { roadNode } = c.world.navigation, { areaAt: inAccessArea } = c.world.navigation.access, { countryAccess } = c.world.map.country;
   const node = roadNode(body.position), points: Vec[] = [];
-  if (onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (isCountry(body.position) && !inAccessArea(body.position)) {
+  if (c.world.map.harbour.onPortRoad(body.position)) { points.push(...PORT_NODES); } else if (c.world.map.country.isCountry(body.position) && !inAccessArea(body.position)) {
     for (const point of countryAccess(body.position).road.points) if (dist(point, body.position) >= 5 && dist(point, body.position) <= 24) points.push(point);
   } else {
     // Alley exits preserve the open channel rather than cutting through a building.
@@ -63,7 +62,7 @@ function roadRejoin(v: Vehicle, body: Body, c: AIContext): { point: Vec; score: 
 }
 
 function beginRecovery(v: Vehicle, c: AIContext): boolean {
-  const { handling: surfaceHandling } = c.world.map.terrain, { inOcean } = c.world.map.coast, { roadDistance } = c.world.navigation;
+  const { handling: surfaceHandling } = c.world.map.terrain, { inOcean } = c.world.map.land, { roadDistance } = c.world.navigation;
   if (v.ai.failures >= 4) {
     v.ai.phase = 'waiting'; v.ai.phaseTime = 8;
     if (dist(v.body.position, c.actor.position) > 75) v.alive = false; // off-screen roadside clearance; never pop a visible car
@@ -100,14 +99,14 @@ function nextTrafficRoad(v: Vehicle, c: AIContext) {
     const rejoin = roadRejoin(v, v.body, c);
     if (rejoin) { v.path = [rejoin.point]; v.ai.phase = 'rejoin'; v.ai.phaseTime = 7; return; }
   }
-  const node = roadNode(v.body.position), options = roadNeighbours(node).filter(p => onPortRoad(v.body.position) || p.y >= 0 || !onPortRoad(p));
+  const node = roadNode(v.body.position), options = roadNeighbours(node).filter(p => c.world.map.harbour.onPortRoad(v.body.position) || p.y >= 0 || !c.world.map.harbour.onPortRoad(p));
   const forward = options.filter(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > -0.3);
   const choices = forward.length ? forward : options;
   const straight = choices.find(p => Math.cos(Math.atan2(p.y - node.y, p.x - node.x) - v.body.angle) > 0.85);
   const p = straight && c.world.random() < 0.6 ? straight : choices[Math.floor(c.world.random() * choices.length)];
   if (!p) { v.ai.planPending = true; return; }
   const heading = Math.atan2(p.y - node.y, p.x - node.x);
-  v.path = roadPath(v.body.position, isCountry(node) || isCountry(p) ? p : add(p, rotate(vec(0, 3), heading))).slice(1);
+  v.path = roadPath(v.body.position, c.world.map.country.isCountry(node) || c.world.map.country.isCountry(p) ? p : add(p, rotate(vec(0, 3), heading))).slice(1);
 }
 
 function policeGoal(v: Vehicle, c: AIContext): Vec {
@@ -130,7 +129,7 @@ function policeGoal(v: Vehicle, c: AIContext): Vec {
   if (dist(v.body.position, v.ai.lastSeen) < 10) {
     const n = roadNode(v.ai.lastSeen), turn = v.id % 2 ? 40 : -40;
     const neighbours = countryNeighbours(n);
-    v.ai.lastSeen = isCountry(n) ? neighbours[v.id % neighbours.length] ?? n : vec(clamp(n.x + turn, 0, SIZE), n.y);
+    v.ai.lastSeen = c.world.map.country.isCountry(n) ? neighbours[v.id % neighbours.length] ?? n : vec(clamp(n.x + turn, 0, SIZE), n.y);
   }
   return v.ai.lastSeen;
 }

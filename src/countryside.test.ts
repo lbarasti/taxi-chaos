@@ -1,11 +1,16 @@
+import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
 import { Body, contact, dist, vec, type Vec } from './physics';
-import { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_STOPS, ROAD_NODES, countryAccess, pathLength } from './countryside';
-import { World, district, roadDistance, roadNeighbours, roadPath, roadProjection } from './world';
+import { pathLength } from './countryside';
+import { World, district } from './world';
 import { Game } from './game';
-import { inOcean } from './coast';
+import { defaultCompiledMap } from './map/compile';
 import { loadScenario } from './lab';
 import { killPedestrian, updatePedestrians } from './pedestrians';
+
+const { BRIDGE_Y, COUNTRY_ROADS, HIGHLAND_STOPS, ROAD_NODES, countryAccess } = defaultCompiledMap.country;
+const { roadDistance, roadNeighbours, roadPath, roadProjection } = createNavigation(defaultCompiledMap);
+const { inOcean } = defaultCompiledMap.land;
 
 function samples(points: Vec[], stride = 2): { point: Vec; angle: number }[] {
   return points.flatMap((b, i) => {
