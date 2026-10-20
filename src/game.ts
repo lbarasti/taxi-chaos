@@ -6,7 +6,7 @@ import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEf
 import { killPedestrian, updatePedestrians } from './pedestrians';
 import { Effects } from './effects';
 import { freshRubberMark, updateRubberMark, type RubberMarkState } from './skid-marks';
-import { SoundEvents } from './sound';
+import { SoundEvents } from './audio/sound';
 import { DayNight } from './day-night';
 import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from './text-messages';
 import { Dialogue } from './story';

@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import type { AudioFX } from './audio';
+import type { AudioFX } from './audio/audio';
 import { createSettings, type SettingsControls } from './settings';
 import { bindSettingControls } from './setting-controls';
 import type { Allegation } from './campaign/model';

@@ -1,5 +1,5 @@
 // DOM-free audio messages. Gameplay never depends on an AudioContext or audio RNG.
-import { clamp, dist, type Vec } from './physics';
+import { clamp, dist, type Vec } from '../physics';
 
 export const soundLabels = {
   engine: 'Taxi engine', skid: 'Tyre skid', 'boost-start': 'Boost onset', 'boost-loop': 'Boost rush', 'boost-end': 'Boost release',

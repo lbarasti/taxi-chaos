@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Body, vec } from './physics';
+import { Body, vec } from '../physics';
 import { drivingSound, SoundEvents, spatialSound } from './sound';
-import { Game } from './game';
-import { loadScenario } from './lab';
+import { Game } from '../game';
+import { loadScenario } from '../lab';
 
 describe('sound event delivery', () => {
   it('deduplicates contact pairs without suppressing separate collisions', () => {

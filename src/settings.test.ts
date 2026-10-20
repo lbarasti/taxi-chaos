@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AudioFX } from './audio';
+import type { AudioFX } from './audio/audio';
 import { Game } from './game';
 import { createSettings } from './settings';
 import { settingRow } from './setting-controls';

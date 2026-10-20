@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import type { AudioFX } from './audio';
+import type { AudioFX } from './audio/audio';
 import { difficulties, type Difficulty } from './rules';
 import type { Setting } from './setting-controls';
 
