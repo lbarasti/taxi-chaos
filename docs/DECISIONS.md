@@ -1,335 +1,124 @@
-# Decision log
-
-Consolidated on 2026-10-19 from the former feature notes and plans. This date
-records the consolidation, not when each original decision was made. Historical
-implementation reports, screenshots and exact generation prompts remain in Git.
-Record a new consequential decision or supersession as a new entry; routine
-implementation changes do not update this log. Contributor rules are in
-[`AGENTS.md`](../AGENTS.md); workflows are in [`README.md`](../README.md).
-
-## D01 — Deliver one offline game
-
-**Decision:** Keep the game frontend-only and ship one HTML file containing its
-scripts, styles, fonts, portraits and sound. Retain asset attribution and licences.
-
-**Reason:** Opening a local file or using a static host should provide the complete
-game without a backend or runtime asset service.
-
-**Consequences:** New assets must be embedded at build time. Browser storage may
-preserve progress but cannot be required to play. The build checks for stray assets.
-
-## D02 — Compile one independent map per world
-
-**Decision:** Compile versioned authored geometry into detached, recursively frozen
-maps shared by rendering, collisions, terrain, navigation, spawns and dispatch.
-Use stable IDs, explicit district ownership and shared attachment points.
-
-**Reason:** Earlier district moves required coordinated coordinate edits; mutable
-global geometry could leave routes and collision caches describing another map.
-
-**Consequences:** Worlds and previews can coexist. Composite parts derive from
-their owner once; weighted seams keep fixed bridge attachments connected. Preserve
-seeded generation and keep presentation randomness out of the simulation stream.
-
-## D03 — Make map edits atomic and validation physical
-
-**Decision:** Reject malformed documents and stale operation batches atomically.
-Allow geometrically invalid drafts to remain editable, but block gameplay preview.
-Keep the browser and CLI on the same DOM-free operations and validation engine.
-
-**Reason:** An editor must support repairing a bad intermediate layout without
-silently relocating authored objects or presenting unsafe geometry as playable.
-
-**Consequences:** Imports are bounded and current-schema only; export is lossless
-and undo restores exact documents. Findings identify stable entities and probe
-dimensions. Validate full vehicle bodies, walking entrances, empty and occupied
-bays, route sweeps and water clearance. Sampled checks report their resolution;
-they are not continuous geometric proofs. City, harbour and bridges remain pinned;
-whole-district translation is limited to Southern Estates.
-
-## D04 — Isolate previews from player state
-
-**Decision:** Retain the original game while a map preview or laboratory session
-uses a separate persistence-disabled instance. Restore the original instance,
-camera, mode and clock on return.
-
-**Reason:** Inspection, scripted time changes and destructive playtests must not
-overwrite a player's progress or settings.
-
-**Consequences:** Map previews start fresh; laboratory copies may stage existing
-state without persisting it. Browser automation uses disposable contexts. A
-collapsed laboratory panel does not imply a return to the saved game.
-
-## D05 — Author content through stable definitions
-
-**Decision:** Separate building and vehicle definitions from placements and roles;
-compile missions and campaigns from validated content. Display names select no
-mechanics or artwork. Keep model identity immutable on an existing vehicle.
-
-**Reason:** Renaming a hospital or adding a story should not require special cases
-throughout gameplay, rendering and save code.
-
-**Consequences:** Derive bodies, dynamics, art and AI clearance from definitions.
-Service entrances and campus street closures are explicit authored data. Campaign
-runtime interprets shared conditions, effects and handlers rather than story IDs.
-Commercial vans and trucks remain NPC-only until their access policy changes.
-
-## D06 — Keep world events, knowledge and publication separate
-
-**Decision:** Use a continuous calendar and one bounded chronological scheduler
-for driving and skipped time. Track occurrences, player-held records, source
-authentication, editorial approval, publication and public responses separately.
-
-**Reason:** The world should change without the player's attendance. An event
-occurring does not mean the player knows it, and possessing a source does not
-make an allegation publishable.
-
-**Consequences:** Resolved events are irreversible; a late intervention cannot
-rewrite a hearing. Pickup commits transport branches, delivery grants completion
-effects, and reload must not replay them. Collection and newsroom actions are
-deliberate physical interactions; submission retains originals. Do not expose
-undiscovered evidence as a checklist or combine progress into a truth score.
-Richer next-step explanations and a clearer nearby newsroom visit were proposed
-as follow-up work, not recorded as completed features.
-
-## D07 — Attach upgrades to the physical chassis
-
-**Decision:** Upgrades belong to each individual vehicle; the wallet is shared.
-Repair preserves surviving upgrades, while destruction loses them. Harbour
-exchange supplies a stock replacement.
-
-**Reason:** Work installed on one car must not transfer to every car of that model
-or be recreated by recovery and save loading.
-
-**Consequences:** Persist invested surviving vehicles with stable spawn identity.
-Earlier harbour notes claiming upgrades transfer are superseded by this policy.
-Retrieving an exchanged original with its upgrades remains deferred; a future
-custody interaction must return that chassis without duplicating it or its parts.
-
-## D08 — Keep departures and damage physical
-
-**Decision:** Separate riders and bikes into physical actors during moving exits
-and significant crashes. Preserve momentum, physical wrecks and continuing fire
-fuses; each vehicle detonates once.
-
-**Reason:** A seat change or abandonment should not freeze a rider, cancel an
-explosion or turn a damaged bike into a repaired replacement.
-
-**Consequences:** Resolve exit clearance, once-only landing injury and riderless
-mass. Low-speed dismounts remain simple. Roll, impulse attenuation and damage are
-arcade tuning rather than accident predictions. Recovery cannot skip a pending
-blast, and AI recovery uses feasible body-based movement with bounded work.
-
-## D09 — Keep lighting readable and separate from physics
-
-**Decision:** Use a reduced-resolution Canvas lighting compositor with cached
-lights, readable cool night shadows and warm local pools. Directed headlights
-use convex shadow extrusion and receiver masking over raised structures.
-
-**Reason:** A dark full-frame mask obscured streets; unmasked light cones also
-illuminated roofs through buildings. Full visibility polygons or per-pixel
-lighting were unnecessary for this top-down game.
-
-**Consequences:** Cull occluders and range-check per light. Apply clipping to both
-darkness and glow passes. Destroyed structures stop occluding; soft radial lights
-retain their intended treatment. Light and sound effects consume no gameplay RNG.
-
-## D10 — Rasterize SVG patterns before their first draw
-
-**Decision:** Decode embedded artwork once, rasterize the SVG ground tile before
-the first playable frame, and cache patterns per canvas context. Keep procedural
-fallbacks and physical footprints independent of image pixels and padding.
-
-**Reason:** A live SVG passed to `createPattern` moved Chrome's world canvas onto
-a persistent software path. Profiling misleadingly attributed the stalls to
-the lighting compositor; fresh-context rasterization restored baseline timings.
-
-**Consequences:** Do not use the live SVG as a pattern source or compare timing
-on a canvas already affected by it. Performance checks need fresh GPU-enabled
-contexts. Artwork bounds, collision bounds and light outlines remain explicit;
-missing images must leave the game playable.
-
-## D11 — Preserve open sea and physical public access
-
-**Decision:** Move the southern estates and golf course south at their original
-scale to retain at least 110 m of clear water across the beachfront. Let the
-luxury condo podiums visibly occupy former public frontage while keeping a real
-pedestrian route between buildings and the city street open.
-
-**Reason:** The earlier inlet felt cramped; beachfront appropriation should be
-visible in the world rather than conveyed only through dialogue.
-
-**Consequences:** Shared map geometry drives shoreline, routes, scenery and water
-hazards. Promenade gaps admit walking bodies while physical bollards exclude
-vehicles. Check clearance and real walking routes when changing these placements.
-
-## D12 — Keep documentation focused on decisions
-
-**Decision:** Keep this file as the only content under `docs/`. Use the existing
-README for contributor workflows, HOW_TO for player instructions and asset
-attribution files for provenance. Store generated QA artifacts outside Git.
-
-**Reason:** Feature notes became overlapping descriptions of current code, completed
-plans and test reports, causing routine PR churn and contradictory instructions.
-
-**Consequences:** Append only consequential decisions and explicit supersessions.
-Put implementation details and validation results in the PR. Browser checks write
-to ignored `scenario-runs/`; executable fixtures live beside their tools or tests.
-Do not create replacement feature documents elsewhere.
-
-## D13 — Resolve all building and prop artwork through one shared catalogue
-
-**Decision:** Compile every building and prop from readable catalogue records with one
-DOM-free compiler. An ordinary new image type is two records — an object type and a
-placement — with no separate artwork record, renderer branch, asset union or import
-list. Artwork geometry is stored as normalized fractions of the resolved footprint,
-and the inline image manifest is generated by measuring the referenced sources.
-
-**Reason:** Independently maintained metre geometry for artwork, collision and light
-outlines drifted from the physical bodies whenever a type default or placement was
-resized, and each new image required coordinated hand edits across several registries.
-
-**Consequences:** Resizing a type default or a placement moves collision, artwork,
-shadow silhouette and light blocker together; only an explicit `artworkScale` changes
-the drawing alone. This supersedes the part of D10 that kept artwork bounds independent
-of collision bounds; procedural fallbacks, one-time SVG rasterization and cached
-patterns still hold. The padding prep CLI (`npm run artwork:prep -- --write`) measures
-sources, regenerates the manifest and reports trimmed padding. The map schema is strict
-version 3: typed catalogue references are validated structurally on import and in
-operations, and older documents are rejected rather than upgraded. Authoring fixtures
-are small placement lists composed onto the current default map, so they do not drift
-when the baseline map changes.
-
-## D14 — Remove the visual Map studio and keep authoring programmatic
-
-**Decision:** Delete the in-game Map studio overlay, its canvas renderer and editor
-styles. Keep the strict map engine, validation, operations, map/authoring CLIs and the
-`__taxi.map` browser automation, including isolated gameplay previews.
-
-**Reason:** The overlay duplicated the checked CLI workflow, hid the actual game and
-added a large maintenance surface for a tool that authors and reviewers already drive
-through commands and automation.
-
-**Consequences:** F2 no longer exposes a map editor. Map changes go through
-`map:check`, the authoring-preview CLI or `__taxi.map`; previews still use a fresh
-persistence-disabled game. `edit()` restores the prior game and camera and freezes
-drafting; `close()` additionally restores the prior live/frozen clock. The DOM-free
-map engine, validation operations and CLI remain the only authoring paths.
-
-## D15 — Compose places from independent map collections
-
-**Decision:** Supersede D13's version-3 map contract with strict version 4. Remove
-`beach.ts` and its dedicated map field/runtime renderer. Author Sunset Beach as
-independent terrain, land, catalogue placements, residents, access graph, district
-zones and ground presentation. Use explicit furniture placements with stable child
-IDs rather than introducing a general prefab language.
-
-**Reason:** Sand is a material; a beach is a composition. Material, dry land and
-travel permission must not imply one another. A second coastal area must work
-entirely through data, including buildings and pedestrian access.
-
-**Consequences:** All tyre physics, tracks and surface snapshots use the shared
-terrain sampler. Low-to-high priority and stable-ID ties determine both sampling
-and drawing. Water queries and exposed shoreline rendering share a union of authored
-land and existing generator geometry. Walking access is an explicit bounded graph
-with body-clearance validation, and protected areas declare roadside approaches.
-Inlet clearance is a directed geometric constraint between land regions. Imports
-reject older schemas; no implicit migration is performed. The second-coast fixture
-exercises composition without location-specific engine branches.
-
-
-## D16 — Author all land once and separate coastal composition
-
-**Decision:** Supersede D15's mixed authored/generated land union and version-4
-contract with strict schema 5. Every region, including city, highlands, harbour and
-bridge decks, belongs to `landRegions`. A boundary is either coordinates or shared
-named-point references, never both. Remove `highlandOutline` and `coast.ts`.
-The DOM-free land compiler has no generator, district, object or presentation policy.
-
-**Reason:** A second place was compositional, but the original land still depended
-on engine coordinates and prescribed IDs. Editing or renaming a region must affect
-the same geometry used by drowning, validation, countryside queries, drawing and
-coastal attachments. Ownership/read-only policy does not establish a second owner
-for physical geometry.
-
-**Consequences:** Generators receive data-authored source references. Weighted seams
-remain named points; the countryside outline and presentation share the resolved
-canonical ring. Frozen compiled maps remain detached from imports. World and minimap
-use polygon-union clipping; exposed union edges retain all source identities.
-Directed gap observations must cross water to the target, and unobservable gaps
-block preview. Terrain and access remain independent of land coverage.
-
-Guardrails are catalogue placements: explicit bridge panels plus a narrowly bounded
-shore-panel rule with geometry references, openings, insets and stable edge/slot
-children. This is not a general procedural-content language. Their historical early
-spawn phase and seeded rural candidate stream are preserved. Joined panels retain
-existing physical contacts at corners and with generated scenery; validation still
-uses every panel for physical clearance and access sweeps. Surf and ground appearance
-are explicit references independent of coverage. Adding land creates neither rail
-objects nor surf. Imports reject older schemas; operations, descriptions, CLI
-fingerprints and fixtures use the current contract together.
-
-
-## D17 — Remove map compatibility formats and historical generation replay
-
-**Decision:** Supersede D16's historical RNG reservation and early coastal spawn
-phase. Keep one current map contract: every prop is a typed `objectPlacements`
-record; bridge and shoreline panels use the same bounded boundary-placement rule.
-Delete `countryProps`, `coastalPlacements`, old coordinate helpers, default geometry
-adapters and the historical spawn-signature fixture. Old formats are rejected.
-
-**Reason:** The migration must simplify the engine. Preserving obsolete prop APIs,
-old runtime IDs and old RNG consumption created parallel paths and made edited maps
-depend on a second, shipped map at runtime.
-
-**Consequences:** All authored props resolve and spawn once through the catalogue.
-Callers use the actual compiled map instead of separately instantiated default
-countryside, harbour or navigation exports. Hospital recovery uses that map too.
-Scenery samples current canonical land bounds, with deterministic RNG draws and
-clearance against current placements and reserved vehicle bodies. Identical
-current documents reproduce identical results; historical runtime IDs and scenery
-sequences are not an import or gameplay contract. Existing city/road/harbour game
-algorithms remain active systems, without a compatibility path around the map.
-
-
-## D18 — Open the hotel beachfront to vehicles
-
-**Decision:** Sunset Beach sand and Ocean Walk paving both admit player vehicles
-and vehicle routes, like city pavements. Remove the promenade enclosure and its
-roadside-only access restriction from the authored map.
-
-**Reason:** The beachfront should provide physical driving space around the hotel
-blocks. Access is governed by real buildings, furniture and the shoreline; sand
-continues to use its existing traction and rolling resistance.
-
-**Consequences:** Pursuing police can follow onto the open beachfront. Hotel walls
-remain solid, surf remains dangerous, and the existing street fare dropoff stays
-in place. Other authored pedestrian areas retain their own access rules.
-
-
-## D19 — Author compound solid footprints for recessed buildings
-
-**Decision:** Catalogue objects may declare a bounded union of up to eight
-normalized rectangular solid sections within their footprint envelope. Compile
-these sections once and share them across contacts, access clearance, map
-validation, sight lines and light blockers. Rectangular objects keep their
-existing footprint by default.
-
-**Reason:** A roof's rectangular export envelope can include visible sand in
-recessed corners. Treating that envelope as solid creates invisible walls.
-Collision sections are authored geometry, independent of image decoding and
-artwork-only scale; placement resizing and rotation transform them together.
-
-
-## D20 — Maintain browser suites as local checks
-
-**Decision:** Keep production browser checks as six named suites under
-`tests/browser/`, with independently reported cases and local results and
-failure screenshots. Run these suites and CLI tool tests locally. Keep CI to
-core tests, the production build and map validation, without browser
-provisioning. Asset generators and the optional performance benchmark remain
-separate utilities under `tools/`.
-
-**Reason:** A stale HUD selector hid a real 568×320 recovery-toast overlap.
-Maintained local checks make UI regressions visible, while keeping browser
-simulations and provisioning out of the quick pull-request checks.
+# Engineering and product principles
+
+Keep this file focused on current principles. Replace changed rules in place;
+remove obsolete rules instead of recording history or supersessions.
+
+## 1. Deliver one standalone, offline game
+
+Ship a frontend-only HTML file with embedded scripts, styles, fonts, artwork and
+sound. Preserve attribution and licences. Require neither runtime services nor
+browser storage to play; check the build for stray assets.
+
+## 2. Compile one authoritative, deterministic world
+
+Compile the current versioned map into detached, recursively frozen geometry
+shared by rendering, collisions, terrain, navigation, spawns, dispatch and recovery.
+Use stable entity IDs, explicit ownership and shared named attachment points.
+All land belongs to `landRegions`; boundaries use coordinates or named-point
+references, never both. The DOM-free land compiler carries no generator, district,
+object or presentation policy. World and minimap share polygon-union coverage and
+exposed edges with source identities; countryside and coastal attachments derive
+from the same canonical geometry.
+
+Keep land coverage, terrain, access and presentation independent. Compose places
+from bounded map collections without location-specific engine branches. Terrain
+sampling and drawing share priority and stable-ID ordering. Adding land implies
+neither guardrails nor surf. Seeded generation uses current land, placements and
+reserved vehicle bodies; identical current documents reproduce identical results.
+Historical runtime IDs, RNG sequences and compatibility formats are not contracts.
+Audio and visual effects must not consume gameplay randomness.
+
+## 3. Author through shared catalogues and validated operations
+
+Separate building and vehicle definitions from placements and roles. Resolve all
+props through typed `objectPlacements` and one DOM-free catalogue compiler. New
+image types need only a type and placement; derive the inline image manifest from
+measured sources. Normalize artwork, collision sections, shadows and light blockers
+to the resolved footprint so resizing and rotation transform them together. Only
+explicit `artworkScale` changes drawing alone; collision never depends on decoding
+or image padding. Allow at most eight rectangular solid sections per object.
+Vehicle model identity is immutable; definitions drive bodies, dynamics, artwork,
+AI clearance and access. Commercial vans and trucks remain NPC-only.
+
+Keep placement rules bounded: bridge and shoreline panels share explicit geometry
+references, openings, insets and stable edge/slot children. Avoid a general prefab
+language. Compose small authoring fixtures onto the current default map.
+Accept only the current schema, with no implicit migration. Keep imports lossless,
+operations atomic, stale batches rejected and undo/redo exact. City, harbour and
+bridges stay read-only; whole-district translation is limited to Southern Estates.
+Use the shared DOM-free engine through CLI tools and `__taxi.map`; do not restore
+a visual Map studio.
+
+Validate full bodies, walking entrances, occupied and empty bays, water clearance,
+route sweeps and workload bounds. Findings identify stable entities and probe
+sizes; sampled checks state their resolution. Directed inlet gaps must cross
+water to their target; unobservable gaps block preview. Invalid drafts remain
+editable but cannot enter gameplay preview.
+
+## 4. Preserve physical access, damage and vehicle ownership
+
+Keep at least 110 m of open water across the beachfront and retain the southern
+estates and golf course at their original scale. Condo podiums occupy frontage
+while preserving a physical walking route to the city street. Sunset Beach and
+Ocean Walk admit vehicles and pursuing police; buildings, furniture, traction and
+shoreline hazards govern movement. Other pedestrian areas keep their own access
+rules. Validate actual bodies and routes when changing placements.
+
+Moving exits and significant bike crashes separate riders and vehicles while
+preserving momentum, exit clearance and once-only landing injury. Keep low-speed
+dismounts simple. Wrecks remain physical, fire fuses survive abandonment and each
+vehicle detonates once; recovery cannot skip a pending blast. AI recovery uses
+feasible body-based movement with bounded work. Damage tuning is arcade physics.
+Upgrades belong to individual chassis and the wallet is shared. Repair preserves
+surviving upgrades; destruction loses them. Persist invested surviving vehicles
+with stable spawn identity. Harbour exchange supplies a stock replacement; any
+future custody return must restore the original chassis without duplicating parts.
+
+## 5. Separate world events, knowledge and publication
+
+Compile missions and campaigns from validated content and shared conditions,
+effects and handlers; display names and story IDs select no special mechanics.
+Author service entrances and campus street closures explicitly. Use one continuous
+calendar and bounded chronological scheduler for driving and skipped time.
+Track occurrences, player-held records, authentication, editorial approval,
+publication and public responses separately. Resolved events are irreversible.
+Pickup commits transport branches; delivery grants completion effects exactly
+once, including across reloads. Collection and newsroom actions require deliberate
+physical interaction; submission retains originals. Do not expose undiscovered
+evidence as a checklist or collapse progress into a truth score.
+
+## 6. Isolate previews and automation from player state
+
+Keep the original game while previews use fresh persistence-disabled instances;
+laboratory copies may stage existing state without saving it. Restore the original
+game, camera, mode and clock on exit. Collapsing laboratory controls does not exit
+the session. Map `edit()` restores the prior game and camera with drafting frozen;
+`close()` also restores the prior live/frozen clock. Browser automation uses
+disposable contexts and leaves player tabs, saves and settings untouched.
+
+## 7. Keep rendering readable, cached and independent of physics
+
+Use reduced-resolution Canvas lighting with cached lights, readable cool night
+shadows and warm local pools. Directed headlights use convex shadow extrusion and
+receiver masking over raised structures in both darkness and glow passes. Cull
+occluders, range-check lights and stop destroyed structures occluding; retain soft
+radial lights. Decode embedded artwork once, rasterize SVG ground tiles before
+play and cache patterns per canvas context. Never use live SVG pattern sources.
+Keep procedural fallbacks playable when images fail. Measure performance in fresh,
+GPU-enabled contexts.
+
+## 8. Keep verification and documentation focused
+
+Maintain deterministic laboratory scenarios, detached snapshots, fixed-step
+automation and real UI playtests. Run appropriate tests, strict TypeScript checks,
+map validation and the production build; verify standalone offline behavior,
+console errors, external requests and desktop/touch layouts. Keep maintained
+browser suites and CLI tool checks local with case results and failure captures.
+CI runs core tests, build and map validation without browser provisioning. Keep
+asset generators and optional performance benchmarks separate under `tools/`.
+
+Keep this as the only file under `docs/`. Contributor workflows belong in README,
+player instructions in HOW_TO and provenance in asset attribution files. Put
+implementation details and validation results in the PR, generated captures in
+ignored `scenario-runs/`, and executable fixtures beside their tools or tests.
+Do not create replacement feature notes, plans or changelogs elsewhere.
