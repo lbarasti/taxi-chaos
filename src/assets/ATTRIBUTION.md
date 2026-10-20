@@ -67,3 +67,17 @@ small sprites bundled inline with the other map artwork; the palm keeps a transp
 background, and transparent export padding is cropped at draw time.
 
 - `map/grass-{short,lush,clover,daisies,dry,tufts}.svg`: original grass tile artwork created for Taxi Chaos; six matching-edge variants with blades, clover, small daisies and dry tufts.
+
+`map/golf-course.png` (A: Classic country club), `map/golf-woodland.png`
+(B: Woodland retreat), `map/golf-coastal.png` (C: Coastal resort), and
+`map/golf-painterly.png` (D: Painterly parkland) were generated with OpenAI's
+built-in image generation for this project. All four use a layout guide drawn from
+the authored three-hole course, straight overhead ground only, no text, objects,
+water or cast shadows. The directions request respectively finely striped emerald
+turf, natural moss/clover rough, sun-washed coastal grass, and gouache brushwork.
+A is provisionally bundled; the other three PNGs are retained for review. The
+runtime keeps flags, tees, paths, clubhouse and physical carts separate. Changed
+hole layouts or a failed image decode use the procedural fallback.
+`map/golf-water.png` was generated separately as muted teal pond water, without a
+shoreline or objects, and is clipped to the same compiled polygon used by hazards,
+walking clearance and inspection. These images require no external services.

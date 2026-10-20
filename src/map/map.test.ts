@@ -91,6 +91,10 @@ describe('map compilation, gameplay and validation', () => {
     const h = new MapHistory(); translate(h);
     const original = new Game(undefined, false), preview = new Game(compileMap(h.snapshot().document), false);
     expect(original.world.pools[6].position).toEqual(vec(119.25, 417)); expect(preview.world.pools[6].position).toEqual(vec(119.25, 437));
+    const originalPond = original.world.pools.find(p => p.waterKind === 'pond')!, movedPond = preview.world.pools.find(p => p.waterKind === 'pond')!;
+    expect(movedPond.sourceId).toBe(originalPond.sourceId);
+    expect(movedPond.position).toEqual(vec(originalPond.position.x, originalPond.position.y + 20));
+    expect(movedPond.corners()).toEqual(originalPond.corners().map(p => vec(p.x, p.y + 20)));
     expect(preview.vehicles.find(v => v.cart)!.body.position).toEqual(vec(144, 490));
     expect(preview.world.people.some(p => p.home.x === 117 && p.home.y === 426)).toBe(true);
     const probe = new Body(105, 434, 1, 16, 10);

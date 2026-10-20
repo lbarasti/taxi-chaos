@@ -18,6 +18,8 @@ export const artworkRecords: readonly ArtworkRecord[] = [
   { id: 'grass-dry', png: 'map/grass-dry.svg', layer: 'ground', tileMetres: 4 },
   { id: 'grass-tufts', png: 'map/grass-tufts.svg', layer: 'ground', tileMetres: 4 },
   { id: 'asphalt', png: 'map/asphalt.svg', layer: 'ground', tileMetres: 48 },
+  { id: 'golf-course', png: 'map/golf-course.png', layer: 'ground', tileMetres: 110 },
+  { id: 'golf-water', png: 'map/golf-water.png', layer: 'ground', tileMetres: 12 },
 ];
 
 const commercialSign: BuildingSign = { width: 14, inset: 1.72, size: 0.78, color: '#eadab8' };

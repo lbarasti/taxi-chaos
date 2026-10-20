@@ -151,10 +151,11 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     const depth = contact(prop.body, other.body)?.depth ?? 0, ids = [prop.sourceId!, other.sourceId ?? `runtime-prop-${other.id}`].sort(), key = ids.join(':');
     if (depth > 0.04 && !overlaps.has(key)) { overlaps.add(key); push('object-overlap', ids, 'Authored solid overlaps another collision footprint (same-composite attachments are allowed)', prop.body.position, { penetration: depth }); }
   }
-  for (const [i, pool] of world.pools.entries()) {
-    const id = country.VILLAS[i].id;
+  for (const pool of world.pools) {
+    const id = pool.sourceId;
     const solid = [...world.hash.query(pool)].find(p => isRigidObstacle(p.kind) && p.sourceId !== id && (contact(pool, p.body)?.depth ?? 0) > 0.04);
-    if (solid) push('pool-overlap', [id, solid.sourceId ?? `runtime-prop-${solid.id}`], 'Villa pool intersects another solid object', pool.position);
+    if (solid) push('pool-overlap', [id, solid.sourceId ?? `runtime-prop-${solid.id}`], 'Pool or pond intersects another solid object', pool.position);
+    if (pool.waterKind === 'pond') checkLand(id, pool, country.inHighlands);
   }
   for (const stop of country.HIGHLAND_STOPS) {
     const body = createVehicleBody(vehicleDefinition('car'), stop.position, 0), access = country.countryAccess(stop.position);

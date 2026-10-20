@@ -1,11 +1,13 @@
 import { defaultCompiledMap } from './map/compile';
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
-import { contact, dist, length, vec } from './physics';
+import { Body, contact, dist, length, rotate, vec } from './physics';
 import { igniteVehicle } from './damage';
+import { contains } from './regions';
+import { inspectPoint } from './inspection';
 
 const HOSPITAL=defaultCompiledMap.city.recovery!;
-const { GOLF_COURSE, VILLA_POOLS } = defaultCompiledMap.country;
+const { GOLF_COURSE, GOLF_PONDS, VILLA_POOLS } = defaultCompiledMap.country;
 
 const run = (g: Game, seconds: number) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };
 function quiet() {
@@ -20,7 +22,7 @@ function walking() {
 }
 
 describe('pool drowning', () => {
-  it.each(VILLA_POOLS)('splashes and sinks in the pool at $position before hospital respawn', pool => {
+  it.each([...VILLA_POOLS, ...GOLF_PONDS])('splashes and sinks in the basin at $position before hospital respawn', pool => {
     const g = quiet(), old = g.player, cash = g.save.cash;
     old.body.position = { ...pool.position }; g.keys.add('KeyW'); g.keys.add('ShiftLeft');
     g.job.stage = 'dropoff'; g.job.dropoff = { ...pool.position }; g.job.wait = 0.799;
@@ -52,6 +54,42 @@ describe('pool drowning', () => {
     g.player.body.position = vec(p.position.x, p.position.y + p.height / 2 + 2);
     const npc = g.vehicle('traffic', p.position.x, p.position.y, 0, '#fff'); npc.parked = true;
     run(g, 2.5); expect(npc.alive).toBe(false); expect(g.player.sinking).toBeUndefined(); expect(g.mode).toBe('playing');
+  });
+});
+
+describe('golf pond shoreline', () => {
+  it('drives into the rotated pond and sinks NPCs through the pool lifecycle', () => {
+    const g = quiet(), pond = g.world.pools.find(p => p.waterKind === 'pond')!;
+    g.player.body.position = pond.toWorld(vec(pond.w / 2 + 3, 0));
+    g.player.body.angle = pond.angle + Math.PI;
+    g.player.body.velocity = rotate(vec(-10, 0), pond.angle);
+    run(g, 0.5);
+    expect(g.player.sinking?.pool).toBe(pond);
+    expect(contains(pond.corners(), g.player.body.position)).toBe(true);
+
+    const npcGame = quiet(), npc = npcGame.vehicle('traffic', pond.position.x, pond.position.y, 0, '#fff');
+    npc.parked = true; run(npcGame, 2.5);
+    expect(npc.alive).toBe(false); expect(npcGame.mode).toBe('playing');
+  });
+
+  it('uses the curved shoreline for walking, inspection and full-body clearance', () => {
+    const g = walking(), pond = g.world.pools.find(p => p.waterKind === 'pond')!;
+    expect(g.clearWalk(pond.toWorld(vec(-8, 0)), pond.toWorld(vec(8, 0)))).toBe(false);
+    const dryCorner = pond.toWorld(vec(pond.w * 0.46, pond.h * 0.46));
+    const smallProbe = new Body(dryCorner.x, dryCorner.y, 1, 0.2, 0.2);
+    expect(contact(smallProbe, pond)).toBeNull();
+    expect(contact(pond, smallProbe)).toBeNull();
+    expect(inspectPoint(g, dryCorner).pool).toBe(false);
+    expect(inspectPoint(g, pond.position).pool).toBe(true);
+    const wetProbe = new Body(pond.position.x, pond.position.y, 1, 0.7, 0.7);
+    expect(contact(wetProbe, pond)?.depth).toBeGreaterThan(0);
+    expect(contact(pond, wetProbe)?.depth).toBeGreaterThan(0);
+
+    g.driver.position = pond.toWorld(vec(pond.w / 2 + 2, 0));
+    const toward = rotate(vec(-1, 0), pond.angle); g.touchMove = toward;
+    run(g, 1);
+    expect(contains(pond.corners(), g.driver.position)).toBe(false);
+    expect(g.mode).toBe('playing');
   });
 });
 

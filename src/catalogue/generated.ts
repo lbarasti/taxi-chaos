@@ -12,13 +12,15 @@ import artwork7 from '../assets/map/grass-daisies.svg?inline';
 import artwork8 from '../assets/map/grass-dry.svg?inline';
 import artwork9 from '../assets/map/grass-tufts.svg?inline';
 import artwork10 from '../assets/map/asphalt.svg?inline';
-import artwork11 from '../assets/map/hospital-structure.png?inline';
-import artwork12 from '../assets/map/luxury-condo.png?inline';
-import artwork13 from '../assets/map/ocean-crest-condo.png?inline';
-import artwork14 from '../assets/map/pacific-palm-hotel.png?inline';
-import artwork15 from '../assets/map/bakery-front.png?inline';
-import artwork16 from '../assets/map/palm-canopy.png?inline';
-import artwork17 from '../assets/map/crate-shipping.png?inline';
+import artwork11 from '../assets/map/golf-course.png?inline';
+import artwork12 from '../assets/map/golf-water.png?inline';
+import artwork13 from '../assets/map/hospital-structure.png?inline';
+import artwork14 from '../assets/map/luxury-condo.png?inline';
+import artwork15 from '../assets/map/ocean-crest-condo.png?inline';
+import artwork16 from '../assets/map/pacific-palm-hotel.png?inline';
+import artwork17 from '../assets/map/bakery-front.png?inline';
+import artwork18 from '../assets/map/palm-canopy.png?inline';
+import artwork19 from '../assets/map/crate-shipping.png?inline';
 import type { ArtworkSource } from './schema';
 
 /** One inline module URL per referenced image, keyed by stable artwork ID. */
@@ -34,13 +36,15 @@ export const artworkInline: Readonly<Record<string, string>> = {
   'grass-dry': artwork8,
   'grass-tufts': artwork9,
   'asphalt': artwork10,
-  'hospital': artwork11,
-  'condo': artwork12,
-  'ocean-crest-condo': artwork13,
-  'hotel': artwork14,
-  'bakery': artwork15,
-  'palm': artwork16,
-  'shipping-crate': artwork17,
+  'golf-course': artwork11,
+  'golf-water': artwork12,
+  'hospital': artwork13,
+  'condo': artwork14,
+  'ocean-crest-condo': artwork15,
+  'hotel': artwork16,
+  'bakery': artwork17,
+  'palm': artwork18,
+  'shipping-crate': artwork19,
 };
 
 /** Measured source pixels and transparent-padding crop for every referenced PNG. */
@@ -49,6 +53,8 @@ export const artworkSources: Readonly<Record<string, ArtworkSource>> = {
   'shop-rust': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 } },
   'shop-concrete': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 } },
   'tree-worn': { width: 192, height: 192, crop: { x: 0, y: 0, width: 192, height: 192 } },
+  'golf-course': { width: 1983, height: 793, crop: { x: 0, y: 0, width: 1983, height: 793 } },
+  'golf-water': { width: 1254, height: 1254, crop: { x: 0, y: 0, width: 1254, height: 1254 } },
   'hospital': { width: 787, height: 1997, crop: { x: 33, y: 16, width: 726, height: 1951 } },
   'condo': { width: 1254, height: 1254, crop: { x: 0, y: 110, width: 1175, height: 1106 } },
   'ocean-crest-condo': { width: 1254, height: 1254, crop: { x: 0, y: 19, width: 1190, height: 1235 } },

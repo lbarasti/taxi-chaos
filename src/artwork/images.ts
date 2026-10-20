@@ -30,6 +30,12 @@ export class ArtworkImages {
     });
   }
   has(id: string): boolean { return this.images.has(id); }
+  /** Authored ground plates, bundled and decoded with the other artwork. */
+  surface(c: CanvasRenderingContext2D, id: string, bounds: ArtBounds): boolean {
+    const image = this.images.get(id);
+    if (!image) return false;
+    c.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height); return true;
+  }
   /** Reuse the existing tar roof's bare membrane at metre scale. Crop out its
    * shop fixtures; enlarged buildings draw their own human-scale equipment. */
   roof(c: CanvasRenderingContext2D, bounds: ArtBounds): void {

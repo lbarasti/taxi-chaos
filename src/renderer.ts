@@ -15,6 +15,7 @@ import { artworkImages } from './artwork/images';
 import { artworkFor, artRadius, fallbackScale } from './artwork/catalogue';
 import { InspectionState } from './inspection';
 import { drawInspection } from './inspection-renderer';
+import { defaultMap } from './map/default';
 
 import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
 import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
@@ -434,17 +435,25 @@ export class Renderer {
     }
     const club = GOLF_COURSE;
     this.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8, '#3b6346');
+    c.save(); c.beginPath(); c.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8); c.clip();
+    // The plate was generated against this layout. Edited hole layouts retain their
+    // accurate procedural presentation; translating the district still uses the art.
+    const authoredLayout = JSON.stringify(this.game.map.document.golf.holes) === JSON.stringify(defaultMap.golf.holes);
+    const courseArt = authoredLayout && artworkImages.surface(c, 'golf-course', { x: club.center.x - 55, y: club.center.y - 22, width: 110, height: 44 });
+    c.restore();
     trace(c, GOLF_PATH);
     c.strokeStyle = '#b8b395'; c.lineWidth = 2.4; c.stroke();
     this.rect(club.clubhouse.x - 10, club.clubhouse.y - 9, 20, 22, '#b8aa87');
     for (const [i, hole] of GOLF_HOLES.entries()) {
-      const center = scale(add(hole.tee, hole.green), 0.5), angle = Math.atan2(hole.green.y - hole.tee.y, hole.green.x - hole.tee.x);
-      c.save(); c.beginPath(); c.ellipse(center.x, center.y, dist(hole.tee, hole.green) / 2 + 6, 4.3, angle, 0, Math.PI * 2); c.clip();
-      this.rect(center.x - 40, center.y - 10, 80, 20, '#7b9b59');
-      for (let x = center.x - 40; x < center.x + 40; x += 5) this.rect(x, center.y - 10, 2.5, 20, '#acc77829');
-      c.restore();
-      c.beginPath(); c.ellipse(hole.bunker.x, hole.bunker.y, 5, 2.2, -0.35, 0, Math.PI * 2); c.fillStyle = '#d9c69a'; c.fill();
-      c.beginPath(); c.ellipse(hole.green.x, hole.green.y, 5, 3.6, 0.2, 0, Math.PI * 2); c.fillStyle = '#a5bd72'; c.fill();
+      if (!courseArt) {
+        const center = scale(add(hole.tee, hole.green), 0.5), angle = Math.atan2(hole.green.y - hole.tee.y, hole.green.x - hole.tee.x);
+        c.save(); c.beginPath(); c.ellipse(center.x, center.y, dist(hole.tee, hole.green) / 2 + 6, 4.3, angle, 0, Math.PI * 2); c.clip();
+        this.rect(center.x - 40, center.y - 10, 80, 20, '#7b9b59');
+        for (let x = center.x - 40; x < center.x + 40; x += 5) this.rect(x, center.y - 10, 2.5, 20, '#acc77829');
+        c.restore();
+        c.beginPath(); c.ellipse(hole.bunker.x, hole.bunker.y, 5, 2.2, -0.35, 0, Math.PI * 2); c.fillStyle = '#d9c69a'; c.fill();
+        c.beginPath(); c.ellipse(hole.green.x, hole.green.y, 5, 3.6, 0.2, 0, Math.PI * 2); c.fillStyle = '#a5bd72'; c.fill();
+      }
       this.circle(hole.green, 0.22, '#253d30');
       this.rect(hole.green.x, hole.green.y - 2.1, 0.1, 2.1, '#efe9d1');
       trace(c, [vec(hole.green.x, hole.green.y - 2.1), vec(hole.green.x + 1.3, hole.green.y - 1.7), vec(hole.green.x, hole.green.y - 1.3)], true); c.fillStyle = '#e87663'; c.fill();
@@ -452,7 +461,13 @@ export class Renderer {
       this.label(String(i + 1), hole.tee.x - 3, hole.tee.y, 0.65, '#efe6bb', '700');
     }
     // Carts are rendered from physical vehicles, rather than painted decorations.
-    c.beginPath(); c.ellipse(club.center.x + 41, club.center.y - 12, 6, 3.3, 0.4, 0, Math.PI * 2); c.fillStyle = '#569097'; c.fill(); c.strokeStyle = '#bec79a'; c.lineWidth = 0.5; c.stroke();
+    for (const pond of this.game.world.pools.filter(pool => pool.waterKind === 'pond')) {
+      const shoreline = pond.corners();
+      trace(c, shoreline, true); c.fillStyle = '#569097'; c.fill();
+      c.save(); c.clip(); c.translate(pond.position.x, pond.position.y); c.rotate(pond.angle);
+      artworkImages.surface(c, 'golf-water', { x: -pond.w / 2, y: -pond.h / 2, width: pond.w, height: pond.h }); c.restore();
+      trace(c, shoreline, true); c.strokeStyle = '#bec79a'; c.lineWidth = 0.3; c.stroke();
+    }
     this.label('FAIRWAY COUNTRY CLUB', club.center.x, club.center.y - 21, 0.95, '#e8dfb4', '700');
   }
   marker(p: Vec, color: string, label: string, garage = false) {
@@ -651,7 +666,7 @@ export class Renderer {
     if (v.sinking) {
       const c = this.ctx, b = v.body, pool = v.sinking.pool, t = clamp(v.sinking.elapsed / 2.2, 0, 1);
       c.save();
-      if (pool) { c.beginPath(); c.rect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); c.clip(); }
+      if (pool) { trace(c, pool.corners(), true); c.clip(); }
       const flight = pool ? 0 : Math.sin(Math.min(1, v.sinking.elapsed / 0.6) * Math.PI) * Math.min(2.4, v.sinking.entrySpeed * 0.08);
       c.translate(b.position.x, b.position.y + t * 0.7 - flight); c.rotate(t * 0.15); c.scale(1 - t * 0.25, 1 - t * 0.25);
       c.translate(-b.position.x, -b.position.y); c.globalAlpha = 1 - t;

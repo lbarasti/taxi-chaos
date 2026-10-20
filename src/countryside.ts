@@ -35,6 +35,9 @@ export function createCountryside(document: MapDocument, land: LandGeometry) {
   const ROAD_NODES = document.nodes.map(point), VILLAS = structuredClone(document.villas);
   const golf = document.golf, golfPoint = (p: Vec) => add(golf.center, p);
   const GOLF_COURSE = { id: golf.id, center: { ...golf.center }, width: golf.width, height: golf.height, clubhouse: golfPoint(golf.clubhouse) };
+  // One shoreline definition for artwork, sinking, route clearance and map previews.
+  const GOLF_PONDS = [{ id: `${golf.id}-pond-0`, sourceId: golf.id, position: golfPoint(vec(41, -12)), width: 12, height: 6.6, angle: 0.4,
+    polygon: Array.from({ length: 48 }, (_, i) => vec(Math.cos(i * Math.PI / 24) / 2, Math.sin(i * Math.PI / 24) / 2)) }];
   const VILLA_POOLS = VILLAS.map(v => ({ position: vec(v.position.x + 14.25, v.position.y + 3), width: 6.5, height: 12 }));
   const GOLF_CART_ROUTE = golf.route.map(golfPoint), GOLF_PATH = golf.path.map(golfPoint);
   const GOLF_HOLES = golf.holes.map(h => ({ tee: golfPoint(h.tee), green: golfPoint(h.green), bunker: golfPoint(h.bunker) }));
@@ -113,6 +116,6 @@ export function createCountryside(document: MapDocument, land: LandGeometry) {
   function inHighlands(p: Vec): boolean {
     return land.regionContains(document.generation.countryLand,p);
   }
-  return { BRIDGE_Y, isCountry, HIGHLAND_OUTLINE, SOUTH_WOODS_Y, MAP_WIDTH, MAP_HEIGHT, HIGHLAND_STOPS, ROAD_NODES, VILLAS, GOLF_COURSE, VILLA_POOLS, GOLF_CART_ROUTE, GOLF_PATH, GOLF_HOLES, RIDGES, LABELS, COUNTRY_ROADS, VILLA_DRIVES, estateDrive, inCountryClearing, countryAccess, countryNode, countryNeighbours, countryPath, inHighlands };
+  return { BRIDGE_Y, isCountry, HIGHLAND_OUTLINE, SOUTH_WOODS_Y, MAP_WIDTH, MAP_HEIGHT, HIGHLAND_STOPS, ROAD_NODES, VILLAS, GOLF_COURSE, GOLF_PONDS, VILLA_POOLS, GOLF_CART_ROUTE, GOLF_PATH, GOLF_HOLES, RIDGES, LABELS, COUNTRY_ROADS, VILLA_DRIVES, estateDrive, inCountryClearing, countryAccess, countryNode, countryNeighbours, countryPath, inHighlands };
 }
 export type Countryside = ReturnType<typeof createCountryside>;
