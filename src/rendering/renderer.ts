@@ -1,7 +1,7 @@
 import { CITY_GRID, CITY_SIZE, citySegmentOpen } from '../world/city';
 import { drawCityBuilding } from './city-renderer';
-import { Game, type Vehicle } from '../game';
-import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from '../physics';
+import { Game, type Vehicle } from '../game/game';
+import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from '../physics/physics';
 import { GARAGE, type Prop } from '../world/world';
 import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';

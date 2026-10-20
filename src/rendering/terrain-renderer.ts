@@ -3,7 +3,7 @@ import type { CompiledMap } from '../map/compile';
 import { artworkImages } from '../artwork/images';
 import { regionBounds } from '../world/regions';
 import { surfaces } from '../world/terrain';
-import { add, dist, scale, vec, type Vec } from '../physics';
+import { add, dist, scale, vec, type Vec } from '../physics/physics';
 
 function trace(c: CanvasRenderingContext2D, points: readonly Vec[]) {
   c.beginPath();

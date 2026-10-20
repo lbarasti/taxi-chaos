@@ -1,5 +1,5 @@
 import { citySegmentOpen, type City } from './city';
-import { dist, vec, type Vec } from '../physics';
+import { dist, vec, type Vec } from '../physics/physics';
 
 export type StreetAccess = { point: Vec; vertical?: number; horizontal?: number; distance?: number };
 

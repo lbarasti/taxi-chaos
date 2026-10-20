@@ -1,4 +1,4 @@
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 import { artworkRecords, objectRecords } from '../catalogue/content';
 import { artworkSources } from '../catalogue/generated';
 import { appearanceSeed, compileArtworkCatalogue, compileObjectCatalogue, deepFreeze, deriveArtwork, scaleArtwork } from '../catalogue/compile';

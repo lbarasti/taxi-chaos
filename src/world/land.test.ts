@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compileLand, directedWaterGap } from './land';
-import { add, scale, vec, type Vec } from '../physics';
+import { add, scale, vec, type Vec } from '../physics/physics';
 const region=(id: string,outline: Vec[])=>({id,owner:'any-owner',outline});
 const box=(x: number,y: number,w=10,h=10)=>[vec(x,y),vec(x+w,y),vec(x+w,y+h),vec(x,y+h)];
 

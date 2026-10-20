@@ -7,8 +7,8 @@ import { compileMap } from './compile';
 import { validateMap } from './validation';
 import { createPreview } from './preview';
 import { World } from '../world/world';
-import { Game } from '../game';
-import { Body, contact, dist, vec } from '../physics';
+import { Game } from '../game/game';
+import { Body, contact, dist, vec } from '../physics/physics';
 
 const translate = (history: MapHistory, y = 20) => history.apply({ baseRevision: history.snapshot().revision, operations: [{ type: 'translate', targetId: 'southern-estates', delta: vec(0, y) }, { type: 'envelope', min: vec(-50, -180), max: vec(540, 600) }] });
 describe('map document and transactional editing', () => {

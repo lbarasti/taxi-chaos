@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Game, defaultSave } from '../game';
+import { Game, defaultSave } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
 import { campaignMissions } from '../missions/compile';
 import { assertMissionCatalogue } from '../missions/schema';
-import { contact, vec } from '../physics';
+import { contact, vec } from '../physics/physics';
 import { GARAGE } from '../world/world';
-import { storageKeys } from '../storage';
+import { storageKeys } from '../game/storage';
 import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../narrative/player-records';
 import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
 import { defaultCampaign, parseCampaign } from './state';

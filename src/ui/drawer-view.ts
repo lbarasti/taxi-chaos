@@ -1,4 +1,4 @@
-import type { Game } from '../game';
+import type { Game } from '../game/game';
 import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
 import { calendarLabel } from '../campaign/clock';

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Game, defaultSave } from '../game';
+import { Game, defaultSave } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
-import { dist, vec } from '../physics';
-import { storageKeys } from '../storage';
+import { dist, vec } from '../physics/physics';
+import { storageKeys } from '../game/storage';
 import type { MissionCatalogue } from './schema';
 import { compileMissions } from './compile';
 import { MissionDirector, type DirectorContext } from './director';

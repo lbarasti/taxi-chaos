@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 import { STORY_LETTERS_PER_SECOND } from './story';
 import { messageCharacter } from './characters';
 import { resolvePortrait } from './portraits';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
-import { contact, dist, length, vec } from '../physics';
+import { Game } from '../game/game';
+import { contact, dist, length, vec } from '../physics/physics';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, vehicleDefinitions, type VehicleDefinition, type VehicleModel } from './vehicles';
 import { igniteVehicle } from './damage';
 import { loadScenario } from '../debug/lab';

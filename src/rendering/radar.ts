@@ -1,4 +1,4 @@
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 
 // A fixed 320 m neighbourhood gives wider context at desktop and touch sizes.
 export function radarView(actor: Vec, width: number, height: number) {

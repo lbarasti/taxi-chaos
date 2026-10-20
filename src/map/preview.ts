@@ -1,5 +1,5 @@
-import { Game } from '../game';
-import { contact, dist, vec } from '../physics';
+import { Game } from '../game/game';
+import { contact, dist, vec } from '../physics/physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { compileMap } from './compile';
 import { entityPosition } from './operations';

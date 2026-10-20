@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Game, defaultSave, type Vehicle } from '../game';
+import { Game, defaultSave, type Vehicle } from '../game/game';
 import { igniteVehicle } from './damage';
 import { defaultCompiledMap } from '../map/compile';
-import { vec } from '../physics';
-import { storageKeys } from '../storage';
+import { vec } from '../physics/physics';
+import { storageKeys } from '../game/storage';
 import { parseGarage } from './garage-save';
 import { stockUpgrades } from './vehicle-upgrades';
 

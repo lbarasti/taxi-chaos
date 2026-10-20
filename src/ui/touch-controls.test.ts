@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { joystickVector, touchSteering } from './touch-controls';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 
 describe('proportional touch movement', () => {

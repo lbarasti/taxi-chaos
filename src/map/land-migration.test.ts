@@ -7,7 +7,7 @@ import { assertMap } from './schema';
 import { validateMap } from './validation';
 import { World } from '../world/world';
 import { boundaryHasSource, directedWaterGap } from '../world/land';
-import { add, scale, vec } from '../physics';
+import { add, scale, vec } from '../physics/physics';
 
 function physics(world: World) {
   return world.props.map(p=>[p.id,p.kind,p.body.position,p.body.w,p.body.h,p.body.angle,p.color,p.label,p.hp]);

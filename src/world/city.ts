@@ -1,4 +1,4 @@
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 import { compileBuilding, buildingDefinitions, type CompiledBuilding } from './buildings';
 import type { ObjectCatalogue } from '../catalogue/schema';
 import { cityContent, type CityContent, type CityCampus, type ResidentHomes } from './city-content';

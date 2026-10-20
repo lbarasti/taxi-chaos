@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Body, CarDynamics, add, dist, length, scale, vec } from '../physics';
+import { Body, CarDynamics, add, dist, length, scale, vec } from '../physics/physics';
 import { World, type Person } from './world';
 import {
   CONTACT_BAND_MIN, FATAL_IMPACT, HIT_COOLDOWN, PERSON_RADIUS,

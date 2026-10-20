@@ -10,18 +10,18 @@ import { dayMinute } from '../campaign/clock';
 // automation and Node tests can inspect it. `loadScenario` is exported with no DOM dependency
 // so fixtures can be unit-tested outside a browser.
 import './lab.css';
-import { Game, upgradeInfo, type Upgrade, type Vehicle } from '../game';
+import { Game, upgradeInfo, type Upgrade, type Vehicle } from '../game/game';
 import type { Renderer } from '../rendering/renderer';
 import type { OnBoardCue } from '../rendering/onboard-cue';
-import type { Settings } from '../rules';
-import { clamp, contact, vec, type Vec } from '../physics';
+import type { Settings } from '../game/rules';
+import { clamp, contact, vec, type Vec } from '../physics/physics';
 import { createAI } from '../vehicles/ai';
 import { createVehicleDamage, igniteVehicle, tickVehicleDamage, type VehicleDamage } from '../vehicles/damage';
 import type { AudioFX } from '../audio/audio';
 import { isSoundCue, soundLabels, type SoundCue } from '../audio/sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from '../world/day-night';
 import { MotorcycleDynamics } from '../vehicles/motorcycle';
-import { removeStorage, storageKeys } from '../storage';
+import { removeStorage, storageKeys } from '../game/storage';
 import type { MapAPI } from '../map/workspace';
 import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from '../vehicles/vehicles';
 

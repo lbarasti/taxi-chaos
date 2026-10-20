@@ -1,4 +1,4 @@
-import { add, cross, dist, dot, scale, sub, vec, type Vec } from '../physics';
+import { add, cross, dist, dot, scale, sub, vec, type Vec } from '../physics/physics';
 import { contains, regionBounds, ringDistance } from './regions';
 
 export type ResolvedLand = { id: string; owner: string; outline: Vec[] };

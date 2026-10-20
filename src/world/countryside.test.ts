@@ -1,9 +1,9 @@
 import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
-import { Body, contact, dist, vec, type Vec } from '../physics';
+import { Body, contact, dist, vec, type Vec } from '../physics/physics';
 import { pathLength } from './countryside';
 import { World, district } from './world';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
 import { loadScenario } from '../debug/lab';
 import { killPedestrian, updatePedestrians } from './pedestrians';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 import { onBoardCue, onBoardLight } from './onboard-cue';
 

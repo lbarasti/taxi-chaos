@@ -2,7 +2,7 @@ import './inspection.css';
 import type { Renderer } from '../rendering/renderer';
 import { inspectPoint, overlayLayers, visualLayers, type InspectionPatch, type InspectionPreset, type OverlayLayer, type VisualLayer } from './inspection';
 import { inspectionColours } from './inspection-renderer';
-import { clamp, type Vec } from '../physics';
+import { clamp, type Vec } from '../physics/physics';
 
 type InspectionHooks = { available(): boolean; clearInput(): void; redraw(): void; clockFrozen(): boolean };
 export type InspectionAPI = ReturnType<typeof createInspectionPanel>['api'];

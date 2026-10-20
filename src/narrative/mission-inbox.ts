@@ -1,4 +1,4 @@
-import type { Game } from '../game';
+import type { Game } from '../game/game';
 import { characters, isCharacterId } from './characters';
 import { showCharacterPortrait } from './story-view';
 import { calendarLabel } from '../campaign/clock';

@@ -1,4 +1,4 @@
-import { Body, SpatialHash, contact, cross, dist, dot, sub, vec, type Vec } from '../physics';
+import { Body, SpatialHash, contact, cross, dist, dot, sub, vec, type Vec } from '../physics/physics';
 import type { BuildingPresentation, PropKind, ResolvedFeature } from '../catalogue/schema';
 import { contains, regionBounds, regionOrder } from './regions';
 import { createAccess, type AccessGeometry } from './access';

@@ -1,4 +1,4 @@
-import { add, clamp, dist, dot, scale, sub, vec, type Vec } from '../physics';
+import { add, clamp, dist, dot, scale, sub, vec, type Vec } from '../physics/physics';
 
 import type { ResolvedLand } from './land';
 import { contains, regionBounds } from './regions';

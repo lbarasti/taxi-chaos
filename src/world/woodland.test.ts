@@ -1,9 +1,9 @@
 import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
-import { Body, contact, dist, vec } from '../physics';
+import { Body, contact, dist, vec } from '../physics/physics';
 import { pathLength } from './countryside';
 import { World, district } from './world';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 import { beachShoreY } from '../test-fixtures/sunset';
 import { defaultCompiledMap } from '../map/compile';

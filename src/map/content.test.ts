@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Body, contact, vec } from '../physics';
-import { Game } from '../game';
+import { Body, contact, vec } from '../physics/physics';
+import { Game } from '../game/game';
 import { World } from '../world/world';
 import { copyDefaultMap } from './default';
 import { compileMap } from './compile';

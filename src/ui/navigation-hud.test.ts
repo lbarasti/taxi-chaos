@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { GARAGE } from '../world/world';
 import { PORT_ENTRY } from '../world/harbour';
 import { navigationTargetKind } from '../rendering/radar';

@@ -1,4 +1,4 @@
-import { add, dist, scale, sub } from '../physics';
+import { add, dist, scale, sub } from '../physics/physics';
 import { closestOnSegment, contains } from '../world/regions';
 import { boundaryHasSource, type LandGeometry } from '../world/land';
 import type { Countryside } from '../world/countryside';

@@ -4,7 +4,7 @@ import { compileMap } from './compile';
 import { MapHistory } from './operations';
 import { validateMap } from './validation';
 import { World, createNavigation } from '../world/world';
-import { Body, dist, vec, type Vec } from '../physics';
+import { Body, dist, vec, type Vec } from '../physics/physics';
 
 function assertDrySweep(world: World, a: Vec, b: Vec) {
   const steps = Math.ceil(dist(a, b) / 0.25);

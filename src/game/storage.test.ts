@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-vi.mock('./audio/audio-assets', () => ({ audioAssets: {} }));
-import { AudioFX } from './audio/audio';
+vi.mock('../audio/audio-assets', () => ({ audioAssets: {} }));
+import { AudioFX } from '../audio/audio';
 import { Game, defaultSave } from './game';
 import { readStorage, removeStorage, storageKeys } from './storage';
 

@@ -5,7 +5,7 @@ import type { CampaignDefinition } from '../campaign/model';
 import { assertCampaignDefinition } from '../campaign/validate';
 import { isCharacterId, type CharacterId } from '../narrative/characters';
 import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles/vehicles';
-import { dist, type Vec } from '../physics';
+import { dist, type Vec } from '../physics/physics';
 import type { CompiledMap } from '../map/compile';
 import { createNavigation } from '../world/world';
 import type { BeatId, StoryCategory, StoryMessage } from '../narrative/story';

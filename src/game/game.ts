@@ -1,42 +1,42 @@
-import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from './world/world';
-import { createAI, driveNPC, type AIState } from './vehicles/ai';
+import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from '../physics/physics';
+import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from '../world/world';
+import { createAI, driveNPC, type AIState } from '../vehicles/ai';
 import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type Settings } from './rules';
-import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './vehicles/damage';
-import { killPedestrian, updatePedestrians } from './world/pedestrians';
-import { Effects } from './rendering/effects';
-import { freshRubberMark, updateRubberMark, type RubberMarkState } from './rendering/skid-marks';
-import { SoundEvents } from './audio/sound';
-import { DayNight } from './world/day-night';
-import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from './narrative/text-messages';
-import { Dialogue } from './narrative/story';
-import { characters } from './narrative/characters';
-import { missionsFor, neutralMissions, campaignMissions } from './missions/compile';
-import { MissionDirector, type AbandonReason, type DirectorContext } from './missions/director';
-import { defaultMissionProgress, parseMissionProgress, type MissionProgress } from './missions/progress';
-import type { MissionId } from './missions/schema';
-import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './vehicles/motorcycle';
-import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from './vehicles/vehicle-exit';
-import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from './vehicles/vehicles';
+import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from '../vehicles/damage';
+import { killPedestrian, updatePedestrians } from '../world/pedestrians';
+import { Effects } from '../rendering/effects';
+import { freshRubberMark, updateRubberMark, type RubberMarkState } from '../rendering/skid-marks';
+import { SoundEvents } from '../audio/sound';
+import { DayNight } from '../world/day-night';
+import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from '../narrative/text-messages';
+import { Dialogue } from '../narrative/story';
+import { characters } from '../narrative/characters';
+import { missionsFor, neutralMissions, campaignMissions } from '../missions/compile';
+import { MissionDirector, type AbandonReason, type DirectorContext } from '../missions/director';
+import { defaultMissionProgress, parseMissionProgress, type MissionProgress } from '../missions/progress';
+import type { MissionId } from '../missions/schema';
+import { MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from '../vehicles/motorcycle';
+import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, JUMP_SIDE_SPEED, landingDamage, motorcycleJumpReaction, tumbleDuration, type ExitSide } from '../vehicles/vehicle-exit';
+import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleDefinition, type VehicleModel, type VehicleRole, type VehicleSpawn } from '../vehicles/vehicles';
 import { readStorage, storageKeys } from './storage';
-import { touchSteering } from './ui/touch-controls';
-import { defaultPlayerRecords, parsePlayerRecords, MAX_TEXT_RECEIPTS, type NotebookEntry, type PlayerRecords } from './narrative/player-records';
-import { defaultCampaign, parseCampaign, type Campaign } from './campaign/state';
-import { campaignDefinition } from './campaign/content';
-import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent } from './campaign/model';
-import { campaignCondition } from './missions/conditions';
-import { dispatchCampaignEvent } from './campaign/events';
-import { recordNote } from './campaign/effects';
-import { CAMPAIGN_START, CAMPAIGN_END, calendarLabel, nextMorning } from './campaign/clock';
-import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
-import { cityBulletin } from './campaign/bulletin';
-import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
-import { pathLength } from './world/countryside';
-import { RAIL_BREAK_SPEED } from './world/world';
-import { defaultCompiledMap, type CompiledMap } from './map/compile';
-import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from './vehicles/vehicle-upgrades';
-import { saveCar, parseGarage, legacyGarage, type GarageSave, type SavedCar } from './vehicles/garage-save';
-import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from './world/harbour';
+import { touchSteering } from '../ui/touch-controls';
+import { defaultPlayerRecords, parsePlayerRecords, MAX_TEXT_RECEIPTS, type NotebookEntry, type PlayerRecords } from '../narrative/player-records';
+import { defaultCampaign, parseCampaign, type Campaign } from '../campaign/state';
+import { campaignDefinition } from '../campaign/content';
+import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent } from '../campaign/model';
+import { campaignCondition } from '../missions/conditions';
+import { dispatchCampaignEvent } from '../campaign/events';
+import { recordNote } from '../campaign/effects';
+import { CAMPAIGN_START, CAMPAIGN_END, calendarLabel, nextMorning } from '../campaign/clock';
+import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from '../campaign/scheduler';
+import { cityBulletin } from '../campaign/bulletin';
+import { ordinaryDuring, rideMessage } from '../campaign/ride-dialogue';
+import { pathLength } from '../world/countryside';
+import { RAIL_BREAK_SPEED } from '../world/world';
+import { defaultCompiledMap, type CompiledMap } from '../map/compile';
+import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from '../vehicles/vehicle-upgrades';
+import { saveCar, parseGarage, legacyGarage, type GarageSave, type SavedCar } from '../vehicles/garage-save';
+import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from '../world/harbour';
 
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -45,7 +45,7 @@ export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: st
 export type Save = { cash: number; deliveries: number; garage: GarageSave | null; best: number; story: MissionProgress; playerRecords: PlayerRecords; campaign: Campaign };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
-export { upgradeInfo, type Upgrade } from './vehicles/vehicle-upgrades';
+export { upgradeInfo, type Upgrade } from '../vehicles/vehicle-upgrades';
 export const defaultSave = (definition = campaignDefinition): Save => ({ cash: 80, deliveries: 0, garage: null, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords(), campaign: defaultCampaign(definition) });
 function loadSave(definition = campaignDefinition): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(definition); const d = defaultSave(definition); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign, definition, { progress: d.story, records: d.playerRecords }); d.garage = s.garage ? parseGarage(s.garage) : s.upgrades ? legacyGarage(s.upgrades) : null; return d; } catch { return defaultSave(definition); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
@@ -192,7 +192,7 @@ export class Game {
     this.setMode('playing'); this.notify(`Morning · ${this.campaignBulletin}`); return true;
   }
   get campaignContext(): CampaignContext { return { state: this.save.campaign, definition: this.campaignContent, progress: this.save.story, records: this.save.playerRecords }; }
-  campaignMatches(condition: import('./missions/schema').Condition | undefined) { return campaignCondition(condition, this.save.campaign, this.campaignContext); }
+  campaignMatches(condition: import('../missions/schema').Condition | undefined) { return campaignCondition(condition, this.save.campaign, this.campaignContext); }
   isCampaignVehicle(id: string | undefined) { return this.campaignContent.vehicles.some(v => v.id === id); }
   get campaignBulletin() { return cityBulletin(this.save.campaign, this.campaignContext, this.campaignContent); }
   /** Also used by the explicit Lab campaign control; never changes simulation seconds. */
@@ -280,7 +280,7 @@ export class Game {
     this.note({ id: active.beatId, title: `${characters[active.message.speaker].name} · ride conversation`, text: active.message.text, kind: 'conversation', source: active.message.speaker });
     this.persist();
   }
-  private speak(beatId: string, message: import('./narrative/story').StoryMessage | null) { this.dialogue.start(beatId, message); this.dialogueStartedAt = this.time; }
+  private speak(beatId: string, message: import('../narrative/story').StoryMessage | null) { this.dialogue.start(beatId, message); this.dialogueStartedAt = this.time; }
   /** Abandons any active mission and detaches it from the current job. */
   releaseMission(reason: AbandonReason = 'shift') { const active = this.missions.activeId; if (active) { const persistent = this.missions.active?.abandon.retry !== 'always'; this.missions.abandon(reason, this.save.story.campaignSeconds); if (persistent) this.persist(); } if (this.job && (active || !this.missionOffers.has(this.job.missionId ?? ''))) delete this.job.missionId; }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {

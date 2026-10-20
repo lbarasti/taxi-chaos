@@ -1,4 +1,4 @@
-import { cross, dist, sub, type Vec } from '../physics';
+import { cross, dist, sub, type Vec } from '../physics/physics';
 
 export const regionBounds = (ring: readonly Vec[]) => ({
   min: { x: Math.min(...ring.map((p) => p.x)), y: Math.min(...ring.map((p) => p.y)) },

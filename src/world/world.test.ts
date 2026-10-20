@@ -1,7 +1,7 @@
 import { defaultCompiledMap } from '../map/compile';
 import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
-import { dist, vec } from '../physics';
+import { dist, vec } from '../physics/physics';
 
 const { roadDistance, roadPath } = createNavigation(defaultCompiledMap);
 

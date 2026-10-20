@@ -1,4 +1,4 @@
-import type { Game } from '../game';
+import type { Game } from '../game/game';
 import { menuItem } from '../ui/drawer-markup';
 import { LAST_EDITION } from './clock';
 import { canApprove } from './events';

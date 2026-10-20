@@ -3,7 +3,7 @@ import {
   Effects, MAX_BLASTS, MAX_BLAST_RADIUS, MAX_BLOOD_MARKS, MAX_CHUNKS, MAX_EMBERS, MAX_SMOKE,
   drawCorpse, drawFire, drawSmoke,
 } from './effects';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 import type { Person } from '../world/world';
 
 // Lightweight recording 2D context so draw code can be exercised under Node

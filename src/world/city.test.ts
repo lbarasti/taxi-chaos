@@ -3,8 +3,8 @@ import { citySegmentOpen } from './city';
 import { compileMap, defaultCompiledMap } from '../map/compile';
 import { copyDefaultMap } from '../map/default';
 import { World } from './world';
-import { Game } from '../game';
-import { Body, contact, vec } from '../physics';
+import { Game } from '../game/game';
+import { Body, contact, vec } from '../physics/physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { occluderFor, pointInConvex } from '../rendering/lighting-occlusion';
 

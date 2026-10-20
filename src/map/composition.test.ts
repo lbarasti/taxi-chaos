@@ -4,9 +4,9 @@ import { copyDefaultMap } from './default';
 import { compileMap } from './compile';
 import { MapHistory, type MapOperation } from './operations';
 import { validateMap } from './validation';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { World, district, blocksWalking } from '../world/world';
-import { Body, contact, dist, vec } from '../physics';
+import { Body, contact, dist, vec } from '../physics/physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { importMap } from './serialization';
 

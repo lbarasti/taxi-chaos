@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 import { parseMissionProgress } from './progress';
 import { MissionDirector } from './director';
 import { compileMissions } from './compile';

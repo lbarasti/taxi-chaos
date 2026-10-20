@@ -328,7 +328,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 
 ## Project map
 
-- `src/physics.ts`: rigid bodies, tyre forces, collision detection, and impulses.
+- `src/physics/physics.ts`: rigid bodies, tyre forces, collision detection, and impulses.
 - `src/vehicles/vehicles.ts`: typed vehicle catalogue and handling/model definitions.
 - `src/world/world.ts`: seeded city generation, structures, and road routing.
 - `src/vehicles/ai.ts`: civilian traffic and police behavior.
@@ -337,10 +337,16 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/catalogue/`: shared DOM-free building/prop catalogue records, compiler, browser-free PNG measurement and the generated inline image manifest.
 - `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
 - `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.
-- `src/game.ts`, `src/main.ts`: game orchestration, input, bootstrap, and persistence.
+- `src/game/`: game orchestration, difficulty and wanted rules, browser storage helpers, and gameplay regression tests.
+- `src/main.ts`: bootstrap, DOM wiring, input and mode routing.
+- `src/audio/`: embedded sound manifest, DOM-free cue planning, playback, preferences and sound controls.
+- `src/artwork/`: compiled artwork catalogue and decoded image registry shared by the game and authoring previews.
 - `src/ui/`: splash, drawer menus, player/navigation HUD, touch controls, settings and fullscreen controls.
-- `src/debug/`: scenario fixtures, layer inspector and panel, and test API.
+- `src/debug/`: layer inspector and panel, scenario loader, and test API.
+- `src/scenarios/`: persistent scenario runner and its fixtures.
 - `src/map/`: versioned authored map, compiler, validation, programmatic authoring workspace, and preview.
+- `src/assets/`: embedded font, character portraits, map artwork and sound samples with their attribution and credits.
+- `src/test-fixtures/`: retained historical Sunset Beach assertions; not imported by the game.
 - `src/rendering/renderer.ts`: Canvas rendering and debug overlays.
 - `vite.config.ts`: standalone single-file build; fails if external assets remain.
 

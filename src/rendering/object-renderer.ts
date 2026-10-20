@@ -1,7 +1,7 @@
 import { FOUNTAIN_RADIUS, FOUNTAIN_WATER_RADIUS } from '../world/fountain';
 import type { PropRenderContext, Renderer } from './renderer';
 import type { Prop } from '../world/world';
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 import { objectDefinitions, type PropArtwork } from '../artwork/catalogue';
 
 function path(r: Renderer, points: readonly Vec[], color: string, width = 0.12, closed = false) {

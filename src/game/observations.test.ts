@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
-import { vec } from './physics';
-import { campaignDefinition } from './campaign/content';
-import { dayMinute } from './campaign/clock';
-import { observationActionState } from './ui/navigation-hud';
-import { parsePlayerRecords } from './narrative/player-records';
-import type { CampaignDefinition } from './campaign/model';
+import { vec } from '../physics/physics';
+import { campaignDefinition } from '../campaign/content';
+import { dayMinute } from '../campaign/clock';
+import { observationActionState } from '../ui/navigation-hud';
+import { parsePlayerRecords } from '../narrative/player-records';
+import type { CampaignDefinition } from '../campaign/model';
 
 const make = (definition = campaignDefinition) => {
   const g = new Game(undefined, false, true, undefined, definition);

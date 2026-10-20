@@ -1,4 +1,4 @@
-import type { CollisionRect, Vec } from '../physics';
+import type { CollisionRect, Vec } from '../physics/physics';
 
 /** Pixel rectangle inside a source image. */
 export type PixelCrop = Readonly<{ x: number; y: number; width: number; height: number }>;

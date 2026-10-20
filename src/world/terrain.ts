@@ -1,4 +1,4 @@
-import { clamp, type Body, type TyreLayout, type Vec } from '../physics';
+import { clamp, type Body, type TyreLayout, type Vec } from '../physics/physics';
 import type { MapDocument } from '../map/schema';
 import { contains, regionBounds, regionOrder } from './regions';
 

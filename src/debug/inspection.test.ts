@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { InspectionState, inspectPoint } from './inspection';
 import { compileMap } from '../map/compile';
 import { copyDefaultMap } from '../map/default';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 
 describe('map inspection authority and isolation', () => {
   it('explains terrain precedence including equal-priority stable IDs, inclusive edges and ocean defaults', () => {

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { BEACH_HOTELS, BEACH_PICKUP, beachShoreY, inBeach, inSand, onPromenade, sandHandling } from '../test-fixtures/sunset';
 import { PORT_ENTRY, PORT_FEE } from './harbour';
 import { defaultCompiledMap } from '../map/compile';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
-import { Body, contact, dist, length, vec } from '../physics';
+import { Body, contact, dist, length, vec } from '../physics/physics';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleModel } from '../vehicles/vehicles';
 import { blocksWalking, district, isRigidObstacle } from './world';
 

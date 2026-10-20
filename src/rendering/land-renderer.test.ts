@@ -3,7 +3,7 @@ import { clipLand, drawLandGround, drawTerrainMiniMap } from './terrain-renderer
 import { compileMap } from '../map/compile';
 import { copyDefaultMap } from '../map/default';
 import { contains } from '../world/regions';
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 
 /** Records real Canvas paths; polygon/overlap semantics can be checked in Node
  * even when a provisioned browser is unavailable. */

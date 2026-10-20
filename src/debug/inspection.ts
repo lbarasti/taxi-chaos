@@ -1,7 +1,7 @@
-import type { Game } from '../game';
+import type { Game } from '../game/game';
 import { artworkFor } from '../artwork/catalogue';
 import { contains } from '../world/regions';
-import { rotate, sub, type Vec } from '../physics';
+import { rotate, sub, type Vec } from '../physics/physics';
 
 export const visualLayers = { ground: 'Ground artwork', props: 'Buildings / props', shadows: 'Map prop shadows', actors: 'People / vehicles', effects: 'Ground / air FX', lighting: 'Lighting compositor', markers: 'World markers' } as const;
 export const overlayLayers = { land: 'Land / coastline', terrain: 'Terrain materials', artwork: 'Artwork bounds', collision: 'Physical bodies', blockers: 'Light blockers' } as const;

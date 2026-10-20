@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
-import { Body, contact, dist, length, vec, type Controls } from '../physics';
+import { Body, contact, dist, length, vec, type Controls } from '../physics/physics';
 import { BIKE_ENGINE, MAX_LEAN, MotorcycleDynamics, cornerLean, leanProjection } from './motorcycle';
 import { igniteVehicle } from './damage';
 

@@ -1,6 +1,6 @@
 import type { PropRenderContext, Renderer } from './renderer';
 import type { Prop } from '../world/world';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 import { artworkImages } from '../artwork/images';
 
 /** One continuous roof per merged footprint. Fixtures stay in metres rather than

@@ -1,4 +1,4 @@
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 import type {
   ArtworkCatalogue, ArtworkOutline, ArtworkPresentation, ArtworkRecord, ArtworkSilhouette, ArtworkSource, ArtworkTemplate,
   AttachedFeature, BuildingCatalogue, BuildingDefinition, BuildingFallback, BuildingSign, CatalogueSources, CompiledBuilding, CompiledObject,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DayNight, formatClock, periodForHour, type LightingState } from './day-night';
-import { Game } from '../game';
+import { Game } from '../game/game';
 
 const clock = new DayNight();
 const setHour = (hour: number) => { clock.configure({ hour }); return clock; };

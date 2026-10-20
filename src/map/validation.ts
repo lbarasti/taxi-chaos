@@ -1,4 +1,4 @@
-import { Body, add, bodyParts, contact, cross, dist, scale, sub, vec, type Vec } from '../physics';
+import { Body, add, bodyParts, contact, cross, dist, scale, sub, vec, type Vec } from '../physics/physics';
 import { World, blocksWalking, isRigidObstacle } from '../world/world';
 import { vehicleDefinition, createVehicleBody } from '../vehicles/vehicles';
 import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';

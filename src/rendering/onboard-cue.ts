@@ -1,4 +1,4 @@
-import type { Game, Vehicle } from '../game';
+import type { Game, Vehicle } from '../game/game';
 import type { LightSource } from './lighting';
 
 /** Where the active vehicle shows that someone or something is aboard. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView } from './radar';
 
 describe('local radar navigation', () => {

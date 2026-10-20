@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Body, vec } from '../physics';
-import { Game } from '../game';
+import { Body, vec } from '../physics/physics';
+import { Game } from '../game/game';
 import { Renderer } from './renderer';
 import { artworkImages } from '../artwork/images';
 import { objectDefinitions, artworkFor, type PropArtwork } from '../artwork/catalogue';

@@ -1,4 +1,4 @@
-import { add, clamp, dist, dot, scale, sub, vec, type Vec } from '../physics';
+import { add, clamp, dist, dot, scale, sub, vec, type Vec } from '../physics/physics';
 import type { LandGeometry } from './land';
 import { regionBounds } from './regions';
 import type { MapDocument } from '../map/schema';

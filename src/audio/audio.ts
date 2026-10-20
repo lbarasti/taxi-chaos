@@ -1,8 +1,8 @@
-import type { Game } from '../game';
-import { clamp, dist, dot, length, rotate, vec, type Vec } from '../physics';
+import type { Game } from '../game/game';
+import { clamp, dist, dot, length, rotate, vec, type Vec } from '../physics/physics';
 import { audioAssets, type AudioAsset } from './audio-assets';
 import { drivingSound, soundLabels, soundPriority, spatialSound, type SoundCue, type SoundEvent } from './sound';
-import { readStorage, storageKeys } from '../storage';
+import { readStorage, storageKeys } from '../game/storage';
 
 export type AudioPreferences = { muted: boolean; volume: number; sirens: number };
 export function audioPreferences(value: Partial<AudioPreferences> = {}): AudioPreferences {

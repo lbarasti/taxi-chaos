@@ -2,7 +2,7 @@
 // Pure and deterministic: it never imports game/world/renderer and only mutates the state handed to it,
 // so the simulation can integrate it at whatever cadence it likes. Front/rear/side component damage is
 // derived from the local contact point (vehicle space, +x is forward, matching CarDynamics tyres).
-import { clamp, dist, normalize, scale, sub, vec, type Vec } from '../physics';
+import { clamp, dist, normalize, scale, sub, vec, type Vec } from '../physics/physics';
 
 export type VehicleDamage = {
   health: number;

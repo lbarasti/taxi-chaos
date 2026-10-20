@@ -1,6 +1,6 @@
 import type { PropRenderContext, Renderer } from './renderer';
 import type { Prop } from '../world/world';
-import { dist, vec } from '../physics';
+import { dist, vec } from '../physics/physics';
 import { CONTAINER_COLORS, FREIGHT_ROUTE, PORT_CONTAINERS, PORT_CRANES, PORT_ENTRY, PORT_FEE, PORT_SHIPS, SWAP_CONTAINER, craneLoad } from '../world/harbour';
 
 function line(r: Renderer, points: { x: number; y: number }[], color: string, width: number) {

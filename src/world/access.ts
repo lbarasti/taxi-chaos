@@ -1,5 +1,5 @@
 import { vehicleDefinition } from '../vehicles/vehicles';
-import { Body, contact, dist, type Vec } from '../physics';
+import { Body, contact, dist, type Vec } from '../physics/physics';
 import type { CompiledMap } from '../map/compile';
 import type { PropKind } from '../catalogue/schema';
 import { freezeGeometry } from '../map/default';

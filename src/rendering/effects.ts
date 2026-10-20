@@ -3,7 +3,7 @@
 // randomness (fires/smoke are deterministic functions of time+seed) so the muted
 // city palette stays legible. Every ctx mutation is wrapped in save()/restore().
 // All coordinates are WORLD METRES, matching `src/rendering/renderer.ts`'s scaled camera space.
-import { add, clamp, length, normalize, scale, vec, type Vec } from '../physics';
+import { add, clamp, length, normalize, scale, vec, type Vec } from '../physics/physics';
 import { seeded, type Person } from '../world/world';
 import { defaultMap } from '../map/default';
 

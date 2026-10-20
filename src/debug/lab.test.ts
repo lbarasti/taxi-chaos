@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario, repairVehicle, resumeFromPause, scenarioInfo, scenarioNames, scenarioDescriptions, isScenarioName, type ScenarioName } from './lab';
 import { igniteVehicle } from '../vehicles/damage';
-import { contact, dist, vec } from '../physics';
+import { contact, dist, vec } from '../physics/physics';
 
 const make = () => { const g = new Game(); g.setMode('playing'); return g; };
 const trafficAlive = (g: Game) => g.vehicles.filter(v => v.alive && v.kind === 'traffic');

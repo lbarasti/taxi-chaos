@@ -1,6 +1,6 @@
 import './authoring-preview.css';
-import { contact, dist, segmentIntersectsBody, vec, type Vec } from '../physics';
-import { Game } from '../game';
+import { contact, dist, segmentIntersectsBody, vec, type Vec } from '../physics/physics';
+import { Game } from '../game/game';
 import type { Renderer } from '../rendering/renderer';
 import { World } from '../world/world';
 import { compileMap } from '../map/compile';

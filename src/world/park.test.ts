@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { World, blocksWalking, isRigidObstacle } from './world';
-import { Body, contact, dist, segmentIntersectsBody, vec } from '../physics';
+import { Body, contact, dist, segmentIntersectsBody, vec } from '../physics/physics';
 import { collectOccluders, pointInConvex } from '../rendering/lighting-occlusion';
 import { compileMap, defaultCompiledMap as map } from '../map/compile';
 import { copyDefaultMap } from '../map/default';

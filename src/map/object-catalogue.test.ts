@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { Body, vec } from '../physics';
+import { Body, vec } from '../physics/physics';
 import { appearanceSeed, artworkFor, artRadius, fallbackScale, objectDefinitions, propArtwork, CRATE_SPRITE_METRES, TREE_CANOPY_METRES } from '../artwork/catalogue';
 import { artworkRecords } from '../catalogue/content';
 import { compileObjectCatalogue, compileObjectPlacement, compilePlacement } from '../catalogue/compile';

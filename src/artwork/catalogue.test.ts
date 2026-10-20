@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Body, contact, vec } from '../physics';
+import { Body, contact, vec } from '../physics/physics';
 import { collectOccluders, occluderFor, pointInConvex, shadowVolume } from '../rendering/lighting-occlusion';
 import { artRadius, artworkFor, propArtwork, renderOrderFor, type PropArtwork } from './catalogue';
 import { compileObjectCatalogue, deriveArtwork } from '../catalogue/compile';

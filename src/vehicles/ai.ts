@@ -1,8 +1,8 @@
-import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from '../physics';
+import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from '../physics/physics';
 import { createVehicleDynamics } from './vehicles';
 import { GRID, SIZE, World, isRigidObstacle } from '../world/world';
-import type { Vehicle } from '../game';
-import { difficulties, type Difficulty } from '../rules';
+import type { Vehicle } from '../game/game';
+import { difficulties, type Difficulty } from '../game/rules';
 import { FREIGHT_ROUTE, PORT_NODES } from '../world/harbour';
 
 export type AIState = {

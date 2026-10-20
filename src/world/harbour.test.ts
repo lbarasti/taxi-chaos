@@ -1,7 +1,7 @@
 import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
-import { Body, contact, dist, length, vec } from '../physics';
+import { Game } from '../game/game';
+import { Body, contact, dist, length, vec } from '../physics/physics';
 import { World, district } from './world';
 import { defaultCompiledMap } from '../map/compile';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS, craneLoad, portPath } from './harbour';

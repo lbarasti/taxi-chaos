@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 // Lifecycle tests use tiny fake buffers; real sample decoding/output is browser-tested.
 vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
 import { AudioFX, audioPreferences } from './audio';
-import { Game } from '../game';
-import { vec } from '../physics';
+import { Game } from '../game/game';
+import { vec } from '../physics/physics';
 
 function fakeContext() {
   const buffer = { duration: 1, getChannelData: () => new Float32Array(20000) };

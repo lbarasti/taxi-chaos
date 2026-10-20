@@ -1,4 +1,4 @@
-import { Body, add, scale, sub, vec, type Vec } from '../physics';
+import { Body, add, scale, sub, vec, type Vec } from '../physics/physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { objectDefinitions } from '../artwork/catalogue';
 import { objectKindRegistry, type KindRegistry, type ObjectCatalogue } from '../catalogue/schema';

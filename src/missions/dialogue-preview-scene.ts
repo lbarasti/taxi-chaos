@@ -1,6 +1,6 @@
 import { characters } from '../narrative/characters';
 import { jobNames } from '../campaign/content';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
 import { generateDialoguePreview, type PreviewState } from './dialogue-preview';
 

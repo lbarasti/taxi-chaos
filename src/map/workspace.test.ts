@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Game } from '../game';
-import { vec, type Vec } from '../physics';
+import type { Game } from '../game/game';
+import { vec, type Vec } from '../physics/physics';
 import { MapWorkspace, type PreviewFactory, type WorkspaceRenderer } from './workspace';
 
 type FakePreview = Game & { keys: Set<string>; updates: number; time: number };

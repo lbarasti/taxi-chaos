@@ -1,5 +1,5 @@
-import type { Game } from '../game';
-import { vec, type Vec } from '../physics';
+import type { Game } from '../game/game';
+import { vec, type Vec } from '../physics/physics';
 import { World } from '../world/world';
 import { compileMap } from './compile';
 import { MapHistory, type MapBatch } from './operations';

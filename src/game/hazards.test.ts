@@ -1,8 +1,8 @@
-import { defaultCompiledMap } from './map/compile';
+import { defaultCompiledMap } from '../map/compile';
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
-import { contact, dist, length, vec } from './physics';
-import { igniteVehicle } from './vehicles/damage';
+import { contact, dist, length, vec } from '../physics/physics';
+import { igniteVehicle } from '../vehicles/damage';
 
 const HOSPITAL=defaultCompiledMap.city.recovery!;
 const { GOLF_COURSE, VILLA_POOLS } = defaultCompiledMap.country;

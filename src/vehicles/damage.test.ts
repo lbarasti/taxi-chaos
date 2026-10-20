@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance } from './damage';
-import { vec } from '../physics';
+import { vec } from '../physics/physics';
 
 const hit = (state = createVehicleDamage(), over: Partial<Parameters<typeof impactDamage>[1]> = {}) =>
   impactDamage(state, { impact: 20, localPoint: vec(2, 0), armor: 0, time: 1, scale: 1, blamed: false, fuse: 7, ...over });

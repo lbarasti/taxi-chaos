@@ -1,4 +1,4 @@
-import { Body, CarDynamics, type CarTuning, type TyreLayout, type Vec } from '../physics';
+import { Body, CarDynamics, type CarTuning, type TyreLayout, type Vec } from '../physics/physics';
 import { BIKE_ENGINE, BIKE_GRIP, MotorcycleDynamics } from './motorcycle';
 
 export type VehicleDefinition = {

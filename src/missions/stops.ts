@@ -1,4 +1,4 @@
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 import type { CompiledMap } from '../map/compile';
 import { createNavigation } from '../world/world';
 

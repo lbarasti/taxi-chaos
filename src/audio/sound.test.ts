@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Body, vec } from '../physics';
+import { Body, vec } from '../physics/physics';
 import { drivingSound, SoundEvents, spatialSound } from './sound';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 
 describe('sound event delivery', () => {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { Body, vec, type Vec } from '../physics';
+import { Body, vec, type Vec } from '../physics/physics';
 import { artworkFor, fallbackScale, objectDefinitions, TREE_CANOPY_METRES } from '../artwork/catalogue';
 import { copyDefaultMap } from '../map/default';
 import type { ObjectPlacement } from '../map/schema';

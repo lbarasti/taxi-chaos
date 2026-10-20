@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { recordNote } from './effects';
 import { campaignDefinition } from './content';
 import { calendarLabel, dayMinute, LAST_EDITION } from './clock';

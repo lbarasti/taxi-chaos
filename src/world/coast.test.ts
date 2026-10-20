@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../game';
+import { Game } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
-import { Body, contact, dist, length, vec } from '../physics';
+import { Body, contact, dist, length, vec } from '../physics/physics';
 import { World } from './world';
 import { loadScenario } from '../debug/lab';
 import { igniteVehicle } from '../vehicles/damage';

@@ -1,6 +1,6 @@
-import type { Game } from '../game';
+import type { Game } from '../game/game';
 import type { AudioFX } from '../audio/audio';
-import { difficulties, type Difficulty } from '../rules';
+import { difficulties, type Difficulty } from '../game/rules';
 import type { Setting } from './setting-controls';
 
 const difficultyLevels = Object.keys(difficulties) as Difficulty[];

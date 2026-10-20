@@ -1,4 +1,4 @@
-import type { CollisionRect } from '../physics';
+import type { CollisionRect } from '../physics/physics';
 
 // Cheap 2D light occlusion for Taxi Chaos's reduced-resolution lighting compositor.
 //

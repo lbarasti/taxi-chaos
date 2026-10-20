@@ -1,4 +1,4 @@
-import type { Game } from '../game';
+import type { Game } from '../game/game';
 import { district } from '../world/world';
 import { navigationTargetKind, type NavigationTargetKind } from '../rendering/radar';
 import { onBoardCue } from '../rendering/onboard-cue';

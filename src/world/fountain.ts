@@ -1,4 +1,4 @@
-import type { CollisionRect } from '../physics';
+import type { CollisionRect } from '../physics/physics';
 
 export const FOUNTAIN_RADIUS = 3.7;
 export const FOUNTAIN_WATER_RADIUS = 2.7;

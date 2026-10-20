@@ -1,7 +1,7 @@
 import type { Renderer } from '../rendering/renderer';
 import { artworkFor, artRadius } from '../artwork/catalogue';
 import { clipLand } from '../rendering/terrain-renderer';
-import type { Vec } from '../physics';
+import type { Vec } from '../physics/physics';
 
 export const inspectionColours = { land: '#65e0ba', terrain: '#e8cb88', artwork: '#ffe16b', collision: '#ff887d', blockers: '#ca9aff' };
 const materialColours = { road: '#597caa', sand: '#ebce80', paving: '#c69ddd', grass: '#78bd68' };

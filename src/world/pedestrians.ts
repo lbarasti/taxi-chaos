@@ -2,7 +2,7 @@
 // impacts and corpse drag. Pure physics/ped-model code — it never touches vehicle bodies,
 // Game state, money, rendering or audio. main.ts owns blood/shred spawning, crime
 // assignment and vehicle momentum loss from the returned events.
-import { Body, add, clamp, dist, dot, length, rotate, scale, sub, vec, type Vec } from '../physics';
+import { Body, add, clamp, dist, dot, length, rotate, scale, sub, vec, type Vec } from '../physics/physics';
 import { blocksWalking, type Person, type World } from './world';
 
 export type PedestrianVehicle = { id: number; body: Body; kind: 'taxi' | 'police' | 'traffic' };

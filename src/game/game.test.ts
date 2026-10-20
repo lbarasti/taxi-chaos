@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
-import { contact, dist, vec } from './physics';
+import { contact, dist, vec } from '../physics/physics';
 
 const make = () => { const g = new Game(); g.vehicles = [g.player]; g.setMode('playing'); return g; };
 const step = (g: Game, seconds: number, keys: string[] = []) => { g.keys = new Set(keys); for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); g.keys.clear(); };

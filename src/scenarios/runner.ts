@@ -1,4 +1,4 @@
-import { Game, type Mode } from '../game';
+import { Game, type Mode } from '../game/game';
 import { defaultCompiledMap } from '../map/compile';
 import { previewInputs } from '../missions/dialogue-preview';
 import { parseMissionProgress } from '../missions/progress';
@@ -8,7 +8,7 @@ import { CAMPAIGN_END, CAMPAIGN_START, dayMinute } from '../campaign/clock';
 import { campaignDefinition } from '../campaign/content';
 import type { Allegation } from '../campaign/model';
 import { GARAGE } from '../world/world';
-import { vec, type Vec } from '../physics';
+import { vec, type Vec } from '../physics/physics';
 
 export type ScenarioOptions = { traffic?: 'quiet' | 'normal'; noPolice?: boolean };
 export type CaptureView = 'world' | 'notebook' | 'texts' | 'story' | 'pause';
