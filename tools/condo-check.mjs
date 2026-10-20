@@ -13,6 +13,7 @@ try {
   for (const [name, width, height, center, zoom, failImages] of [
     ['desktop', 1440, 900, { x: 200, y: 245 }, 11, false],
     ['portrait', 390, 844, { x: 162, y: 245 }, 12, false],
+    ['landscape', 844, 390, { x: 162, y: 251 }, 9, false],
     ['fallback', 1440, 900, { x: 200, y: 245 }, 11, true],
   ]) {
     const context = await browser.newContext({ viewport: { width, height }, isMobile: name === 'portrait', hasTouch: name === 'portrait', reducedMotion: 'reduce' });

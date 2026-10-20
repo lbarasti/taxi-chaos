@@ -59,9 +59,8 @@ export const objectRecords = [
     id: 'condo', kind: 'building', width: 14, height: 13, storeys: 12,
     fallback: 'commercial', sign: condoSign, frontage: 'RESIDENTS ONLY',
     image: 'map/luxury-condo.png',
-    // The supplied sheet keeps its lawn edges, so the authored crop is wider than
-    // the measured transparent padding.
-    crop: { x: 100, y: 60, width: 1055, height: 1090 },
+    // Ignore faint export specks outside the directly overhead building silhouette.
+    crop: { x: 89, y: 110, width: 1086, height: 1006 },
     artwork: { fit: 'stretch', width: 14.3 / 14, height: 13.3 / 13, outline: 'bounds', occluder: true, castsShadow: false },
   },
   {

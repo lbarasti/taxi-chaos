@@ -4537,552 +4537,6 @@
       "label": ""
     },
     {
-      "id": "walk-pedestrian-gate-00",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 180,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 4.8,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-00",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 178.65,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-01",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 180,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-02",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 181.35,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-pedestrian-gate-01",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 200,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 4.8,
-      "height": 0.6
-    },
-    {
-      "id": "walk-promenade-edge-01",
-      "owner": "beach",
-      "type": "promenade-edge",
-      "position": {
-        "x": 190.0,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#e2d9c2",
-      "label": "",
-      "width": 15.199999999999989,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-03",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 198.65,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-04",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 200,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-05",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 201.35,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-pedestrian-gate-02",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 220,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 4.8,
-      "height": 0.6
-    },
-    {
-      "id": "walk-promenade-edge-02",
-      "owner": "beach",
-      "type": "promenade-edge",
-      "position": {
-        "x": 210.0,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#e2d9c2",
-      "label": "",
-      "width": 15.199999999999989,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-06",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 218.65,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-07",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 220,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-08",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 221.35,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-pedestrian-gate-03",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 180,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 4.8,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-09",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 178.65,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-10",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 180,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-11",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 181.35,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-pedestrian-gate-04",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 220,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 4.8,
-      "height": 0.6
-    },
-    {
-      "id": "walk-promenade-edge-05",
-      "owner": "beach",
-      "type": "promenade-edge",
-      "position": {
-        "x": 200.0,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#e2d9c2",
-      "label": "",
-      "width": 35.19999999999999,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-12",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 218.65,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-13",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 220,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-14",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 221.35,
-        "y": 256
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-pedestrian-gate-05",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 177.6,
-        "y": 251.5
-      },
-      "angle": 1.5707963267948966,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 9,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-15",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-16",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 248.35
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-17",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 249.7
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-18",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 251.04999999999998
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-19",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 252.39999999999998
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-20",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 253.74999999999997
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-21",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 177.6,
-        "y": 255.09999999999997
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-pedestrian-gate-06",
-      "owner": "beach",
-      "type": "pedestrian-gate",
-      "position": {
-        "x": 222.4,
-        "y": 251.5
-      },
-      "angle": 1.5707963267948966,
-      "color": "#d8c4a1",
-      "label": "",
-      "width": 9,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-22",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 247
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-23",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 248.35
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-24",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 249.7
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-25",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 251.04999999999998
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-26",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 252.39999999999998
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-27",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 253.74999999999997
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
-      "id": "walk-bollard-28",
-      "owner": "beach",
-      "type": "bollard",
-      "position": {
-        "x": 222.4,
-        "y": 255.09999999999997
-      },
-      "angle": 0,
-      "color": "#758e8b",
-      "label": "",
-      "width": 0.6,
-      "height": 0.6
-    },
-    {
       "id": "walk-palm-00",
       "owner": "beach",
       "type": "palm",
@@ -5508,30 +4962,6 @@
       ],
       "priority": 10,
       "driving": "direct"
-    },
-    {
-      "id": "walk-access",
-      "owner": "beach",
-      "outline": [
-        {
-          "x": 174.6,
-          "y": 247
-        },
-        {
-          "x": 254,
-          "y": 247
-        },
-        {
-          "x": 254,
-          "y": 274
-        },
-        {
-          "x": 174.6,
-          "y": 274
-        }
-      ],
-      "priority": 20,
-      "driving": "approach"
     }
   ],
   "accessNodes": [
@@ -5675,7 +5105,7 @@
       "owner": "beach",
       "position": {
         "x": 180.675,
-        "y": 251.5
+        "y": 251
       },
       "road": false
     },
@@ -5693,7 +5123,7 @@
       "owner": "beach",
       "position": {
         "x": 200.675,
-        "y": 251.5
+        "y": 251
       },
       "road": false
     },
@@ -5710,8 +5140,8 @@
       "id": "walk-mid-2",
       "owner": "beach",
       "position": {
-        "x": 220.675,
-        "y": 251.5
+        "x": 220,
+        "y": 251
       },
       "road": false
     },
@@ -5777,6 +5207,15 @@
         "y": 248
       },
       "road": false
+    },
+    {
+      "id": "road-hotel-east",
+      "owner": "beach",
+      "position": {
+        "x": 220.675,
+        "y": 240
+      },
+      "road": true
     }
   ],
   "accessEdges": [
@@ -5916,7 +5355,8 @@
       "fromNode": "walk-north-0",
       "toNode": "walk-mid-0",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5925,7 +5365,8 @@
       "fromNode": "walk-north-0",
       "toNode": "apron-access-5",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5934,7 +5375,8 @@
       "fromNode": "walk-north-1",
       "toNode": "walk-mid-1",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5943,7 +5385,8 @@
       "fromNode": "walk-north-1",
       "toNode": "apron-access-5",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5952,7 +5395,8 @@
       "fromNode": "walk-mid-0",
       "toNode": "walk-mid-1",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5961,7 +5405,8 @@
       "fromNode": "walk-north-2",
       "toNode": "walk-mid-2",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5979,7 +5424,8 @@
       "fromNode": "walk-mid-1",
       "toNode": "walk-mid-2",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -5997,7 +5443,8 @@
       "fromNode": "walk-south-0",
       "toNode": "walk-mid-0",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -6015,7 +5462,8 @@
       "fromNode": "walk-south-1",
       "toNode": "walk-mid-2",
       "modes": [
-        "walk"
+        "walk",
+        "drive"
       ]
     },
     {
@@ -6110,6 +5558,26 @@
       "owner": "beach",
       "fromNode": "west-access",
       "toNode": "road-access-0",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-walk-north-2-road-hotel-east",
+      "owner": "beach",
+      "fromNode": "walk-north-2",
+      "toNode": "road-hotel-east",
+      "modes": [
+        "walk",
+        "drive"
+      ]
+    },
+    {
+      "id": "link-road-hotel-east-road-access-5",
+      "owner": "beach",
+      "fromNode": "road-hotel-east",
+      "toNode": "road-access-5",
       "modes": [
         "walk",
         "drive"
@@ -6287,57 +5755,6 @@
       "color": "#88b8be69",
       "width": 0.12,
       "fill": true
-    },
-    {
-      "id": "entry-paint-0",
-      "owner": "beach",
-      "points": [
-        {
-          "x": 180,
-          "y": 244.7
-        },
-        {
-          "x": 180,
-          "y": 246.3
-        }
-      ],
-      "color": "#f4ebcf",
-      "width": 0.2,
-      "fill": false
-    },
-    {
-      "id": "entry-paint-1",
-      "owner": "beach",
-      "points": [
-        {
-          "x": 200,
-          "y": 244.7
-        },
-        {
-          "x": 200,
-          "y": 246.3
-        }
-      ],
-      "color": "#f4ebcf",
-      "width": 0.2,
-      "fill": false
-    },
-    {
-      "id": "entry-paint-2",
-      "owner": "beach",
-      "points": [
-        {
-          "x": 220,
-          "y": 244.7
-        },
-        {
-          "x": 220,
-          "y": 246.3
-        }
-      ],
-      "color": "#f4ebcf",
-      "width": 0.2,
-      "fill": false
     }
   ],
   "groundLabels": [
@@ -6383,17 +5800,6 @@
       },
       "text": "O C E A N   W A L K",
       "size": 0.9,
-      "color": "#647d7a"
-    },
-    {
-      "id": "walk-advice",
-      "owner": "beach",
-      "position": {
-        "x": 200.0,
-        "y": 248.2
-      },
-      "text": "PEDESTRIANS ONLY",
-      "size": 0.55,
       "color": "#647d7a"
     },
     {

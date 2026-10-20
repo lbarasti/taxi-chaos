@@ -34,7 +34,7 @@ export const artworkSources: Readonly<Record<string, ArtworkSource>> = {
   'shop-concrete': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 } },
   'tree-worn': { width: 192, height: 192, crop: { x: 0, y: 0, width: 192, height: 192 } },
   'hospital': { width: 787, height: 1997, crop: { x: 33, y: 16, width: 726, height: 1951 } },
-  'condo': { width: 1254, height: 1254, crop: { x: 0, y: 17, width: 1160, height: 1213 } },
+  'condo': { width: 1254, height: 1254, crop: { x: 0, y: 110, width: 1175, height: 1106 } },
   'bakery': { width: 48, height: 48, crop: { x: 0, y: 0, width: 48, height: 48 } },
   'palm': { width: 32, height: 32, crop: { x: 5, y: 1, width: 24, height: 30 } },
   'shipping-crate': { width: 32, height: 32, crop: { x: 0, y: 0, width: 32, height: 32 } },

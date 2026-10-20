@@ -290,3 +290,18 @@ clearance against current placements and reserved vehicle bodies. Identical
 current documents reproduce identical results; historical runtime IDs and scenery
 sequences are not an import or gameplay contract. Existing city/road/harbour game
 algorithms remain active systems, without a compatibility path around the map.
+
+
+## D18 — Open the hotel beachfront to vehicles
+
+**Decision:** Sunset Beach sand and Ocean Walk paving both admit player vehicles
+and vehicle routes, like city pavements. Remove the promenade enclosure and its
+roadside-only access restriction from the authored map.
+
+**Reason:** The beachfront should provide physical driving space around the hotel
+blocks. Access is governed by real buildings, furniture and the shoreline; sand
+continues to use its existing traction and rolling resistance.
+
+**Consequences:** Pursuing police can follow onto the open beachfront. Hotel walls
+remain solid, surf remains dangerous, and the existing street fare dropoff stays
+in place. Other authored pedestrian areas retain their own access rules.

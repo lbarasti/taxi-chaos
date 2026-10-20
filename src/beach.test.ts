@@ -1,6 +1,6 @@
 import { createNavigation } from './world';
 import { describe, expect, it } from 'vitest';
-import { BEACH_HOTELS, BEACH_PICKUP, PROMENADE_ENTRIES, beachShoreY, inBeach, inSand, onPromenade, sandHandling } from './test-fixtures/sunset';
+import { BEACH_HOTELS, BEACH_PICKUP, beachShoreY, inBeach, inSand, onPromenade, sandHandling } from './test-fixtures/sunset';
 import { PORT_ENTRY, PORT_FEE } from './harbour';
 import { defaultCompiledMap } from './map/compile';
 import { Game } from './game';
@@ -61,10 +61,10 @@ describe('southern beach geography and access', () => {
       }
     }
   });
-  it('approaches eastern sand from the street with vehicle clearance, rather than clipping promenade edges', () => {
-    const g = new Game(), from = vec(140, 240), target = vec(180, 256.7);
+  it('routes vehicles onto eastern hotel sand with full body clearance', () => {
+    const g = new Game(), from = vec(140, 240), target = vec(180.675, 263);
     const path = roadPath(from, target);
-    expect(path.at(-1)).toEqual(vec(180, 240));
+    expect(path.at(-1)).toEqual(target);
     for (let i = 1; i < path.length; i++) {
       const a = path[i - 1], b = path[i], steps = Math.ceil(dist(a, b) / 0.2);
       for (let j = 0; j <= steps; j++) {
@@ -89,12 +89,12 @@ describe('southern beach geography and access', () => {
       }
     }
   });
-  it('keeps pursuing police outside the protected hotel and pedestrian strip', () => {
-    const g = quiet(); g.onFoot = true; g.driver.position = vec(170, 256.7);
-    const cop = g.spawnVehicle({ kind: 'police', position: vec(170, 240) });
-    g.heat = 30; run(g, 0.1);
+  it('lets pursuing police follow the player onto open hotel sand', () => {
+    const g = quiet(); g.onFoot = true; g.driver.position = vec(180.675, 263);
+    const cop = g.spawnVehicle({ kind: 'police', position: vec(180.675, 240) });
+    cop.ai.role = 'pursuit'; g.heat = 30; run(g, 0.1);
     expect(cop.path.length).toBeGreaterThan(0);
-    expect(cop.path.every(p => p.y < 246)).toBe(true);
+    expect(cop.path.some(p => p.y > 256)).toBe(true);
   });
 });
 
@@ -178,13 +178,28 @@ describe('physical sand handling', () => {
   });
 });
 
-describe('protected eastern promenade', () => {
-  it.each(['car', 'pickup', 'motorcycle'] as const)('stops a %s at the pedestrian entrance even under boost', model => {
-    const g = quiet(); g.player.alive = false;
-    g.player = g.spawnVehicle({ kind: 'taxi', model, position: vec(PROMENADE_ENTRIES[2] + 0.675, 243.5), angle: Math.PI / 2 });
-    g.settings.invincible = true; g.settings.infiniteBoost = true; run(g, 3, ['KeyW', 'ShiftLeft']);
-    expect(g.player.body.position.y).toBeLessThan(247); expect(onPromenade(g.player.body.position)).toBe(false);
-    expect(g.world.props.filter(p => p.kind === 'bollard' || p.kind === 'promenade-edge').every(p => p.alive)).toBe(true);
+describe('open hotel beachfront', () => {
+  it.each(['car', 'pickup', 'motorcycle'] as const)('drives a %s from the street across paving onto hotel sand and back', model => {
+    for (const x of [180.675, 220.675]) for (const returning of [false, true]) {
+      const g = quiet(); g.player.alive = false;
+      g.player = g.spawnVehicle({ kind: 'taxi', model, position: vec(x, returning ? 265 : 243.5), angle: returning ? -Math.PI / 2 : Math.PI / 2 });
+      const surfaces = new Set<string>();
+      for (let i = 0; i < 120 * 12; i++) {
+        run(g, 1 / 120, ['KeyW']); surfaces.add(g.map.terrain.sample(g.player.body.position));
+        if (returning ? g.player.body.position.y < 243.5 : g.player.body.position.y > 263) break;
+      }
+      expect(returning ? g.player.body.position.y < 243.5 : g.player.body.position.y > 263).toBe(true);
+      expect(surfaces).toEqual(new Set(['road', 'paving', 'sand']));
+      expect(g.health).toBe(100); expect(g.mode).toBe('playing');
+      expect(g.player.sinking).toBeUndefined();
+    }
+  });
+  it('retains solid hotel walls when driving across the promenade', () => {
+    const g = quiet(); g.player.body.position = vec(200.675, 243.5); g.player.body.angle = Math.PI / 2;
+    run(g, 4, ['KeyW']);
+    expect(g.player.body.position.y).toBeGreaterThan(251);
+    expect(g.player.body.position.y).toBeLessThan(258);
+    expect(g.world.props.find(p => p.sourceId === 'hotel-pacific-palm')!.alive).toBe(true);
   });
   it('lets the walking player enter from either side and walk east along the path', () => {
     for (const south of [false, true]) {
@@ -208,7 +223,7 @@ describe('protected eastern promenade', () => {
     g.player.body.velocity = vec(16, 0); expect(g.interact()).toBe(true); expect(g.player.door).toBeDefined(); expect(g.pendingExit).not.toBeNull();
     run(g, 0.5); expect(g.onFoot).toBe(true); expect(g.tumble).not.toBeNull(); expect(g.driverHealth).toBeLessThan(100); expect(g.player.coastUntil).toBeGreaterThan(g.time);
   });
-  it('dispatches a beach fare to the south road without sending cars onto the walking path', () => {
+  it('retains the existing beach fare dropoff on the south road', () => {
     const g = new Game(undefined, false, false); g.offer = 19; g.newJob();
     expect(g.job.dropoff).toEqual(vec(160, 240)); expect(g.job.destination).toBe('Ocean Walk'); expect(onPromenade(g.job.dropoff)).toBe(false);
   });

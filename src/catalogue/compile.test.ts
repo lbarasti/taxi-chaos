@@ -35,10 +35,10 @@ describe('shared catalogue compiler', () => {
     expect([building.width, building.height, building.storeys]).toEqual([20, 18, 3]);
     expect(building.presentation.fallback).toBe('commercial');
     expect(building.artwork?.image).toBe('clinic');
-    expect(building.artwork?.source).toEqual({ x: 0, y: 17, width: 1160, height: 1213 });
+    expect(building.artwork?.source).toEqual({ x: 0, y: 110, width: 1175, height: 1106 });
     // The cropped source is centred and its aspect is preserved by default.
     expect(building.artwork?.bounds.height).toBeCloseTo(18);
-    expect(building.artwork?.bounds.width).toBeCloseTo(18 * 1160 / 1213);
+    expect(building.artwork?.bounds.width).toBeCloseTo(18 * 1175 / 1106);
     expect(building.artwork?.bounds.x).toBeCloseTo(-building.artwork!.bounds.width / 2);
     expect(building.artwork?.bounds.y).toBeCloseTo(-9);
     expect(objectRecords.some(record => (record.id as string) === 'clinic')).toBe(false);
@@ -63,7 +63,7 @@ describe('shared catalogue compiler', () => {
     const contain = compileObjectCatalogue([clinic()], sourcesFor([clinic()])).clinic;
     const contained = deriveArtwork(contain.artwork![0], 20, 18);
     expect(contained.bounds.height).toBeCloseTo(18);
-    expect(contained.bounds.width).toBeCloseTo(18 * 1160 / 1213);
+    expect(contained.bounds.width).toBeCloseTo(18 * 1175 / 1106);
 
     const stretch: ObjectRecord = { ...clinic(), artwork: { fit: 'stretch' } };
     const stretched = deriveArtwork(compileObjectCatalogue([stretch], sourcesFor([stretch])).clinic.artwork![0], 20, 18);
@@ -120,10 +120,10 @@ describe('shared catalogue compiler', () => {
     const definitions = compileBuildingCatalogue([scaledType], sourcesFor([scaledType]));
     const base = compilePlacement({ ...placement, type: 'clinic' }, definitions);
     expect([base.width, base.height]).toEqual([20, 18]);
-    expect(base.artwork?.bounds.width).toBeCloseTo(18 * 1160 / 1213 * 1.5);
+    expect(base.artwork?.bounds.width).toBeCloseTo(18 * 1175 / 1106 * 1.5);
     const overridden = compilePlacement({ ...placement, type: 'clinic', width: 40, height: 36, artworkScale: 2 }, definitions);
     expect([overridden.width, overridden.height]).toEqual([40, 36]);
-    expect(overridden.artwork?.bounds.width).toBeCloseTo(36 * 1160 / 1213 * 2);
+    expect(overridden.artwork?.bounds.width).toBeCloseTo(36 * 1175 / 1106 * 2);
     expect(() => compilePlacement({ ...placement, type: 'clinic', artworkScale: 0 }, definitions)).toThrow(/invalid artwork scale/);
   });
 
@@ -219,7 +219,7 @@ describe('shared catalogue compiler', () => {
       expect(hospitalOutline[i].x).toBeCloseTo(x);
       expect(hospitalOutline[i].y).toBeCloseTo(y);
     });
-    expect(propArtwork.condo.source).toEqual({ x: 100, y: 60, width: 1055, height: 1090 });
+    expect(propArtwork.condo.source).toEqual({ x: 89, y: 110, width: 1086, height: 1006 });
     expect(propArtwork.condo.castsShadow).toBe(false);
     expect(propArtwork.condo.bounds.x).toBeCloseTo(-7.15);
     expect(propArtwork.condo.bounds.y).toBeCloseTo(-6.65);
