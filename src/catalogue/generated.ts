@@ -5,14 +5,20 @@ import artwork0 from '../assets/map/shop-tar.png?inline';
 import artwork1 from '../assets/map/shop-rust.png?inline';
 import artwork2 from '../assets/map/shop-concrete.png?inline';
 import artwork3 from '../assets/map/tree-worn.png?inline';
-import artwork4 from '../assets/map/asphalt.svg?inline';
-import artwork5 from '../assets/map/hospital-structure.png?inline';
-import artwork6 from '../assets/map/luxury-condo.png?inline';
-import artwork7 from '../assets/map/ocean-crest-condo.png?inline';
-import artwork8 from '../assets/map/pacific-palm-hotel.png?inline';
-import artwork9 from '../assets/map/bakery-front.png?inline';
-import artwork10 from '../assets/map/palm-canopy.png?inline';
-import artwork11 from '../assets/map/crate-shipping.png?inline';
+import artwork4 from '../assets/map/grass-short.svg?inline';
+import artwork5 from '../assets/map/grass-lush.svg?inline';
+import artwork6 from '../assets/map/grass-clover.svg?inline';
+import artwork7 from '../assets/map/grass-daisies.svg?inline';
+import artwork8 from '../assets/map/grass-dry.svg?inline';
+import artwork9 from '../assets/map/grass-tufts.svg?inline';
+import artwork10 from '../assets/map/asphalt.svg?inline';
+import artwork11 from '../assets/map/hospital-structure.png?inline';
+import artwork12 from '../assets/map/luxury-condo.png?inline';
+import artwork13 from '../assets/map/ocean-crest-condo.png?inline';
+import artwork14 from '../assets/map/pacific-palm-hotel.png?inline';
+import artwork15 from '../assets/map/bakery-front.png?inline';
+import artwork16 from '../assets/map/palm-canopy.png?inline';
+import artwork17 from '../assets/map/crate-shipping.png?inline';
 import type { ArtworkSource } from './schema';
 
 /** One inline module URL per referenced image, keyed by stable artwork ID. */
@@ -21,14 +27,20 @@ export const artworkInline: Readonly<Record<string, string>> = {
   'shop-rust': artwork1,
   'shop-concrete': artwork2,
   'tree-worn': artwork3,
-  'asphalt': artwork4,
-  'hospital': artwork5,
-  'condo': artwork6,
-  'ocean-crest-condo': artwork7,
-  'hotel': artwork8,
-  'bakery': artwork9,
-  'palm': artwork10,
-  'shipping-crate': artwork11,
+  'grass-short': artwork4,
+  'grass-lush': artwork5,
+  'grass-clover': artwork6,
+  'grass-daisies': artwork7,
+  'grass-dry': artwork8,
+  'grass-tufts': artwork9,
+  'asphalt': artwork10,
+  'hospital': artwork11,
+  'condo': artwork12,
+  'ocean-crest-condo': artwork13,
+  'hotel': artwork14,
+  'bakery': artwork15,
+  'palm': artwork16,
+  'shipping-crate': artwork17,
 };
 
 /** Measured source pixels and transparent-padding crop for every referenced PNG. */

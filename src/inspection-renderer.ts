@@ -4,7 +4,7 @@ import { clipLand } from './terrain-renderer';
 import type { Vec } from './physics';
 
 export const inspectionColours = { land: '#65e0ba', terrain: '#e8cb88', artwork: '#ffe16b', collision: '#ff887d', blockers: '#ca9aff' };
-const materialColours = { road: '#597caa', sand: '#ebce80', paving: '#c69ddd' };
+const materialColours = { road: '#597caa', sand: '#ebce80', paving: '#c69ddd', grass: '#78bd68' };
 function path(c: CanvasRenderingContext2D, points: readonly Vec[], closed = true) {
   if (!points.length) return;
   c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); if (closed) c.closePath();

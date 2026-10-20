@@ -219,7 +219,7 @@ export function compileObjectCatalogue(
     else if (record.storeys !== undefined || record.fallback !== undefined || record.sign !== undefined) throw new Error(`Object ${record.id}: only buildings declare storeys, fallback or sign`);
     if (record.artworkScale !== undefined && (!Number.isFinite(record.artworkScale) || record.artworkScale <= 0)) throw new Error(`Object ${record.id}: invalid artwork scale`);
     if (record.collision !== undefined) {
-      if (!Array.isArray(record.collision) || record.collision.length < 1 || record.collision.length > 8) throw new Error(`Object ${record.id}: collision needs 1–8 rectangles`);
+      if (!Array.isArray(record.collision) || record.collision.length < 1 || record.collision.length > 64) throw new Error(`Object ${record.id}: collision needs 1–64 rectangles`);
       for (const r of record.collision) {
         if (!r || ![r.x, r.y, r.width, r.height].every(Number.isFinite) || r.width <= 0 || r.height <= 0 || r.x < -0.5 || r.y < -0.5 || r.x + r.width > 0.500000001 || r.y + r.height > 0.500000001) throw new Error(`Object ${record.id}: collision rectangle must stay inside the footprint`);
       }

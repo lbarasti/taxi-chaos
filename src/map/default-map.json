@@ -3442,6 +3442,228 @@
       ],
       "surface": "paving",
       "priority": 20
+    },
+    {
+      "id": "city-park-0-3-grass",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 6.5,
+          "y": 126.5
+        },
+        {
+          "x": 33.5,
+          "y": 126.5
+        },
+        {
+          "x": 33.5,
+          "y": 153.5
+        },
+        {
+          "x": 6.5,
+          "y": 153.5
+        }
+      ],
+      "surface": "grass",
+      "priority": 10
+    },
+    {
+      "id": "city-park-0-3-path-ns",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 18.8,
+          "y": 126.5
+        },
+        {
+          "x": 21.2,
+          "y": 126.5
+        },
+        {
+          "x": 21.2,
+          "y": 153.5
+        },
+        {
+          "x": 18.8,
+          "y": 153.5
+        }
+      ],
+      "surface": "paving",
+      "priority": 20,
+      "texture": "gravel"
+    },
+    {
+      "id": "city-park-0-3-path-ew",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 6.5,
+          "y": 138.8
+        },
+        {
+          "x": 33.5,
+          "y": 138.8
+        },
+        {
+          "x": 33.5,
+          "y": 141.20000000000002
+        },
+        {
+          "x": 6.5,
+          "y": 141.20000000000002
+        }
+      ],
+      "surface": "paving",
+      "priority": 20,
+      "texture": "gravel"
+    },
+    {
+      "id": "city-park-2-2-grass",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 86.5,
+          "y": 86.5
+        },
+        {
+          "x": 113.5,
+          "y": 86.5
+        },
+        {
+          "x": 113.5,
+          "y": 113.5
+        },
+        {
+          "x": 86.5,
+          "y": 113.5
+        }
+      ],
+      "surface": "grass",
+      "priority": 10
+    },
+    {
+      "id": "city-park-2-2-path-ns",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 98.8,
+          "y": 86.5
+        },
+        {
+          "x": 101.2,
+          "y": 86.5
+        },
+        {
+          "x": 101.2,
+          "y": 113.5
+        },
+        {
+          "x": 98.8,
+          "y": 113.5
+        }
+      ],
+      "surface": "paving",
+      "priority": 20,
+      "texture": "gravel"
+    },
+    {
+      "id": "city-park-2-2-path-ew",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 86.5,
+          "y": 98.8
+        },
+        {
+          "x": 113.5,
+          "y": 98.8
+        },
+        {
+          "x": 113.5,
+          "y": 101.2
+        },
+        {
+          "x": 86.5,
+          "y": 101.2
+        }
+      ],
+      "surface": "paving",
+      "priority": 20,
+      "texture": "gravel"
+    },
+    {
+      "id": "city-park-4-4-grass",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 166.5,
+          "y": 166.5
+        },
+        {
+          "x": 193.5,
+          "y": 166.5
+        },
+        {
+          "x": 193.5,
+          "y": 193.5
+        },
+        {
+          "x": 166.5,
+          "y": 193.5
+        }
+      ],
+      "surface": "grass",
+      "priority": 10
+    },
+    {
+      "id": "city-park-4-4-path-ns",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 178.8,
+          "y": 166.5
+        },
+        {
+          "x": 181.20000000000002,
+          "y": 166.5
+        },
+        {
+          "x": 181.20000000000002,
+          "y": 193.5
+        },
+        {
+          "x": 178.8,
+          "y": 193.5
+        }
+      ],
+      "surface": "paving",
+      "priority": 20,
+      "texture": "gravel"
+    },
+    {
+      "id": "city-park-4-4-path-ew",
+      "owner": "city",
+      "outline": [
+        {
+          "x": 166.5,
+          "y": 178.8
+        },
+        {
+          "x": 193.5,
+          "y": 178.8
+        },
+        {
+          "x": 193.5,
+          "y": 181.20000000000002
+        },
+        {
+          "x": 166.5,
+          "y": 181.20000000000002
+        }
+      ],
+      "surface": "paving",
+      "priority": 20,
+      "texture": "gravel"
     }
   ],
   "districtZones": [
@@ -4745,6 +4967,42 @@
       "label": "JUICE / COFFEE",
       "width": 4,
       "height": 2.8
+    },
+    {
+      "id": "city-park-0-3-fountain",
+      "owner": "city",
+      "type": "fountain",
+      "position": {
+        "x": 20,
+        "y": 140
+      },
+      "angle": 0,
+      "color": "#697e6c",
+      "label": "CITY GARDENS"
+    },
+    {
+      "id": "city-park-2-2-fountain",
+      "owner": "city",
+      "type": "fountain",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "angle": 0,
+      "color": "#697e6c",
+      "label": "CITY GARDENS"
+    },
+    {
+      "id": "city-park-4-4-fountain",
+      "owner": "city",
+      "type": "fountain",
+      "position": {
+        "x": 180,
+        "y": 180
+      },
+      "angle": 0,
+      "color": "#697e6c",
+      "label": "CITY GARDENS"
     }
   ],
   "residents": [

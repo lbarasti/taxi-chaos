@@ -1,3 +1,4 @@
+import { FOUNTAIN_RADIUS, FOUNTAIN_WATER_RADIUS } from './fountain';
 import type { Renderer } from './renderer';
 import type { Prop } from './world';
 import { vec, type Vec } from './physics';
@@ -55,6 +56,15 @@ function drawResort(r: Renderer, prop: Prop) {
 }
 
 export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
+  if (prop.kind === 'fountain') {
+    const c = r.ctx, b = prop.body;
+    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+    c.scale(b.w / (FOUNTAIN_RADIUS * 2), b.h / (FOUNTAIN_RADIUS * 2));
+    r.circle(vec(), FOUNTAIN_RADIUS, prop.color);
+    r.circle(vec(), FOUNTAIN_WATER_RADIUS, '#6ea6b2');
+    r.circle(vec(), 1.5, '#9ac9cd');
+    c.restore(); return true;
+  }
   if (prop.alive && prop.kind === 'building' && (prop.presentation ?? prop.building?.presentation)?.fallback === 'resort' && (!prop.artwork || !artworkImages.has(prop.artwork.image))) { drawResort(r, prop); return true; }
   if (!['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(prop.kind)) return false;
   const c = r.ctx, b = prop.body;

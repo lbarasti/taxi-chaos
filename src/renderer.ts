@@ -305,11 +305,8 @@ export class Renderer {
       if (!this.visible(vec(b.x + 20, b.y + 20), 30)) continue;
       this.rect(b.x + 6, b.y + 6, 28, 28, '#596361'); this.rect(b.x + 6.5, b.y + 6.5, 27, 27, b.park ? '#345b4a' : '#444c4b');
       c.strokeStyle = '#68726b'; c.lineWidth = 0.08;
-      for (let i = 7; i < 34; i += 2) { c.beginPath(); c.moveTo(b.x + 6, b.y + i); c.lineTo(b.x + 34, b.y + i); c.stroke(); c.beginPath(); c.moveTo(b.x + i, b.y + 6); c.lineTo(b.x + i, b.y + 34); c.stroke(); }
-      if (b.park) {
-        this.rect(b.x + 18.8, b.y + 6.5, 2.4, 27, '#a9aa82'); this.rect(b.x + 6.5, b.y + 18.8, 27, 2.4, '#a9aa82');
-        this.circle(vec(b.x + 20, b.y + 20), 3.7, '#697e6c'); this.circle(vec(b.x + 20, b.y + 20), 2.7, '#6ea6b2'); this.circle(vec(b.x + 20, b.y + 20), 1.5, '#9ac9cd'); this.label('CITY GARDENS', b.x + 20, b.y + 30, 1, '#bdd7ac');
-      } else if (b.special === 'fuel') {
+      if (!b.park) for (let i = 7; i < 34; i += 2) { c.beginPath(); c.moveTo(b.x + 6, b.y + i); c.lineTo(b.x + 34, b.y + i); c.stroke(); c.beginPath(); c.moveTo(b.x + i, b.y + 6); c.lineTo(b.x + i, b.y + 34); c.stroke(); }
+      if (b.special === 'fuel') {
         this.rect(b.x + 7, b.y + 7, 26, 26, '#485152');
         this.rect(b.x + 9, b.y + 9, 22, 8, '#b8965a18', '#b8965a55');
         this.label('LAST CHANCE', b.x + 20, b.y + 7.8, 1.1, '#e3c487', '700');
@@ -365,6 +362,8 @@ export class Renderer {
     this.label('M A R K E T   S T R E E T', 62, 117.7, 1.1, '#81908f');
     c.restore();
     drawTerrainGround(this);
+    for (const b of g.world.blocks) if (b.park && this.visible(vec(b.x + 20, b.y + 20), 30))
+      this.label('CITY GARDENS', b.x + 20, b.y + 30, 1, '#bdd7ac');
     c.save(); clipLand(c,g.map);
     // Workshop's apron, immediately beside the starting cab.
     this.rect(6.2, 24, 2.5, 8, '#a0b89d'); this.label('TAXI', 7.4, 28, 0.65, '#29483e', '700');
@@ -943,7 +942,6 @@ export class Renderer {
     c.fillStyle = '#90a66b'; c.fillRect(GOLF_COURSE.center.x - GOLF_COURSE.width / 2, GOLF_COURSE.center.y - GOLF_COURSE.height / 2, GOLF_COURSE.width, GOLF_COURSE.height);
     for (const villa of VILLAS) { c.fillStyle = '#dcc4a1'; c.fillRect(villa.position.x - 5, villa.position.y - 3, 10, 6); }
     for (const road of COUNTRY_ROADS) { trace(c, road.points); c.strokeStyle = road.bridge ? '#b4bbb0' : '#a2af94'; c.lineWidth = road.bridge ? 5 : 3; c.stroke(); }
-    drawTerrainMiniMap(c,g.map);
     for (const b of g.world.blocks) {
       if (b.campusId) continue;
       c.fillStyle = b.park ? '#456955' : '#293b40'; c.fillRect(b.x + 7, b.y + 7, 26, 26);
@@ -951,6 +949,7 @@ export class Renderer {
     for (const site of g.map.city.campuses) {
       c.fillStyle = '#586d66'; c.fillRect(site.position.x - site.width / 2, site.position.y - site.height / 2, site.width, site.height);
     }
+    drawTerrainMiniMap(c,g.map);
     for (const building of g.map.city.buildings) {
       c.fillStyle = '#64726d'; c.fillRect(building.position.x - building.width / 2, building.position.y - building.height / 2, building.width, building.height);
     }

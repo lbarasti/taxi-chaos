@@ -50,7 +50,7 @@ export function drawTerrainMiniMap(c: CanvasRenderingContext2D, map: CompiledMap
   for (const region of map.terrain.regions) {
     trace(c, region.outline);
     c.closePath();
-    c.fillStyle = surfaces[region.surface].color;
+    c.fillStyle = region.texture === 'gravel' ? '#a9aa82' : surfaces[region.surface].color;
     c.fill();
   }
   c.restore();
@@ -69,9 +69,25 @@ export function drawTerrainGround(r: Renderer) {
     trace(c, region.outline);
     c.closePath();
     c.clip();
-    c.fillStyle = surfaces[region.surface].color;
+    c.fillStyle = region.texture === 'gravel' ? '#a9aa82' : surfaces[region.surface].color;
     c.fillRect(b.min.x, b.min.y, w, h);
-    if (region.surface === 'sand') {
+    if (region.surface === 'grass') {
+      // Bound work by the viewport, even for a large imported grass polygon.
+      const x = Math.max(b.min.x, r.camera.x - r.width / r.zoom / 2 - 4);
+      const y = Math.max(b.min.y, r.camera.y - r.height / r.zoom / 2 - 4);
+      const right = Math.min(b.max.x, r.camera.x + r.width / r.zoom / 2 + 4);
+      const bottom = Math.min(b.max.y, r.camera.y + r.height / r.zoom / 2 + 4);
+      if (right > x && bottom > y) artworkImages.grass(c, { x, y, width: right - x, height: bottom - y });
+    } else if (region.texture === 'gravel') {
+      c.fillStyle = '#a9aa82'; c.fillRect(b.min.x, b.min.y, w, h);
+      // Stable stone flecks retain the original path colour and footprint.
+      for (let i = 0; i < 300; i++) {
+        const x = b.min.x + ((i * 37 % 307) / 307) * w;
+        const y = b.min.y + ((i * 71 % 311) / 311) * h;
+        c.fillStyle = i % 2 ? '#737c6744' : '#e2dbb755';
+        c.fillRect(x, y, 0.04 + (i % 3) * 0.02, 0.05);
+      }
+    } else if (region.surface === 'sand') {
       const sand = c.createLinearGradient(0, b.min.y, 0, b.max.y);
       sand.addColorStop(0, '#eddaa8');
       sand.addColorStop(0.58, '#e1c28a');
