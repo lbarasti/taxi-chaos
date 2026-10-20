@@ -20,8 +20,8 @@ export function drawCityBuilding(r: Renderer, prop: Prop, shadow: Vec, shadowAlp
   if (presentation.fallback === 'shop' && (!building || w === 10 && h === 10)) return false;
   const landmark = presentation.fallback === 'terraced' && w >= 10 && h >= 12, wards = presentation.fallback === 'wards' && w >= 10 && h >= 12;
   const sign = presentation.sign;
-  c.save(); c.globalAlpha *= shadowAlpha;
-  r.rect(left + shadow.x + 0.8, top + shadow.y + 1.3, w + 0.5, h + 0.5, '#13212880'); c.restore();
+  r.mapShadow(() => { c.globalAlpha *= shadowAlpha;
+    r.rect(left + shadow.x + 0.8, top + shadow.y + 1.3, w + 0.5, h + 0.5, '#13212880'); });
   c.save(); c.beginPath(); c.rect(left - 0.25, top, w + 0.25, h + 0.6); c.clip();
   const wardCount = Math.max(1, Math.round((h - 3) / 21)), wardStep = (h - 3) / wardCount;
   const wardRows = Array.from({ length: wardCount }, (_, i) => top + 3 + i * wardStep);

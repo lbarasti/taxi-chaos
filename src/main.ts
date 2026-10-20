@@ -23,6 +23,7 @@ import type { PreviewState } from './missions/dialogue-preview';
 import { ScenarioRunner, type ScenarioOptions, type CaptureView, type CaptureFrame } from './scenarios/runner';
 import { createAuthoringPreview } from './catalogue/authoring-preview';
 import { createPreview } from './map/preview';
+import { createInspectionPanel } from './inspection-panel';
 
 const arrowIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -148,11 +149,12 @@ function hud() {
   const drivingEmergency = damage.status === 'burning' || damage.status === 'wreck' || bike && !motorcycleEngineWorks(damage);
   refreshStory(g.mode === 'playing' && !g.onFoot && !g.player.sinking && !drivingEmergency && !g.harbourPrompt && $('roadside').hidden);
   lab?.refreshUI();
+  inspection.refresh();
   refreshAudioControls(audio);
 }
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
 function realtime() { if (mapWorkspace?.previewing) mapWorkspace.api.live(); else if (!drafting()) lab?.realtime(); }
-function interact() { if (drafting() || game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
+function interact() { if (drafting() || renderer.inspection.paused || renderer.inspection.freeCamera || game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
 function garage() { if (drafting()) return; game.garage(); hud(); if (game.mode === 'playing') $('city').focus(); }
 function tow() { if (drafting() || game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('garage-action').addEventListener('click', garage); $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
@@ -172,6 +174,7 @@ window.addEventListener('keydown', e => {
   // any caller can clear the external clock or mutate the original run. Programmatic
   // `__taxi.map` calls do not pass through this listener.
   if (drafting()) { e.preventDefault(); return; }
+  if (inspection.keydown(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
   if (!$('overlay').inert && !target?.closest('#debug-panel') && drawer.handleKey(e)) return;
@@ -182,6 +185,8 @@ window.addEventListener('keydown', e => {
   // Preserve native keyboard activation for HUD buttons.
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
+  if (renderer.inspection.paused && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyG', 'KeyH', 'KeyR'].includes(e.code)) { e.preventDefault(); return; }
+  if (renderer.inspection.freeCamera && ['Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyG', 'KeyH', 'KeyR'].includes(e.code)) { e.preventDefault(); return; }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
    if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
@@ -193,7 +198,7 @@ window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.
 document.addEventListener('visibilitychange', () => { if (document.hidden) { resetTouch(); game.keys.clear(); audio.silence(game); if (!mapWorkspace?.editing && game.mode === 'playing') game.setMode('paused'); } });
 window.addEventListener('pagehide', () => game.persist());
 const resetTouch = bindTouchControls($('joystick'), document.querySelectorAll<HTMLButtonElement>('[data-key]'), {
-  active: () => !mapWorkspace?.editing && game.mode === 'playing',
+  active: () => !mapWorkspace?.editing && !renderer.inspection.freeCamera && !renderer.inspection.paused && game.mode === 'playing',
   move: value => { game.touchMove = value; },
   action: (key, pressed) => { if (pressed) game.keys.add(key); else game.keys.delete(key); },
   begin: () => { if (drafting()) return; if (externalClock && lab) realtime(); externalClock = false; },
@@ -207,7 +212,7 @@ function pollController() {
   const pressed = pad?.buttons.map(b => b.pressed) ?? [];
   const activity = pressed.some((value, index) => value && !previousPadButtons[index]) || !!pad?.axes.some((a, index) => Math.abs(a) > 0.25 && Math.abs(a - (previousPadAxes[index] ?? 0)) > 0.1);
   if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
-  const locked = drafting();
+  const locked = drafting() || renderer.inspection.freeCamera || renderer.inspection.paused;
   if (!locked && pad && drawer.active && !$('overlay').inert) {
     if (pressed[12] && !previousPadButtons[12]) drawer.move(-1);
     if (pressed[14] && !previousPadButtons[14]) drawer.adjust(-1);
@@ -230,6 +235,12 @@ function pollController() {
 }
 let last = performance.now(), accumulator = 0, hudClock = 0, externalClock = dialoguePreviewMode || scenarioPreviewMode || authoringPreviewMode, timeScale = 1;
 const STEP = 1 / 120;
+const inspection = createInspectionPanel(renderer, {
+  available: () => !!laboratoryGame && game !== normalGame && !drafting(),
+  clearInput: () => { resetTouch(); game.keys.clear(); game.touchMove = null; },
+  redraw: () => renderer.draw(0),
+  clockFrozen: () => externalClock,
+});
 function frame(now: number) {
   // Scenario mode renders only at explicit command boundaries. Wall-clock RAFs
   // must never move the simulation, reveal dialogue or change a captured scene.
@@ -239,11 +250,11 @@ function frame(now: number) {
   // `realtime()` could never resume the restored game. Simulation and painting stay frozen.
   if (authoringPreviewMode && externalClock) { last = now; requestAnimationFrame(frame); return; }
   const dt = Math.min((now - last) / 1000, 0.05); last = now;
-  const locked = drafting();
+  const locked = drafting() || renderer.inspection.paused;
   if (!externalClock && !locked) { accumulator += dt * timeScale; while (accumulator >= STEP) { game.update(STEP); accumulator -= STEP; } }
   pollController();
   audio.update(game, !externalClock && !locked, !document.hidden && document.hasFocus());
-  renderer.draw(game.mode === 'paused' ? 0 : dt);
+  renderer.draw(game.mode === 'paused' || renderer.inspection.paused ? 0 : dt);
   hudClock += dt; if (hudClock > 0.1) { hud(); hudClock = 0; }
   requestAnimationFrame(frame);
 }
@@ -256,17 +267,18 @@ function ensureLab() {
   activateLab();
   if (!mapWorkspace) mapWorkspace = new MapWorkspace(game, renderer, {
     clock: () => externalClock,
-    freeze: frozen => { externalClock = frozen; accumulator = 0; },
+    freeze: frozen => { externalClock = frozen; accumulator = 0; if (!frozen) renderer.inspection.options.paused = false; },
     clearInput: () => { resetTouch(); game.keys.clear(); game.touchMove = null; game.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; },
-    activate: active => { game = active; renderer.game = active; bindGame(); modal(); hud(); },
+    activate: active => { inspection.api.close(); game = active; renderer.game = active; bindGame(); modal(); hud(); },
     silence: () => audio.silence(game),
     lock: (panel, gameUi) => { $('debug-panel').inert = panel; $('app').inert = gameUi; },
   }, createPreview);
   if (!lab) lab = setupLab(game, renderer, {
     map: mapWorkspace.api,
+    layers: inspection.api,
     enter: activateLab,
-    leave: () => { if (mapWorkspace?.active) mapWorkspace.api.close(); audio.silence(game); externalClock = false; accumulator = 0; timeScale = 1; game = normalGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; $('debug-panel').hidden = true; modal(); hud(); $('city').focus(); },
-    setExternalClock: frozen => { externalClock = frozen; accumulator = 0; if (frozen) audio.silence(game); },
+    leave: () => { if (mapWorkspace?.active) mapWorkspace.api.close(); inspection.api.close(); audio.silence(game); externalClock = false; accumulator = 0; timeScale = 1; game = normalGame!; renderer.game = game; bindGame(); renderer.camera = { ...game.actor.position }; $('debug-panel').hidden = true; modal(); hud(); $('city').focus(); },
+    setExternalClock: frozen => { externalClock = frozen; accumulator = 0; if (frozen) audio.silence(game); else renderer.inspection.options.paused = false; },
     setTimeScale: scale => { timeScale = scale; },
     refresh: () => { hud(); renderer.draw(1 / 60); },
     focus: () => $('city').focus(),

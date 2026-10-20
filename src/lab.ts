@@ -145,6 +145,7 @@ export type PersonSummary = { id: number; role: string; position: Vec; velocity:
 export type ContactSummary = { id: number; kind: string; depth: number };
 
 export type LabHooks = {
+  layers?: import('./inspection-panel').InspectionAPI;
   enter?: () => void;
   leave?: () => void;
   map?: MapAPI;
@@ -156,6 +157,7 @@ export type LabHooks = {
 };
 
 export type LabAPI = {
+  layers?: import('./inspection-panel').InspectionAPI;
   map?: MapAPI;
   toggle(force?: boolean): boolean;
   open(): boolean;
@@ -548,6 +550,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
     <div class="lab-body" data-lab="body">
       <div class="lab-head">
         <strong>Taxi Chaos Lab · temporary game</strong>
+        ${hooks.layers ? '<button data-lab="layers">Map layers</button>' : ''}
         ${hooks.leave ? '<button data-lab="leave">Return to saved game</button>' : ''}
         <span class="lab-pill" data-lab="clock-2">LIVE</span>
         <span class="lab-tele" data-lab="tele"></span>
@@ -749,6 +752,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   const findVehicle = (id: number) => game.vehicles.find(v => v.id === id);
 
   const api: LabAPI = {
+    layers: hooks.layers,
     map: hooks.map,
     toggle: (force?: boolean) => {
       expanded = force ?? !expanded;
@@ -915,6 +919,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   // ---- UI events -----------------------------------------------------------------------------
 
   q<HTMLButtonElement>('leave')?.addEventListener('click', () => { api.realtime(); hooks.leave?.(); });
+  q<HTMLButtonElement>('layers')?.addEventListener('click', () => { api.close(); hooks.layers?.open(); });
   q<HTMLButtonElement>('campaign-advance')?.addEventListener('click', () => api.campaign(dayMinute(clamp(Number(q<HTMLInputElement>('campaign-day')!.value) || 1, 1, 15))));
   expandButton.addEventListener('click', () => api.toggle());
   if (hooks.audio) {
