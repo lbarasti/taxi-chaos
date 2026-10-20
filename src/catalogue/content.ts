@@ -61,7 +61,7 @@ export const objectRecords = [
     image: 'map/luxury-condo.png',
     // Main roof, north pavilion and west wing; the recessed sand corners are open.
     collision: [
-      { x: -0.33, y: -0.42, width: 0.83, height: 0.92 },
+      { x: -0.33, y: -0.42, width: 0.805, height: 0.92 },
       { x: -0.067, y: -0.5, width: 0.371, height: 0.08 },
       { x: -0.5, y: -0.372, width: 0.17, height: 0.712 },
     ],
