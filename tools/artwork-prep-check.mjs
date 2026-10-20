@@ -34,8 +34,8 @@ test('the checked-in manifest is current and reports padding for every reference
   assert.ok(Math.abs(hospital.bounds.width - 26.6) < 1e-9);
   assert.ok(Math.abs(hospital.bounds.height - 66.6) < 1e-9);
   const condo = output.artworks.find(art => art.id === 'condo');
-  assert.deepEqual(condo.crop, { x: 100, y: 60, width: 1055, height: 1090 }, 'authored crop overrides the measured padding');
-  assert.deepEqual(condo.padding, { left: 0, top: 17, right: 94, bottom: 24 });
+  assert.deepEqual(condo.crop, { x: 89, y: 110, width: 1086, height: 1006 }, 'authored crop overrides the measured padding');
+  assert.deepEqual(condo.padding, { left: 0, top: 110, right: 79, bottom: 38 });
   const crate = output.artworks.find(art => art.id === 'shipping-crate');
   assert.deepEqual(crate.crop, { x: 0, y: 0, width: 32, height: 32 }, 'the authored crate PNG is measured directly');
   assert.ok(Math.abs(crate.bounds.width - 1.8) < 1e-9);

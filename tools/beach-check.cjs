@@ -42,11 +42,30 @@ assert.equal(await page.evaluate(id=>__taxi.props().find(p=>p.id===id).alive,tar
 await page.evaluate(()=>__taxi.teleport(35,260,0,0));await snap('destruction');
 await setup('promenade');const before=await page.evaluate(()=>__taxi.state().position);const walked=await step(2,['KeyD']);
 assert(walked.position.x>before.x+8);assert.equal(walked.surface,'paving');assert.equal(walked.driverHealth,100);await snap('promenade');
-await setup('beach');await page.evaluate(()=>__taxi.teleport(200.675,243.5,Math.PI/2,0));const stopped=await step(3,['KeyW','ShiftLeft']);assert(stopped.position.y<247);assert.equal(stopped.surface,'road');
+// Each run begins with one placement; all surface transitions use real throttle.
+const driveAcrossHotelBeach=async(name,x,returning=false)=>{
+await setup(name);await page.evaluate(({x,returning})=>__taxi.teleport(x,returning?265:243.5,returning?-Math.PI/2:Math.PI/2,0),{x,returning});
+const surfaces=new Set();let state;
+for(let i=0;i<120;i++){
+state=await step(0.1,['KeyW']);surfaces.add(state.surface);
+if(returning?state.position.y<243.5:state.position.y>263)break;
+}
+assert(returning?state.position.y<243.5:state.position.y>263,`${name}: hotel beach crossing blocked`);
+assert.deepEqual([...surfaces].sort(),['paving','road','sand']);assert.equal(state.health,100);assert.equal(state.mode,'playing');
+return state;
+};
+for(const name of ['beach','beach-pickup'])for(const x of [180.675,220.675])for(const returning of [false,true]){
+await driveAcrossHotelBeach(name,x,returning);
+if(name==='beach'&&x===180.675&&!returning)await snap('hotel-sand-desktop');
+}
+// The open promenade still stops the taxi at the real hotel wall.
+await setup('beach');await page.evaluate(()=>__taxi.teleport(200.675,243.5,Math.PI/2,0));
+const wall=await step(4,['KeyW']);assert(wall.position.y>251&&wall.position.y<258);
+await snap('hotel-wall');
 await setup('beach-pickup');await page.evaluate(()=>__taxi.teleport(64,270,Math.PI/2,25));const drowned=await step(3);assert.equal(drowned.mode,'wasted');assert.equal(drowned.wastedReason,'drowning');assert.equal(drowned.explosions,0);await snap('surf-sinking');
 await setup('promenade',22);await snap('promenade-night');
 for(const [name,width,height] of [['mobile',390,844],['small-mobile',320,568],['landscape',844,390]]){
-await page.setViewportSize({width,height});await setup('promenade');await step(0.5,['KeyD']);
+await page.setViewportSize({width,height});await driveAcrossHotelBeach('beach',180.675);
 assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await snap(name);
 }
 // Sustained mobile sand driving: queue size and canvas stroke count stay bounded.
@@ -70,9 +89,9 @@ const pickup=await page.evaluate(()=>__taxi.state().job.pickup);
 await page.evaluate(p=>__taxi.teleport(p.x,p.y,0,0),pickup);await step(1);
 assert.equal(await page.evaluate(()=>__taxi.state().job.stage),'dropoff');
 await page.evaluate(()=>__taxi.teleport(64,253,0,0));await step(0);
-assert.equal(await page.locator('.navigation-hud').getAttribute('data-target'),'dropoff');
+assert.equal(await page.locator('.navigation-hud').getAttribute('data-target'),'delivery');
 }
 assert.deepEqual(errors,[]);assert(requests.every(u=>u.startsWith('file:')||u.startsWith('data:')),'production must be self-contained');
-console.log('PASS: sand/pickup acceleration, real pickup entry, pickup door/jump/landing, four destructible classes, promenade walking/vehicle exclusion, surf death, night, three mobile viewports, 60s mobile sand rendering and preserved fare cues; offline with no page errors');
-await browser.close();
+console.log('PASS: sand/pickup acceleration, real pickup entry, pickup door/jump/landing, four destructible classes, promenade walking, eight physical street/paving/hotel-sand crossings, solid hotel wall, surf death, night, three mobile viewports, 60s mobile sand rendering and preserved fare cues; offline with no page errors');
+await page.evaluate(()=>__taxi.realtime());await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

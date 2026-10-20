@@ -61,23 +61,28 @@ describe('top-down artwork geometry', () => {
     expect(hospital.body.corners()).toEqual(corners);
     expect([hospital.body.w, hospital.body.h]).toEqual([26, 66]);
   });
-  it('gives two beachfront condos the supplied catalogue roof while keeping the remaining hotel procedural', () => {
+  it('gives the three beachfront plots distinct roofs with their existing physical footprints', () => {
     const beachBuildings = new World().props.filter(p => p.kind === 'building' && p.sourceId?.startsWith('hotel-'));
     expect(beachBuildings).toHaveLength(3);
-    const condos = beachBuildings.filter(p => p.artwork?.image === 'condo');
-    expect(condos.map(p => p.label)).toEqual(['AZURE RESIDENCES', 'OCEAN CREST CONDOS']);
-    for (const condo of condos) {
-      expect([condo.body.w, condo.body.h]).toEqual([28, 26]);
+    expect(beachBuildings.map(p => [p.sourceId, p.artwork?.image, p.body.w, p.body.h])).toEqual([
+      ['hotel-sandpiper', 'condo', 28, 26],
+      ['hotel-pacific-palm', 'hotel', 33, 11],
+      ['hotel-ocean-sunset', 'ocean-crest-condo', 28, 26],
+    ]);
+    for (const building of beachBuildings) {
+      expect(artworkFor(building)).toBe(building.artwork);
+      expect(building.artwork?.castsShadow).toBe(false);
+      expect(building.artwork?.occluder).toBeDefined();
+      const renamed = { ...building, label: 'RENAMED', sourceId: 'another-site' };
+      expect(artworkFor(renamed)).toBe(building.artwork);
+    }
+    for (const condo of [beachBuildings[0], beachBuildings[2]]) {
       expect(condo.artwork?.bounds.width).toBeCloseTo(28.6);
       expect(condo.artwork?.bounds.height).toBeCloseTo(26.6);
-      expect(condo.artwork?.castsShadow).toBe(false);
       expect(condo.presentation).toMatchObject({ frontage: 'RESIDENTS ONLY', fallback: 'commercial' });
-      const renamed = { ...condo, label: 'RENAMED', sourceId: 'another-site' };
-      expect(artworkFor(renamed)).toBe(condo.artwork);
     }
-    expect(artworkFor(beachBuildings[1])).toBeUndefined();
-    expect(beachBuildings[1].label).toBe('PACIFIC PALM HOTEL');
-    // The generic hotel keeps its procedural fallback and its apron/frontage data.
-    expect(beachBuildings[1].presentation).toMatchObject({ frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE' });
+    expect(beachBuildings[1].artwork?.bounds.width).toBeCloseTo(33.4);
+    expect(beachBuildings[1].artwork?.bounds.height).toBeCloseTo(11.4);
+    expect(beachBuildings[1].presentation).toMatchObject({ frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE', fallback: 'resort' });
   });
 });
