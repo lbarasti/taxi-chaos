@@ -1,3 +1,5 @@
+import type { CollisionRect } from './physics';
+
 // Cheap 2D light occlusion for Taxi Chaos's reduced-resolution lighting compositor.
 //
 // General raytracing / CPU visibility polygons are out of scope (they are CPU-heavy and pop as
@@ -40,7 +42,7 @@ export type Occluder = {
 export type OccluderProp = {
   kind: string;
   alive: boolean;
-  body: { position: OcclusionPoint; angle?: number; w: number; h: number };
+  body: { position: OcclusionPoint; angle?: number; w: number; h: number; collisionRects?: readonly CollisionRect[] };
 };
 
 /** Kinds whose roofs are raised above the street and must not receive street-level light. */
@@ -91,12 +93,21 @@ export function collectOccluders<T extends OccluderProp>(props: readonly T[], vi
   const minX = view.minX - margin, maxX = view.maxX + margin;
   const minY = view.minY - margin, maxY = view.maxY + margin;
   const out: Occluder[] = [];
-  for (const prop of props) {
-    const occluder = occluderFor(prop, outlineFor?.(prop));
-    if (!occluder) continue;
-    if (occluder.cx + occluder.radius < minX || occluder.cx - occluder.radius > maxX) continue;
-    if (occluder.cy + occluder.radius < minY || occluder.cy - occluder.radius > maxY) continue;
+  const include = (prop: OccluderProp, outline?: readonly OcclusionPoint[]) => {
+    const occluder = occluderFor(prop, outline);
+    if (!occluder) return;
+    if (occluder.cx + occluder.radius < minX || occluder.cx - occluder.radius > maxX) return;
+    if (occluder.cy + occluder.radius < minY || occluder.cy - occluder.radius > maxY) return;
     out.push(occluder);
+  };
+  for (const prop of props) {
+    if (!prop.body.collisionRects) { include(prop, outlineFor?.(prop)); continue; }
+    for (const r of prop.body.collisionRects) include(prop, [
+      { x: r.x * prop.body.w, y: r.y * prop.body.h },
+      { x: (r.x + r.width) * prop.body.w, y: r.y * prop.body.h },
+      { x: (r.x + r.width) * prop.body.w, y: (r.y + r.height) * prop.body.h },
+      { x: r.x * prop.body.w, y: (r.y + r.height) * prop.body.h },
+    ]);
   }
   return out;
 }

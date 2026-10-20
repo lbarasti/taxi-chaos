@@ -29,7 +29,7 @@ export function descriptorBody(e: Extract<AuthoredDescriptor, { position: Vec; a
   if ('model' in e) return createVehicleBody(vehicleDefinition(e.model), e.position, e.angle);
   const object= catalogue[e.type];
   if(!object)throw new Error(`Unknown catalogue type ${e.type}`);
-  const body=new Body(e.position.x,e.position.y,1,e.width ?? object.width,e.height ?? object.height); body.angle=e.angle; return body;
+  const body=new Body(e.position.x,e.position.y,1,e.width ?? object.width,e.height ?? object.height); body.angle=e.angle; body.collisionRects=object.collision; return body;
 }
 export function entityPosition(d: MapDocument, id: string): Vec | undefined {
   const e = entities(d).find(e => e.id === id);

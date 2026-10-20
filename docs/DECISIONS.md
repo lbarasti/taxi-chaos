@@ -305,3 +305,17 @@ continues to use its existing traction and rolling resistance.
 **Consequences:** Pursuing police can follow onto the open beachfront. Hotel walls
 remain solid, surf remains dangerous, and the existing street fare dropoff stays
 in place. Other authored pedestrian areas retain their own access rules.
+
+
+## D19 — Author compound solid footprints for recessed buildings
+
+**Decision:** Catalogue objects may declare a bounded union of up to eight
+normalized rectangular solid sections within their footprint envelope. Compile
+these sections once and share them across contacts, access clearance, map
+validation, sight lines and light blockers. Rectangular objects keep their
+existing footprint by default.
+
+**Reason:** A roof's rectangular export envelope can include visible sand in
+recessed corners. Treating that envelope as solid creates invisible walls.
+Collision sections are authored geometry, independent of image decoding and
+artwork-only scale; placement resizing and rotation transform them together.

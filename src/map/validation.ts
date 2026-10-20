@@ -1,4 +1,4 @@
-import { Body, add, contact, cross, dist, scale, sub, vec, type Vec } from '../physics';
+import { Body, add, bodyParts, contact, cross, dist, scale, sub, vec, type Vec } from '../physics';
 import { World, blocksWalking, isRigidObstacle } from '../world';
 import { vehicleDefinition, createVehicleBody } from '../vehicles';
 import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';
@@ -12,6 +12,7 @@ export type Finding = { code: string; severity: 'error' | 'warning' | 'info'; en
 export type Validation = { revision: string; findings: Finding[]; errors: number; warnings: number; waterGap: number | null; resolution: { roads: number; waterGap: number; footprintEdge: number; tolerance: number } };
 
 function footprint(body: Body): Vec[] {
+  if (body.collisionRects) return bodyParts(body).flatMap(footprint);
   const corners = body.corners(), points = [body.position, ...corners];
   for (let i = 0; i < 4; i++) { const a = corners[i], b = corners[(i + 1) % 4], steps = Math.ceil(dist(a, b) / 0.5); for (let j = 1; j < steps; j++) points.push(add(a, scale(sub(b, a), j / steps))); }
   return points;
@@ -56,7 +57,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     }
   }
   const checkLand = (id: string, body: Body, land: (p: Vec) => boolean) => { const outside = footprint(body).find(p => !land(p)); if (outside) push('object-outside-land', [id], 'Composite footprint extends outside its intended land', outside, { length: body.w, width: body.h }); };
-  const compiledBody = (object: CompiledObject) => { const b = new Body(object.position.x, object.position.y, 1, object.width, object.height); b.angle = object.angle; return b; };
+  const compiledBody = (object: CompiledObject) => { const b = new Body(object.position.x, object.position.y, 1, object.width, object.height); b.angle = object.angle; b.collisionRects = object.collision; return b; };
   // Attached features are resolved from local normalized offsets; report any that stray
   // beyond the allowed attachment band, naming the parent and stable feature ID. The
   // `service` role feeds the single city recovery entrance, so it is only consumed on

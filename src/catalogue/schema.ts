@@ -1,4 +1,4 @@
-import type { Vec } from '../physics';
+import type { CollisionRect, Vec } from '../physics';
 
 /** Pixel rectangle inside a source image. */
 export type PixelCrop = Readonly<{ x: number; y: number; width: number; height: number }>;
@@ -155,6 +155,8 @@ export type ObjectRecord = Readonly<{
   /** Default collision footprint in metres. */
   width: number;
   height: number;
+  /** Optional union of at most eight solid sections inside the footprint envelope. */
+  collision?: readonly CollisionRect[];
   /** Required for buildings. */
   storeys?: number;
   /** Required for buildings. */
@@ -205,6 +207,7 @@ export type ObjectDefinition = Readonly<{
   width: number;
   height: number;
   storeys?: number;
+  collision?: readonly CollisionRect[];
   artwork?: readonly ArtworkTemplate[];
   presentation?: BuildingPresentation;
   /** Artwork-only size multiplier, independent of the collision footprint. */
@@ -234,6 +237,7 @@ export type ObjectPlacementRecord = Readonly<{
 export type CompiledObject = Readonly<{
   id: string; type: string; kind: PropKind;
   position: Vec; angle: number; width: number; height: number;
+  collision?: readonly CollisionRect[];
   artwork?: PropArtwork; silhouette: readonly Vec[];
   storeys?: number; presentation?: BuildingPresentation;
   /** Local attached features resolved to world positions for this instance. */
@@ -253,6 +257,7 @@ export type PlacementRecord<Type extends string = string> = Readonly<{
 export type CompiledBuilding = Readonly<{
   id: string; type: string; owner: 'city'; blockId: string; position: Vec; label: string; color: string;
   width: number; height: number; storeys: number; silhouette: readonly Vec[];
+  collision?: readonly CollisionRect[];
   artwork?: PropArtwork; presentation: BuildingPresentation; features: readonly ResolvedFeature[]; recoveryEntrance?: Vec;
 }>;
 
