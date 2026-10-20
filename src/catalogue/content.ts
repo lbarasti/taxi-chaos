@@ -59,6 +59,12 @@ export const objectRecords = [
     id: 'condo', kind: 'building', width: 14, height: 13, storeys: 12,
     fallback: 'commercial', sign: condoSign, frontage: 'RESIDENTS ONLY',
     image: 'map/luxury-condo.png',
+    // Main roof, north pavilion and west wing; the recessed sand corners are open.
+    collision: [
+      { x: -0.33, y: -0.42, width: 0.83, height: 0.92 },
+      { x: -0.067, y: -0.5, width: 0.371, height: 0.08 },
+      { x: -0.5, y: -0.372, width: 0.17, height: 0.712 },
+    ],
     // Ignore faint export specks outside the directly overhead building silhouette.
     crop: { x: 89, y: 110, width: 1086, height: 1006 },
     artwork: { fit: 'stretch', width: 14.3 / 14, height: 13.3 / 13, outline: 'bounds', occluder: true, castsShadow: false },

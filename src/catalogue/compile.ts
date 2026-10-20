@@ -218,6 +218,12 @@ export function compileObjectCatalogue(
     if (record.kind === 'building') validateBuilding(record);
     else if (record.storeys !== undefined || record.fallback !== undefined || record.sign !== undefined) throw new Error(`Object ${record.id}: only buildings declare storeys, fallback or sign`);
     if (record.artworkScale !== undefined && (!Number.isFinite(record.artworkScale) || record.artworkScale <= 0)) throw new Error(`Object ${record.id}: invalid artwork scale`);
+    if (record.collision !== undefined) {
+      if (!Array.isArray(record.collision) || record.collision.length < 1 || record.collision.length > 8) throw new Error(`Object ${record.id}: collision needs 1–8 rectangles`);
+      for (const r of record.collision) {
+        if (!r || ![r.x, r.y, r.width, r.height].every(Number.isFinite) || r.width <= 0 || r.height <= 0 || r.x < -0.5 || r.y < -0.5 || r.x + r.width > 0.500000001 || r.y + r.height > 0.500000001) throw new Error(`Object ${record.id}: collision rectangle must stay inside the footprint`);
+      }
+    }
     // Validate type-level features eagerly, so a bad default cannot wait for the first
     // placement to fail (or for a custom catalogue to skip the check entirely).
     validateFeatureList(record.features, record.id);
@@ -258,6 +264,7 @@ export function compileObjectCatalogue(
       height: record.height,
       ...(record.storeys === undefined ? {} : { storeys: record.storeys }),
       ...(templates.length ? { artwork: templates } : {}),
+      ...(record.collision ? { collision: record.collision.map(r => ({ ...r })) } : {}),
       ...(record.kind === 'building' ? { presentation: {
         fallback: record.fallback!, sign: record.sign!,
         ...(record.frontage === undefined ? {} : { frontage: record.frontage }),
@@ -382,6 +389,7 @@ export function compileObjectPlacement(placement: ObjectPlacementRecord, catalog
     id: placement.id, type: placement.type, kind: definition.kind,
     position: { ...placement.position }, angle, width, height,
     ...(artwork ? { artwork } : {}),
+    ...(definition.collision ? { collision: definition.collision.map(r => ({ ...r })) } : {}),
     ...(definition.storeys === undefined ? {} : { storeys: definition.storeys }),
     ...(definition.presentation === undefined ? {} : { presentation: definition.presentation }),
     silhouette: artwork?.silhouette ?? footprintSilhouette(width, height),
@@ -403,6 +411,7 @@ export function compilePlacement(placement: PlacementRecord<string>, catalogue: 
   const { sign, replaceBlock, width: _width, height: _height, storeys: _storeys, artworkScale: _scale, features: _features, ...instance } = structuredClone(placement);
   const entrance = features.find(feature => feature.role === 'service')?.position;
   return { ...instance, width, height, storeys: placement.storeys ?? definition.storeys, artwork: compiled.artwork,
+    ...(compiled.collision ? { collision: compiled.collision } : {}),
     presentation: { ...definition.presentation, sign: { ...definition.presentation.sign, ...sign } },
     silhouette: [vec(-width / 2 - 0.25, -height / 2 - 0.6), vec(width / 2, -height / 2 - 0.6), vec(width / 2, height / 2), vec(-width / 2 - 0.25, height / 2)],
     features,

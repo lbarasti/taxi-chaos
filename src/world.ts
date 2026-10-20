@@ -62,7 +62,7 @@ export class World {
       } else if (special !== 'parking') {
         for (const building of block.buildings) {
           const p = this.add('building', building.position.x, building.position.y, building.width, building.height, building.color, building.label);
-          p.sourceId = building.id; p.building = building; p.features = building.features;
+          p.body.collisionRects = building.collision; p.sourceId = building.id; p.building = building; p.features = building.features;
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
         if (special === 'depot') this.add('shed', x + 20.5, y + 14, 23, 10, '#776255', 'FREIGHT DEPOT');
@@ -93,6 +93,7 @@ export class World {
     for (const p of map.placements) {
       const o=map.objects[p.id];
       const prop=this.add(o.kind,p.position.x,p.position.y,o.width,o.height,p.color,p.label,p.angle);
+      prop.body.collisionRects = o.collision;
       Object.assign(prop,{sourceId:p.id,storeys:o.storeys,artwork:o.artwork,presentation:o.presentation,features:o.features});
     }
     for (const y of BRIDGE_Y) {

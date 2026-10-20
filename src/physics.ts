@@ -14,7 +14,11 @@ export const rotate = (v: Vec, angle: number) => vec(Math.cos(angle) * v.x - Mat
 export const normalize = (v: Vec) => scale(v, 1 / (length(v) || 1));
 export const angleDiff = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
+/** Rectangular solid section, normalized to its parent envelope (±0.5). */
+export type CollisionRect = Readonly<{ x: number; y: number; width: number; height: number }>;
+
 export class Body {
+  collisionRects?: readonly CollisionRect[];
   position: Vec; velocity = vec(); angle = 0; angularVelocity = 0; force = vec(); torque = 0;
   constructor(x: number, y: number, public mass = 1000, public w = 4.2, public h = 2.1) { this.position = vec(x, y); }
   get inertia() { return this.mass * (this.w ** 2 + this.h ** 2) / 12; }
@@ -26,6 +30,22 @@ export class Body {
   impulse(f: Vec, p = this.position) { this.velocity = add(this.velocity, scale(f, this.invMass)); this.angularVelocity += cross(sub(p, this.position), f) * this.invInertia; }
   integrate(dt: number) { this.velocity = add(this.velocity, scale(this.force, dt * this.invMass)); this.angularVelocity += this.torque * dt * this.invInertia; this.position = add(this.position, scale(this.velocity, dt)); this.angle += this.angularVelocity * dt; this.force = vec(); this.torque = 0; }
   corners() { return [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)].map(p => this.toWorld(p)); }
+}
+
+/** Cache only derived geometry; static compounds avoid rebuilding their sections
+ * per contact, while moved/rotated/resized bodies invalidate the same cache. */
+const sectionCache = new WeakMap<Body, { x: number; y: number; angle: number; w: number; h: number; source: readonly CollisionRect[]; parts: Body[] }>();
+export function bodyParts(body: Body): readonly Body[] {
+  if (!body.collisionRects) return [body];
+  const cached = sectionCache.get(body), { x, y } = body.position;
+  if (cached && cached.x === x && cached.y === y && cached.angle === body.angle && cached.w === body.w && cached.h === body.h && cached.source === body.collisionRects) return cached.parts;
+  const parts = body.collisionRects.map(r => {
+    const p = body.toWorld(vec((r.x + r.width / 2) * body.w, (r.y + r.height / 2) * body.h));
+    const part = new Body(p.x, p.y, body.mass, r.width * body.w, r.height * body.h);
+    part.angle = body.angle; return part;
+  });
+  sectionCache.set(body, { x, y, angle: body.angle, w: body.w, h: body.h, source: body.collisionRects, parts });
+  return parts;
 }
 
 export type Controls = { throttle: number; turn: number; handbrake: boolean; boost?: boolean };
@@ -86,6 +106,16 @@ export const bodiesNear = (a: Body, b: Body, margin = 0) => dist(a.position, b.p
 export type Contact = { normal: Vec; depth: number; point: Vec };
 // SAT for rotated rectangles, including a face midpoint for stable face contacts.
 export function contact(a: Body, b: Body): Contact | null {
+  if (!a.collisionRects && !b.collisionRects) return rectangleContact(a, b);
+  if (!rectangleContact(a, b)) return null;
+  let deepest: Contact | null = null;
+  for (const ap of bodyParts(a)) for (const bp of bodyParts(b)) {
+    const hit = rectangleContact(ap, bp);
+    if (hit && (!deepest || hit.depth > deepest.depth)) deepest = hit;
+  }
+  return deepest;
+}
+function rectangleContact(a: Body, b: Body): Contact | null {
   const ac = a.corners(), bc = b.corners(); let depth = Infinity, normal = vec();
   const axes = [rotate(vec(1, 0), a.angle), rotate(vec(0, 1), a.angle), rotate(vec(1, 0), b.angle), rotate(vec(0, 1), b.angle)];
   for (let axis of axes) {
@@ -137,6 +167,7 @@ export class SpatialHash<T extends { body: Body; alive: boolean }> {
 
 /** Exact segment/OBB test; thin walls cannot be skipped by sampled sight rays. */
 export function segmentIntersectsBody(a: Vec, b: Vec, body: Body): boolean {
+  if (body.collisionRects) return bodyParts(body).some(part => segmentIntersectsBody(a, b, part));
   const start = rotate(sub(a, body.position), -body.angle), end = rotate(sub(b, body.position), -body.angle), delta = sub(end, start);
   let enter = 0, leave = 1;
   for (const axis of ['x', 'y'] as const) {
