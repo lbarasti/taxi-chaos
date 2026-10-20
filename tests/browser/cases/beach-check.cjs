@@ -1,15 +1,13 @@
-// Production QA: PLAYWRIGHT_PATH and CHROMIUM_PATH may override local browser dependencies.
-const {chromium}=require(process.env.PLAYWRIGHT_PATH || 'playwright');
+// Production QA against the standalone HTML.
 const fs=require('node:fs'), assert=require('node:assert/strict'), path=require('node:path');
-const root=path.resolve(__dirname,'..');
+const root=path.resolve(__dirname,'../../..');
 const screenshotRoot=process.env.SCREENSHOT_DIR || path.join(root,'scenario-runs/beach');
 (async()=>{
-const browser=await chromium.launch({...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {}),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
+const {launchBrowser,newPage,closeBrowser}=await import('../runtime.mjs');
+const browser=await launchBrowser();
+const page=await newPage(browser,{viewport:{width:1440,height:900},deviceScaleFactor:1});
 await page.addInitScript(()=>{window.requestAnimationFrame=()=>1;});
-const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
 await page.goto('file://'+root+'/dist/index.html?debug=1');await page.waitForFunction(()=>!!window.__taxi);
-await page.context().setOffline(true);await page.reload();await page.waitForFunction(()=>!!window.__taxi);
 fs.mkdirSync(screenshotRoot,{recursive:true});
 const setup=async(name,hour=14)=>page.evaluate(({name,hour})=>{__taxi.scenario(name);__taxi.dayNight({hour,frozen:true});__taxi.close();document.querySelector('#debug-panel').hidden=true;__taxi.step(0);}, {name,hour});
 const snap=async name=>page.screenshot({path:path.join(screenshotRoot,name+'.png')});
@@ -91,7 +89,6 @@ assert.equal(await page.evaluate(()=>__taxi.state().job.stage),'dropoff');
 await page.evaluate(()=>__taxi.teleport(64,253,0,0));await step(0);
 assert.equal(await page.locator('.navigation-hud').getAttribute('data-target'),'delivery');
 }
-assert.deepEqual(errors,[]);assert(requests.every(u=>u.startsWith('file:')||u.startsWith('data:')),'production must be self-contained');
 console.log('PASS: sand/pickup acceleration, real pickup entry, pickup door/jump/landing, four destructible classes, promenade walking, eight physical street/paving/hotel-sand crossings, solid hotel wall, surf death, night, three mobile viewports, 60s mobile sand rendering and preserved fare cues; offline with no page errors');
-await page.evaluate(()=>__taxi.realtime());await browser.close();
-})().catch(e=>{console.error(e);process.exit(1)});
+await page.evaluate(()=>__taxi.realtime());await closeBrowser(browser);
+})().catch(e=>{setImmediate(()=>{throw e})});

@@ -2,23 +2,26 @@
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build } from 'vite';
+import { probeBrowser } from '../tests/browser/runtime.mjs';
 
 const cwd = fileURLToPath(new URL('../', import.meta.url));
 const example = 'tools/examples/map-authoring.json';
 const conflict = 'tools/examples/map-authoring-conflict.json';
+const { executablePath: chromiumPath } = await probeBrowser();
 const run = (args, timeout = 60000) => {
-  const result = spawnSync(process.execPath, ['tools/authoring-preview.mjs', ...args], { cwd, encoding: 'utf8', timeout, maxBuffer: 16e6 });
+  const result = spawnSync(process.execPath, ['tools/authoring-preview.mjs', ...args], { cwd, encoding: 'utf8', timeout, maxBuffer: 16e6,
+    env: { ...process.env, ...(chromiumPath ? { CHROMIUM_PATH: chromiumPath } : {}) } });
   if (result.error) throw result.error;
   return result;
 };
 const json = result => JSON.parse(result.stdout);
-const chromiumReady = existsSync(chromium.executablePath());
+const chromiumReady = !!chromiumPath;
 const temporary = () => mkdtempSync(path.join(tmpdir(), 'taxi-authoring-'));
 // One offline standalone build is shared by the browser cases below; the CLI accepts
 // `--standalone`, so each run reuses the same real game instead of rebuilding it.
@@ -326,7 +329,7 @@ test('--drive-from rejects a distant run that never reaches the selected bakery'
 
 test('map authoring automation applies typed placements and isolates previews', { skip: !chromiumReady, timeout: 240000 }, async () => {
   const errors = [], requests = [];
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await chromium.launch({ executablePath: chromiumPath });
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     await context.addInitScript(() => { try { localStorage.clear(); sessionStorage.clear(); } catch { /* file:// may deny storage */ } });
@@ -438,7 +441,7 @@ test('map authoring automation applies typed placements and isolates previews', 
 
 test('drafting rejects real input and restores the prior clock on edit and close', { skip: !chromiumReady, timeout: 240000 }, async () => {
   const errors = [], requests = [];
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await chromium.launch({ executablePath: chromiumPath });
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     await context.addInitScript(() => { try { localStorage.clear(); sessionStorage.clear(); } catch { /* file:// may deny storage */ } });

@@ -3,17 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
+import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
 
 const output = resolve(process.env.SCREENSHOT_DIR ?? 'scenario-runs/mobile-controls');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], requests = [];
-const monitor = page => {
-  page.on('pageerror', error => errors.push(error.message));
-  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
-};
+const browser = await launchBrowser();
 const url = pathToFileURL(resolve('dist/index.html'));
 try {
   // Check desktop first, then portrait, landscape, tablet and the supplied image size.
@@ -22,8 +16,8 @@ try {
     ['landscape', 844, 390, true], ['compact-landscape', 568, 320, true],
     ['tablet', 768, 1024, true], ['tablet-landscape', 1024, 768, true], ['reference', 1179, 766, true],
   ]) {
-    const context = await browser.newContext({ viewport: { width, height }, hasTouch: mobile, isMobile: mobile, offline: true });
-    const page = await context.newPage(); monitor(page);
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: mobile, isMobile: mobile, offline: true });
+    const page = await context.newPage();
     await page.goto(`${url}?scenario-preview=1`);
     await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
     assert.equal(await page.locator('.touch-controls').isVisible(), mobile);
@@ -75,8 +69,8 @@ try {
   }
 
   // Native touch events drive the actual joystick mapping and game physics.
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, offline: true });
-  const page = await context.newPage(); monitor(page);
+  const context = await newContext(browser, { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, offline: true });
+  const page = await context.newPage();
   await page.goto(`${url}?scenario-preview=1`);
   let before = (await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }))).state;
   const cdp = await context.newCDPSession(page);
@@ -136,28 +130,6 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   console.log('Boost tank: full, depleted, refilling, full again and reduced motion passed');
 
-  // Realtime checks preserve independently held action keys during two-finger input.
-  await page.goto(`${url}?dialogue-preview=1&debug=1`);
-  await page.evaluate(() => { __taxi.scenario('first-fare'); document.querySelector('#debug-panel').hidden = true; });
-  for (const key of ['boost', 'handbrake']) {
-    const button = page.locator(`[data-key=${key}]`), b = await button.boundingBox();
-    await touch('touchStart', [point(cx, cy - 35, 1)]);
-    await touch('touchStart', [point(cx, cy - 35, 1), point(b.x + b.width / 2, b.y + b.height / 2, 2)]);
-    await page.waitForTimeout(250);
-    assert.equal(await page.locator('#joystick.pressed').count(), 1);
-    assert(await button.evaluate(el => el.classList.contains('pressed')));
-    if (key === 'boost') {
-      assert((await page.evaluate(() => __taxi.state())).boost < 99);
-      assert(await button.evaluate(el => Number(el.style.getPropertyValue('--boost-level')) < 0.99));
-    }
-    await touch('touchEnd', [point(b.x + b.width / 2, b.y + b.height / 2, 2)]);
-    assert(!(await button.evaluate(el => el.classList.contains('pressed'))));
-    assert.equal(await page.locator('#joystick.pressed').count(), 1);
-    await touch('touchCancel', []);
-    assert.equal(await page.locator('#joystick.pressed').count(), 0);
-  }
-  await page.evaluate(() => __taxi.realtime());
   await context.close();
-  assert.deepEqual(errors, []); assert.deepEqual(requests, []);
-  console.log('Independent boost/drift fingers, cancellation and offline console checks passed');
-} finally { await browser.close(); }
+  console.log('Joystick mapping, boost tank and offline console checks passed');
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }

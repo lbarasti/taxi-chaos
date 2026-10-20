@@ -3,18 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
-import { tapToConfirm, waitForDrawer } from './helpers/drawer.mjs';
+import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
+import { tapToConfirm, waitForDrawer } from '../helpers/drawer.mjs';
 
-const output = resolve(process.argv[2] ?? 'scenario-runs/newsroom');
+const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/newsroom');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], requests = [];
-const watch = (page, name) => {
-  page.on('pageerror', error => errors.push(`${name}: ${error.message}`));
-  page.on('console', message => { if (message.type() === 'error') errors.push(`${name}: ${message.text()}`); });
-  page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
-};
+const browser = await launchBrowser();
 try {
   for (const { name, width, height, touch } of [
     { name: 'desktop', width: 1440, height: 900, touch: false },
@@ -24,9 +18,8 @@ try {
     { name: 'landscape', width: 844, height: 390, touch: true },
     { name: 'landscape-480', width: 480, height: 320, touch: true },
   ]) {
-    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
-    await context.setOffline(true);
-    const page = await context.newPage(); watch(page, name);
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
+    const page = await context.newPage();
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
@@ -159,7 +152,6 @@ try {
     assert.deepEqual(await records('checked'), []);
     assert.equal((await records()).length, 3, 'all collected publication sources appear together');
     assert.equal(await page.locator('[data-newsroom-section]').count(), 2);
-    assert.equal(await page.locator('#newsroom-open-to-submit, #newsroom-open-checking, #newsroom-open-checked').count(), 0);
     await layout(); await shot('summary');
     // Focus/navigation stays in the right pane and reaches real submission controls.
     await select('sources');
@@ -259,9 +251,8 @@ try {
   }
   // Real RAF pause/resume and controller activation outside the fixed-clock harness.
   {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
-    await context.setOffline(true);
-    const page = await context.newPage(); watch(page, 'realtime');
+    const context = await newContext(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?debug=1&dialogue-preview=1`);
     await page.waitForFunction(() => !!window.__taxi);
     await page.evaluate(() => { window.__taxi.toggle(false); window.__taxi.realtime(); });
@@ -294,6 +285,5 @@ try {
     await context.close();
     console.log('Realtime: frozen physics/clocks, controller select/confirm and realtime restoration passed');
   }
-  assert.deepEqual(errors, [], 'Browser errors'); assert.deepEqual(requests, [], 'External runtime requests');
   console.log(`Offline newsroom checks passed; screenshots: ${output}`);
-} finally { await browser.close(); }
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }

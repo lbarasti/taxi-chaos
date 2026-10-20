@@ -61,6 +61,8 @@
 }
 /* A short landscape column cannot fit status, two actions and the joystick. */
 @media(max-height:360px) and (max-width:1000px), (max-height:360px) and (pointer:coarse) and (max-width:1200px){
+  /* Reserve a full toast line above the thumb stack on 568 × 320 screens. */
+  :root{--radar-size:min(170px,46vw,calc(50vw - var(--edge-left) - 96px),calc(100dvh - var(--top-height) - var(--edge-bottom) - 190px))}
   .context-actions{right:calc(var(--edge-right) + var(--stick-size) + 12px);bottom:var(--edge-bottom)}
   .context-actions:has(#garage-action:not([hidden]))~.toast{bottom:calc(var(--edge-bottom) + var(--stick-size) + 12px)}
 }

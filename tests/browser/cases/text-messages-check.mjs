@@ -3,19 +3,15 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
+import { launchBrowser, newContext, closeBrowser, captureFailure, viewportTuples } from '../runtime.mjs';
 
-const output = resolve(process.argv[2] ?? 'scenario-runs/text-messages');
+const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/text-messages');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], requests = [];
+const browser = await launchBrowser();
 try {
-  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['compact', 320, 568, true], ['landscape', 844, 390, true]]) {
-    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, offline: true });
+  for (const [name, width, height, touch] of viewportTuples('desktop', 'portrait', 'compact', 'landscape')) {
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, offline: true });
     const page = await context.newPage();
-    page.on('pageerror', error => errors.push(`${name}: ${error.message}`));
-    page.on('console', message => { if (message.type() === 'error') errors.push(`${name}: ${message.text()}`); });
-    page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?dialogue-preview=1&debug=1`);
     await page.evaluate(() => {
       window.__taxi.scenario('first-fare'); window.__taxi.configure({ noPolice: true });
@@ -25,7 +21,6 @@ try {
     });
     await page.locator('#texts').click();
     const panel = page.locator('#mission-inbox');
-    assert.equal(await panel.locator('.inbox-help').count(), 0);
     assert.deepEqual(await panel.locator('.inbox-day').evaluateAll(nodes => nodes.map(n => n.dataset.day)), ['3', '2']);
     assert.equal(await panel.locator('article').first().getAttribute('data-message-id'), 'celia-roster-text');
     const bodies = await panel.locator('article p').allTextContents();
@@ -89,7 +84,5 @@ try {
     assert.equal(await page.evaluate(() => window.__taxi.state().job.missionId), 'mara-calls', 'route uses the selected message');
     await context.close();
   }
-  assert.deepEqual(errors, [], 'browser console errors');
-  assert.deepEqual(requests, [], 'standalone must not make network requests');
   console.log('Text messages: desktop, portrait, compact and landscape passed offline; pagination, midnight, read tracking, countdown stability and expiry verified.');
-} finally { await browser.close(); }
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }

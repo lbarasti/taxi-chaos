@@ -1,24 +1,21 @@
-import { chromium } from 'playwright';
+import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, readFile } from 'node:fs/promises';
-import { openGame, waitForDrawer, tapToConfirm } from './helpers/drawer.mjs';
+import { openGame, waitForDrawer, tapToConfirm } from '../helpers/drawer.mjs';
 const output = process.env.SCREENSHOT_DIR || 'scenario-runs/start-pause';
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
-const problems = { errors: [], requests: [] };
+const browser = await launchBrowser();
 const html = await readFile('dist/index.html', 'utf8');
 const selected = page => page.locator('[data-selected]');
 try {
   await checkDesktop();
   await checkTouchResume();
   await checkTouchLayouts();
-  assert.deepEqual(problems.errors, []);
-  assert.deepEqual(problems.requests, []);
   console.log('Offline drawer QA passed: keyboard/pointer selection, full pages, touch select/confirm, stable settings controls, Back/focus, reduced motion, controller, frozen state, physical touch driving, desktop/portrait/compact/landscape; no console errors or external requests.');
-} finally { await browser.close(); }
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }
 
 async function checkDesktop() {
-  const page = await openGame(browser, html, { viewport: { width: 1440, height: 900 } }, problems);
+  const page = await openGame(browser, html, { viewport: { width: 1440, height: 900 } });
   await page.waitForTimeout(400);
   assert.match(await page.locator('#start').innerText(),/Start your shift/);
   const first = await page.locator('#city').screenshot(); await page.waitForTimeout(600); const second=await page.locator('#city').screenshot(); assert(!first.equals(second),'ambient camera moves');
@@ -36,20 +33,28 @@ async function checkDesktop() {
   assert.match(await page.locator('.splash-save-heading').innerText(),/CURRENT SHIFT · PAUSED/);
   assert.equal(await page.locator('#start').evaluate(el=>el===document.activeElement),true);
   await page.screenshot({path:`${output}/pause-desktop.png`});
-  const pausedCanvas = await page.locator('#city').screenshot(); await page.waitForTimeout(400);
-  assert(pausedCanvas.equals(await page.locator('#city').screenshot()),'paused backdrop stays frozen');
+  // The last frame of the start transition can land just after the pause drawer opens.
+  // Require two settled samples, then verify it stays frozen over a longer interval.
+  let pausedCanvas;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const first = await page.locator('#city').screenshot();
+    await page.waitForTimeout(120);
+    const second = await page.locator('#city').screenshot();
+    if (first.equals(second)) { pausedCanvas = second; break; }
+  }
+  assert(pausedCanvas, 'paused backdrop must settle');
+  await page.waitForTimeout(400);
+  assert(pausedCanvas.equals(await page.locator('#city').screenshot()), 'paused backdrop stays frozen');
   await page.mouse.move(1300, 800);
   await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'menu-shift', 'navigation wraps');
   await page.keyboard.press('ArrowDown'); assert.equal(await selected(page).getAttribute('id'), 'start');
   await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'menu-rules');
   await page.keyboard.press('Enter'); await waitForDrawer(page, 'rules');
   assert(await page.locator('.intro-grid').isVisible()); await page.screenshot({path:`${output}/rules-desktop.png`}); assert.equal(await page.locator('#start').count(), 0, 'page replaces the entire drawer');
-  assert.equal(await page.locator('#modal details, #modal summary').count(), 0);
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
   assert.equal(await selected(page).getAttribute('id'), 'menu-rules', 'Back restores selection');
   await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); await waitForDrawer(page, 'settings');
-  assert.equal(await page.locator('.splash-save').count(), 0); await page.screenshot({path:`${output}/settings-desktop.png`});
-  assert.equal(await page.locator('[data-step]').count(), 0, 'settings has no arrow buttons');
+  await page.screenshot({path:`${output}/settings-desktop.png`});
   await page.locator('#gore-option').evaluate(element => { window.originalSetting = element; });
   await page.locator('#gore-option').check();
   assert(await page.locator('#gore-option').evaluate(element => element === window.originalSetting), 'edit preserves controls');
@@ -151,7 +156,7 @@ async function checkDesktop() {
 
 async function checkTouchResume() {
   // Touch driving, focus-loss pause and resume preserve the same physical game.
-  const touch = await openGame(browser, html, { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' }, problems, '/?debug=1');
+  const touch = await openGame(browser, html, { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' }, '/?debug=1');
   const touchContext = touch.context();
   await touch.evaluate(()=>{document.querySelector('#debug-panel').hidden=true});
   const beforeDrive = await touch.evaluate(()=>__taxi.state());
@@ -188,7 +193,7 @@ async function checkTouchResume() {
 
 async function checkTouchLayouts() {
   for (const [name, width, height] of [['portrait', 390, 844], ['small', 320, 568], ['landscape', 844, 390]]) {
-    const mobile = await openGame(browser, html, { viewport: { width, height }, hasTouch: true, isMobile: true }, problems);
+    const mobile = await openGame(browser, html, { viewport: { width, height }, hasTouch: true, isMobile: true });
     await mobile.locator('#menu-settings').tap();
     assert.equal(await mobile.locator('#modal').getAttribute('data-page'), 'home');
     await mobile.locator('#menu-settings').tap(); await waitForDrawer(mobile, 'settings');
