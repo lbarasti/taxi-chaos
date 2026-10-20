@@ -41,6 +41,10 @@ document.querySelector('#app')!.innerHTML = `
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
 `;
+const roadsideElement = document.getElementById('roadside');
+if (!(roadsideElement instanceof HTMLElement)) throw new Error('Missing roadside panel');
+const roadsidePanel = roadsideElement;
+
 const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
 const scenarioPreviewMode = new URLSearchParams(location.search).has('scenario-preview');
 const authoringPreviewMode = new URLSearchParams(location.search).has('authoring-preview');
@@ -136,18 +140,34 @@ function hud() {
   $('interact').textContent = g.onFoot ? g.enterableCar?.model === 'motorcycle' && (g.enterableCar.dynamics as MotorcycleDynamics).fallen ? 'Lift motorbike' : g.enterableCar?.definition.graphics.sprite === 'motorcycle' ? 'Ride motorbike' : 'Get in' : g.pendingExit ? bike ? 'Jumping…' : 'Opening door…' : damage.status === 'burning' ? 'Bail out!' : g.speed > 1.2 ? bike ? 'Jump off' : 'Jump out' : bike ? 'Dismount' : 'Get out';
   ($('interact') as HTMLButtonElement).disabled = !!g.pendingExit;
   $('interact').hidden = g.mode !== 'playing' || (g.onFoot ? !g.enterableCar : !!g.player.sinking);
-  const wreck = (damage.status === 'wreck' && !g.player.sinking && g.onFoot && dist(g.driver.position, g.player.body.position) < 6 || g.bikeTowable) && g.mode === 'playing';
-  $('roadside').hidden = !wreck || damage.status === 'wreck' && g.time - g.player.wreckAt < 0.65;
-  $('roadside').querySelector('strong')!.textContent = g.bikeDisabled && damage.status !== 'wreck' ? 'BIKE ENGINE DEAD' : `${vehicleName} DESTROYED`;
-  $('roadside').querySelector('p')!.textContent = g.bikeDisabled && damage.status !== 'wreck' ? 'This motorbike is too damaged to start. Tow it for a repair or find another ride.' : 'The wreck stays here. Walk to a parked car or motorbike and keep your shift going.';
+  const walkingNearWreck = damage.status === 'wreck'
+    && !g.player.sinking
+    && g.onFoot
+    && dist(g.driver.position, g.player.body.position) < 6;
+  const waitingForWreck = damage.status === 'wreck' && g.time - g.player.wreckAt < 0.65;
+  const showRoadside = g.mode === 'playing'
+    && (walkingNearWreck || g.bikeTowable)
+    && !waitingForWreck;
+  roadsidePanel.hidden = !showRoadside;
+  roadsidePanel.querySelector('strong')!.textContent = g.bikeDisabled && damage.status !== 'wreck' ? 'BIKE ENGINE DEAD' : `${vehicleName} DESTROYED`;
+  roadsidePanel.querySelector('p')!.textContent = g.bikeDisabled && damage.status !== 'wreck' ? 'This motorbike is too damaged to start. Tow it for a repair or find another ride.' : 'The wreck stays here. Walk to a parked car or motorbike and keep your shift going.';
   ($('tow') as HTMLButtonElement).disabled = damage.status === 'wreck' && g.time - g.player.wreckAt < 1.2;
   $('tow-price').textContent = `Optional tow & repair: $${Math.min(g.save.cash, 60)} · or take another ride for free`;
-  if (g.harbourPrompt && g.mode === 'playing' && damage.status !== 'burning') {
+  const harbourInteraction = Boolean(g.harbourPrompt);
+  if (harbourInteraction && g.mode === 'playing' && damage.status !== 'burning') {
     $('interact').hidden = !g.portGateNear; $('interact').textContent = `Pay $${PORT_FEE}`; ($('interact') as HTMLButtonElement).disabled = false;
   }
   // Keep conversations out of emergencies and harbour interactions, without a warning banner.
-  const drivingEmergency = damage.status === 'burning' || damage.status === 'wreck' || bike && !motorcycleEngineWorks(damage);
-  refreshStory(g.mode === 'playing' && !g.onFoot && !g.player.sinking && !drivingEmergency && !g.harbourPrompt && $('roadside').hidden);
+  const isDriving = g.mode === 'playing' && !g.onFoot;
+  const drivingEmergency = damage.status === 'burning'
+    || damage.status === 'wreck'
+    || (bike && !motorcycleEngineWorks(damage));
+  const showStory = isDriving
+    && !g.player.sinking
+    && !drivingEmergency
+    && !harbourInteraction
+    && !showRoadside;
+  refreshStory(showStory);
   lab?.refreshUI();
   inspection.refresh();
   refreshAudioControls(audio);
