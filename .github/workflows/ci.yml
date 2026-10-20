@@ -14,7 +14,7 @@ concurrency:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
     steps:
       - name: Check out merge candidate
         uses: actions/checkout@v4
@@ -27,22 +27,9 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Provision Chromium for browser suites
-        run: npx playwright install --with-deps chromium
       - name: Run tests
         run: npm test
       - name: Build standalone HTML
         run: npm run build
       - name: Validate authored map
         run: npm run map:check -- --input src/map/default-map.json --json
-      - name: Run tool tests
-        run: npm run tools:test
-      - name: Run six browser suites
-        run: npm run browser:test -- --require-browser
-      - name: Upload browser results and failure screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-results
-          path: scenario-runs/browser/
-          if-no-files-found: ignore

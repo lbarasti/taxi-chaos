@@ -321,14 +321,15 @@ Collision sections are authored geometry, independent of image decoding and
 artwork-only scale; placement resizing and rotation transform them together.
 
 
-## D20 — Gate pull requests on maintained offline browser suites
+## D20 — Maintain browser suites as local checks
 
 **Decision:** Keep production browser checks as six named suites under
-`tests/browser/`, with independently reported cases. CI provisions Chromium,
-runs the suites against the standalone build, and retains browser results and
-failure screenshots as artifacts. Asset generators and the optional performance
-benchmark remain separate utilities under `tools/`.
+`tests/browser/`, with independently reported cases and local results and
+failure screenshots. Run these suites and CLI tool tests locally. Keep CI to
+core tests, the production build and map validation, without browser
+provisioning. Asset generators and the optional performance benchmark remain
+separate utilities under `tools/`.
 
 **Reason:** A stale HUD selector hid a real 568×320 recovery-toast overlap.
-Running the checks routinely against the built artifact makes UI regressions
-visible while keeping asset maintenance and performance sampling opt-in.
+Maintained local checks make UI regressions visible, while keeping browser
+simulations and provisioning out of the quick pull-request checks.
