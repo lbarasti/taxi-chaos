@@ -2,7 +2,7 @@ import type { Game } from '../game';
 import { characters, isCharacterId } from './characters';
 import { showCharacterPortrait } from './story-view';
 import { calendarLabel } from '../campaign/clock';
-import { formatClock } from '../day-night';
+import { formatClock } from '../world/day-night';
 import { textDay, textTiming, textHistory, textExpiryDiscs, TEXT_HISTORY_DAYS } from './text-messages';
 
 export const inboxMarkup = `<aside id="mission-inbox" class="mission-inbox panel" aria-label="Mission text messages" hidden>

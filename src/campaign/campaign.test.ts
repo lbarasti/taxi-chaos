@@ -4,7 +4,7 @@ import { defaultCompiledMap } from '../map/compile';
 import { campaignMissions } from '../missions/compile';
 import { assertMissionCatalogue } from '../missions/schema';
 import { contact, vec } from '../physics';
-import { GARAGE } from '../world';
+import { GARAGE } from '../world/world';
 import { storageKeys } from '../storage';
 import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../narrative/player-records';
 import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';

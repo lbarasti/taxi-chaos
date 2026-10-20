@@ -1,5 +1,5 @@
 import type { MapDocument, LandRegion } from './schema';
-import type { ResolvedLand } from '../land';
+import type { ResolvedLand } from '../world/land';
 export function resolveLandRegion(document: MapDocument, region: LandRegion): ResolvedLand {
   const lookup = new Map(document.points.map(p=>[p.id,p.position]));
   return { id:region.id, owner:region.owner, outline:structuredClone('outline' in region ? region.outline : region.pointRefs.map(id=>lookup.get(id)!)) };

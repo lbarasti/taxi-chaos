@@ -1,4 +1,4 @@
-import { formatClock } from '../day-night';
+import { formatClock } from '../world/day-night';
 
 export const dayMinute = (day: number, hour = 7, minute = 0) => (day - 1) * 1440 + hour * 60 + minute;
 export const CAMPAIGN_START = dayMinute(1);

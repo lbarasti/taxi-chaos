@@ -1,8 +1,8 @@
 import './authoring-preview.css';
 import { contact, dist, segmentIntersectsBody, vec, type Vec } from '../physics';
 import { Game } from '../game';
-import type { Renderer } from '../renderer';
-import { World } from '../world';
+import type { Renderer } from '../rendering/renderer';
+import { World } from '../world/world';
 import { compileMap } from '../map/compile';
 import { assertMap, type MapDocument } from '../map/schema';
 import { validateMap } from '../map/validation';

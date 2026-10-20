@@ -3,7 +3,7 @@ import { Game } from '../game';
 import { contact, dist, length, vec } from '../physics';
 import { createVehicleBody, createVehicleDynamics, vehicleDefinition, vehicleDefinitions, type VehicleDefinition, type VehicleModel } from './vehicles';
 import { igniteVehicle } from './damage';
-import { loadScenario } from '../lab';
+import { loadScenario } from '../debug/lab';
 
 const commercial: VehicleModel[] = ['van', 'truck-empty', 'truck-loaded', 'truck-flammable'];
 const run = (g: Game, seconds: number) => { for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); };

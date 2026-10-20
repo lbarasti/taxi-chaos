@@ -3,7 +3,7 @@ import { copyDefaultMap } from './default';
 import { compileMap } from './compile';
 import { MapHistory } from './operations';
 import { validateMap } from './validation';
-import { World, createNavigation } from '../world';
+import { World, createNavigation } from '../world/world';
 import { Body, dist, vec, type Vec } from '../physics';
 
 function assertDrySweep(world: World, a: Vec, b: Vec) {

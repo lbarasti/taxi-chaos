@@ -166,7 +166,7 @@ describe('content-independent campaign engine', () => {
   });
 
   it('keeps narrative identifiers out of the generic runtime', () => {
-    const paths = ['game.ts', 'main.ts', 'renderer.ts', 'missions/compile.ts', 'missions/director.ts', 'missions/conditions.ts', 'scenarios/runner.ts', ...['events', 'effects', 'state', 'scheduler', 'view', 'bulletin', 'ride-dialogue', 'validate', 'model'].map(name => `campaign/${name}.ts`)];
+    const paths = ['game.ts', 'main.ts', 'rendering/renderer.ts', 'missions/compile.ts', 'missions/director.ts', 'missions/conditions.ts', 'scenarios/runner.ts', ...['events', 'effects', 'state', 'scheduler', 'view', 'bulletin', 'ride-dialogue', 'validate', 'model'].map(name => `campaign/${name}.ts`)];
     for (const path of paths) expect(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'), path).not.toMatch(/tenantOutcome|tenant-interview-reached|tenancy-review|campaign-ms14|openShore|OPEN SHORE|['"]coordination['"]|['"]policing['"]|['"]knowledge['"]|MERIDIAN|APPEARANCE CANCELLED/);
   });
 });

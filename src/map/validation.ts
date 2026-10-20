@@ -1,11 +1,11 @@
 import { Body, add, bodyParts, contact, cross, dist, scale, sub, vec, type Vec } from '../physics';
-import { World, blocksWalking, isRigidObstacle } from '../world';
+import { World, blocksWalking, isRigidObstacle } from '../world/world';
 import { vehicleDefinition, createVehicleBody } from '../vehicles/vehicles';
 import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';
 import { compileMap, type CompiledMap } from './compile';
 import type { MapDocument } from './schema';
-import { directedWaterGap } from '../land';
-import { contains } from '../regions';
+import { directedWaterGap } from '../world/land';
+import { contains } from '../world/regions';
 import { descriptorBody } from './operations';
 
 export type Finding = { code: string; severity: 'error' | 'warning' | 'info'; entityIds: string[]; position?: Vec; message: string; measured?: Record<string, number> };

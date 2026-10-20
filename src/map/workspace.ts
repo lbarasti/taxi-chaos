@@ -1,6 +1,6 @@
 import type { Game } from '../game';
 import { vec, type Vec } from '../physics';
-import { World } from '../world';
+import { World } from '../world/world';
 import { compileMap } from './compile';
 import { MapHistory, type MapBatch } from './operations';
 import type { MapDocument } from './schema';

@@ -7,7 +7,7 @@ import { isCharacterId, type CharacterId } from '../narrative/characters';
 import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles/vehicles';
 import { dist, type Vec } from '../physics';
 import type { CompiledMap } from '../map/compile';
-import { createNavigation } from '../world';
+import { createNavigation } from '../world/world';
 import type { BeatId, StoryCategory, StoryMessage } from '../narrative/story';
 import { assertMissionCatalogue, type ChoiceGroupId, type ChoiceId, type Condition, type Effect, type MissionCatalogue, type MissionId } from './schema';
 import { compileStops, type CompiledStops } from './stops';

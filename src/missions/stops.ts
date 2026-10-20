@@ -1,6 +1,6 @@
 import { vec, type Vec } from '../physics';
 import type { CompiledMap } from '../map/compile';
-import { createNavigation } from '../world';
+import { createNavigation } from '../world/world';
 
 export type StopKind = 'city' | 'beach' | 'highland';
 

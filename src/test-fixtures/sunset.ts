@@ -1,7 +1,7 @@
 /** Historical Sunset Beach assertions use authored data through generic queries.
  * This fixture is not imported by the game. */
 import { defaultCompiledMap as map } from '../map/compile';
-import { contains } from '../regions';
+import { contains } from '../world/regions';
 export const BEACH_PICKUP = map.document.parking.find((p) => p.id === 'parking-73')!.position;
 export const BEACH_HOTELS = map.document.objectPlacements
   .filter((p) => map.objects[p.id].kind === 'building')

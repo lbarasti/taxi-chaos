@@ -1,9 +1,9 @@
 import { Body, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, rotate, scale, sub, vec, type Controls, type Vec } from '../physics';
 import { createVehicleDynamics } from './vehicles';
-import { GRID, SIZE, World, isRigidObstacle } from '../world';
+import { GRID, SIZE, World, isRigidObstacle } from '../world/world';
 import type { Vehicle } from '../game';
 import { difficulties, type Difficulty } from '../rules';
-import { FREIGHT_ROUTE, PORT_NODES } from '../harbour';
+import { FREIGHT_ROUTE, PORT_NODES } from '../world/harbour';
 
 export type AIState = {
   anchor: Vec; progressClock: number; stalled: number; phase: 'drive' | 'reverse' | 'rejoin' | 'waiting'; phaseTime: number; reverseTurn: number; attempts: number; failures: number;

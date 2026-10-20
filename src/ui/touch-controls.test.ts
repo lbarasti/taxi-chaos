@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { joystickVector, touchSteering } from './touch-controls';
 import { Game } from '../game';
-import { loadScenario } from '../lab';
+import { loadScenario } from '../debug/lab';
 
 describe('proportional touch movement', () => {
   it('ignores centre jitter and clamps diagonal travel to a circle', () => {

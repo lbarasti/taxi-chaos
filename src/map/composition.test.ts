@@ -5,7 +5,7 @@ import { compileMap } from './compile';
 import { MapHistory, type MapOperation } from './operations';
 import { validateMap } from './validation';
 import { Game } from '../game';
-import { World, district, blocksWalking } from '../world';
+import { World, district, blocksWalking } from '../world/world';
 import { Body, contact, dist, vec } from '../physics';
 import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { importMap } from './serialization';

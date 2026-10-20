@@ -7,7 +7,7 @@ import { parseCampaign } from '../campaign/state';
 import { CAMPAIGN_END, CAMPAIGN_START, dayMinute } from '../campaign/clock';
 import { campaignDefinition } from '../campaign/content';
 import type { Allegation } from '../campaign/model';
-import { GARAGE } from '../world';
+import { GARAGE } from '../world/world';
 import { vec, type Vec } from '../physics';
 
 export type ScenarioOptions = { traffic?: 'quiet' | 'normal'; noPolice?: boolean };

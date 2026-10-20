@@ -6,7 +6,7 @@ import { MapHistory, applyOperations } from './operations';
 import { compileMap } from './compile';
 import { validateMap } from './validation';
 import { createPreview } from './preview';
-import { World } from '../world';
+import { World } from '../world/world';
 import { Game } from '../game';
 import { Body, contact, dist, vec } from '../physics';
 

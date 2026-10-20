@@ -1,5 +1,5 @@
 import { Body, contact, dist, vec, type Vec } from '../physics';
-import { World } from '../world';
+import { World } from '../world/world';
 import { artworkFor, artRadius } from '../artwork/catalogue';
 import { compileMap, type CompiledMap } from '../map/compile';
 import { authoredCollection, descriptorBody, entities, entityPosition } from '../map/operations';

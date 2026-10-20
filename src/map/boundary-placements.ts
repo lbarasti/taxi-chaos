@@ -1,7 +1,7 @@
 import { add, dist, scale, sub } from '../physics';
-import { closestOnSegment, contains } from '../regions';
-import { boundaryHasSource, type LandGeometry } from '../land';
-import type { Countryside } from '../countryside';
+import { closestOnSegment, contains } from '../world/regions';
+import { boundaryHasSource, type LandGeometry } from '../world/land';
+import type { Countryside } from '../world/countryside';
 import type { MapDocument, ObjectPlacement } from './schema';
 
 /** A single bounded shore-panel rule, independent of the land compiler. Slot IDs

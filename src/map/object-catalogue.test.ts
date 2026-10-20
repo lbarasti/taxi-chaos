@@ -8,7 +8,7 @@ import { compileObjectCatalogue, compileObjectPlacement, compilePlacement } from
 import { inlineEntries } from '../catalogue/generate';
 import { measureArtworkSources } from '../catalogue/png';
 import { objectKindRegistry, type ObjectCatalogue, type ObjectRecord } from '../catalogue/schema';
-import { World } from '../world';
+import { World } from '../world/world';
 import { compileMap } from './compile';
 import { copyDefaultMap } from './default';
 import { MapHistory } from './operations';

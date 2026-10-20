@@ -5,8 +5,8 @@ import { MapHistory } from './operations';
 import { exportMap, importMap, revision } from './serialization';
 import { assertMap } from './schema';
 import { validateMap } from './validation';
-import { World } from '../world';
-import { boundaryHasSource, directedWaterGap } from '../land';
+import { World } from '../world/world';
+import { boundaryHasSource, directedWaterGap } from '../world/land';
 import { add, scale, vec } from '../physics';
 
 function physics(world: World) {

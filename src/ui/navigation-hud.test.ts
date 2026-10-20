@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../game';
-import { GARAGE } from '../world';
-import { PORT_ENTRY } from '../harbour';
-import { navigationTargetKind } from '../radar';
+import { GARAGE } from '../world/world';
+import { PORT_ENTRY } from '../world/harbour';
+import { navigationTargetKind } from '../rendering/radar';
 import { navigationHudMarkup, navigationHudState } from './navigation-hud';
 
 const routeOf = (game: Game) => navigationTargetKind({

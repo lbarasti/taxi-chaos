@@ -1,5 +1,5 @@
 import { CAMPAIGN_START } from '../campaign/clock';
-import { DAY_MINUTES } from '../day-night';
+import { DAY_MINUTES } from '../world/day-night';
 import type { TextReceipt } from './player-records';
 
 export const TEXT_HISTORY_DAYS = 2;

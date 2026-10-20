@@ -38,7 +38,7 @@ __taxi.realtime(); // restore interactive play after automation
 
 Other useful harness methods include `step`, `scenario`, `spawnVehicle`, `contacts`, `configure`, `upgrades`, `traffic`, `damageVehicle`, `repair`, `props`, `people`, `audio`, `sound`, `dayNight`, and `resetSave`.
 
-Automated browser tests should use an isolated browser context, especially when working with shared browser sessions or saved progress. The test API supports deterministic stepping without wall-clock waits. `loadScenario(game, name)` in `src/lab.ts` is also available to Node tests without a DOM.
+Automated browser tests should use an isolated browser context, especially when working with shared browser sessions or saved progress. The test API supports deterministic stepping without wall-clock waits. `loadScenario(game, name)` in `src/debug/lab.ts` is also available to Node tests without a DOM.
 
 After building, `node tools/text-messages-check.mjs` checks the inbox offline on desktop and three touch layouts, including date grouping, loading older texts, read tracking, live countdowns and expired pickups. Screenshots go to `scenario-runs/text-messages/`; pass a directory argument to choose another destination. Set `CHROMIUM_PATH` to use an existing Chromium installation.
 
@@ -83,7 +83,7 @@ city, countryside, harbour and bridge decks. Each owned region has exactly one
 boundary source: `outline: [{ x, y }, ...]` or `pointRefs: ["shore-00", ...]`.
 The latter resolves the existing named points, so ownership, weighted Southern
 Estates seams and pinned attachments keep their existing meaning. There is no
-separate highland outline. The generic `src/land.ts` compiler accepts resolved
+separate highland outline. The generic `src/world/land.ts` compiler accepts resolved
 polygons with arbitrary IDs; its detached union supplies bounds, inclusive dry-land
 queries, exposed segments, outward normals and all contributing source identities.
 World and minimap drawing clip to that same polygon union, including overlaps.
@@ -176,13 +176,13 @@ input isolation, pause and preview restoration. Captures go to `scenario-runs/la
 
 For city buildings, edit reusable object records in
 [`src/catalogue/content.ts`](src/catalogue/content.ts) and placements/campuses in
-[`src/city-content.ts`](src/city-content.ts). A type declares its footprint, storeys,
+[`src/world/city-content.ts`](src/world/city-content.ts). A type declares its footprint, storeys,
 fallback, sign and normalized artwork — a direct `image` path or shared `variants`; a
 placement references it by stable ID and type. A matching placement ID replaces one
 generated building; `replaceBlock` or campus ownership replaces whole blocks. Campus
 bounds derive street closures; relocate affected parking/traffic descriptors in the map.
 Declare resident homes and an exterior recovery entrance explicitly.
-[`src/buildings.test.ts`](src/buildings.test.ts) contains examples.
+[`src/world/buildings.test.ts`](src/world/buildings.test.ts) contains examples.
 
 An ordinary new image type is two records — one object type and one placement:
 
@@ -330,17 +330,18 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 
 - `src/physics.ts`: rigid bodies, tyre forces, collision detection, and impulses.
 - `src/vehicles/vehicles.ts`: typed vehicle catalogue and handling/model definitions.
-- `src/world.ts`: seeded city generation, structures, and road routing.
+- `src/world/world.ts`: seeded city generation, structures, and road routing.
 - `src/vehicles/ai.ts`: civilian traffic and police behavior.
-- `src/vehicles/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
+- `src/vehicles/damage.ts`, `src/rendering/effects.ts`: damage, fires, destruction, and effects.
 - `src/narrative/characters.json`, `src/narrative/characters.ts`, `src/narrative/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/narrative/portrait-manifest.ts` is the DOM-free declared file list.
 - `src/catalogue/`: shared DOM-free building/prop catalogue records, compiler, browser-free PNG measurement and the generated inline image manifest.
 - `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
 - `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.
-- `src/game.ts`, `src/main.ts`: game orchestration, input, HUD, and persistence.
-- `src/lab.ts`: scenario fixtures, inspector, and test API.
+- `src/game.ts`, `src/main.ts`: game orchestration, input, bootstrap, and persistence.
+- `src/ui/`: splash, drawer menus, player/navigation HUD, touch controls, settings and fullscreen controls.
+- `src/debug/`: scenario fixtures, layer inspector and panel, and test API.
 - `src/map/`: versioned authored map, compiler, validation, programmatic authoring workspace, and preview.
-- `src/renderer.ts`: Canvas rendering and debug overlays.
+- `src/rendering/renderer.ts`: Canvas rendering and debug overlays.
 - `vite.config.ts`: standalone single-file build; fails if external assets remain.
 
 ## Credits and licences

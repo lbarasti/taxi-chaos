@@ -1,10 +1,10 @@
-import { createCountryside } from '../countryside';
-import { createTerrain } from '../terrain';
-import { compileLand } from '../land';
+import { createCountryside } from '../world/countryside';
+import { createTerrain } from '../world/terrain';
+import { compileLand } from '../world/land';
 import { resolveLandRegions } from './land-references';
 import { compileBoundaryPlacements } from './boundary-placements';
-import { createHarbourGeometry } from '../harbour';
-import { createCity } from '../city';
+import { createHarbourGeometry } from '../world/harbour';
+import { createCity } from '../world/city';
 import { objectDefinitions } from '../artwork/catalogue';
 import { compileObjectPlacement } from '../catalogue/compile';
 import { objectKindRegistry, type CompiledObject, type ObjectCatalogue } from '../catalogue/schema';

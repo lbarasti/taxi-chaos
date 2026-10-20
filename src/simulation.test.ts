@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
-import { loadScenario } from './lab';
+import { loadScenario } from './debug/lab';
 import { igniteVehicle } from './vehicles/damage';
 import { vec } from './physics';
 

@@ -1,4 +1,4 @@
-import { fountainRim, FOUNTAIN_RADIUS } from '../fountain';
+import { fountainRim, FOUNTAIN_RADIUS } from '../world/fountain';
 import type { ArtworkRecord, BuildingSign, KindRegistry, ObjectRecord } from './schema';
 
 /** Shared images that still own absolute geometry (standalone props, ground tiles)

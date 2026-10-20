@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Body, contact, vec } from '../physics';
 import { Game } from '../game';
-import { World } from '../world';
+import { World } from '../world/world';
 import { copyDefaultMap } from './default';
 import { compileMap } from './compile';
 import { MapHistory, entities } from './operations';

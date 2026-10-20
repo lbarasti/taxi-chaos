@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Body, contact, vec } from '../physics';
-import { collectOccluders, occluderFor, pointInConvex, shadowVolume } from '../lighting-occlusion';
+import { collectOccluders, occluderFor, pointInConvex, shadowVolume } from '../rendering/lighting-occlusion';
 import { artRadius, artworkFor, propArtwork, renderOrderFor, type PropArtwork } from './catalogue';
 import { compileObjectCatalogue, deriveArtwork } from '../catalogue/compile';
-import { World } from '../world';
+import { World } from '../world/world';
 
 describe('top-down artwork geometry', () => {
   it('keeps custom artwork draw order independent of shipped kind defaults', () => {

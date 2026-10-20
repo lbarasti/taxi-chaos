@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { vec, type Vec } from '../physics';
 import { propArtwork, asphaltArtwork, objectDefinitions } from '../artwork/catalogue';
-import { buildingDefinitions } from '../buildings';
+import { buildingDefinitions } from '../world/buildings';
 import { artworkRecords, objectRecords } from './content';
 import { compileArtworkCatalogue, compileBuildingCatalogue, compileObjectCatalogue, compileObjectPlacement, compilePlacement, deriveArtwork } from './compile';
 import { inlineEntries } from './generate';

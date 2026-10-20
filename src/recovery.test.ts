@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
 import { Body, CarDynamics, contact, dist, length, rotate, sub, vec } from './physics';
 import { igniteVehicle } from './vehicles/damage';
-import { loadScenario } from './lab';
+import { loadScenario } from './debug/lab';
 
 const HOSPITAL=defaultCompiledMap.city.recovery!;
 

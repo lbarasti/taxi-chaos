@@ -1,13 +1,13 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from './physics';
-import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from './world';
+import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from './world/world';
 import { createAI, driveNPC, type AIState } from './vehicles/ai';
 import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from './vehicles/damage';
-import { killPedestrian, updatePedestrians } from './pedestrians';
-import { Effects } from './effects';
-import { freshRubberMark, updateRubberMark, type RubberMarkState } from './skid-marks';
+import { killPedestrian, updatePedestrians } from './world/pedestrians';
+import { Effects } from './rendering/effects';
+import { freshRubberMark, updateRubberMark, type RubberMarkState } from './rendering/skid-marks';
 import { SoundEvents } from './audio/sound';
-import { DayNight } from './day-night';
+import { DayNight } from './world/day-night';
 import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from './narrative/text-messages';
 import { Dialogue } from './narrative/story';
 import { characters } from './narrative/characters';
@@ -31,12 +31,12 @@ import { CAMPAIGN_START, CAMPAIGN_END, calendarLabel, nextMorning } from './camp
 import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from './campaign/scheduler';
 import { cityBulletin } from './campaign/bulletin';
 import { ordinaryDuring, rideMessage } from './campaign/ride-dialogue';
-import { pathLength } from './countryside';
-import { RAIL_BREAK_SPEED } from './world';
+import { pathLength } from './world/countryside';
+import { RAIL_BREAK_SPEED } from './world/world';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
 import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from './vehicles/vehicle-upgrades';
 import { saveCar, parseGarage, legacyGarage, type GarageSave, type SavedCar } from './vehicles/garage-save';
-import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from './harbour';
+import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from './world/harbour';
 
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
