@@ -26,7 +26,7 @@ export function createInspectionPanel(r: Renderer, hooks: InspectionHooks) {
       <h3>Geometry overlays</h3>
       ${Object.entries(overlayLayers).map(([key, label]) => `<div class="layers-row"><label><input type="checkbox" data-overlay="${key}"><i style="background:${inspectionColours[key as OverlayLayer]}"></i>${label}</label><button data-solo="${key}" aria-label="Solo ${label}">Solo</button></div>`).join('')}
       <label>Overlay opacity <input type="range" min="0" max="1" step="0.05" data-control="overlayOpacity" aria-label="Geometry overlay opacity"></label>
-      <p class="layers-hint">Land: solid coastline, dashed source rings. Terrain: blue road, gold sand, purple paving; material never grants access. Shadows: map props only; baked-in sprite shading stays in artwork. Hidden bodies still collide and block light.</p>
+      <p class="layers-hint">Land: solid coastline, dashed source rings. Terrain: blue road, gold sand, purple paving, green grass; material never grants access. Shadows: map props only; baked-in sprite shading stays in artwork. Hidden bodies still collide and block light.</p>
       <section class="layers-selection" aria-label="Selected map entity"><h3>At inspected point</h3><p data-report>Click the world to inspect geometry.</p><label>Overlapping entities <select data-control="selection" aria-label="Overlapping entities"></select></label><p data-detail></p><button data-action="copy">Copy entity ID</button><span data-copy role="status"></span></section>
     </div>`;
   const q = <T extends HTMLElement>(selector: string) => panel.querySelector<T>(selector)!;

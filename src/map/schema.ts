@@ -15,7 +15,7 @@ export type LandPresentation = Owned & { land: string; color: string; texture?: 
 export type Surf = Owned & { land: string; edges: number[] };
 /** Bounded shore panels only, with explicit land/road openings and stable edge/slot children. */
 export type BoundaryPlacement = Owned & { land: string; type: string; edges: number[]; maxLength: number; inset: number; panels: number; period: number; excludeLand: string[]; excludeRoads: string[]; clearance: number };
-export type TerrainRegion = Region & { surface: 'road' | 'sand' | 'paving'; priority: number };
+export type TerrainRegion = Region & { surface: 'road' | 'sand' | 'paving' | 'grass'; priority: number; texture?: 'gravel' };
 export type AccessArea = Region & { priority: number; driving: 'direct' | 'approach' };
 export type AccessNode = Owned & { position: Vec; road: boolean };
 export type AccessEdge = Owned & { fromNode: string; toNode: string; modes: ('walk' | 'drive')[] };
@@ -139,9 +139,10 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
   };
   for (const key of ['terrainRegions', 'accessAreas', 'districtZones'] as const) for (const v of list(root[key], key, 0, 100)) {
     const extras = key === 'terrainRegions' ? ['surface', 'priority'] : key === 'accessAreas' ? ['driving', 'priority'] : key === 'districtZones' ? ['name', 'priority'] : [];
-    const p = object(v, ['id', 'owner', 'outline', ...extras], key); owned(p, key); polygon(p.outline, `${key}.outline`);
+    const p = object(v, ['id', 'owner', 'outline', ...extras], key, key === 'terrainRegions' ? ['texture'] : []); owned(p, key); polygon(p.outline, `${key}.outline`);
     if (p.priority !== undefined) num(p.priority, `${key}.priority`, -1000, 1000);
-    if (key === 'terrainRegions' && !['road', 'sand', 'paving'].includes(p.surface as string)) fail(key, 'unknown surface');
+    if (key === 'terrainRegions' && p.texture !== undefined && (p.texture !== 'gravel' || p.surface !== 'paving')) fail(key, 'gravel texture requires paving');
+    if (key === 'terrainRegions' && !['road', 'sand', 'paving', 'grass'].includes(p.surface as string)) fail(key, 'unknown surface');
     if (key === 'accessAreas' && !['direct', 'approach'].includes(p.driving as string)) fail(key, 'unknown driving policy');
     if (key === 'districtZones') text(p.name, `${key}.name`);
   }

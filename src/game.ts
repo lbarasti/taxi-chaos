@@ -1050,7 +1050,7 @@ export class Game {
   }
   lineOfSight(a: Vec, b: Vec) {
     const sweep = new Body((a.x + b.x) / 2, (a.y + b.y) / 2, 1, Math.abs(b.x - a.x) + 0.1, Math.abs(b.y - a.y) + 0.1);
-    for (const prop of this.world.hash.query(sweep)) if (['building', 'rock', 'guardrail', 'container', 'lifeguard-tower', 'shed', 'barracks', 'station'].includes(prop.kind) && segmentIntersectsBody(a, b, prop.body)) return false;
+    for (const prop of this.world.hash.query(sweep)) if (['fountain', 'building', 'rock', 'guardrail', 'container', 'lifeguard-tower', 'shed', 'barracks', 'station'].includes(prop.kind) && segmentIntersectsBody(a, b, prop.body)) return false;
     return true;
   }
   update(dt: number) {

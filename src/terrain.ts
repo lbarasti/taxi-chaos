@@ -16,6 +16,18 @@ export const surfaces = {
     lateral: Infinity,
     lateralAptitude: 0,
   },
+  grass: {
+    color: '#456b48',
+    tracks: false,
+    driveLoss: 0.12,
+    driveAptitude: 0,
+    gripLoss: 0.22,
+    gripAptitude: 0,
+    drag: 32,
+    dragAptitude: 0,
+    lateral: 7,
+    lateralAptitude: 0,
+  },
   sand: {
     color: '#e2c68e',
     tracks: true,

@@ -65,3 +65,5 @@ pixel art created for Taxi Chaos (simple generated artwork, no third-party sourc
 shared catalogue's representative crate, bakery building and typed palm records. All are
 small sprites bundled inline with the other map artwork; the palm keeps a transparent
 background, and transparent export padding is cropped at draw time.
+
+- `map/grass-{short,lush,clover,daisies,dry,tufts}.svg`: original grass tile artwork created for Taxi Chaos; six matching-edge variants with blades, clover, small daisies and dry tufts.

@@ -1,3 +1,4 @@
+import { fountainRim, FOUNTAIN_RADIUS } from '../fountain';
 import type { ArtworkRecord, BuildingSign, KindRegistry, ObjectRecord } from './schema';
 
 /** Shared images that still own absolute geometry (standalone props, ground tiles)
@@ -10,6 +11,12 @@ export const artworkRecords: readonly ArtworkRecord[] = [
   { id: 'shop-rust', png: 'map/shop-rust.png', layer: 'structure', metres: 10.6, silhouette: 'bounds', occluder: true },
   { id: 'shop-concrete', png: 'map/shop-concrete.png', layer: 'structure', metres: 10.6, silhouette: 'bounds', occluder: true },
   { id: 'tree-worn', png: 'map/tree-worn.png', layer: 'structure', metres: 5.2, silhouette: { shape: 'circle', radius: 2.4 } },
+  { id: 'grass-short', png: 'map/grass-short.svg', layer: 'ground', tileMetres: 4 },
+  { id: 'grass-lush', png: 'map/grass-lush.svg', layer: 'ground', tileMetres: 4 },
+  { id: 'grass-clover', png: 'map/grass-clover.svg', layer: 'ground', tileMetres: 4 },
+  { id: 'grass-daisies', png: 'map/grass-daisies.svg', layer: 'ground', tileMetres: 4 },
+  { id: 'grass-dry', png: 'map/grass-dry.svg', layer: 'ground', tileMetres: 4 },
+  { id: 'grass-tufts', png: 'map/grass-tufts.svg', layer: 'ground', tileMetres: 4 },
   { id: 'asphalt', png: 'map/asphalt.svg', layer: 'ground', tileMetres: 48 },
 ];
 
@@ -30,6 +37,7 @@ const condoSign: BuildingSign = { width: 8.6, inset: 0.95, size: 0.72, color: '#
  * `as const` keeps the authored IDs literal, so `BuildingType` remains a checked union
  * rather than collapsing to `string`. */
 export const objectRecords = [
+  { id: 'fountain', kind: 'fountain', width: FOUNTAIN_RADIUS * 2, height: FOUNTAIN_RADIUS * 2, collision: fountainRim },
   { id: 'hydrant', kind: 'hydrant', width: 0.65, height: 0.65 },
   { id: 'bin', kind: 'bin', width: 0.85, height: 0.85 },
   { id: 'barrier', kind: 'barrier', width: 3.1, height: 0.6 },

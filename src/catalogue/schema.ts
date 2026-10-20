@@ -75,7 +75,7 @@ export type ArtworkCatalogue = Readonly<{
 
 /** Existing world prop behaviours. `building` is a prop kind too, so one catalogue
  * vocabulary and one compiler serve both buildings and later beach/countryside props. */
-export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate';
+export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate' | 'fountain';
 
 export type BuildingFallback = 'shop' | 'commercial' | 'terraced' | 'wards' | 'resort';
 export type BuildingSign = Readonly<{
@@ -155,7 +155,7 @@ export type ObjectRecord = Readonly<{
   /** Default collision footprint in metres. */
   width: number;
   height: number;
-  /** Optional union of at most eight solid sections inside the footprint envelope. */
+  /** Optional union of at most 64 solid sections inside the footprint envelope. */
   collision?: readonly CollisionRect[];
   /** Required for buildings. */
   storeys?: number;

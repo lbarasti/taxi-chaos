@@ -62,6 +62,25 @@ export class ArtworkImages {
     c.restore();
     return true;
   }
+  /** World-anchored variants: camera movement never changes the chosen tile.
+   * SVG sources are rasterized once so world draws stay on the bitmap fast path. */
+  private grassTiles?: HTMLCanvasElement[];
+  grass(c: CanvasRenderingContext2D, bounds: ArtBounds): void {
+    if (!this.grassTiles) {
+      const sources = ['short', 'lush', 'clover', 'daisies', 'dry', 'tufts'].map(name => this.images.get(`grass-${name}`));
+      if (sources.some(source => !source)) return;
+      this.grassTiles = sources.map(source => {
+        const tile = document.createElement('canvas'); tile.width = tile.height = 128;
+        tile.getContext('2d')?.drawImage(source!, 0, 0, 128, 128); return tile;
+      });
+    }
+    const size = 4, tiles = this.grassTiles;
+    for (let y = Math.floor(bounds.y / size); y < Math.ceil((bounds.y + bounds.height) / size); y++)
+      for (let x = Math.floor(bounds.x / size); x < Math.ceil((bounds.x + bounds.width) / size); x++) {
+        const hash = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0;
+        c.drawImage(tiles[hash % tiles.length], x * size, y * size, size, size);
+      }
+  }
   ground(c: CanvasRenderingContext2D, bounds: ArtBounds): void {
     const tile = this.groundTile;
     if (!tile) return;
