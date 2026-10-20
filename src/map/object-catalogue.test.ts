@@ -324,7 +324,8 @@ describe('local attached features follow the parent', () => {
 describe('beach hotels use the shared catalogue', () => {
   it('keeps the shipped condo and hotel artwork data-driven', () => {
     expect(propArtwork.condo.image).toBe('condo');
-    expect(objectDefinitions.hotel.artwork).toBeUndefined();
+    expect(propArtwork['ocean-crest-condo'].image).toBe('ocean-crest-condo');
+    expect(propArtwork.hotel.image).toBe('hotel');
     expect(objectDefinitions.condo.presentation).toMatchObject({ frontage: 'RESIDENTS ONLY' });
     expect(objectDefinitions.hotel.presentation).toMatchObject({ frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE' });
   });

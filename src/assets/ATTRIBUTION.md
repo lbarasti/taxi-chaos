@@ -48,10 +48,17 @@ Exact original prompts remain in Git history; current crop, metre bounds and
 light outline are defined in `src/artwork/catalogue.ts`. The PNG is bundled
 inline with a procedural fallback.
 
-`map/luxury-condo.png` is the original straight-overhead transparent PNG supplied
-by Lorenzo for the Ocean Walk condos. It is embedded unchanged; only transparent
-export padding is cropped at draw time. The same asset appears at two beachfront
-plots, with a procedural building fallback if image decoding fails.
+`map/luxury-condo.png` is OpenAI built-in image-generation option A, adapted from
+Lorenzo's supplied condo to retain its cream roof and pool with minimal visible
+facade. It is used by Azure Residences. `map/ocean-crest-condo.png` and
+`map/pacific-palm-hotel.png` were generated from scratch with the same built-in tool
+for Ocean Crest and Pacific Palm. The prompts request orthographic straight-down
+roofs, muted weathered materials, minimal visible walls, transparent backgrounds,
+no surrounding ground or cast shadows, and no text. Ocean Crest has a slate roof,
+terracotta roof terrace and lap pool; Pacific Palm has a long seafoam/cream roof,
+HVAC plant, blue skylights and a rooftop pool. The hotel roof was extended in depth
+to match its 3:1 footprint. Authored draw-time crops exclude faint alpha specks.
+All three sprites are bundled inline with procedural fallbacks.
 
 `map/crate-shipping.png`, `map/bakery-front.png` and `map/palm-canopy.png` are original
 pixel art created for Taxi Chaos (simple generated artwork, no third-party source) for the

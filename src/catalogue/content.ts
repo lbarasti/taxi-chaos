@@ -64,8 +64,18 @@ export const objectRecords = [
     artwork: { fit: 'stretch', width: 14.3 / 14, height: 13.3 / 13, outline: 'bounds', occluder: true, castsShadow: false },
   },
   {
+    id: 'ocean-crest-condo', kind: 'building', width: 14, height: 13, storeys: 16,
+    fallback: 'commercial', sign: condoSign, frontage: 'RESIDENTS ONLY',
+    image: 'map/ocean-crest-condo.png',
+    // Crop faint alpha specks outside the slate roof and its cream parapet.
+    crop: { x: 94, y: 130, width: 1070, height: 986 },
+    artwork: { fit: 'stretch', width: 14.3 / 14, height: 13.3 / 13, outline: 'bounds', occluder: true, castsShadow: false },
+  },
+  {
     id: 'hotel', kind: 'building', width: 33, height: 11, storeys: 14,
     fallback: 'resort', sign: hotelSign, frontage: 'GUESTS ONLY', apron: 'PRIVATE FRONTAGE',
+    image: 'map/pacific-palm-hotel.png',
+    artwork: { fit: 'stretch', width: 33.4 / 33, height: 11.4 / 11, outline: 'bounds', occluder: true, castsShadow: false },
   },
   // Representative ordinary single-image building. `map/bakery-front.png` is the
   // genuine committed art; the type itself is all the catalogue needs. The authoring
