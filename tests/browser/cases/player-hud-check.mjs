@@ -16,16 +16,19 @@ async function screenshot(page, name, prefix = '') {
 async function checkLayout(page, name, width, height, touch, insets = {}) {
   const rects = await page.evaluate(() => {
     const out = {};
-    for (const selector of ['.player-hud', '.navigation-hud', '#story', '#roadside', '#toast', '#joystick', '.thumb-actions', '#interact']) {
+    for (const selector of ['.player-hud', '.navigation-hud', '.navigation-actions', '#story', '#roadside', '#toast', '#joystick', '.thumb-actions', '#interact']) {
       const element = document.querySelector(selector);
-      if (!element.getClientRects().length) continue;
+      if (!element.getClientRects().length || getComputedStyle(element).visibility === 'hidden') continue;
       if (selector === '#toast' && !element.classList.contains('visible')) continue;
       const { x, y, width, height } = element.getBoundingClientRect();
       out[selector] = { x, y, width, height };
     }
     return out;
   });
-  const status = rects['.player-hud'];
+  const status = await page.locator('.player-hud').evaluate(element => {
+    const { x, y, width, height } = element.getBoundingClientRect();
+    return { x, y, width, height };
+  });
   assert.equal(status.y, insets.top ?? (touch ? 8 : 28), `${name}: status must stay at the top edge`);
   assert.equal(width - status.x - status.width, insets.right ?? (touch ? 10 : 28), `${name}: status must stay at the right edge`);
   for (const [selector, rect] of Object.entries(rects)) {
@@ -151,15 +154,27 @@ try {
     const heatBounds = await heatPage.locator('.player-hud').boundingBox();
     assert(heatBounds.x >= 0 && heatBounds.y >= 0 && heatBounds.x + heatBounds.width <= width && heatBounds.y + heatBounds.height <= height);
     assert.deepEqual(await heatPage.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
-    // Full and minimized conversations must leave the top-right widget visible.
+    // Expanded conversations replace status; minimizing restores it and centres replay.
     await page.bringToFront();
     await page.evaluate(() => window.__dialoguePreview({ character: 'bea' }, 'bea-first-shift', 'pickup'));
     await page.locator('#story').waitFor({ state: 'visible' });
     await page.locator('#story img').evaluateAll(images => Promise.all(images.map(image => image.decode())));
+    assert.equal(await page.locator('.player-hud').isVisible(), false, 'expanded dialogue hides the underlying status');
+    const storyBounds = await page.locator('#story').boundingBox();
+    assert.equal(storyBounds.y, touch ? 8 : 28, 'expanded dialogue shares the status top edge');
+    assert.equal(width - storyBounds.x - storyBounds.width, touch ? 10 : 28, 'expanded dialogue shares the status right edge');
     await checkLayout(page, `${name} story`, width, height, touch);
     await screenshot(page, name, 'story-');
     await page.locator('#story-close').click();
+    assert.equal(await page.locator('.player-hud').isVisible(), true, 'minimizing restores status');
+    const replayBounds = await page.locator('#story').boundingBox();
+    assert.equal(replayBounds.x + replayBounds.width / 2, width / 2, 'replay is centred');
     await checkLayout(page, `${name} minimized story`, width, height, touch);
+    await screenshot(page, name, 'collapsed-story-');
+    await page.locator('#story-read').click();
+    assert.equal(await page.locator('.player-hud').isVisible(), false, 'replay returns to the status corner');
+    await checkLayout(page, `${name} replayed story`, width, height, touch);
+    await page.locator('#story-close').click();
     if (touch) {
       await page.evaluate(() => {
         document.documentElement.style.setProperty('--top-height', '24px');
