@@ -52,7 +52,7 @@ describe('southern woodland estates and golf club', () => {
     }
   });
 
-  it('builds solid villas with accessible driveways, residents and a clear golf course', () => {
+  it('builds solid villas with accessible driveways, residents and clear golf tees/greens', () => {
     const world = new World();
     expect(VILLAS.length).toBe(12);
     for (const [i, villa] of VILLAS.entries()) {
@@ -67,7 +67,12 @@ describe('southern woodland estates and golf club', () => {
       }
     }
     expect(world.props.some(p => p.label === 'FAIRWAY CLUB')).toBe(true);
-    for (const prop of world.props.filter(p => p.kind === 'tree' || p.kind === 'rock')) expect(inCountryClearing(prop.body.position), `${prop.kind} ${prop.body.position.x},${prop.body.position.y}`).toBe(false);
+    // Deliberately placed trees frame the rough; random scenery still respects clearings.
+    for (const prop of world.props.filter(p => !p.sourceId && (p.kind === 'tree' || p.kind === 'rock'))) expect(inCountryClearing(prop.body.position), `${prop.kind} ${prop.body.position.x},${prop.body.position.y}`).toBe(false);
+    for (const hole of defaultCompiledMap.country.GOLF_HOLES) for (const p of [hole.tee, hole.green]) {
+      const probe = new Body(p.x, p.y, 1, 0.7, 0.7);
+      expect([...world.hash.query(probe)].some(prop => contact(probe, prop.body))).toBe(false);
+    }
     expect(inHighlands(GOLF_COURSE.center)).toBe(true);
   });
 

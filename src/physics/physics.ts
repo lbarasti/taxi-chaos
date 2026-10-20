@@ -19,6 +19,8 @@ export type CollisionRect = Readonly<{ x: number; y: number; width: number; heig
 
 export class Body {
   collisionRects?: readonly CollisionRect[];
+  /** Optional convex footprint in normalized body coordinates (±0.5). */
+  collisionPolygon?: readonly Vec[];
   position: Vec; velocity = vec(); angle = 0; angularVelocity = 0; force = vec(); torque = 0;
   constructor(x: number, y: number, public mass = 1000, public w = 4.2, public h = 2.1) { this.position = vec(x, y); }
   get inertia() { return this.mass * (this.w ** 2 + this.h ** 2) / 12; }
@@ -29,7 +31,9 @@ export class Body {
   addForce(f: Vec, p = this.position) { this.force = add(this.force, f); this.torque += cross(sub(p, this.position), f); }
   impulse(f: Vec, p = this.position) { this.velocity = add(this.velocity, scale(f, this.invMass)); this.angularVelocity += cross(sub(p, this.position), f) * this.invInertia; }
   integrate(dt: number) { this.velocity = add(this.velocity, scale(this.force, dt * this.invMass)); this.angularVelocity += this.torque * dt * this.invInertia; this.position = add(this.position, scale(this.velocity, dt)); this.angle += this.angularVelocity * dt; this.force = vec(); this.torque = 0; }
-  corners() { return [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)].map(p => this.toWorld(p)); }
+  corners() { return this.collisionPolygon
+    ? this.collisionPolygon.map(p => this.toWorld(vec(p.x * this.w, p.y * this.h)))
+    : [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)].map(p => this.toWorld(p)); }
 }
 
 /** Cache only derived geometry; static compounds avoid rebuilding their sections
@@ -104,7 +108,7 @@ export const bodyRadius = (body: Body) => Math.hypot(body.w, body.h) / 2;
 export const bodiesNear = (a: Body, b: Body, margin = 0) => dist(a.position, b.position) < bodyRadius(a) + bodyRadius(b) + margin;
 
 export type Contact = { normal: Vec; depth: number; point: Vec };
-// SAT for rotated rectangles, including a face midpoint for stable face contacts.
+// SAT for rotated rectangles and convex footprints, with stable face contacts.
 export function contact(a: Body, b: Body): Contact | null {
   if (!a.collisionRects && !b.collisionRects) return rectangleContact(a, b);
   if (!rectangleContact(a, b)) return null;
@@ -117,7 +121,10 @@ export function contact(a: Body, b: Body): Contact | null {
 }
 function rectangleContact(a: Body, b: Body): Contact | null {
   const ac = a.corners(), bc = b.corners(); let depth = Infinity, normal = vec();
-  const axes = [rotate(vec(1, 0), a.angle), rotate(vec(0, 1), a.angle), rotate(vec(1, 0), b.angle), rotate(vec(0, 1), b.angle)];
+  const axesFor = (body: Body, points: Vec[]) => body.collisionPolygon
+    ? points.map((p, i) => { const edge = sub(points[(i + 1) % points.length], p); return normalize(vec(-edge.y, edge.x)); })
+    : [rotate(vec(1, 0), body.angle), rotate(vec(0, 1), body.angle)];
+  const axes = [...axesFor(a, ac), ...axesFor(b, bc)];
   for (let axis of axes) {
     const ap = ac.map(p => dot(p, axis)), bp = bc.map(p => dot(p, axis));
     const overlap = Math.min(Math.max(...ap), Math.max(...bp)) - Math.max(Math.min(...ap), Math.min(...bp));

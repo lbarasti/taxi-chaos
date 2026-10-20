@@ -6,6 +6,8 @@ import { artworkImages } from '../artwork/images';
 import { objectDefinitions, artworkFor, type PropArtwork } from '../artwork/catalogue';
 import { deriveArtwork } from '../catalogue/compile';
 import type { Prop } from '../world/world';
+import { compileMap } from '../map/compile';
+import { exportMap, importMap } from '../map/serialization';
 
 /** Renderer dispatch regression: an alive prop with decoded catalogue artwork draws that
  * sprite ahead of the procedural district renderers, while a destroyed prop never does.
@@ -25,7 +27,7 @@ const prop = (kind: string, artwork: PropArtwork, alive = true, fire = 0): Prop 
 function canvasContext() {
   const calls: Record<string, unknown[][]> = {};
   const ctx: Record<string, unknown> = { globalAlpha: 1 };
-  for (const name of ['setTransform', 'fillRect', 'strokeRect', 'save', 'restore', 'translate', 'rotate', 'scale', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'bezierCurveTo', 'quadraticCurveTo', 'fill', 'stroke', 'arc', 'clip', 'ellipse', 'setLineDash', 'fillText']) {
+  for (const name of ['setTransform', 'fillRect', 'strokeRect', 'save', 'restore', 'translate', 'rotate', 'scale', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'bezierCurveTo', 'quadraticCurveTo', 'fill', 'stroke', 'arc', 'clip', 'rect', 'ellipse', 'setLineDash', 'fillText']) {
     ctx[name] = (...args: unknown[]) => { (calls[name] ??= []).push(args); };
   }
   return { ctx: ctx as unknown as CanvasRenderingContext2D, calls };
@@ -41,6 +43,26 @@ function renderer() {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('prop render dispatch', () => {
+  it('keeps the aerial ground plate after map round trips and draws course objects separately', () => {
+    const { r, calls } = renderer();
+    r.game = new Game(compileMap(importMap(exportMap(r.game.map.document))), false);
+    const surface = vi.spyOn(artworkImages, 'surface').mockReturnValue(true);
+    const draw = vi.spyOn(artworkImages, 'draw').mockReturnValue(true);
+    vi.spyOn(artworkImages, 'has').mockReturnValue(true);
+    r.countryEstates();
+    expect(surface).toHaveBeenCalledExactlyOnceWith(r.ctx, 'golf-course', r.game.map.country.GOLF_COURSE.artwork);
+    expect(draw).not.toHaveBeenCalled();
+    expect(calls.fillText?.some(([text]) => ['1', '2', '3'].includes(String(text)))).toBe(false);
+
+    const tree = r.game.world.props.find(p => p.sourceId?.startsWith('fairway-tree-'))!;
+    const clubhouse = r.game.world.props.find(p => p.sourceId === 'fairway-clubhouse')!;
+    r.drawMapProp(tree); r.drawMapProp(clubhouse); r.golfFixtures();
+    expect(draw).toHaveBeenCalledWith(r.ctx, expect.objectContaining({ image: 'tree-worn' }));
+    expect(draw).toHaveBeenCalledWith(r.ctx, expect.objectContaining({ image: 'golf-clubhouse' }));
+    expect(calls.fillText?.filter(([text]) => ['1', '2', '3'].includes(String(text)))).toHaveLength(3);
+    tree.alive = false; draw.mockClear(); r.drawMapProp(tree);
+    expect(draw).not.toHaveBeenCalled();
+  });
   it('isolates actual prop shadows from hidden artwork and preserves the light blockers', () => {
     const { r } = renderer();
     const stack: number[] = [];

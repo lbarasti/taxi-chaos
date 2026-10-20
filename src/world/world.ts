@@ -21,6 +21,7 @@ export type Prop = { id: number; sourceId?: string; storeys?: number; artwork?: 
 export type Person = { id: number; sourceId?: string; position: Vec; home: Vec; phase: number; color: string; panic: number; alive: boolean; aboard: boolean; health: number; velocity: Vec; angle: number; deathTime: number; role: 'civilian' | 'customer' | 'officer'; hitAt: number; wander?: Vec; fall?: { elapsed: number; duration: number; angularVelocity: number } };
 export type Block = CityBlock;
 export type ParkingSpot = Parking & { sourceId: string };
+export type Pool = Body & { sourceId: string; waterKind: 'pool' | 'pond' };
 export const GRID = CITY_GRID, SIZE = CITY_SIZE, GARAGE = vec(4, 28);
 export function district(p: Vec, map = defaultCompiledMap) {
   const { SOUTH_WOODS_Y } = map.country;
@@ -30,7 +31,7 @@ export function district(p: Vec, map = defaultCompiledMap) {
 }
 export function seeded(seed: number) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 export class World {
-  pools: Body[];
+  pools: Pool[];
   navigation: ReturnType<typeof createNavigation>;
   props: Prop[] = []; people: Person[] = []; blocks: readonly Block[] = []; hash = new SpatialHash<Prop>(); random = seeded(1976);
   private personSerial = 0;
@@ -46,9 +47,13 @@ export class World {
     this.people.push(person); return person;
   }
   constructor(public readonly map: CompiledMap = defaultCompiledMap) {
-    const { BRIDGE_Y, GOLF_COURSE, GOLF_HOLES, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, inCountryClearing, inHighlands } = map.country;
+    const { BRIDGE_Y, GOLF_HOLES, HIGHLAND_STOPS, VILLAS, VILLA_DRIVES, VILLA_POOLS, countryAccess, inCountryClearing, inHighlands } = map.country;
     this.parking = map.document.parking.map(p => ({ ...structuredClone(p), sourceId: p.id }));
-    this.pools = VILLA_POOLS.map(p => new Body(p.position.x, p.position.y, Infinity, p.width, p.height));
+    this.pools = VILLA_POOLS.map((p, i) => Object.assign(new Body(p.position.x, p.position.y, Infinity, p.width, p.height), { sourceId: VILLAS[i].id, waterKind: 'pool' as const }));
+    for (const p of map.country.GOLF_PONDS) {
+      const body = Object.assign(new Body(p.position.x, p.position.y, Infinity, p.width, p.height), { sourceId: p.sourceId, waterKind: 'pond' as const });
+      body.angle = p.angle; body.collisionPolygon = p.polygon; this.pools.push(body);
+    }
     this.blocks = map.city.blocks;
     for (const block of this.blocks) {
       const { x, y, park, special } = block;
@@ -128,9 +133,7 @@ export class World {
       this.addPerson(vec(p.x + 12, p.y - 8), 'civilian', '#e4ca79');
       this.addPerson(vec(p.x - 12, p.y + 6), 'civilian', '#d7c9e7');
     }
-    const club = GOLF_COURSE.clubhouse;
-    this.add('building', club.x, club.y, 10, 14, '#b89a74', 'FAIRWAY CLUB').sourceId = map.document.golf.id;
-    this.add('lamp', club.x - 7, club.y + 7, 0.6, 0.6, '#a7bfbb');
+    // The clubhouse, trees and furniture are ordinary authored catalogue placements.
     for (const hole of GOLF_HOLES) this.addPerson(vec(hole.tee.x + 2, hole.tee.y - 2), 'civilian', '#f0e6c8');
     for (const stop of HIGHLAND_STOPS) {
       const p = stop.position;

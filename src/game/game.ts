@@ -1,5 +1,6 @@
 import { Body, CarDynamics, add, angleDiff, bodiesNear, clamp, contact, dist, dot, length, normalize, resolveCollision, rotate, scale, segmentIntersectsBody, sub, vec, type Controls, type Vec } from '../physics/physics';
-import { GARAGE, World, blocksWalking, isStructural, type Person, type Prop } from '../world/world';
+import { GARAGE, World, blocksWalking, isStructural, type Person, type Pool, type Prop } from '../world/world';
+import { contains } from '../world/regions';
 import { createAI, driveNPC, type AIState } from '../vehicles/ai';
 import { defaultSettings, difficulties, wantedThresholds, type Difficulty, type Settings } from './rules';
 import { blastDamage, createVehicleDamage, igniteVehicle, impactDamage, radialEffect, tickVehicleDamage, vehiclePerformance, type VehicleDamage } from '../vehicles/damage';
@@ -1039,14 +1040,14 @@ export class Game {
     v.damage.status = 'wreck'; v.damage.health = 0; v.wreckAt = this.time; v.alive = false;
     if (v === this.player && !this.onFoot) this.waste('drowning');
   }
-  private enterWater(v: Vehicle, pool?: Body) {
+  private enterWater(v: Vehicle, pool?: Pool) {
     v.sinking = { elapsed: 0, pool, entrySpeed: length(v.body.velocity) };
     this.loseUpgrades(v);
     v.damage.status = 'intact'; v.damage.fuse = 0; v.damage.fireTime = 0; v.dynamics.skidding = false;
     v.body.force = vec(); v.body.torque = 0;
     if (pool) { v.body.velocity = vec(); v.body.angularVelocity = 0; }
     this.fx.splash(v.body.position, pool ? 1 : clamp(v.sinking.entrySpeed / 15, 0.8, 2));
-    if (v === this.player && !this.onFoot) this.notify(pool ? 'RIDE IN THE POOL · SINKING' : 'RIDE IN THE OCEAN · SINKING', 'danger');
+    if (v === this.player && !this.onFoot) this.notify(pool ? `RIDE IN THE ${pool.waterKind.toUpperCase()} · SINKING` : 'RIDE IN THE OCEAN · SINKING', 'danger');
   }
   lineOfSight(a: Vec, b: Vec) {
     const sweep = new Body((a.x + b.x) / 2, (a.y + b.y) / 2, 1, Math.abs(b.x - a.x) + 0.1, Math.abs(b.y - a.y) + 0.1);
@@ -1107,7 +1108,7 @@ export class Game {
         const offset = rotate(vec(0, (v.dynamics as MotorcycleDynamics).fallSide * 0.45), v.body.angle);
         this.skids.push({ a: add(previousPosition, offset), b: add(v.body.position, offset), life: 9 });
       }
-      const pool = this.world.pools.find(pool => Math.abs(v.body.position.x - pool.position.x) < pool.w / 2 && Math.abs(v.body.position.y - pool.position.y) < pool.h / 2);
+      const pool = this.world.pools.find(pool => dist(v.body.position, pool.position) <= Math.hypot(pool.w, pool.h) / 2 && contains(pool.corners(), v.body.position));
       if (pool) {
         this.enterWater(v, pool);
         continue;

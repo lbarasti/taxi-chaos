@@ -14,7 +14,7 @@ export type Validation = { revision: string; findings: Finding[]; errors: number
 function footprint(body: Body): Vec[] {
   if (body.collisionRects) return bodyParts(body).flatMap(footprint);
   const corners = body.corners(), points = [body.position, ...corners];
-  for (let i = 0; i < 4; i++) { const a = corners[i], b = corners[(i + 1) % 4], steps = Math.ceil(dist(a, b) / 0.5); for (let j = 1; j < steps; j++) points.push(add(a, scale(sub(b, a), j / steps))); }
+  for (let i = 0; i < corners.length; i++) { const a = corners[i], b = corners[(i + 1) % corners.length], steps = Math.ceil(dist(a, b) / 0.5); for (let j = 1; j < steps; j++) points.push(add(a, scale(sub(b, a), j / steps))); }
   return points;
 }
 function intersects(a: Vec, b: Vec, c: Vec, d: Vec) {
@@ -140,7 +140,6 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   }
   const golf = country.GOLF_COURSE;
   checkLand(golf.id, new Body(golf.center.x, golf.center.y, 1, golf.width + 14, golf.height + 8), country.inHighlands);
-  checkLand(golf.id, new Body(golf.clubhouse.x, golf.clubhouse.y, 1, 20, 22), country.inHighlands);
   for (const p of [...country.GOLF_CART_ROUTE, ...country.GOLF_HOLES.flatMap(h => [h.tee, h.green, h.bunker])]) checkLand(golf.id, new Body(p.x, p.y, 1, 3, 3), country.inHighlands);
   const overlaps = new Set<string>();
   const placementIds = new Set(document.objectPlacements.filter(p => compiled.objects[p.id]?.kind !== 'pedestrian-gate').map(p => p.id));
@@ -151,10 +150,11 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     const depth = contact(prop.body, other.body)?.depth ?? 0, ids = [prop.sourceId!, other.sourceId ?? `runtime-prop-${other.id}`].sort(), key = ids.join(':');
     if (depth > 0.04 && !overlaps.has(key)) { overlaps.add(key); push('object-overlap', ids, 'Authored solid overlaps another collision footprint (same-composite attachments are allowed)', prop.body.position, { penetration: depth }); }
   }
-  for (const [i, pool] of world.pools.entries()) {
-    const id = country.VILLAS[i].id;
+  for (const pool of world.pools) {
+    const id = pool.sourceId;
     const solid = [...world.hash.query(pool)].find(p => isRigidObstacle(p.kind) && p.sourceId !== id && (contact(pool, p.body)?.depth ?? 0) > 0.04);
-    if (solid) push('pool-overlap', [id, solid.sourceId ?? `runtime-prop-${solid.id}`], 'Villa pool intersects another solid object', pool.position);
+    if (solid) push('pool-overlap', [id, solid.sourceId ?? `runtime-prop-${solid.id}`], 'Pool or pond intersects another solid object', pool.position);
+    if (pool.waterKind === 'pond') checkLand(id, pool, country.inHighlands);
   }
   for (const stop of country.HIGHLAND_STOPS) {
     const body = createVehicleBody(vehicleDefinition('car'), stop.position, 0), access = country.countryAccess(stop.position);

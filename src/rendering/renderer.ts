@@ -15,6 +15,7 @@ import { artworkImages } from '../artwork/images';
 import { artworkFor, artRadius, fallbackScale, renderOrderFor, type PropArtwork } from '../artwork/catalogue';
 import { InspectionState } from '../debug/inspection';
 import { drawInspection } from '../debug/inspection-renderer';
+import { defaultMap } from '../map/default';
 
 import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from '../world/harbour';
 import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
@@ -139,7 +140,7 @@ export class Renderer {
       if (prop.alive && renderOrderFor(prop) === 'above-actors') overheadProps.push(prop);
       else this.drawMapProp(prop);
     }
-    if (view.shown('props')) { c.save(); c.globalAlpha = view.active ? view.options.propOpacity : 1; this.campaignFrontages(); c.restore(); }
+    if (view.shown('props')) { c.save(); c.globalAlpha = view.active ? view.options.propOpacity : 1; this.golfFixtures(); this.campaignFrontages(); c.restore(); }
     if (view.shown('actors')) {
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
       if (person.aboard) continue;
@@ -326,7 +327,6 @@ export class Renderer {
     // do not read as a darker night before the ambient lighting pass is applied.
     drawLandGround(c,g.map,true);
     c.save(); clipLand(c,g.map);
-    this.countrysideGround();
     drawHarbourGround(this);
     for (const b of g.world.blocks) {
       if (b.campusId) continue;
@@ -390,6 +390,7 @@ export class Renderer {
     this.label('M A R K E T   S T R E E T', 62, 117.7, 1.1, '#81908f');
     c.restore();
     drawTerrainGround(this);
+    this.countrysideGround();
     for (const b of g.world.blocks) if (b.park && this.visible(vec(b.x + 20, b.y + 20), 30))
       this.label('CITY GARDENS', b.x + 20, b.y + 30, 1, '#bdd7ac');
     c.save(); clipLand(c,g.map);
@@ -462,26 +463,46 @@ export class Renderer {
     }
     const club = GOLF_COURSE;
     this.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8, '#3b6346');
-    trace(c, GOLF_PATH);
-    c.strokeStyle = '#b8b395'; c.lineWidth = 2.4; c.stroke();
-    this.rect(club.clubhouse.x - 10, club.clubhouse.y - 9, 20, 22, '#b8aa87');
-    for (const [i, hole] of GOLF_HOLES.entries()) {
-      const center = scale(add(hole.tee, hole.green), 0.5), angle = Math.atan2(hole.green.y - hole.tee.y, hole.green.x - hole.tee.x);
-      c.save(); c.beginPath(); c.ellipse(center.x, center.y, dist(hole.tee, hole.green) / 2 + 6, 4.3, angle, 0, Math.PI * 2); c.clip();
-      this.rect(center.x - 40, center.y - 10, 80, 20, '#7b9b59');
-      for (let x = center.x - 40; x < center.x + 40; x += 5) this.rect(x, center.y - 10, 2.5, 20, '#acc77829');
-      c.restore();
-      c.beginPath(); c.ellipse(hole.bunker.x, hole.bunker.y, 5, 2.2, -0.35, 0, Math.PI * 2); c.fillStyle = '#d9c69a'; c.fill();
-      c.beginPath(); c.ellipse(hole.green.x, hole.green.y, 5, 3.6, 0.2, 0, Math.PI * 2); c.fillStyle = '#a5bd72'; c.fill();
-      this.circle(hole.green, 0.22, '#253d30');
-      this.rect(hole.green.x, hole.green.y - 2.1, 0.1, 2.1, '#efe9d1');
-      trace(c, [vec(hole.green.x, hole.green.y - 2.1), vec(hole.green.x + 1.3, hole.green.y - 1.7), vec(hole.green.x, hole.green.y - 1.3)], true); c.fillStyle = '#e87663'; c.fill();
-      this.rect(hole.tee.x - 1.8, hole.tee.y - 0.8, 3.6, 1.6, '#425f42');
-      this.label(String(i + 1), hole.tee.x - 3, hole.tee.y, 0.65, '#efe6bb', '700');
+    c.save(); c.beginPath(); c.rect(club.center.x - club.width / 2 - 7, club.center.y - club.height / 2 - 4, club.width + 14, club.height + 8); c.clip();
+    // The plate was generated against this layout. Edited hole layouts retain their
+    // accurate procedural presentation; translating the district still uses the art.
+    // Field order survives canonical export/import; routes and ownership do not affect pixels.
+    const layout = (g: typeof defaultMap.golf) => JSON.stringify([g.width, g.height,
+      g.path.map(p => [p.x, p.y]), g.pond.map(p => [p.x, p.y]),
+      g.holes.map(h => [h.tee.x, h.tee.y, h.green.x, h.green.y, h.bunker.x, h.bunker.y])]);
+    const authoredLayout = layout(this.game.map.document.golf) === layout(defaultMap.golf);
+    const courseArt = authoredLayout && artworkImages.surface(c, 'golf-course', club.artwork);
+    c.restore();
+    if (!courseArt) { trace(c, GOLF_PATH); c.strokeStyle = '#b8b395'; c.lineWidth = 1.2; c.stroke(); }
+    for (const hole of GOLF_HOLES) {
+      if (!courseArt) {
+        const center = scale(add(hole.tee, hole.green), 0.5), angle = Math.atan2(hole.green.y - hole.tee.y, hole.green.x - hole.tee.x);
+        c.save(); c.beginPath(); c.ellipse(center.x, center.y, dist(hole.tee, hole.green) / 2 + 6, 4.3, angle, 0, Math.PI * 2); c.clip();
+        this.rect(center.x - 40, center.y - 10, 80, 20, '#7b9b59');
+        for (let x = center.x - 40; x < center.x + 40; x += 5) this.rect(x, center.y - 10, 2.5, 20, '#acc77829');
+        c.restore();
+        c.beginPath(); c.ellipse(hole.bunker.x, hole.bunker.y, 5, 2.2, -0.35, 0, Math.PI * 2); c.fillStyle = '#d9c69a'; c.fill();
+        c.beginPath(); c.ellipse(hole.green.x, hole.green.y, 5, 3.6, 0.2, 0, Math.PI * 2); c.fillStyle = '#a5bd72'; c.fill();
+      }
     }
     // Carts are rendered from physical vehicles, rather than painted decorations.
-    c.beginPath(); c.ellipse(club.center.x + 41, club.center.y - 12, 6, 3.3, 0.4, 0, Math.PI * 2); c.fillStyle = '#569097'; c.fill(); c.strokeStyle = '#bec79a'; c.lineWidth = 0.5; c.stroke();
+    for (const pond of this.game.world.pools.filter(pool => pool.waterKind === 'pond')) if (!courseArt) {
+      const shoreline = pond.corners();
+      trace(c, shoreline, true); c.fillStyle = '#569097'; c.fill();
+      trace(c, shoreline, true); c.strokeStyle = '#bec79a'; c.lineWidth = 0.3; c.stroke();
+    }
     this.label('FAIRWAY COUNTRY CLUB', club.center.x, club.center.y - 21, 0.95, '#e8dfb4', '700');
+  }
+  /** Raised course details share the prop pass, never the ground plate. */
+  golfFixtures() {
+    const c = this.ctx;
+    for (const [i, hole] of this.game.map.country.GOLF_HOLES.entries()) {
+      this.circle(hole.green, 0.16, '#253d30');
+      this.rect(hole.green.x, hole.green.y - 1.3, 0.08, 1.3, '#efe9d1');
+      trace(c, [vec(hole.green.x, hole.green.y - 1.3), vec(hole.green.x + 0.8, hole.green.y - 1.1), vec(hole.green.x, hole.green.y - 0.7)], true); c.fillStyle = '#e87663'; c.fill();
+      for (const side of [-1, 1]) this.circle(vec(hole.tee.x, hole.tee.y + side * 0.45), 0.12, '#e8d6a0');
+      this.label(String(i + 1), hole.tee.x - 1.7, hole.tee.y, 0.55, '#efe6bb', '700');
+    }
   }
   marker(p: Vec, color: string, label: string, garage = false) {
     if (!this.visible(p, 10)) return; const c = this.ctx, g = this.game;
@@ -690,7 +711,7 @@ export class Renderer {
     if (v.sinking) {
       const c = this.ctx, b = v.body, pool = v.sinking.pool, t = clamp(v.sinking.elapsed / 2.2, 0, 1);
       c.save();
-      if (pool) { c.beginPath(); c.rect(pool.position.x - pool.w / 2, pool.position.y - pool.h / 2, pool.w, pool.h); c.clip(); }
+      if (pool) { trace(c, pool.corners(), true); c.clip(); }
       const flight = pool ? 0 : Math.sin(Math.min(1, v.sinking.elapsed / 0.6) * Math.PI) * Math.min(2.4, v.sinking.entrySpeed * 0.08);
       c.translate(b.position.x, b.position.y + t * 0.7 - flight); c.rotate(t * 0.15); c.scale(1 - t * 0.25, 1 - t * 0.25);
       c.translate(-b.position.x, -b.position.y); c.globalAlpha = 1 - t;
