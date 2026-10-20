@@ -3,13 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
-import { waitForDrawer } from './helpers/drawer.mjs';
+import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
+import { waitForDrawer } from '../helpers/drawer.mjs';
 
-const output = resolve(process.argv[2] ?? 'scenario-runs/observations');
+const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/observations');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], requests = [];
+const browser = await launchBrowser();
 try {
   for (const { name, width, height, touch } of [
     { name: 'desktop', width: 1440, height: 900, touch: false },
@@ -21,12 +20,8 @@ try {
     { name: 'landscape-480', width: 480, height: 320, touch: true },
     { name: 'landscape-500', width: 500, height: 400, touch: true },
   ]) {
-    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
-    await context.setOffline(true);
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    page.on('pageerror', error => errors.push(`${name}: ${error.message}`));
-    page.on('console', message => { if (message.type() === 'error') errors.push(`${name}: ${message.text()}`); });
-    page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     const command = async command => {
@@ -149,7 +144,5 @@ try {
     await context.close();
     console.log(`${name}: physical approach, observation activation, notebook, retention and layout passed`);
   }
-  assert.deepEqual(errors, [], 'Browser errors');
-  assert.deepEqual(requests, [], 'External runtime requests');
   console.log(`Offline observation checks passed; screenshots: ${output}`);
-} finally { await browser.close(); }
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }

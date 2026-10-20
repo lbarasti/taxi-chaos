@@ -3,22 +3,17 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
+import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
 
-const output = resolve(process.argv[2] ?? 'scenario-runs/city-scale');
+const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/city-scale');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], external = [];
+const browser = await launchBrowser();
 try {
   for (const [name, width, height, touch] of [
     ['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['landscape', 844, 390, true],
   ]) {
-    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
-    await context.setOffline(true);
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    page.on('pageerror', e => errors.push(`${name}: ${e.message}`));
-    page.on('console', m => { if (m.type() === 'error') errors.push(`${name}: ${m.text()}`); });
-    page.on('request', r => { if (/^https?:/.test(r.url())) external.push(r.url()); });
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     const command = async c => {
@@ -60,5 +55,4 @@ try {
     await context.close();
     console.log(`${name}: offline city scale and layout passed`);
   }
-  assert.deepEqual(errors, []); assert.deepEqual(external, []);
-} finally { await browser.close(); }
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }

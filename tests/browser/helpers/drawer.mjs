@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { newContext } from '../runtime.mjs';
 
 // Helpers for the actual game drawer; no test-only navigation API in the app.
 export async function waitForDrawer(page, name) {
@@ -14,15 +15,10 @@ export async function tapToConfirm(page, selector) {
   assert.equal(await page.locator(selector).getAttribute('data-selected'), 'true');
   await page.locator(selector).tap();
 }
-export async function openGame(browser, html, options, problems, path = '/') {
-  const context = await browser.newContext(options);
+export async function openGame(browser, html, options, path = '/') {
+  const context = await newContext(browser, options);
   await context.route('http://localhost:4173/**', route => route.fulfill({ contentType: 'text/html', body: html }));
   const page = await context.newPage();
-  page.on('pageerror', error => problems.errors.push(error.message));
-  page.on('console', message => { if (message.type() === 'error') problems.errors.push(message.text()); });
-  page.on('request', request => {
-    if (/^https?:/.test(request.url()) && !request.url().startsWith('http://localhost:4173/')) problems.requests.push(request.url());
-  });
   await page.goto(`http://localhost:4173${path}`);
   return page;
 }

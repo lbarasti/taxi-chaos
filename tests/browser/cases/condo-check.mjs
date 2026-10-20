@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
+import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
 
-const output = resolve(process.argv[2] ?? 'scenario-runs/luxury-condos');
+const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/luxury-condos');
 await mkdir(output, { recursive: true });
 // Identify actual source bytes rather than image dimensions: the two condos can
 // have the same export size while still needing independent draw assertions.
@@ -13,8 +13,7 @@ const sources = Object.fromEntries(await Promise.all([
   ['azure', 'luxury-condo.png'], ['ocean-crest', 'ocean-crest-condo.png'], ['pacific-palm', 'pacific-palm-hotel.png'],
 ].map(async ([id, file]) => [id, (await readFile(resolve('src/assets/map', file))).toString('base64').slice(-128)])));
 assert.equal(new Set(Object.values(sources)).size, 3);
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], external = [];
+const browser = await launchBrowser();
 try {
   for (const [name, width, height, center, zoom, required, failImages] of [
     ['desktop', 1440, 900, { x: 200, y: 245 }, 11, ['azure', 'pacific-palm', 'ocean-crest'], false],
@@ -25,12 +24,8 @@ try {
     ['fallback', 1440, 900, { x: 200, y: 245 }, 11, [], true],
   ]) {
     const touch = name.startsWith('portrait') || name === 'landscape';
-    const context = await browser.newContext({ viewport: { width, height }, isMobile: touch, hasTouch: touch, reducedMotion: 'reduce' });
-    await context.setOffline(true);
+    const context = await newContext(browser, { viewport: { width, height }, isMobile: touch, hasTouch: touch, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    page.on('pageerror', error => errors.push(`${name}: ${error.message}`));
-    page.on('console', message => { if (message.type() === 'error') errors.push(`${name}: ${message.text()}`); });
-    page.on('request', request => { if (/^https?:/.test(request.url())) external.push(request.url()); });
     await page.addInitScript(({ failImages, sources }) => {
       window.roofDraws = {};
       const draw = CanvasRenderingContext2D.prototype.drawImage;
@@ -71,8 +66,6 @@ try {
     await context.close();
     console.log(`${name}: offline beachfront rendering passed ${JSON.stringify(draws)}`);
   }
-  assert.deepEqual(errors, []);
-  assert.deepEqual(external, []);
-} finally {
-  await browser.close();
+} catch (error) { await captureFailure(); throw error; } finally {
+  await closeBrowser(browser);
 }

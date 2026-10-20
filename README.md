@@ -19,9 +19,11 @@ Open **http://localhost:5173**. Vite serves the game with instant TypeScript and
 npm test
 npm run build
 npm run map:check -- --input src/map/default-map.json --json
+npm run tools:test
+npm run browser:test -- --require-browser
 ```
 
-`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding; `npm run artwork:test` covers the prep CLI offline. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs, and `npm run authoring:test` covers the DOM-free report, offline screenshot CLI and `__taxi.map` automation.
+`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run tools:test` runs the artwork, scenario and authoring CLI suites. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs. The optional GPU benchmark is `npm run performance:bench -- --frames 180`; it writes results under `scenario-runs/artwork-performance/`.
 
 For interactive testing, open **http://localhost:5173/?debug=1** or press **F2**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
 
@@ -40,11 +42,10 @@ Other useful harness methods include `step`, `scenario`, `spawnVehicle`, `contac
 
 Automated browser tests should use an isolated browser context, especially when working with shared browser sessions or saved progress. The test API supports deterministic stepping without wall-clock waits. `loadScenario(game, name)` in `src/debug/lab.ts` is also available to Node tests without a DOM.
 
-After building, `node tools/text-messages-check.mjs` checks the inbox offline on desktop and three touch layouts, including date grouping, loading older texts, read tracking, live countdowns and expired pickups. Screenshots go to `scenario-runs/text-messages/`; pass a directory argument to choose another destination. Set `CHROMIUM_PATH` to use an existing Chromium installation.
+After building, `npm run browser:test` runs six offline suites: menus, input, HUD, campaign UI, world rendering and driving, and map inspection. Use `npm run browser:test -- --list`, `--suite hud`, or `--case player-hud` to narrow a run. Each case reports pass, fail or skip independently; results and failure screenshots go to `scenario-runs/browser/`. Set `CHROMIUM_PATH` to use an existing Chromium executable. `--require-browser` makes unavailable Chromium a failure, as in CI. The inbox case covers date grouping, older texts, read tracking, countdowns and expired pickups on desktop and touch layouts.
 
 Browser checks write generated captures to ignored `scenario-runs/` directories.
-The splash, player HUD, mobile HUD and beach checks accept `SCREENSHOT_DIR` to
-override their destination. Attach relevant captures to the PR. Historical
+`SCREENSHOT_DIR` overrides their root. Attach relevant captures to the PR. Historical
 rationale belongs in [the decision log](docs/DECISIONS.md); routine changes need
 no decision entry or separate feature document.
 
@@ -170,9 +171,9 @@ __taxi.layers.close();
 __taxi.realtime();
 ```
 
-After building, `node tools/layers-check.mjs` checks the standalone inspector offline
+After building, `npm run browser:test -- --suite map-inspection` checks the standalone inspector offline
 on desktop and three touch layouts, including selection, physical driving, free-camera
-input isolation, pause and preview restoration. Captures go to `scenario-runs/layers/`.
+input isolation, pause and preview restoration.
 
 For city buildings, edit reusable object records in
 [`src/catalogue/content.ts`](src/catalogue/content.ts) and placements/campuses in

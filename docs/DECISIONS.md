@@ -319,3 +319,16 @@ existing footprint by default.
 recessed corners. Treating that envelope as solid creates invisible walls.
 Collision sections are authored geometry, independent of image decoding and
 artwork-only scale; placement resizing and rotation transform them together.
+
+
+## D20 — Gate pull requests on maintained offline browser suites
+
+**Decision:** Keep production browser checks as six named suites under
+`tests/browser/`, with independently reported cases. CI provisions Chromium,
+runs the suites against the standalone build, and retains browser results and
+failure screenshots as artifacts. Asset generators and the optional performance
+benchmark remain separate utilities under `tools/`.
+
+**Reason:** A stale HUD selector hid a real 568×320 recovery-toast overlap.
+Running the checks routinely against the built artifact makes UI regressions
+visible while keeping asset maintenance and performance sampling opt-in.

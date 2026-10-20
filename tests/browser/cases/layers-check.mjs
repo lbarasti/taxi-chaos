@@ -3,19 +3,15 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
+import { launchBrowser, newContext, closeBrowser, captureFailure, viewportTuples } from '../runtime.mjs';
 
-const output = resolve(process.argv[2] ?? 'scenario-runs/layers');
+const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/layers');
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const errors = [], requests = [];
+const browser = await launchBrowser();
 try {
-  for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['compact', 320, 568, true], ['landscape', 844, 390, true]]) {
-    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, offline: true });
+  for (const [name, width, height, touch] of viewportTuples('desktop', 'portrait', 'compact', 'landscape')) {
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, offline: true });
     const page = await context.newPage();
-    page.on('pageerror', error => errors.push(`${name}: ${error.message}`));
-    page.on('console', message => { if (message.type() === 'error') errors.push(`${name}: ${message.text()}`); });
-    page.on('request', request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?debug=1`);
     await page.waitForFunction(() => !!window.__taxi?.layers);
     await page.evaluate(() => { window.__taxi.scenario('first-fare'); });
@@ -108,6 +104,5 @@ try {
     assert.equal(await page.evaluate(() => window.__taxi.state().lab.frozen), false);
     await context.close();
   }
-  assert.deepEqual(errors, [], 'console/page errors'); assert.deepEqual(requests, [], 'external runtime requests');
   console.log('Layers: desktop, portrait, compact and landscape passed offline; selection, camera, pause, driving and preview restoration passed.');
-} finally { await browser.close(); }
+} catch (error) { await captureFailure(); throw error; } finally { await closeBrowser(browser); }
