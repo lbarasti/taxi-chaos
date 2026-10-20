@@ -73,3 +73,26 @@ shared catalogue's representative crate and bakery building records. Both are
 small sprites bundled inline with the other map artwork.
 
 - `map/grass-{short,lush,clover,daisies,dry,tufts}.svg`: original grass tile artwork created for Taxi Chaos; six matching-edge variants with blades, clover, small daisies and dry tufts.
+
+`map/golf-course.png` was made with OpenAI's built-in image generation in two
+steps: a realistic, exactly overhead aerial of a naturally designed three-hole
+woodland course, then a ground-only edit of the user-selected first aerial.
+The edit preserves the flowing fairways, irregular greens, eight sand bunkers,
+cart paths, parking apron and upper-right pond. Its direction explicitly removes
+every tree, shrub, rock, building, car, person, flag, furnishing and external
+object shadow, replacing vegetation with flat rough and the clubhouse with an
+empty paving pad. The background contains ground and water only.
+
+`map/golf-clubhouse.png` was generated separately from that same aerial as a cream
+overhead roof sprite. Its packaged crop uses only the opaque main roof, excluding
+the export's unwanted halo and projecting wings. Both PNGs use an indexed palette;
+the course is packaged at 1280 px wide and the roof at 256 px wide. The real
+building body, tree trunks/canopies, furniture, flags, tee markers, people and
+carts draw afterwards in their respective prop/actor passes; destruction and
+layer visibility never reveal a duplicate painted object underneath.
+
+The authored map records the pond shoreline and matching bunker terrain, plus
+ordinary catalogue placements for the clubhouse, trees and furniture. The
+previous four course candidates and separate water texture have been removed.
+Changed course geometry or a failed decode uses the existing geometric fallback.
+These assets are bundled inline and require no external service.

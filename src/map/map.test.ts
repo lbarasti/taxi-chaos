@@ -17,7 +17,7 @@ describe('map document and transactional editing', () => {
     expect(exportMap(importMap(json))).toBe(json); expect(revision(importMap(json))).toBe(revision(d));
     expect(d.villas.find(v => v.id === 'villa-the-laurels')!.position).toEqual(vec(105, 414));
     expect(d.golf.center).toEqual(vec(174, 487));
-    expect(compileMap(d).country.GOLF_CART_ROUTE[0]).toEqual(vec(144, 470));
+    expect(compileMap(d).country.GOLF_CART_ROUTE[0]).toEqual(vec(140.082, 470.457));
   });
   it.each(['version', 'duplicate', 'reference', 'finite', 'dimension', 'extra', 'pinned', 'ordering', 'workload'])('rejects malformed imports: %s', kind => {
     const d = copyDefaultMap();
@@ -43,6 +43,12 @@ describe('map document and transactional editing', () => {
     expect(() => h.apply({ baseRevision: 'stale', operations: [{ type: 'translate', targetId: 'southern-estates', delta: vec(0, 10) }] })).toThrow(/Stale/);
     expect(h.snapshot()).toEqual(before);
   });
+  it('requires a bounded convex authored pond shoreline', () => {
+    for (const pond of [undefined, [], [vec(), vec(1, 0), vec(2, 0)], [vec(), vec(4, 0), vec(1, 1), vec(4, 4), vec(0, 4)]]) {
+      const d = copyDefaultMap(); Object.assign(d.golf, { pond });
+      expect(() => assertMap(d)).toThrow(/golf.pond/);
+    }
+  });
   it('detaches snapshots, descriptions and operation results', () => {
     const h = new MapHistory(), snapshot = h.snapshot(); snapshot.document.golf.center.x = 0;
     const description = h.describe('southern-estates'); description.members.length = 0;
@@ -56,9 +62,9 @@ describe('map document and transactional editing', () => {
     const map = compileMap(result.document);
     expect(map.country.VILLAS.find(v => v.id === 'villa-the-laurels')!.position).toEqual(vec(105, 434));
     expect(map.country.VILLA_POOLS[6].position).toEqual(vec(119.25, 437));
-    expect(map.country.GOLF_COURSE.clubhouse).toEqual(vec(127, 501));
-    expect(map.country.GOLF_HOLES[0].tee).toEqual(vec(146, 500));
-    expect(map.country.GOLF_CART_ROUTE[0]).toEqual(vec(144, 490));
+    expect(map.objects['fairway-clubhouse'].position).toEqual(vec(127.681, 507.074));
+    expect(map.country.GOLF_HOLES[0].tee).toEqual(vec(130.905, 493.185));
+    expect(map.country.GOLF_CART_ROUTE[0]).toEqual(vec(140.082, 490.457));
     expect(result.document.points.find(p => p.id === 'southwoods-seam')!.position).toEqual(vec(337, 334));
     expect(result.document.points.find(p => p.id === 'southwoods-fixed')!.position).toEqual(vec(368, 219));
     expect(result.document.points.find(p => p.id === 'node-01')!.position).toEqual(vec(310, 80));
@@ -91,7 +97,11 @@ describe('map compilation, gameplay and validation', () => {
     const h = new MapHistory(); translate(h);
     const original = new Game(undefined, false), preview = new Game(compileMap(h.snapshot().document), false);
     expect(original.world.pools[6].position).toEqual(vec(119.25, 417)); expect(preview.world.pools[6].position).toEqual(vec(119.25, 437));
-    expect(preview.vehicles.find(v => v.cart)!.body.position).toEqual(vec(144, 490));
+    const originalPond = original.world.pools.find(p => p.waterKind === 'pond')!, movedPond = preview.world.pools.find(p => p.waterKind === 'pond')!;
+    expect(movedPond.sourceId).toBe(originalPond.sourceId);
+    expect(movedPond.position).toEqual(vec(originalPond.position.x, originalPond.position.y + 20));
+    expect(movedPond.corners()).toEqual(originalPond.corners().map(p => vec(p.x, p.y + 20)));
+    expect(preview.vehicles.find(v => v.cart)!.body.position).toEqual(vec(140.082, 490.457));
     expect(preview.world.people.some(p => p.home.x === 117 && p.home.y === 426)).toBe(true);
     const probe = new Body(105, 434, 1, 16, 10);
     expect([...preview.world.hash.query(probe)].some(p => p.sourceId === 'villa-the-laurels' && contact(probe, p.body))).toBe(true);

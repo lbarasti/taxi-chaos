@@ -4,7 +4,7 @@ import { defaultCompiledMap as map } from '../map/compile';
 import { contains } from '../world/regions';
 export const BEACH_PICKUP = map.document.parking.find((p) => p.id === 'parking-73')!.position;
 export const BEACH_HOTELS = map.document.objectPlacements
-  .filter((p) => map.objects[p.id].kind === 'building')
+  .filter((p) => p.owner === 'beach' && map.objects[p.id].kind === 'building')
   .map((p) => ({ ...p, ...map.objects[p.id], name: p.label }));
 const outline = map.land.landRegions.find((r) => r.id === 'sunset-land')!.outline;
 const shore = outline.slice(2).reverse();

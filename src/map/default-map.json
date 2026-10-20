@@ -67,52 +67,48 @@
       "x": 174,
       "y": 487
     },
-    "clubhouse": {
-      "x": -47,
-      "y": -6
-    },
     "height": 36,
     "holes": [
       {
-        "bunker": {
-          "x": 21,
-          "y": -13
+        "tee": {
+          "x": -43.095,
+          "y": -13.815
         },
         "green": {
-          "x": 19,
-          "y": -8
+          "x": 18.788,
+          "y": -15.055
         },
-        "tee": {
-          "x": -28,
-          "y": -7
+        "bunker": {
+          "x": 16.618,
+          "y": -17.188
         }
       },
       {
-        "bunker": {
-          "x": -9,
-          "y": -4
+        "tee": {
+          "x": 45.575,
+          "y": 1.364
         },
         "green": {
-          "x": -7,
-          "y": 2
+          "x": -28.957,
+          "y": -1.563
         },
-        "tee": {
-          "x": 36,
-          "y": -1
+        "bunker": {
+          "x": -26.291,
+          "y": -4.787
         }
       },
       {
-        "bunker": {
-          "x": 33,
-          "y": 14
+        "tee": {
+          "x": -39.25,
+          "y": 10.492
         },
         "green": {
-          "x": 28,
-          "y": 11
+          "x": 33.05,
+          "y": 11.93
         },
-        "tee": {
-          "x": -26,
-          "y": 11
+        "bunker": {
+          "x": 32.057,
+          "y": 15.055
         }
       }
     ],
@@ -120,45 +116,271 @@
     "owner": "southern-estates",
     "path": [
       {
-        "x": -42,
-        "y": -29
+        "x": -43.839,
+        "y": 8.259
       },
       {
-        "x": -55,
-        "y": -22
+        "x": -40.118,
+        "y": 4.291
       },
       {
-        "x": -58,
-        "y": 0
+        "x": -40.118,
+        "y": -6.622
       },
       {
-        "x": -34,
-        "y": 18
+        "x": -47.869,
+        "y": -14.063
       },
       {
-        "x": 44,
-        "y": 19
+        "x": -37.018,
+        "y": -17.635
+      },
+      {
+        "x": -22.136,
+        "y": -17.039
+      },
+      {
+        "x": -1.054,
+        "y": -14.063
+      },
+      {
+        "x": 20.648,
+        "y": -20.016
+      },
+      {
+        "x": 29.949,
+        "y": -12.079
+      },
+      {
+        "x": 32.43,
+        "y": -5.63
+      },
+      {
+        "x": 47.931,
+        "y": -1.91
+      },
+      {
+        "x": 51.032,
+        "y": 6.771
+      },
+      {
+        "x": 46.071,
+        "y": 14.212
+      },
+      {
+        "x": 29.329,
+        "y": 16.692
+      },
+      {
+        "x": 8.247,
+        "y": 18.676
+      },
+      {
+        "x": -11.595,
+        "y": 17.436
+      },
+      {
+        "x": -27.097,
+        "y": 15.452
+      },
+      {
+        "x": -43.839,
+        "y": 12.228
+      },
+      {
+        "x": -43.839,
+        "y": 8.259
       }
     ],
     "route": [
       {
-        "x": -30,
-        "y": -17
+        "x": -33.918,
+        "y": -16.543
       },
       {
-        "x": 30,
-        "y": -17
+        "x": -1.054,
+        "y": -15.402
       },
       {
-        "x": 30,
-        "y": 17
+        "x": 22.508,
+        "y": -18.776
       },
       {
-        "x": -30,
-        "y": 17
+        "x": 27.159,
+        "y": -7.118
+      },
+      {
+        "x": 44.831,
+        "y": -2.009
+      },
+      {
+        "x": 46.691,
+        "y": 5.283
+      },
+      {
+        "x": 42.971,
+        "y": 14.708
+      },
+      {
+        "x": 13.828,
+        "y": 17.486
+      },
+      {
+        "x": -16.556,
+        "y": 15.7
+      },
+      {
+        "x": -37.018,
+        "y": 8.259
+      },
+      {
+        "x": -36.398,
+        "y": -2.158
+      },
+      {
+        "x": -34.228,
+        "y": -10.095
       }
     ],
-    "width": 96
+    "width": 96,
+    "pond": [
+      {
+        "x": 34.414,
+        "y": -19.619
+      },
+      {
+        "x": 44.273,
+        "y": -16.99
+      },
+      {
+        "x": 46.009,
+        "y": -16.345
+      },
+      {
+        "x": 47.249,
+        "y": -15.849
+      },
+      {
+        "x": 48.303,
+        "y": -15.254
+      },
+      {
+        "x": 49.357,
+        "y": -14.46
+      },
+      {
+        "x": 50.411,
+        "y": -13.021
+      },
+      {
+        "x": 50.536,
+        "y": -12.525
+      },
+      {
+        "x": 50.784,
+        "y": -10.839
+      },
+      {
+        "x": 50.784,
+        "y": -9.995
+      },
+      {
+        "x": 50.474,
+        "y": -8.359
+      },
+      {
+        "x": 48.923,
+        "y": -6.176
+      },
+      {
+        "x": 47.869,
+        "y": -5.283
+      },
+      {
+        "x": 47.125,
+        "y": -4.886
+      },
+      {
+        "x": 45.451,
+        "y": -4.39
+      },
+      {
+        "x": 43.653,
+        "y": -4.241
+      },
+      {
+        "x": 42.165,
+        "y": -4.44
+      },
+      {
+        "x": 34.724,
+        "y": -6.573
+      },
+      {
+        "x": 34.414,
+        "y": -6.722
+      },
+      {
+        "x": 33.98,
+        "y": -6.97
+      },
+      {
+        "x": 33.236,
+        "y": -7.664
+      },
+      {
+        "x": 32.74,
+        "y": -8.458
+      },
+      {
+        "x": 29.205,
+        "y": -16.692
+      },
+      {
+        "x": 29.143,
+        "y": -16.99
+      },
+      {
+        "x": 29.205,
+        "y": -17.486
+      },
+      {
+        "x": 29.391,
+        "y": -18.081
+      },
+      {
+        "x": 29.887,
+        "y": -18.577
+      },
+      {
+        "x": 30.569,
+        "y": -19.123
+      },
+      {
+        "x": 31.127,
+        "y": -19.421
+      },
+      {
+        "x": 31.437,
+        "y": -19.52
+      },
+      {
+        "x": 32.244,
+        "y": -19.718
+      },
+      {
+        "x": 32.864,
+        "y": -19.768
+      },
+      {
+        "x": 33.236,
+        "y": -19.768
+      },
+      {
+        "x": 33.732,
+        "y": -19.718
+      }
+    ]
   },
   "labels": [
     {
@@ -3664,6 +3886,506 @@
       "surface": "paving",
       "priority": 20,
       "texture": "gravel"
+    },
+    {
+      "id": "golf-turf",
+      "owner": "southern-estates",
+      "surface": "grass",
+      "priority": 10,
+      "outline": [
+        {
+          "x": 119,
+          "y": 465
+        },
+        {
+          "x": 229,
+          "y": 465
+        },
+        {
+          "x": 229,
+          "y": 509
+        },
+        {
+          "x": 119,
+          "y": 509
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-1",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 189.316,
+          "y": 470.109
+        },
+        {
+          "x": 189.502,
+          "y": 469.564
+        },
+        {
+          "x": 189.75,
+          "y": 469.316
+        },
+        {
+          "x": 190.246,
+          "y": 469.068
+        },
+        {
+          "x": 190.556,
+          "y": 468.968
+        },
+        {
+          "x": 191.176,
+          "y": 468.968
+        },
+        {
+          "x": 191.548,
+          "y": 469.117
+        },
+        {
+          "x": 191.796,
+          "y": 469.415
+        },
+        {
+          "x": 191.796,
+          "y": 469.812
+        },
+        {
+          "x": 191.424,
+          "y": 470.209
+        },
+        {
+          "x": 190.618,
+          "y": 470.556
+        },
+        {
+          "x": 190.246,
+          "y": 470.655
+        },
+        {
+          "x": 189.936,
+          "y": 470.605
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-2",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 187.766,
+          "y": 472.143
+        },
+        {
+          "x": 187.766,
+          "y": 471.746
+        },
+        {
+          "x": 188.076,
+          "y": 471.349
+        },
+        {
+          "x": 188.448,
+          "y": 471.101
+        },
+        {
+          "x": 188.882,
+          "y": 471.052
+        },
+        {
+          "x": 189.316,
+          "y": 471.3
+        },
+        {
+          "x": 189.378,
+          "y": 471.796
+        },
+        {
+          "x": 189.006,
+          "y": 472.193
+        },
+        {
+          "x": 188.572,
+          "y": 472.441
+        },
+        {
+          "x": 188.2,
+          "y": 472.441
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-3",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 194.028,
+          "y": 474.921
+        },
+        {
+          "x": 195.02,
+          "y": 474.772
+        },
+        {
+          "x": 195.578,
+          "y": 474.871
+        },
+        {
+          "x": 195.95,
+          "y": 475.219
+        },
+        {
+          "x": 195.95,
+          "y": 475.616
+        },
+        {
+          "x": 195.702,
+          "y": 475.913
+        },
+        {
+          "x": 193.966,
+          "y": 476.558
+        },
+        {
+          "x": 193.16,
+          "y": 476.608
+        },
+        {
+          "x": 192.726,
+          "y": 476.36
+        },
+        {
+          "x": 192.726,
+          "y": 476.012
+        },
+        {
+          "x": 193.532,
+          "y": 475.219
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-4",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 145.973,
+          "y": 482.114
+        },
+        {
+          "x": 146.097,
+          "y": 481.667
+        },
+        {
+          "x": 146.345,
+          "y": 481.419
+        },
+        {
+          "x": 146.903,
+          "y": 481.271
+        },
+        {
+          "x": 147.461,
+          "y": 481.419
+        },
+        {
+          "x": 148.515,
+          "y": 481.816
+        },
+        {
+          "x": 149.073,
+          "y": 482.312
+        },
+        {
+          "x": 149.135,
+          "y": 482.858
+        },
+        {
+          "x": 148.887,
+          "y": 483.106
+        },
+        {
+          "x": 148.453,
+          "y": 483.205
+        },
+        {
+          "x": 148.143,
+          "y": 483.156
+        },
+        {
+          "x": 146.221,
+          "y": 482.312
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-5",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 147.275,
+          "y": 487.719
+        },
+        {
+          "x": 148.515,
+          "y": 487.223
+        },
+        {
+          "x": 150.871,
+          "y": 486.777
+        },
+        {
+          "x": 151.182,
+          "y": 486.876
+        },
+        {
+          "x": 151.43,
+          "y": 487.174
+        },
+        {
+          "x": 151.368,
+          "y": 487.57
+        },
+        {
+          "x": 150.995,
+          "y": 487.918
+        },
+        {
+          "x": 150.127,
+          "y": 488.364
+        },
+        {
+          "x": 149.755,
+          "y": 488.513
+        },
+        {
+          "x": 149.321,
+          "y": 488.612
+        },
+        {
+          "x": 147.771,
+          "y": 488.711
+        },
+        {
+          "x": 147.275,
+          "y": 488.662
+        },
+        {
+          "x": 146.965,
+          "y": 488.513
+        },
+        {
+          "x": 146.965,
+          "y": 488.067
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-6",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 206.864,
+          "y": 495.408
+        },
+        {
+          "x": 207.174,
+          "y": 494.912
+        },
+        {
+          "x": 207.484,
+          "y": 494.664
+        },
+        {
+          "x": 207.98,
+          "y": 494.466
+        },
+        {
+          "x": 208.972,
+          "y": 494.118
+        },
+        {
+          "x": 209.53,
+          "y": 494.069
+        },
+        {
+          "x": 209.964,
+          "y": 494.118
+        },
+        {
+          "x": 210.336,
+          "y": 494.317
+        },
+        {
+          "x": 210.584,
+          "y": 494.614
+        },
+        {
+          "x": 210.522,
+          "y": 494.962
+        },
+        {
+          "x": 210.212,
+          "y": 495.21
+        },
+        {
+          "x": 207.856,
+          "y": 495.805
+        },
+        {
+          "x": 207.298,
+          "y": 495.805
+        },
+        {
+          "x": 206.988,
+          "y": 495.656
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-7",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 202.523,
+          "y": 496.599
+        },
+        {
+          "x": 202.833,
+          "y": 495.954
+        },
+        {
+          "x": 203.143,
+          "y": 495.557
+        },
+        {
+          "x": 203.515,
+          "y": 495.309
+        },
+        {
+          "x": 203.887,
+          "y": 495.21
+        },
+        {
+          "x": 204.383,
+          "y": 495.21
+        },
+        {
+          "x": 205.003,
+          "y": 495.309
+        },
+        {
+          "x": 205.313,
+          "y": 495.458
+        },
+        {
+          "x": 205.561,
+          "y": 495.755
+        },
+        {
+          "x": 205.623,
+          "y": 496.103
+        },
+        {
+          "x": 205.313,
+          "y": 496.45
+        },
+        {
+          "x": 203.763,
+          "y": 497.095
+        },
+        {
+          "x": 202.957,
+          "y": 497.194
+        },
+        {
+          "x": 202.585,
+          "y": 496.946
+        }
+      ]
+    },
+    {
+      "id": "golf-bunker-8",
+      "owner": "southern-estates",
+      "surface": "sand",
+      "priority": 20,
+      "outline": [
+        {
+          "x": 204.507,
+          "y": 501.807
+        },
+        {
+          "x": 204.507,
+          "y": 501.51
+        },
+        {
+          "x": 204.631,
+          "y": 501.262
+        },
+        {
+          "x": 204.879,
+          "y": 501.063
+        },
+        {
+          "x": 205.561,
+          "y": 501.014
+        },
+        {
+          "x": 206.43,
+          "y": 501.212
+        },
+        {
+          "x": 207.484,
+          "y": 501.758
+        },
+        {
+          "x": 207.732,
+          "y": 502.006
+        },
+        {
+          "x": 207.794,
+          "y": 502.551
+        },
+        {
+          "x": 207.484,
+          "y": 502.849
+        },
+        {
+          "x": 207.174,
+          "y": 502.948
+        },
+        {
+          "x": 206.678,
+          "y": 502.948
+        },
+        {
+          "x": 206.182,
+          "y": 502.799
+        },
+        {
+          "x": 205.003,
+          "y": 502.254
+        },
+        {
+          "x": 204.693,
+          "y": 502.055
+        }
+      ]
     }
   ],
   "districtZones": [
@@ -5003,6 +5725,758 @@
       "angle": 0,
       "color": "#697e6c",
       "label": "CITY GARDENS"
+    },
+    {
+      "id": "fairway-clubhouse",
+      "owner": "southern-estates",
+      "type": "golf-clubhouse",
+      "position": {
+        "x": 127.681,
+        "y": 487.074
+      },
+      "angle": 0.31,
+      "color": "#d4c4a1",
+      "label": "FAIRWAY CLUB"
+    },
+    {
+      "id": "fairway-furniture-1",
+      "owner": "southern-estates",
+      "type": "lamp",
+      "position": {
+        "x": 132.952,
+        "y": 485.09
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-2",
+      "owner": "southern-estates",
+      "type": "lamp",
+      "position": {
+        "x": 131.401,
+        "y": 491.787
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-3",
+      "owner": "southern-estates",
+      "type": "bench",
+      "position": {
+        "x": 135.432,
+        "y": 478.393
+      },
+      "angle": 0.5,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-4",
+      "owner": "southern-estates",
+      "type": "bin",
+      "position": {
+        "x": 136.052,
+        "y": 479.882
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-5",
+      "owner": "southern-estates",
+      "type": "bench",
+      "position": {
+        "x": 199.609,
+        "y": 485.834
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-6",
+      "owner": "southern-estates",
+      "type": "bin",
+      "position": {
+        "x": 201.779,
+        "y": 485.586
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-7",
+      "owner": "southern-estates",
+      "type": "bench",
+      "position": {
+        "x": 193.408,
+        "y": 505.428
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-furniture-8",
+      "owner": "southern-estates",
+      "type": "bin",
+      "position": {
+        "x": 195.888,
+        "y": 505.676
+      },
+      "angle": 0,
+      "color": "#b8a786",
+      "label": ""
+    },
+    {
+      "id": "fairway-tree-001",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 121.17,
+        "y": 467.232
+      },
+      "angle": 0,
+      "color": "#66774b",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-014",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 200.849,
+        "y": 466.091
+      },
+      "angle": 1.570796,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-016",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 216.971,
+        "y": 466.488
+      },
+      "angle": 4.712388000000001,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-017",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 223.481,
+        "y": 466.736
+      },
+      "angle": 0,
+      "color": "#526d45",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-018",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 227.512,
+        "y": 467.976
+      },
+      "angle": 1.570796,
+      "color": "#788157",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-019",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 121.48,
+        "y": 470.953
+      },
+      "angle": 3.141592,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-020",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 121.48,
+        "y": 474.673
+      },
+      "angle": 4.712388000000001,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-021",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 121.48,
+        "y": 478.145
+      },
+      "angle": 0,
+      "color": "#788157",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-022",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 123.03,
+        "y": 497.492
+      },
+      "angle": 1.570796,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-023",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 122.72,
+        "y": 501.46
+      },
+      "angle": 3.141592,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-024",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 123.03,
+        "y": 505.428
+      },
+      "angle": 4.712388000000001,
+      "color": "#788157",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-035",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 200.229,
+        "y": 507.165
+      },
+      "angle": 3.141592,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-036",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 208.91,
+        "y": 507.165
+      },
+      "angle": 4.712388000000001,
+      "color": "#788157",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-037",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 217.591,
+        "y": 506.421
+      },
+      "angle": 0,
+      "color": "#66774b",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-038",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 225.962,
+        "y": 504.684
+      },
+      "angle": 1.570796,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-039",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 226.582,
+        "y": 487.818
+      },
+      "angle": 3.141592,
+      "color": "#788157",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-040",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 226.892,
+        "y": 492.283
+      },
+      "angle": 4.712388000000001,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-041",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 226.892,
+        "y": 497.244
+      },
+      "angle": 0,
+      "color": "#526d45",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-042",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 227.512,
+        "y": 501.46
+      },
+      "angle": 1.570796,
+      "color": "#788157",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-043",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 226.582,
+        "y": 482.362
+      },
+      "angle": 3.141592,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-044",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 226.582,
+        "y": 477.897
+      },
+      "angle": 4.712388000000001,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-047",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 143.803,
+        "y": 479.138
+      },
+      "angle": 3.141592,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-048",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 148.763,
+        "y": 479.634
+      },
+      "angle": 4.712388000000001,
+      "color": "#788157",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-049",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 153.724,
+        "y": 480.378
+      },
+      "angle": 0,
+      "color": "#66774b",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-050",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 158.684,
+        "y": 480.626
+      },
+      "angle": 1.570796,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-051",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 163.025,
+        "y": 479.882
+      },
+      "angle": 3.141592,
+      "color": "#788157",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-052",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 167.365,
+        "y": 480.378
+      },
+      "angle": 4.712388000000001,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-053",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 172.326,
+        "y": 480.626
+      },
+      "angle": 0,
+      "color": "#526d45",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-054",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 179.767,
+        "y": 479.634
+      },
+      "angle": 1.570796,
+      "color": "#788157",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-055",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 184.107,
+        "y": 480.13
+      },
+      "angle": 3.141592,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-056",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 189.068,
+        "y": 479.882
+      },
+      "angle": 4.712388000000001,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-057",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 194.648,
+        "y": 480.626
+      },
+      "angle": 0,
+      "color": "#788157",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-058",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 197.129,
+        "y": 482.362
+      },
+      "angle": 1.570796,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-062",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 145.043,
+        "y": 491.539
+      },
+      "angle": 1.570796,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-063",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 150.003,
+        "y": 492.531
+      },
+      "angle": 3.141592,
+      "color": "#788157",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-064",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 154.344,
+        "y": 493.027
+      },
+      "angle": 4.712388000000001,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-065",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 159.924,
+        "y": 492.531
+      },
+      "angle": 0,
+      "color": "#526d45",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-066",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 164.265,
+        "y": 492.283
+      },
+      "angle": 1.570796,
+      "color": "#788157",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-067",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 169.846,
+        "y": 491.291
+      },
+      "angle": 3.141592,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-068",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 174.806,
+        "y": 491.539
+      },
+      "angle": 4.712388000000001,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-069",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 179.767,
+        "y": 492.283
+      },
+      "angle": 0,
+      "color": "#788157",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-070",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 184.107,
+        "y": 492.531
+      },
+      "angle": 1.570796,
+      "color": "#66774b",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
+    },
+    {
+      "id": "fairway-tree-071",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 189.688,
+        "y": 493.027
+      },
+      "angle": 3.141592,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.3,
+      "height": 1.3
+    },
+    {
+      "id": "fairway-tree-072",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 194.648,
+        "y": 492.531
+      },
+      "angle": 4.712388000000001,
+      "color": "#788157",
+      "label": "",
+      "width": 1.1,
+      "height": 1.1
+    },
+    {
+      "id": "fairway-tree-073",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 199.609,
+        "y": 492.531
+      },
+      "angle": 0,
+      "color": "#66774b",
+      "label": "",
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "fairway-tree-074",
+      "owner": "southern-estates",
+      "type": "tree",
+      "position": {
+        "x": 212.01,
+        "y": 492.779
+      },
+      "angle": 1.570796,
+      "color": "#526d45",
+      "label": "",
+      "width": 1.15,
+      "height": 1.15
     }
   ],
   "residents": [

@@ -18,6 +18,7 @@ export const artworkRecords: readonly ArtworkRecord[] = [
   { id: 'grass-dry', png: 'map/grass-dry.svg', layer: 'ground', tileMetres: 4 },
   { id: 'grass-tufts', png: 'map/grass-tufts.svg', layer: 'ground', tileMetres: 4 },
   { id: 'asphalt', png: 'map/asphalt.svg', layer: 'ground', tileMetres: 48 },
+  { id: 'golf-course', png: 'map/golf-course.png', layer: 'ground', tileMetres: 110 },
 ];
 
 const commercialSign: BuildingSign = { width: 14, inset: 1.72, size: 0.78, color: '#eadab8' };
@@ -37,6 +38,13 @@ const condoSign: BuildingSign = { width: 8.6, inset: 0.95, size: 0.72, color: '#
  * `as const` keeps the authored IDs literal, so `BuildingType` remains a checked union
  * rather than collapsing to `string`. */
 export const objectRecords = [
+  {
+    id: 'golf-clubhouse', kind: 'building', width: 5.7, height: 7.8, storeys: 1,
+    fallback: 'shop', image: 'map/golf-clubhouse.png',
+    sign: { width: 4, inset: 0.8, size: 0.5, color: '#f0e6ce' },
+    // The packaged sprite contains only the opaque main roof, without the export halo.
+    artwork: { fit: 'stretch', width: 1, height: 1, outline: 'bounds', occluder: true },
+  },
   { id: 'fountain', kind: 'fountain', width: FOUNTAIN_RADIUS * 2, height: FOUNTAIN_RADIUS * 2, collision: fountainRim },
   { id: 'hydrant', kind: 'hydrant', width: 0.65, height: 0.65 },
   { id: 'bin', kind: 'bin', width: 0.85, height: 0.85 },

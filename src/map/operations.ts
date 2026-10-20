@@ -55,7 +55,7 @@ export function describe(d: MapDocument, id: string, catalogue: ObjectCatalogue 
       if ('path' in authored) positions.push(...authored.path);
     }
     else if ('points' in e) positions.push(...e.points);
-    else if ('center' in e) { rectangle(e.center, e.width + 14, e.height + 8); rectangle(add(e.center, e.clubhouse), 20, 22); positions.push(...[...e.route, ...e.path].map(p => add(e.center, p))); }
+    else if ('center' in e) { rectangle(e.center, e.width + 14, e.height + 8); positions.push(...[...e.route, ...e.path, ...e.pond].map(p => add(e.center, p))); }
     else if ('pointRefs' in e) positions.push(...resolveLandRegion(d,e).outline);
     else if ('land' in e) positions.push(...referencedLand(d,e.land).outline);
     else if ('outline' in e) positions.push(...e.outline);

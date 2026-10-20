@@ -39,7 +39,7 @@ export type MapDocument = {
   parking: Parking[];
   trafficSpawns: TrafficSpawn[];
   stops: (Owned & { point: string; name: string })[];
-  golf: Owned & { center: Vec; width: number; height: number; clubhouse: Vec; route: Vec[]; path: Vec[]; holes: { tee: Vec; green: Vec; bunker: Vec }[] };
+  golf: Owned & { center: Vec; width: number; height: number; pond: Vec[]; route: Vec[]; path: Vec[]; holes: { tee: Vec; green: Vec; bunker: Vec }[] };
   ridges: (Owned & { points: Vec[] })[];
   labels: (Owned & { position: Vec; text: string; size: number; color: string })[];
   terrainRegions: TerrainRegion[];
@@ -127,7 +127,18 @@ export function assertMap(value: unknown, kinds: KindRegistry = objectKinds): as
     else list(p.path, 'traffic.path', 1, 40).forEach(q => point(q, 'traffic.path.point'));
   }
   for (const v of list(root.stops, 'stops', 1, 100)) { const p = object(v, ['id', 'owner', 'point', 'name'], 'stop'); owned(p, 'stop'); ref(p.point, 'stop.point'); text(p.name, 'stop.name'); }
-  const golf = object(root.golf, ['id', 'owner', 'center', 'width', 'height', 'clubhouse', 'route', 'path', 'holes'], 'golf'); owned(golf, 'golf'); point(golf.center, 'golf.center'); point(golf.clubhouse, 'golf.clubhouse'); num(golf.width, 'golf.width', 1, 500); num(golf.height, 'golf.height', 1, 500);
+  const golf = object(root.golf, ['id', 'owner', 'center', 'width', 'height', 'pond', 'route', 'path', 'holes'], 'golf'); owned(golf, 'golf'); point(golf.center, 'golf.center'); num(golf.width, 'golf.width', 1, 500); num(golf.height, 'golf.height', 1, 500);
+  // Pool SAT consumes a convex ring. Reject malformed shorelines before compilation.
+  const pond = list(golf.pond, 'golf.pond', 3, 100) as Vec[];
+  pond.forEach(p => point(p, 'golf.pond'));
+  const area = pond.reduce((sum, p, i) => { const q = pond[(i + 1) % pond.length]; return sum + p.x * q.y - q.x * p.y; }, 0);
+  if (Math.abs(area) < 1e-8) fail('golf.pond', 'expected a nondegenerate shoreline');
+  const winding = Math.sign(area);
+  for (let i = 0; i < pond.length; i++) {
+    const a = pond[i], b = pond[(i + 1) % pond.length];
+    if (Math.hypot(b.x - a.x, b.y - a.y) < 0.1) fail('golf.pond', 'shoreline edges must be at least 0.1 m');
+    if (pond.some(p => winding * ((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)) < -1e-8)) fail('golf.pond', 'expected a convex shoreline');
+  }
   for (const key of ['route', 'path'] as const) list(golf[key], `golf.${key}`, 3, 40).forEach(p => point(p, `golf.${key}`));
   for (const v of list(golf.holes, 'golf.holes', 1, 30)) { const h = object(v, ['tee', 'green', 'bunker'], 'hole'); Object.values(h).forEach(p => point(p, 'hole')); }
   for (const v of list(root.ridges, 'ridges', 0, 30)) { const p = object(v, ['id', 'owner', 'points'], 'ridge'); owned(p, 'ridge'); list(p.points, 'ridge.points', 5, 100).forEach(p => point(p, 'ridge.point')); }
