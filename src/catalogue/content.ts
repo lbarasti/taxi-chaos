@@ -10,7 +10,7 @@ export const artworkRecords: readonly ArtworkRecord[] = [
   { id: 'shop-tar', png: 'map/shop-tar.png', layer: 'structure', metres: 10.6, silhouette: 'bounds', occluder: true },
   { id: 'shop-rust', png: 'map/shop-rust.png', layer: 'structure', metres: 10.6, silhouette: 'bounds', occluder: true },
   { id: 'shop-concrete', png: 'map/shop-concrete.png', layer: 'structure', metres: 10.6, silhouette: 'bounds', occluder: true },
-  { id: 'tree-worn', png: 'map/tree-worn.png', layer: 'structure', metres: 5.2, silhouette: { shape: 'circle', radius: 2.4 } },
+  { id: 'tree-worn', png: 'map/tree-worn.png', layer: 'structure', renderOrder: 'above-actors', metres: 5.2, silhouette: { shape: 'circle', radius: 2.4 } },
   { id: 'grass-short', png: 'map/grass-short.svg', layer: 'ground', tileMetres: 4 },
   { id: 'grass-lush', png: 'map/grass-lush.svg', layer: 'ground', tileMetres: 4 },
   { id: 'grass-clover', png: 'map/grass-clover.svg', layer: 'ground', tileMetres: 4 },
@@ -109,13 +109,44 @@ export const objectRecords = [
     artwork: { fit: 'stretch', width: 5.2 / 1.8, height: 5.2 / 1.8, outline: { shape: 'circle', radius: 2.4 / 2.6 } },
   },
   { id: 'crate', kind: 'crate', width: 1.4, height: 1.4 },
-  // A representative prop kind that already has a procedural district renderer: a typed
-  // placement draws this decoded PNG instead of the beach pass, so the generic artwork
-  // dispatch is exercised by real committed art with no engine change. Original pixel art.
+  // Overhead crown, centred directly above the upright trunk. Only the compact,
+  // rounded trunk is solid; vehicles can pass underneath the overhanging fronds.
   {
     id: 'palm', kind: 'palm', width: 0.8, height: 0.8,
+    collision: [
+      { x: -0.35, y: -0.5, width: 0.7, height: 0.25 },
+      { x: -0.5, y: -0.25, width: 1, height: 0.5 },
+      { x: -0.35, y: 0.25, width: 0.7, height: 0.25 },
+    ],
     image: 'map/palm-canopy.png',
-    artwork: { fit: 'stretch', width: 6 / 0.8, height: 6 / 0.8, outline: { shape: 'circle', radius: 1 } },
+    // Preserve the source frame: the crown is at (140, 133), so the image anchor
+    // anchors that point to the trunk rather than centring the irregular leaf tips.
+    crop: { x: 0, y: 0, width: 256, height: 256 },
+    artwork: {
+      renderOrder: 'above-actors',
+      fit: 'stretch', width: 6 / 0.8, height: 6 / 0.8,
+      anchor: { x: 140 / 256, y: 133 / 256 },
+      // Bounded radial trace of the opaque fronds; preserve the gaps between leaves
+      // instead of casting the previous solid six-metre disc onto the sand.
+      outline: [
+        { x: 0.4688, y: 0.0195 }, { x: 0.4535, y: 0.0731 }, { x: 0.4732, y: 0.1338 },
+        { x: 0.4547, y: 0.1885 }, { x: 0.3513, y: 0.1953 }, { x: 0.3909, y: 0.2835 },
+        { x: 0.3673, y: 0.3399 }, { x: 0.3013, y: 0.3511 }, { x: 0.1855, y: 0.2597 },
+        { x: 0.2053, y: 0.4021 }, { x: 0.1662, y: 0.4648 }, { x: 0.1009, y: 0.4301 },
+        { x: 0.0469, y: 0.4531 }, { x: -0.0041, y: 0.4068 }, { x: -0.034, y: 0.3214 },
+        { x: -0.0981, y: 0.3696 }, { x: -0.1934, y: 0.4356 }, { x: -0.2385, y: 0.3914 },
+        { x: -0.1796, y: 0.246 }, { x: -0.2351, y: 0.2359 }, { x: -0.3828, y: 0.2676 },
+        { x: -0.3934, y: 0.2019 }, { x: -0.304, y: 0.1136 }, { x: -0.4527, y: 0.0853 },
+        { x: -0.4219, y: 0.0195 }, { x: -0.2939, y: -0.0253 }, { x: -0.4285, y: -0.1079 },
+        { x: -0.4187, y: -0.1733 }, { x: -0.3455, y: -0.207 }, { x: -0.2847, y: -0.2349 },
+        { x: -0.2846, y: -0.3119 }, { x: -0.2504, y: -0.3678 }, { x: -0.1563, y: -0.3323 },
+        { x: -0.0742, y: -0.2728 }, { x: -0.0744, y: -0.4332 }, { x: -0.0107, y: -0.4181 },
+        { x: 0.0469, y: -0.4766 }, { x: 0.104, y: -0.4142 }, { x: 0.1449, y: -0.3465 },
+        { x: 0.168, y: -0.2728 }, { x: 0.2598, y: -0.3492 }, { x: 0.3061, y: -0.3183 },
+        { x: 0.3783, y: -0.3119 }, { x: 0.394, y: -0.2468 }, { x: 0.348, y: -0.1543 },
+        { x: 0.3861, y: -0.121 }, { x: 0.4129, y: -0.0785 }, { x: 0.407, y: -0.0279 },
+      ],
+    },
   },
   // A representative single-image crate whose original pixel art is committed at
   // `map/crate-shipping.png` (not an alias of an existing sprite) and attributed in

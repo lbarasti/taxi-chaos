@@ -59,6 +59,35 @@ describe('shared catalogue compiler', () => {
     expect(art.silhouette[0]).toEqual(vec(-5, -10.8));
   });
 
+  it('keeps the palm crown attached to the trunk through artwork scaling and footprint resizes', () => {
+    const template = objectDefinitions.palm.artwork![0];
+    const base = deriveArtwork(template, 0.8, 0.8);
+    for (const [width, height] of [[0.8, 0.8], [1.6, 0.4]]) for (const scale of [1, 2, 3]) {
+      const art = deriveArtwork(template, width, height, scale), b = art.bounds;
+      expect(b.x + 140 / 256 * b.width).toBeCloseTo(0);
+      expect(b.y + 133 / 256 * b.height).toBeCloseTo(0);
+      expect(b.width).toBeCloseTo(6 * width / 0.8 * scale);
+      expect(b.height).toBeCloseTo(6 * height / 0.8 * scale);
+      art.silhouette.forEach((p, i) => {
+        expect(p.x).toBeCloseTo(base.silhouette[i].x * width / 0.8 * scale);
+        expect(p.y).toBeCloseTo(base.silhouette[i].y * height / 0.8 * scale);
+      });
+    }
+    // Placement offsets stay footprint-relative while the image anchor follows art scale.
+    const shifted = deriveArtwork({ ...template, offset: vec(0.25, -0.1), occluder: true }, 1.6, 0.4, 3);
+    expect(shifted.bounds.x + shifted.anchor.x * shifted.bounds.width).toBeCloseTo(0.4);
+    expect(shifted.bounds.y + shifted.anchor.y * shifted.bounds.height).toBeCloseTo(-0.04);
+    expect(shifted.occluder).toBe(shifted.silhouette);
+    expect(shifted.anchor).not.toBe(template.anchor);
+  });
+
+  it('rejects invalid image anchors before compiling placements', () => {
+    for (const anchor of [vec(NaN, 0.5), vec(0.5, Infinity), vec(-0.1, 0.5), vec(0.5, 1.1)]) {
+      const record: ObjectRecord = { ...clinic(), artwork: { anchor } };
+      expect(() => compileObjectCatalogue([record], sourcesFor([record]))).toThrow(/invalid artwork anchor/);
+    }
+  });
+
   it('fits artwork to the footprint by default and stretches or offsets it only when declared', () => {
     const contain = compileObjectCatalogue([clinic()], sourcesFor([clinic()])).clinic;
     const contained = deriveArtwork(contain.artwork![0], 20, 18);

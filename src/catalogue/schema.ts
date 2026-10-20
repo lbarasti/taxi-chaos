@@ -9,6 +9,9 @@ export type ArtBounds = Readonly<{ x: number; y: number; width: number; height: 
 export type ArtworkSource = Readonly<{ width: number; height: number; crop: PixelCrop }>;
 export type CatalogueSources = Readonly<Record<string, ArtworkSource>>;
 
+/** Sprite and shadow share their position relative to people and vehicles. */
+export type ArtworkRenderOrder = 'below-actors' | 'above-actors';
+
 /** A silhouette is the art rectangle, a circle of `points` vertices, or explicit metres.
  * This absolute form belongs to the legacy artwork registry, whose records own an
  * explicit metre extent. Object presentations use the normalized `ArtworkOutline`. */
@@ -50,6 +53,8 @@ export type ArtworkRecord = Readonly<{
   occluder?: boolean;
   /** Supplied sprites with their own depth shading need no sun shadow. */
   castsShadow?: boolean;
+  /** Default below actors; elevated canopies can cover vehicles and pedestrians. */
+  renderOrder?: ArtworkRenderOrder;
   /** Ground tiles repeat every `tileMetres`. */
   tileMetres?: number;
 }>;
@@ -58,6 +63,8 @@ export type PropArtwork = Readonly<{
   image: string;
   layer: 'structure';
   bounds: ArtBounds;
+  /** Attachment point within the cropped image, from top-left (0, 0) to (1, 1). */
+  anchor: Vec;
   /** Optional pixel crop removes export padding without changing the source PNG. */
   source?: PixelCrop;
   rotation?: number;
@@ -65,6 +72,8 @@ export type PropArtwork = Readonly<{
   silhouette: readonly Vec[];
   /** Some supplied sprites carry their own depth shading and need no ground shadow. */
   castsShadow?: boolean;
+  /** Effective order, including the compiler's below-actors default. */
+  renderOrder: ArtworkRenderOrder;
   occluder?: readonly Vec[];
 }>;
 export type GroundArtwork = Readonly<{ image: string; layer: 'ground'; tileMetres: number }>;
@@ -122,9 +131,9 @@ export type BuildingPresentation = Readonly<{
  * footprint exactly. */
 export type ArtworkFit = 'contain' | 'stretch';
 
-/** Normalized artwork presentation. Geometry is expressed as fractions of the
- * resolved footprint, so resizing a type or placement moves collision and art
- * together and never changes physics. */
+/** Normalized artwork presentation. Size and placement use footprint fractions;
+ * anchors and outlines use image fractions. Resizing a type or placement moves
+ * collision and art together without changing physics. */
 export type ArtworkPresentation = Readonly<{
   /** Default `contain`: centred, aspect-preserving fit. `stretch` fills exactly. */
   fit?: ArtworkFit;
@@ -132,7 +141,11 @@ export type ArtworkPresentation = Readonly<{
   width?: number;
   /** Drawn height as a fraction of the resolved footprint height. Overrides the fitted height. */
   height?: number;
-  /** Art centre offset as a fraction of the resolved footprint width/height. */
+  /** Image point attached to the placement offset, as fractions of the cropped image
+   * from top-left (0, 0) to bottom-right (1, 1). Defaults to the centre (0.5, 0.5).
+   * Unlike a placement offset, this correction follows artwork-only scaling. */
+  anchor?: Vec;
+  /** Placement of the image anchor as fractions of the footprint width/height. */
   offset?: Readonly<{ x?: number; y?: number }>;
   /** Normalized outline as fractions of the resolved art extent. Defaults to the art
    * rectangle, so it stays aligned when the footprint or art scale changes. */
@@ -141,6 +154,8 @@ export type ArtworkPresentation = Readonly<{
   occluder?: boolean;
   /** Supplied sprites with their own depth shading need no sun shadow. */
   castsShadow?: boolean;
+  /** Applies to both sprite and shadow, including the missing-image fallback. */
+  renderOrder?: ArtworkRenderOrder;
 }>;
 
 /** One authored object type. A new single-image type is exactly this record plus a
@@ -195,10 +210,12 @@ export type ArtworkTemplate = Readonly<{
   /** Normalized overhang factors; undefined means the fitted extent. */
   width?: number;
   height?: number;
+  anchor: Vec;
   offset: Readonly<{ x: number; y: number }>;
   outline: NormalizedOutline;
   occluder: boolean;
   castsShadow: boolean;
+  renderOrder: ArtworkRenderOrder;
 }>;
 
 export type ObjectDefinition = Readonly<{

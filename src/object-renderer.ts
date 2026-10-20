@@ -1,14 +1,31 @@
 import { FOUNTAIN_RADIUS, FOUNTAIN_WATER_RADIUS } from './fountain';
-import type { Renderer } from './renderer';
+import type { PropRenderContext, Renderer } from './renderer';
 import type { Prop } from './world';
 import { vec, type Vec } from './physics';
-import { objectDefinitions } from './artwork/catalogue';
-import { artworkImages } from './artwork/images';
+import { objectDefinitions, type PropArtwork } from './artwork/catalogue';
 
 function path(r: Renderer, points: readonly Vec[], color: string, width = 0.12, closed = false) {
   const c = r.ctx; c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y));
   if (closed) { c.closePath(); c.fillStyle = color; c.fill(); }
   else { c.strokeStyle = color; c.lineWidth = width; c.stroke(); }
+}
+
+/** Missing foliage images retain the resolved outline, anchor and rotation instead
+ * of approximating catalogue geometry from the trunk's physical footprint. The same
+ * path owns the canopy and its catalogue shadow at every artwork scale and resize. */
+export function drawCanopyFallback(r: Renderer, prop: Prop, art: PropArtwork) {
+  const c = r.ctx, b = art.bounds, size = Math.min(b.width, b.height);
+  const crown = vec(b.x + art.anchor.x * b.width, b.y + art.anchor.y * b.height);
+  c.save(); c.rotate(art.rotation ?? 0);
+  path(r, art.silhouette, prop.color, 0, true);
+  c.clip();
+  r.circle(vec(crown.x - size * 0.06, crown.y - size * 0.08), size * 0.3, '#a3b48022');
+  for (let i = 0; i < art.silhouette.length; i += 4) {
+    const tip = art.silhouette[i];
+    path(r, [crown, vec(crown.x + (tip.x - crown.x) * 0.9, crown.y + (tip.y - crown.y) * 0.9)], '#acc18269', size * 0.01);
+  }
+  r.circle(crown, size * 0.045, prop.kind === 'palm' ? '#bdac74' : '#63816a');
+  c.restore();
 }
 
 // Rasterize world labels at a normal font size before scaling down. Subpixel
@@ -17,13 +34,13 @@ function label(r: Renderer, text: string, x: number, y: number, size: number, co
   r.ctx.save(); r.ctx.scale(0.05, 0.05); r.label(text, x * 20, y * 20, size * 20, color, weight); r.ctx.restore();
 }
 
-function drawResort(r: Renderer, prop: Prop) {
+function drawResort(r: Renderer, prop: Prop, render: PropRenderContext) {
   const c = r.ctx, b = prop.body, floors = prop.storeys ?? prop.building?.storeys ?? 14;
   const w = b.w, h = b.h, left = -w / 2, top = -h / 2;
   c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
   // Oversized concrete podiums consume almost the entire eastern sand frontage.
   // Stacked balcony bands and rising penthouse tiers give the blocks urban mass.
-  r.mapShadow(() => r.rect(left + 1.1, top + 1.2, w + 1.2, h + 0.3, '#17333566'));
+  render.shadow(() => r.rect(left + 1.1, top + 1.2, w + 1.2, h + 0.3, '#17333566'));
   r.rect(left, top, w, h, '#929688', '#e5dcc6');
   r.rect(left + 0.3, top + 0.3, w - 0.6, h - 0.6, '#c4c3af');
   const tiers = floors === 9 ? 2 : floors === 14 ? 3 : 4;
@@ -55,7 +72,7 @@ function drawResort(r: Renderer, prop: Prop) {
   c.restore();
 }
 
-export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
+export function drawObjectFallback(r: Renderer, prop: Prop, render: PropRenderContext): boolean {
   if (prop.kind === 'fountain') {
     const c = r.ctx, b = prop.body;
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
@@ -65,12 +82,13 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.circle(vec(), 1.5, '#9ac9cd');
     c.restore(); return true;
   }
-  if (prop.alive && prop.kind === 'building' && (prop.presentation ?? prop.building?.presentation)?.fallback === 'resort' && (!prop.artwork || !artworkImages.has(prop.artwork.image))) { drawResort(r, prop); return true; }
+  if (prop.alive && prop.kind === 'building' && (prop.presentation ?? prop.building?.presentation)?.fallback === 'resort') { drawResort(r, prop, render); return true; }
   if (!['lifeguard-tower', 'parasol', 'beach-chair', 'sandcastle', 'palm', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(prop.kind)) return false;
   const c = r.ctx, b = prop.body;
   c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
   const template = objectDefinitions[prop.kind];
-  if (template && !['pedestrian-gate', 'promenade-edge'].includes(prop.kind)) c.scale(b.w / template.width, b.h / template.height);
+  const resolvedCanopy = prop.alive && prop.kind === 'palm' ? render.artwork : undefined;
+  if (template && !resolvedCanopy && !['pedestrian-gate', 'promenade-edge'].includes(prop.kind)) c.scale(b.w / template.width, b.h / template.height);
   if (!prop.alive) {
     if (prop.kind === 'sandcastle') {
       c.beginPath(); c.ellipse(0, 0, 1.3, 0.8, 0, 0, Math.PI * 2); c.fillStyle = '#c3a37566'; c.fill();
@@ -93,7 +111,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.rect(-b.w / 2, -0.3, b.w, 0.6, '#f0e4c660');
     for (let x = -b.w / 2 + 0.3; x < b.w / 2; x += 0.675) r.rect(x, -0.25, 0.12, 0.5, '#c1a47b50');
   } else if (prop.kind === 'lifeguard-tower') {
-    r.mapShadow(() => r.rect(-1.65, -1.3, 4.3, 4.2, '#607b6b38'));
+    render.shadow(() => r.rect(-1.65, -1.3, 4.3, 4.2, '#607b6b38'));
     for (const x of [-1.8, 1.5]) for (const y of [-1.7, 0.5]) r.rect(x, y, 0.3, 0.6, '#a78a65');
     r.rect(-2.3, -2.1, 4.6, 3.3, '#a89778');
     for (let y = -1.8; y < 1.1; y += 0.45) r.rect(-2.1, y, 4.2, 0.07, '#dbc7a0');
@@ -107,7 +125,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.rect(-2.1, -2, 0.1, 1.1, '#7d9189');
     path(r, [vec(-2, -2), vec(-1.2, -1.7), vec(-2, -1.4)], '#e79079', 0, true);
   } else if (prop.kind === 'parasol') {
-    r.mapShadow(() => r.circle(vec(0.6, 0.65), 1.65, '#8a7e5840'));
+    render.shadow(() => r.circle(vec(0.6, 0.65), 1.65, '#8a7e5840'));
     for (let i = 0; i < 8; i++) {
       c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 1.7, i * Math.PI / 4, (i + 1) * Math.PI / 4); c.closePath();
       c.fillStyle = i % 2 ? '#fff0cc' : prop.color; c.fill();
@@ -115,7 +133,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     }
     r.circle(vec(), 0.14, '#fff4d4');
   } else if (prop.kind === 'beach-chair') {
-    r.mapShadow(() => r.rect(-0.49, -1.17, 1.08, 2.4, '#aa906333'));
+    render.shadow(() => r.rect(-0.49, -1.17, 1.08, 2.4, '#aa906333'));
     r.rect(-0.5, -1.2, 1, 2.4, '#eee3c5'); r.rect(-0.4, -1.08, 0.8, 2.14, prop.color);
     for (let y = -1; y < 1; y += 0.38) r.rect(-0.4, y, 0.8, 0.12, '#fff0c997');
     r.rect(-0.5, -0.5, 1, 0.1, '#aa8866');
@@ -126,17 +144,29 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.rect(0, -0.75, 0.07, 0.75, '#7e6c50'); path(r, [vec(0.07, -0.75), vec(0.65, -0.55), vec(0.07, -0.35)], '#e1957f', 0, true);
     r.rect(1.05, 0.3, 0.35, 0.3, '#d58a70');
   } else if (prop.kind === 'palm') {
-    const light = r.game.dayNight.lighting;
-    r.mapShadow(() => path(r, [vec(), vec(-light.sunDirection.x * 2.5, -light.sunDirection.y * 2.5)], '#63745938', 0.65));
-    r.circle(vec(), 0.42, '#9b805b');
-    for (let i = 0; i < 7; i++) {
-      c.save(); c.rotate(i * Math.PI * 2 / 7 + prop.id * 0.3);
-      path(r, [vec(0, 0), vec(0.5, -0.5), vec(2.7, -0.35), vec(3.3, 0.45), vec(1.4, 0.25)], i % 2 ? prop.color : '#76965e', 0, true);
-      path(r, [vec(), vec(2.8, 0)], '#acc18269', 0.07); c.restore();
+    if (resolvedCanopy) {
+      r.circle(vec(), Math.min(b.w, b.h) * 0.525, '#9b805b');
+      drawCanopyFallback(r, prop, resolvedCanopy);
+      c.restore(); return true;
     }
+    const frond = [vec(0, 0), vec(0.5, -0.5), vec(2.45, -0.35), vec(3, 0.15), vec(1.4, 0.25)];
+    const drawFronds = (shadow = false) => {
+      for (let i = 0; i < 7; i++) {
+        c.save(); c.rotate(i * Math.PI * 2 / 7 + prop.id * 0.3);
+        path(r, frond, shadow ? '#172c2d80' : i % 2 ? prop.color : '#76965e', 0, true);
+        if (!shadow) path(r, [vec(), vec(2.8, 0)], '#acc18269', 0.07);
+        c.restore();
+      }
+    };
+    render.shadow(() => {
+      c.translate(render.shadowOffset.x * objectDefinitions.palm.width / b.w, render.shadowOffset.y * objectDefinitions.palm.height / b.h);
+      c.globalAlpha *= render.shadowAlpha; drawFronds(true);
+    });
+    r.circle(vec(), 0.42, '#9b805b');
+    drawFronds();
     r.circle(vec(), 0.27, '#bdac74');
   } else if (prop.kind === 'bollard') {
-    r.mapShadow(() => r.circle(vec(0.12, 0.16), 0.32, '#687e6d44')); r.circle(vec(), 0.3, prop.color); r.circle(vec(-0.05, -0.05), 0.2, '#e7dcc0');
+    render.shadow(() => r.circle(vec(0.12, 0.16), 0.32, '#687e6d44')); r.circle(vec(), 0.3, prop.color); r.circle(vec(-0.05, -0.05), 0.2, '#e7dcc0');
   } else {
     r.rect(-b.w / 2, -0.3, b.w, 0.6, prop.color, '#b3b9a7');
     for (let x = -b.w / 2 + 1.2; x < b.w / 2 - 0.7; x += 2.4) { r.circle(vec(x, 0), 0.38, '#779072'); r.circle(vec(x - 0.1, -0.1), 0.22, '#a2b788'); }

@@ -7,7 +7,7 @@ import type { AuthoredDescriptor, MapDocument } from '../map/schema';
 import { validateMap, type Finding, type Validation } from '../map/validation';
 import { artworkInline, artworkSources } from './generated';
 import type {
-  ArtBounds, CompiledObject, ObjectCatalogue, PixelCrop, PropArtwork, PropKind, ResolvedFeature,
+  ArtBounds, ArtworkRenderOrder, CompiledObject, ObjectCatalogue, PixelCrop, PropArtwork, PropKind, ResolvedFeature,
 } from './schema';
 
 /** Reused by the browser preview and the CLI. Everything here is DOM-free: it compiles,
@@ -17,10 +17,12 @@ import type {
 export type AuthoringArtwork = Readonly<{
   image: string;
   bounds: ArtBounds;
+  anchor: Vec;
   silhouette: readonly Vec[];
   source?: PixelCrop;
   occluder?: readonly Vec[];
   castsShadow: boolean;
+  renderOrder: ArtworkRenderOrder;
   rotation: number;
   /** Present only for direct images / variants that the generated inline manifest owns. */
   manifest: Readonly<{ inline: boolean; measured: boolean }>;
@@ -108,10 +110,12 @@ function artworkSummary(art: PropArtwork | undefined): AuthoringArtwork | undefi
   return {
     image: art.image,
     bounds: { x: art.bounds.x, y: art.bounds.y, width: art.bounds.width, height: art.bounds.height },
+    anchor: clonePoint(art.anchor),
     silhouette: clonePoints(art.silhouette),
     ...(art.source ? { source: { x: art.source.x, y: art.source.y, width: art.source.width, height: art.source.height } } : {}),
     ...(art.occluder ? { occluder: clonePoints(art.occluder) } : {}),
     castsShadow: art.castsShadow !== false,
+    renderOrder: art.renderOrder ?? 'below-actors',
     rotation: art.rotation ?? 0,
     manifest: { inline: Object.hasOwn(artworkInline, art.image), measured: Object.hasOwn(artworkSources, art.image) },
   };

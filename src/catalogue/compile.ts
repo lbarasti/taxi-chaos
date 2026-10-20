@@ -31,6 +31,7 @@ export function scaleArtwork(art: PropArtwork, sx: number, sy: number): PropArtw
   const point = (p: Vec) => vec(p.x * sx, p.y * sy), b = art.bounds;
   return {
     ...art,
+    anchor: vec(art.anchor.x, art.anchor.y),
     bounds: { x: b.x * sx, y: b.y * sy, width: b.width * sx, height: b.height * sy },
     silhouette: art.silhouette.map(point),
     occluder: art.occluder?.map(point),
@@ -134,6 +135,7 @@ function resolveOutline(spec: NormalizedOutline, width: number, height: number):
 /** Normalize one legacy authored image record into centred, metre-space drawing geometry. */
 export function compileStructureArtwork(record: ArtworkRecord, source?: ArtworkSource): PropArtwork {
   if (record.layer !== 'structure') throw new Error(`Artwork ${record.id}: expected structure artwork`);
+  validateRenderOrder(record.renderOrder, record.id);
   const crop = sourceCrop(record, source);
   const { width, height } = resolveMetres(record, crop);
   const silhouette = resolveSilhouette(record.silhouette, width, height);
@@ -141,9 +143,11 @@ export function compileStructureArtwork(record: ArtworkRecord, source?: ArtworkS
     image: record.id,
     layer: 'structure',
     bounds: { x: -width / 2, y: -height / 2, width, height },
+    anchor: vec(0.5, 0.5),
     ...(crop && !isWholeSource(crop, source) ? { source: crop } : {}),
     silhouette,
     ...(record.castsShadow === false ? { castsShadow: false } : {}),
+    renderOrder: record.renderOrder ?? 'below-actors',
     ...(record.occluder ? { occluder: silhouette } : {}),
   };
 }
@@ -161,7 +165,12 @@ export function compileArtworkCatalogue(records: readonly ArtworkRecord[], sourc
   return deepFreeze({ structures, ground });
 }
 
+function validateRenderOrder(order: ArtworkPresentation['renderOrder'], id: string): void {
+  if (order !== undefined && order !== 'below-actors' && order !== 'above-actors') throw new Error(`Artwork ${id}: invalid render order`);
+}
+
 function validatePresentation(presentation: ArtworkPresentation, id: string): void {
+  validateRenderOrder(presentation.renderOrder, id);
   if (presentation.fit !== undefined && presentation.fit !== 'contain' && presentation.fit !== 'stretch') throw new Error(`Object ${id}: invalid artwork fit`);
   for (const [axis, value] of [['width', presentation.width], ['height', presentation.height]] as const) {
     if (value !== undefined && (!Number.isFinite(value) || value <= 0)) throw new Error(`Object ${id}: invalid artwork ${axis} factor`);
@@ -169,6 +178,7 @@ function validatePresentation(presentation: ArtworkPresentation, id: string): vo
   for (const value of [presentation.offset?.x, presentation.offset?.y]) {
     if (value !== undefined && !Number.isFinite(value)) throw new Error(`Object ${id}: invalid artwork offset`);
   }
+  if (presentation.anchor !== undefined && ![presentation.anchor.x, presentation.anchor.y].every(value => Number.isFinite(value) && value >= 0 && value <= 1)) throw new Error(`Object ${id}: invalid artwork anchor`);
   if (presentation.outline !== undefined) normalizeOutline(presentation.outline, id);
 }
 
@@ -186,10 +196,12 @@ function artworkTemplate(id: string, image: string, crop: PixelCrop | undefined,
     fit,
     ...(presentation.width === undefined ? {} : { width: presentation.width }),
     ...(presentation.height === undefined ? {} : { height: presentation.height }),
+    anchor: vec(presentation.anchor?.x ?? 0.5, presentation.anchor?.y ?? 0.5),
     offset: { x: presentation.offset?.x ?? 0, y: presentation.offset?.y ?? 0 },
     outline,
     occluder: presentation.occluder === true,
     castsShadow: presentation.castsShadow !== false,
+    renderOrder: presentation.renderOrder ?? 'below-actors',
   });
 }
 
@@ -251,6 +263,7 @@ export function compileObjectCatalogue(
           ...presentation,
           occluder: presentation.occluder ?? variant.occluder,
           castsShadow: presentation.castsShadow ?? variant.castsShadow,
+          renderOrder: presentation.renderOrder ?? variant.renderOrder,
         }, outline));
       }
     } else if (presentation.fit === 'stretch' || presentation.width !== undefined || presentation.height !== undefined) {
@@ -309,8 +322,12 @@ export function deriveArtwork(template: ArtworkTemplate, width: number, height: 
   if (template.height !== undefined) artHeight = height * template.height;
   artWidth *= scale; artHeight *= scale;
   if (!Number.isFinite(artWidth) || !Number.isFinite(artHeight) || artWidth <= 0 || artHeight <= 0) throw new Error(`Artwork ${template.image}: invalid resolved size`);
-  const centerX = template.offset.x * width, centerY = template.offset.y * height;
-  const bounds = { x: centerX - artWidth / 2, y: centerY - artHeight / 2, width: artWidth, height: artHeight };
+  const bounds = {
+    x: template.offset.x * width - template.anchor.x * artWidth,
+    y: template.offset.y * height - template.anchor.y * artHeight,
+    width: artWidth, height: artHeight,
+  };
+  const centerX = bounds.x + artWidth / 2, centerY = bounds.y + artHeight / 2;
   // The outline is authored around the art rectangle's centre, so an offset art centre
   // translates the silhouette (and the shared light blocker) with the bounds. Otherwise a
   // shifted drawing would report a shadow/occluder that no longer sits over its sprite.
@@ -319,9 +336,11 @@ export function deriveArtwork(template: ArtworkTemplate, width: number, height: 
     image: template.image,
     layer: 'structure',
     bounds,
+    anchor: vec(template.anchor.x, template.anchor.y),
     ...(template.source ? { source: { ...template.source } } : {}),
     silhouette,
     ...(template.castsShadow === false ? { castsShadow: false } : {}),
+    renderOrder: template.renderOrder,
     ...(template.occluder ? { occluder: silhouette } : {}),
   };
 }

@@ -60,10 +60,16 @@ HVAC plant, blue skylights and a rooftop pool. The hotel roof was extended in de
 to match its 3:1 footprint. Authored draw-time crops exclude faint alpha specks.
 All three sprites are bundled inline with procedural fallbacks.
 
-`map/crate-shipping.png`, `map/bakery-front.png` and `map/palm-canopy.png` are original
+`map/palm-canopy.png` was regenerated with OpenAI's built-in image-generation tool,
+using `map/tree-worn.png` as a style and camera reference. The prompt requests one
+orthographic straight-down palm crown, muted olive/sage feathered fronds, weathered
+painterly detail, a crown centred over the upright trunk, a transparent background,
+and no visible long trunk, ground, text or baked cast shadow. The PNG is bundled
+inline; the shared catalogue supplies its trunk collision and runtime sun silhouette.
+
+`map/crate-shipping.png` and `map/bakery-front.png` are original
 pixel art created for Taxi Chaos (simple generated artwork, no third-party source) for the
-shared catalogue's representative crate, bakery building and typed palm records. All are
-small sprites bundled inline with the other map artwork; the palm keeps a transparent
-background, and transparent export padding is cropped at draw time.
+shared catalogue's representative crate and bakery building records. Both are
+small sprites bundled inline with the other map artwork.
 
 - `map/grass-{short,lush,clover,daisies,dry,tufts}.svg`: original grass tile artwork created for Taxi Chaos; six matching-edge variants with blades, clover, small daisies and dry tufts.

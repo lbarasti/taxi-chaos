@@ -3,7 +3,8 @@ import { Body, vec } from './physics';
 import { Game } from './game';
 import { Renderer } from './renderer';
 import { artworkImages } from './artwork/images';
-import type { PropArtwork } from './artwork/catalogue';
+import { objectDefinitions, artworkFor, type PropArtwork } from './artwork/catalogue';
+import { deriveArtwork } from './catalogue/compile';
 import type { Prop } from './world';
 
 /** Renderer dispatch regression: an alive prop with decoded catalogue artwork draws that
@@ -13,6 +14,7 @@ import type { Prop } from './world';
 
 const art = (image: string, castsShadow = true): PropArtwork => ({
   image, layer: 'structure', bounds: { x: -1, y: -1, width: 2, height: 2 },
+  anchor: vec(0.5, 0.5), renderOrder: 'below-actors',
   silhouette: [vec(-1, -1), vec(1, -1), vec(1, 1), vec(-1, 1)], castsShadow,
 });
 const prop = (kind: string, artwork: PropArtwork, alive = true, fire = 0): Prop => ({
@@ -91,6 +93,32 @@ describe('prop render dispatch', () => {
     r.prop(prop('fence', art('fence-png', false)));
     expect(draw).not.toHaveBeenCalled();
     expect(calls.moveTo.length).toBeGreaterThan(0);
+  });
+
+  it.each(['palm', 'tree'] as const)('keeps a missing %s image and its shadow on the same scaled canopy', kind => {
+    const { r, calls } = renderer();
+    vi.spyOn(artworkImages, 'has').mockReturnValue(false);
+    const draw = vi.spyOn(artworkImages, 'draw').mockReturnValue(false);
+    const template = objectDefinitions[kind].artwork![0];
+    const paths: ReturnType<typeof vec>[][] = [];
+    let current: ReturnType<typeof vec>[] = [];
+    r.ctx.beginPath = () => { current = []; };
+    r.ctx.moveTo = r.ctx.lineTo = (x, y) => { current.push(vec(x, y)); };
+    r.ctx.fill = () => { if (current.length) paths.push([...current]); };
+    for (const [width, height] of [[0.8, 0.8], [1.6, 0.4]]) for (const scale of [1, 2, 3]) {
+      paths.length = 0;
+      const artwork = deriveArtwork(template, width, height, scale);
+      const p = { ...prop(kind, artwork), body: new Body(10, 10, Infinity, width, height) };
+      p.body.angle = Math.PI / 3;
+      r.prop(p);
+      // The real shadow and fallback both trace the same metre-space outline, with
+      // no second body scale. Only the shadow receives the sun's translation.
+      const resolved = artworkFor(p)!;
+      expect(paths).toEqual([resolved.silhouette, resolved.silhouette]);
+      expect(calls.scale ?? []).toEqual([]);
+      expect(calls.rotate).toContainEqual([resolved.rotation ?? 0]);
+    }
+    expect(draw).not.toHaveBeenCalled();
   });
 
   it('never draws a live sprite for a destroyed prop', () => {

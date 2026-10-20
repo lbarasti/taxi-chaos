@@ -2,7 +2,7 @@ import { vec, type Vec } from '../physics';
 import { artworkRecords, objectRecords } from '../catalogue/content';
 import { artworkSources } from '../catalogue/generated';
 import { appearanceSeed, compileArtworkCatalogue, compileObjectCatalogue, deepFreeze, deriveArtwork, scaleArtwork } from '../catalogue/compile';
-import type { ArtBounds, ObjectCatalogue, PropArtwork } from '../catalogue/schema';
+import type { ArtBounds, ArtworkRenderOrder, ObjectCatalogue, PropArtwork } from '../catalogue/schema';
 
 export type { ArtBounds, PropArtwork } from '../catalogue/schema';
 export { appearanceSeed, scaleArtwork };
@@ -66,6 +66,18 @@ export function artworkFor(prop: ArtProp): PropArtwork | undefined {
     return art && { ...art, rotation: rotation(seed) };
   }
 }
+
+/** Resolved artwork owns its order, including its compiled below-actors default.
+ * Only scenery without resolved artwork shares its kind's authored draw order.
+ * Countryside trees retain their procedural needles while their canopy and shadow
+ * use the same overhead pass as park trees and palms. */
+export function renderOrderFor(prop: ArtProp): ArtworkRenderOrder {
+  const art = artworkFor(prop);
+  if (art) return art.renderOrder ?? 'below-actors';
+  return objectDefinitions[prop.kind]?.artwork?.[0]?.renderOrder
+    ?? 'below-actors';
+}
+
 export function artRadius(prop: ArtProp): number {
   const b = artworkFor(prop)?.bounds;
   // Include the maximum sun displacement, so off-screen canopies keep their shadows.

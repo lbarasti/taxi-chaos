@@ -54,6 +54,6 @@ export const artworkSources: Readonly<Record<string, ArtworkSource>> = {
   'ocean-crest-condo': { width: 1254, height: 1254, crop: { x: 0, y: 19, width: 1190, height: 1235 } },
   'hotel': { width: 2172, height: 724, crop: { x: 49, y: 30, width: 2076, height: 664 } },
   'bakery': { width: 48, height: 48, crop: { x: 0, y: 0, width: 48, height: 48 } },
-  'palm': { width: 32, height: 32, crop: { x: 5, y: 1, width: 24, height: 30 } },
+  'palm': { width: 256, height: 256, crop: { x: 0, y: 3, width: 254, height: 253 } },
   'shipping-crate': { width: 32, height: 32, crop: { x: 0, y: 0, width: 32, height: 32 } },
 };

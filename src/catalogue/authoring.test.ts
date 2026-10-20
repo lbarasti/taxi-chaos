@@ -37,6 +37,8 @@ describe('DOM-free authoring report', () => {
     expect(report.artwork?.bounds.height).toBeCloseTo(8.4);
     // The manifest keys the direct image, so the browser loads the same authored PNG.
     expect(report.artwork?.manifest).toEqual({ inline: true, measured: true });
+    expect(report.artwork?.renderOrder).toBe('below-actors');
+    expect(report.artwork?.anchor).toEqual(vec(0.5, 0.5));
     expect(report.shadow).toMatchObject({ casts: true });
     expect(report.shadow?.silhouette).toHaveLength(4);
     expect(report.lightBlocker?.silhouette).toHaveLength(4);
@@ -178,6 +180,8 @@ describe('bounded procedural tree artwork', () => {
     const definitions = compileObjectCatalogue([record], measureArtworkSources(inlineEntries([], [record]), read));
     const placed = compileObjectPlacement({ id: 'park-tree-1', type: 'park-tree', position: vec(50, 50) }, definitions);
     expect(placed.artwork!.bounds.width).toBeCloseTo(7);
+    const report = inspectAuthoring(withPlacements({ ...crate, id: 'custom-tree', type: record.id }), 'custom-tree', { ...objectDefinitions, ...definitions });
+    expect(report.artwork?.renderOrder).toBe('below-actors');
     const scale = fallbackScale({ kind: 'tree', body: new Body(50, 50, Infinity, 3, 3), artwork: placed.artwork });
     expect(scale.x).toBeCloseTo(7 / TREE_CANOPY_METRES);
   });

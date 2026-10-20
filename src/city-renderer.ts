@@ -1,11 +1,11 @@
-import type { Renderer } from './renderer';
+import type { PropRenderContext, Renderer } from './renderer';
 import type { Prop } from './world';
-import { vec, type Vec } from './physics';
+import { vec } from './physics';
 import { artworkImages } from './artwork/images';
 
 /** One continuous roof per merged footprint. Fixtures stay in metres rather than
  * stretching shop sprites (which would also enlarge doors, vents and skylights). */
-export function drawCityBuilding(r: Renderer, prop: Prop, shadow: Vec, shadowAlpha: number): boolean {
+export function drawCityBuilding(r: Renderer, prop: Prop, render: PropRenderContext): boolean {
   const building = prop.building;
   // City buildings carry `prop.building`; a typed non-city building carries the same
   // presentation through the shared catalogue. Either way the authored `fallback` picks
@@ -20,7 +20,8 @@ export function drawCityBuilding(r: Renderer, prop: Prop, shadow: Vec, shadowAlp
   if (presentation.fallback === 'shop' && (!building || w === 10 && h === 10)) return false;
   const landmark = presentation.fallback === 'terraced' && w >= 10 && h >= 12, wards = presentation.fallback === 'wards' && w >= 10 && h >= 12;
   const sign = presentation.sign;
-  r.mapShadow(() => { c.globalAlpha *= shadowAlpha;
+  const shadow = render.shadowOffset;
+  render.shadow(() => { c.globalAlpha *= render.shadowAlpha;
     r.rect(left + shadow.x + 0.8, top + shadow.y + 1.3, w + 0.5, h + 0.5, '#13212880'); });
   c.save(); c.beginPath(); c.rect(left - 0.25, top, w + 0.25, h + 0.6); c.clip();
   const wardCount = Math.max(1, Math.round((h - 3) / 21)), wardStep = (h - 3) / wardCount;

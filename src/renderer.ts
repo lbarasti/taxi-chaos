@@ -12,13 +12,13 @@ import { doorOpenness, LANDING_TIME } from './vehicle-exit';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { artworkImages } from './artwork/images';
-import { artworkFor, artRadius, fallbackScale } from './artwork/catalogue';
+import { artworkFor, artRadius, fallbackScale, renderOrderFor, type PropArtwork } from './artwork/catalogue';
 import { InspectionState } from './inspection';
 import { drawInspection } from './inspection-renderer';
 
 import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
 import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
-import { drawObjectFallback } from './object-renderer';
+import { drawCanopyFallback, drawObjectFallback } from './object-renderer';
 import { drawHarbourGround, drawHarbourActivity, drawPortProp } from './harbour-renderer';
 
 const GOLD = '#f7ce55', MINT = '#a3ddc2';
@@ -34,6 +34,17 @@ function mixHex(a: string, b: string, t: number): string {
   const A = parse(a), B = parse(b), k = clamp(t, 0, 1);
   return `rgb(${Math.round(A[0] + (B[0] - A[0]) * k)},${Math.round(A[1] + (B[1] - A[1]) * k)},${Math.round(A[2] + (B[2] - A[2]) * k)})`;
 }
+
+/** Fallbacks request a procedural shadow through this context. The prop pipeline
+ * owns catalogue shadows, so those requests become no-ops when artwork exists,
+ * including an explicit `castsShadow: false` or a failed image decode. */
+export type PropRenderContext = Readonly<{
+  /** Resolved geometry for missing-image fallbacks, shared with the catalogue shadow. */
+  artwork?: PropArtwork;
+  shadow: (draw: () => void) => void;
+  shadowOffset: Vec;
+  shadowAlpha: number;
+}>;
 
 export class Renderer {
   readonly inspection = new InspectionState();
@@ -123,7 +134,11 @@ export class Renderer {
         zoom: this.zoom, project: point => this.screen(point),
       });
     }
-    for (const prop of g.world.props) if (this.visible(prop.body.position, artRadius(prop))) this.drawMapProp(prop);
+    const overheadProps: Prop[] = [];
+    for (const prop of g.world.props) if (this.visible(prop.body.position, artRadius(prop))) {
+      if (prop.alive && renderOrderFor(prop) === 'above-actors') overheadProps.push(prop);
+      else this.drawMapProp(prop);
+    }
     if (view.shown('props')) { c.save(); c.globalAlpha = view.active ? view.options.propOpacity : 1; this.campaignFrontages(); c.restore(); }
     if (view.shown('actors')) {
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
@@ -181,6 +196,9 @@ export class Renderer {
     }
     drawHarbourActivity(this);
     }
+    // Elevated artwork and its shadow cover actors together, once, before air FX
+    // and lighting. Destroyed props stay in the ordinary ground-level pass.
+    for (const prop of overheadProps) this.drawMapProp(prop);
     if (view.shown('effects')) g.fx.drawAir(c, g.time, g.settings.gore);
     c.restore();
     if (view.shown('lighting')) this.lightingPass(lighting);
@@ -253,6 +271,16 @@ export class Renderer {
     this.ctx.save();
     if (this.drawingMapProp) this.ctx.globalAlpha = 1;
     try { draw(); } finally { this.ctx.restore(); }
+  }
+  /** Own the complete transform so callers never need to establish a local frame. */
+  private artworkShadow(prop: Prop, art: PropArtwork) {
+    if (art.castsShadow === false) return;
+    const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
+    this.mapShadow(() => {
+      c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+      c.translate(so.x, so.y); c.rotate(art.rotation ?? 0); c.globalAlpha *= this.shadowAlpha;
+      trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill();
+    });
   }
   private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.mapShadow(() => { this.ctx.globalAlpha *= this.shadowAlpha; this.rect(x, y, w, h, color); }); }
   private shadowCircle(p: Vec, r: number, color: string) { this.mapShadow(() => { this.ctx.globalAlpha *= this.shadowAlpha; this.circle(p, r, color); }); }
@@ -474,11 +502,17 @@ export class Renderer {
   }
   prop(prop: Prop) {
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
+    const art = prop.alive ? artworkFor(prop) : undefined;
+    const render: PropRenderContext = {
+      artwork: art,
+      shadow: draw => { if (!art) this.mapShadow(draw); },
+      shadowOffset: so, shadowAlpha: this.shadowAlpha,
+    };
     // Destruction is authoritative and comes first: a district renderer's own wreck art
     // (torn canvas, splintered fence) runs before the generic rubble pass, and a dead prop
     // never reaches its live catalogue sprite.
     if (!prop.alive) {
-      if (drawObjectFallback(this, prop) || drawPortProp(this, prop)) return;
+      if (drawObjectFallback(this, prop, render) || drawPortProp(this, prop, render)) return;
       c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
       if (prop.kind === 'guardrail') {
         // Broken ends remain legible while the middle becomes a drivable gap.
@@ -496,17 +530,13 @@ export class Renderer {
       if (prop.fire > 0) drawFire(c, vec(), prop.kind === 'station' ? 3 : 1.4, this.game.time, prop.id);
       c.restore(); return;
     }
-    const art = artworkFor(prop);
+    // Catalogue geometry owns the shadow independently of sprite availability.
+    if (art) this.artworkShadow(prop, art);
     if (art && artworkImages.has(art.image)) {
       // Any alive prop with decoded catalogue artwork draws that sprite ahead of the
       // district renderers, so a typed palm/fence/container is never overpainted by the
       // procedural pass. There is no per-asset or per-image-name branch here.
       c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
-      // Structure artwork shares the old prop pass. Destruction above stays authoritative.
-      if (art.castsShadow !== false) {
-        this.mapShadow(() => { c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
-          trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); });
-      }
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
         const sign = prop.presentation?.sign ?? prop.building?.presentation.sign ?? { width: 8.6, inset: 0.95, size: 0.72, color: '#f0dfae' };
@@ -529,9 +559,15 @@ export class Renderer {
       this.propFire(prop);
       c.restore(); return;
     }
-    if (drawObjectFallback(this, prop) || drawPortProp(this, prop)) return;
+    if (drawObjectFallback(this, prop, render) || drawPortProp(this, prop, render)) return;
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
-    if (drawCityBuilding(this, prop, so, this.shadowAlpha)) { c.restore(); return; }
+    if (drawCityBuilding(this, prop, render)) { c.restore(); return; }
+    const shadowRect = (x: number, y: number, w: number, h: number, color: string) => {
+      render.shadow(() => { c.globalAlpha *= render.shadowAlpha; this.rect(x, y, w, h, color); });
+    };
+    const shadowCircle = (p: Vec, radius: number, color: string) => {
+      render.shadow(() => { c.globalAlpha *= render.shadowAlpha; this.circle(p, radius, color); });
+    };
     if (prop.kind === 'guardrail') {
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#314847');
       this.rect(-b.w / 2, -b.h / 2 - 0.12, b.w, b.h * 0.55, prop.color);
@@ -539,12 +575,12 @@ export class Renderer {
     } else if (prop.kind === 'rock') {
       const w = b.w / 2, h = b.h / 2;
       const shape = [vec(-w, -h * 0.55), vec(-w * 0.65, -h), vec(w * 0.45, -h), vec(w, -h * 0.2), vec(w * 0.8, h), vec(-w * 0.5, h), vec(-w, h * 0.4)];
-      this.mapShadow(() => { c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); });
+      render.shadow(() => { c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); });
       trace(c, shape, true); c.fillStyle = prop.color; c.fill(); c.strokeStyle = '#b4b49a70'; c.lineWidth = 0.12; c.stroke();
       trace(c, [vec(-w * 0.65, -h), vec(-w * 0.2, 0), vec(w * 0.8, h)]); c.strokeStyle = '#33484070'; c.stroke();
     } else if (prop.kind === 'building' && (prop.label.startsWith('VILLA ') || prop.label === 'FAIRWAY CLUB')) {
       const w = b.w, h = b.h;
-      this.shadowRect(-w / 2 + so.x + 0.8, -h / 2 + so.y + 1, w, h, '#14282080');
+      shadowRect(-w / 2 + so.x + 0.8, -h / 2 + so.y + 1, w, h, '#14282080');
       this.rect(-w / 2, -h / 2, w, h, '#e3d6b8', '#f4e6c5');
       this.rect(-w / 2 - 0.3, -h / 2 - 0.6, w + 0.6, h, prop.color, '#e9cbaa');
       trace(c, [vec(-w / 2, -h / 2 - 0.6), vec(-w / 2 + 2, -0.6), vec(w / 2 - 2, -0.6), vec(w / 2, -h / 2 - 0.6)]);
@@ -556,7 +592,7 @@ export class Renderer {
       for (let x = -w / 2 + 1; x < w / 2 - 1; x += 2.6) this.rect(x, h / 2 - 0.9, 1.4, 0.75, '#ffe3a0');
       this.rect(-1.3, h / 2 - 0.5, 2.6, 0.8, '#675648');
     } else if (prop.kind === 'building') {
-      this.shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1.3 + so.y, b.w + 0.5, b.h + 0.5, '#13212870');
+      shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1.3 + so.y, b.w + 0.5, b.h + 0.5, '#13212870');
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, '#202f37');
       this.rect(-b.w / 2 - 0.25, -b.h / 2 - 0.6, b.w, b.h, prop.color, '#84938c50');
       if (b.w <= 12) {
@@ -580,7 +616,7 @@ export class Renderer {
         this.rect(-5.3, 0, 0.5, 3, '#758488'); for (let y = 0; y < 3; y += 0.5) this.rect(-5.3, y, 0.5, 0.12, '#2c3b43');
       }
     } else if (['shed', 'barracks', 'station'].includes(prop.kind)) {
-      this.shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1 + so.y, b.w, b.h, '#13212870');
+      shadowRect(-b.w / 2 + 0.8 + so.x, -b.h / 2 + 1 + so.y, b.w, b.h, '#13212870');
       this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#a1a18a80');
       for (let x = -b.w / 2 + 0.5; x < b.w / 2; x += 1) this.rect(x, -b.h / 2, 0.1, b.h, '#222f3440');
       this.rect(-b.w / 2, -0.3, b.w, 0.6, '#8c95816a');
@@ -601,16 +637,19 @@ export class Renderer {
       }
       this.propFire(prop);
     } else if (prop.kind === 'pump') {
-      this.shadowRect(-0.75 + so.x, -1.35 + so.y, 1.5, 2.7, '#1b2d3250'); this.rect(-0.6, -1.2, 1.2, 2.4, prop.color, '#e5c691');
+      shadowRect(-0.75 + so.x, -1.35 + so.y, 1.5, 2.7, '#1b2d3250'); this.rect(-0.6, -1.2, 1.2, 2.4, prop.color, '#e5c691');
       this.rect(-0.4, -0.8, 0.8, 0.65, '#233d44'); this.rect(-0.3, -0.7, 0.6, 0.3, '#a7ccb6');
       this.circle(vec(0, -1.35), 0.3, '#ffe4a8');
       c.strokeStyle = '#26383c'; c.lineWidth = 0.13; c.beginPath(); c.moveTo(0.6, 0); c.lineTo(1.2, 0); c.lineTo(1.2, 0.8); c.lineTo(0.6, 0.8); c.stroke();
       this.propFire(prop);
     } else if (prop.kind === 'tree') {
-      // Missing or failed PNG: draw the canopy at the resolved extent so the fallback
-      // matches the typed artwork and collider rather than a fixed sprite size.
+      if (art) {
+        drawCanopyFallback(this, prop, art);
+        c.restore(); return;
+      }
+      // Genuinely procedural countryside trees retain their footprint-scaled needles.
       const s = fallbackScale(prop); c.save(); c.scale(s.x, s.y);
-      this.shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80');
+      shadowCircle(vec(0.5 + so.x, 0.5 + so.y), 2.1, '#172c2d80');
       if (this.game.map.country.isCountry(b.position)) {
         for (const r of [2.4, 1.7, 1]) {
           const needles = Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8; return vec(Math.cos(a) * r * (i % 2 ? 0.6 : 1), Math.sin(a) * r * (i % 2 ? 0.6 : 1) - (2.4 - r) * 0.2); });
@@ -619,14 +658,14 @@ export class Renderer {
       } else { this.circle(vec(), 1.9, '#294c43'); this.circle(vec(-0.25, -0.3), 1.6, prop.color); this.circle(vec(-0.6, -0.7), 0.8, '#6b92724a'); }
       c.restore();
     } else if (prop.kind === 'hydrant') {
-      this.shadowCircle(vec(0.15 + so.x, 0.2 + so.y), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
+      shadowCircle(vec(0.15 + so.x, 0.2 + so.y), 0.5, '#15242b70'); this.rect(-0.45, -0.15, 0.9, 0.3, '#bd584e'); this.circle(vec(), 0.33, prop.color); this.circle(vec(-0.07, -0.07), 0.16, '#fca086');
     } else if (prop.kind === 'lamp') {
       // Warm lamp head with a soft halo; the lighting pass adds the pool on the ground.
       this.circle(vec(), 3.6, '#ffd9a00f'); this.circle(vec(), 1.15, '#ffdf9a14');
       this.circle(vec(), 0.42, '#59706d'); this.rect(-0.06, -0.7, 0.12, 0.9, '#8a9a96');
       this.rect(-0.34, -1.02, 0.68, 0.42, '#ffe9b0'); this.rect(-0.28, -0.62, 0.56, 0.1, '#fff6d8');
     } else if (prop.kind === 'kiosk') {
-      this.shadowRect(-b.w / 2 + 0.3 + so.x, -b.h / 2 + 0.4 + so.y, b.w, b.h, '#17272e80'); this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#d5bba0');
+      shadowRect(-b.w / 2 + 0.3 + so.x, -b.h / 2 + 0.4 + so.y, b.w, b.h, '#17272e80'); this.rect(-b.w / 2, -b.h / 2, b.w, b.h, prop.color, '#d5bba0');
       this.rect(-b.w / 2, -b.h / 2, b.w, 0.4, '#ded4b5'); this.label(prop.label, 0, 0, 0.55, '#f1e3ca', '700');
     } else if (prop.kind === 'crate') {
       // Missing or failed PNG: scale the nominal crate sprite to the resolved body so the

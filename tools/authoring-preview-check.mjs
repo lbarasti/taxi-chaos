@@ -103,7 +103,7 @@ test('a typed palm and crate resolve real PNGs with no engine change', () => {
   assert.deepEqual(palm.artwork.manifest, { inline: true, measured: true });
   assert.deepEqual([palm.entity.bodies[0].width, palm.entity.bodies[0].height], [0.8, 0.8]);
   assert.ok(Math.abs(palm.artwork.bounds.width - 6) < 1e-9);
-  assert.equal(palm.artwork.silhouette.length, 12);
+  assert.equal(palm.artwork.silhouette.length, 48);
   assert.equal(palm.preview.allowed, true);
 
   // The same three visual exercises apply to a prop: instance resize, visual-only scale

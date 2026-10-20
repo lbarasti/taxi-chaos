@@ -1,10 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { Body, contact, vec } from '../physics';
 import { collectOccluders, occluderFor, pointInConvex, shadowVolume } from '../lighting-occlusion';
-import { artRadius, artworkFor, propArtwork } from './catalogue';
+import { artRadius, artworkFor, propArtwork, renderOrderFor, type PropArtwork } from './catalogue';
+import { compileObjectCatalogue, deriveArtwork } from '../catalogue/compile';
 import { World } from '../world';
 
 describe('top-down artwork geometry', () => {
+  it('keeps custom artwork draw order independent of shipped kind defaults', () => {
+    const custom = compileObjectCatalogue([
+      { id: 'custom-tree', kind: 'tree', width: 2, height: 2, image: 'custom.png', artwork: { fit: 'stretch' } },
+    ])['custom-tree'];
+    const art = deriveArtwork(custom.artwork![0], 2, 2);
+    const tree = { kind: 'tree', body: new Body(320, 200, Infinity, 2, 2), artwork: art };
+    expect(custom.artwork![0].renderOrder).toBe('below-actors');
+    expect(art.renderOrder).toBe('below-actors');
+    expect(renderOrderFor(tree)).toBe('below-actors');
+    expect(renderOrderFor({ ...tree, artwork: { ...art, renderOrder: 'above-actors' } })).toBe('above-actors');
+    // Runtime callers carrying older, unannotated artwork also get the documented default.
+    const { renderOrder: _order, ...unannotated } = art;
+    expect(renderOrderFor({ ...tree, artwork: unannotated as PropArtwork })).toBe('below-actors');
+    // Only genuinely procedural trees inherit the shipped canopy's elevated pass.
+    expect(renderOrderFor({ kind: 'tree', body: tree.body })).toBe('above-actors');
+  });
+
   it('keeps collision footprints independent of roof overhangs and foliage', () => {
     const tree = { kind: 'tree', body: new Body(90, 90, Infinity, 1.8, 1.8) };
     expect(artworkFor(tree)?.image).toBe('tree-worn');

@@ -1,4 +1,4 @@
-import type { Renderer } from './renderer';
+import type { PropRenderContext, Renderer } from './renderer';
 import type { Prop } from './world';
 import { dist, vec } from './physics';
 import { CONTAINER_COLORS, FREIGHT_ROUTE, PORT_CONTAINERS, PORT_CRANES, PORT_ENTRY, PORT_FEE, PORT_SHIPS, SWAP_CONTAINER, craneLoad } from './harbour';
@@ -6,8 +6,10 @@ import { CONTAINER_COLORS, FREIGHT_ROUTE, PORT_CONTAINERS, PORT_CRANES, PORT_ENT
 function line(r: Renderer, points: { x: number; y: number }[], color: string, width: number) {
   const c = r.ctx; c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.strokeStyle = color; c.lineWidth = width; c.stroke();
 }
-function box(r: Renderer, x: number, y: number, w: number, h: number, color: string, name = '', tiers = 1) {
-  r.mapShadow(() => r.rect(x - w / 2 + 1.1, y - h / 2 + 1.3, w + 0.4, h + 0.4, '#152e3255'));
+type BoxOptions = Readonly<{ name?: string; tiers?: number; shadow?: PropRenderContext['shadow'] }>;
+function box(r: Renderer, x: number, y: number, w: number, h: number, color: string, options: BoxOptions = {}) {
+  const { name = '', tiers = 1, shadow = draw => r.mapShadow(draw) } = options;
+  shadow(() => r.rect(x - w / 2 + 1.1, y - h / 2 + 1.3, w + 0.4, h + 0.4, '#152e3255'));
   r.rect(x - w / 2, y - h / 2, w, h, '#314a4d');
   const lift = tiers * 0.35;
   r.rect(x - w / 2 - 0.15, y - h / 2 - lift, w, h, color, '#d6e1bb70');
@@ -59,7 +61,7 @@ export function drawHarbourGround(r: Renderer) {
   for (const x of [88, 230]) for (const y of [-46, -62, -97]) { r.rect(x, y, 1.6, 0.7, '#354c4d'); for (let i = 0; i < 6; i++) r.rect(x + i * 0.25, y, 0.08, 0.7, '#a9b7a1'); }
 }
 
-export function drawPortProp(r: Renderer, prop: Prop): boolean {
+export function drawPortProp(r: Renderer, prop: Prop, render: PropRenderContext): boolean {
   const b = prop.body, c = r.ctx;
   if (prop.kind === 'building' && prop.label === 'CRANE FOOT') {
     r.rect(b.position.x - 0.6, b.position.y - 0.6, 1.2, 1.2, '#446567', '#bbd4ba'); return true;
@@ -68,7 +70,7 @@ export function drawPortProp(r: Renderer, prop: Prop): boolean {
     if (prop.label === 'EXCHANGE WALL') r.rect(b.position.x - b.w / 2, b.position.y - b.h / 2, b.w, b.h, prop.color, '#b4dfce');
     else {
       const info = PORT_CONTAINERS.find(p => p.label === prop.label);
-      box(r, b.position.x, b.position.y, b.w, b.h, prop.color, prop.label, info?.tiers ?? 1);
+      box(r, b.position.x, b.position.y, b.w, b.h, prop.color, { name: prop.label, tiers: info?.tiers, shadow: render.shadow });
     }
     return true;
   }
@@ -138,7 +140,7 @@ export function drawHarbourActivity(r: Renderer) {
   // visible on approach and the freshly issued car appears outside them.
   if (r.visible(SWAP_CONTAINER, 18)) {
     const p = SWAP_CONTAINER;
-    if (g.insideSwap) box(r, p.x, p.y, 14, 6.2, '#568f8d', 'C-76 / NEW IDENTITY');
+    if (g.insideSwap) box(r, p.x, p.y, 14, 6.2, '#568f8d', { name: 'C-76 / NEW IDENTITY' });
     for (const side of [-1, 1]) {
       c.save(); c.translate(p.x + 7, p.y + side * 3.1); c.rotate(side * 0.55);
       r.rect(0, side < 0 ? -0.4 : 0, 3.2, 0.4, '#78b6aa', '#d1dcc0'); c.restore();
