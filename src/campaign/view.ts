@@ -1,6 +1,6 @@
-import { menuItem } from '../drawer-markup';
+import { menuItem } from '../ui/drawer-markup';
 import type { Game } from '../game';
-import type { NotebookEntry } from '../player-records';
+import type { NotebookEntry } from '../narrative/player-records';
 import { canApprove } from './events';
 import { LAST_EDITION, calendarLabel } from './clock';
 import { VERIFICATION_MINUTES } from './scheduler';

@@ -1,7 +1,7 @@
 import { menuItem } from './drawer-markup';
-import type { Game } from './game';
-import { calendarLabel } from './campaign/clock';
-import { readStorage, storageKeys } from './storage';
+import type { Game } from '../game';
+import { calendarLabel } from '../campaign/clock';
+import { readStorage, storageKeys } from '../storage';
 
 export type InputDevice = 'keyboard' | 'touch' | 'xbox' | 'playstation';
 export function savedCampaignAvailable(): boolean {

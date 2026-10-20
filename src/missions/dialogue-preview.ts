@@ -1,6 +1,6 @@
 import { calendarLabel, dayMinute } from '../campaign/clock';
-import { characters, type CharacterId } from '../characters';
-import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles';
+import { characters, type CharacterId } from '../narrative/characters';
+import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles/vehicles';
 import type { CompiledMissions, CompiledMission } from './compile';
 import { MissionDirector, type DirectorContext } from './director';
 import { defaultMissionProgress } from './progress';

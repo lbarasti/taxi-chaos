@@ -1,4 +1,4 @@
-import { characters } from '../characters';
+import { characters } from '../narrative/characters';
 import { jobNames } from '../campaign/content';
 import { Game } from '../game';
 import { defaultCompiledMap } from '../map/compile';

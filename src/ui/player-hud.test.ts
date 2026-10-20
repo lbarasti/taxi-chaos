@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from './game';
+import { Game } from '../game';
 import { playerHudMarkup, playerHudState } from './player-hud';
 
 describe('minimal player HUD', () => {

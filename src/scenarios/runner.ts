@@ -2,7 +2,7 @@ import { Game, type Mode } from '../game';
 import { defaultCompiledMap } from '../map/compile';
 import { previewInputs } from '../missions/dialogue-preview';
 import { parseMissionProgress } from '../missions/progress';
-import { parsePlayerRecords } from '../player-records';
+import { parsePlayerRecords } from '../narrative/player-records';
 import { parseCampaign } from '../campaign/state';
 import { CAMPAIGN_END, CAMPAIGN_START, dayMinute } from '../campaign/clock';
 import { campaignDefinition } from '../campaign/content';

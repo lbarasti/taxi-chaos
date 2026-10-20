@@ -3,8 +3,8 @@ import { Game } from './game';
 import { vec } from './physics';
 import { campaignDefinition } from './campaign/content';
 import { dayMinute } from './campaign/clock';
-import { observationActionState } from './navigation-hud';
-import { parsePlayerRecords } from './player-records';
+import { observationActionState } from './ui/navigation-hud';
+import { parsePlayerRecords } from './narrative/player-records';
 import type { CampaignDefinition } from './campaign/model';
 
 const make = (definition = campaignDefinition) => {

@@ -1,7 +1,7 @@
 import { createVehicleDamage, type VehicleDamage } from './damage';
-import type { Vehicle } from './game';
+import type { Vehicle } from '../game';
 import { MotorcycleDynamics } from './motorcycle';
-import { vec, type Vec } from './physics';
+import { vec, type Vec } from '../physics';
 import { parseUpgrades, stockUpgrades, type VehicleUpgrades } from './vehicle-upgrades';
 import { vehicleDefinitions, type VehicleModel } from './vehicles';
 

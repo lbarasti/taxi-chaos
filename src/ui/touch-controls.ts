@@ -1,4 +1,4 @@
-import type { Vec } from './physics';
+import type { Vec } from '../physics';
 
 // Circular travel, with a small centre dead zone and proportional output.
 export function joystickVector(x: number, y: number, radius: number): Vec {

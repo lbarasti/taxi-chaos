@@ -1,5 +1,5 @@
-import type { Game } from './game';
-import { wantedThresholds } from './rules';
+import type { Game } from '../game';
+import { wantedThresholds } from '../rules';
 
 const starPath = 'M12 2 15.1 8.3 22 9.3 17 14.2 18.2 21 12 17.8 5.8 21 7 14.2 2 9.3 8.9 8.3Z';
 const starMarkup = wantedThresholds.map((_, index) => `<svg class="heat-star" viewBox="0 0 24 24" aria-hidden="true">

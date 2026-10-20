@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from './game';
+import { Game } from '../game';
 import { MotorcycleDynamics } from './motorcycle';
-import { length, vec } from './physics';
+import { length, vec } from '../physics';
 import { DOOR_OPEN_TIME, LANDING_TIME, MOVING_EXIT_SPEED, doorOpenness, landingDamage, motorcycleJumpReaction, tumbleDuration } from './vehicle-exit';
 
 function run(g: Game, seconds: number, keys: string[] = []) {

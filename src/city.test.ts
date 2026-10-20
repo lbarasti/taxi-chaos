@@ -5,7 +5,7 @@ import { copyDefaultMap } from './map/default';
 import { World } from './world';
 import { Game } from './game';
 import { Body, contact, vec } from './physics';
-import { createVehicleBody, vehicleDefinition } from './vehicles';
+import { createVehicleBody, vehicleDefinition } from './vehicles/vehicles';
 import { occluderFor, pointInConvex } from './lighting-occlusion';
 
 const HOSPITAL=defaultCompiledMap.city.recovery!;

@@ -18,11 +18,11 @@ export type { PortraitFormat, PortraitSourceId };
  */
 export type Portrait = Readonly<{ src: string; format: PortraitFormat }>;
 
-const portraitModules = import.meta.glob('./assets/characters/*.{svg,png,jpg,jpeg}', {
+const portraitModules = import.meta.glob('../assets/characters/*.{svg,png,jpg,jpeg}', {
   eager: true, query: '?inline', import: 'default',
 }) as Record<string, string>;
 
-const modulePath = (id: PortraitSourceId) => `./assets/characters/${id}`;
+const modulePath = (id: PortraitSourceId) => `../assets/characters/${id}`;
 const fileName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
 
 function formatOf(name: string): PortraitFormat {

@@ -6,7 +6,7 @@ import { assertMissionCatalogue } from '../missions/schema';
 import { contact, vec } from '../physics';
 import { GARAGE } from '../world';
 import { storageKeys } from '../storage';
-import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../player-records';
+import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../narrative/player-records';
 import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
 import { defaultCampaign, parseCampaign } from './state';
 import { CAMPAIGN_END, LAST_EDITION, dayMinute } from './clock';

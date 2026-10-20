@@ -1,5 +1,5 @@
 import { Body, add, scale, sub, vec, type Vec } from '../physics';
-import { createVehicleBody, vehicleDefinition } from '../vehicles';
+import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { objectDefinitions } from '../artwork/catalogue';
 import { objectKindRegistry, type KindRegistry, type ObjectCatalogue } from '../catalogue/schema';
 import { referencedLand, resolveLandRegion } from './land-references';

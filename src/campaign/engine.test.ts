@@ -5,7 +5,7 @@ import { defaultCompiledMap } from '../map/compile';
 import { compileMissions } from '../missions/compile';
 import { MissionDirector, type DirectorContext } from '../missions/director';
 import { defaultMissionProgress } from '../missions/progress';
-import { defaultPlayerRecords } from '../player-records';
+import { defaultPlayerRecords } from '../narrative/player-records';
 import { campaignCondition } from '../missions/conditions';
 import { assertMissionCatalogue } from '../missions/schema';
 import { dayMinute } from './clock';

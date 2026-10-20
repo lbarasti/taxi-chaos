@@ -1,4 +1,4 @@
-import { Body, CarDynamics, add, clamp, dot, length, rotate, scale, vec, type Controls, type CarTuning, type TyreLayout } from './physics';
+import { Body, CarDynamics, add, clamp, dot, length, rotate, scale, vec, type Controls, type CarTuning, type TyreLayout } from '../physics';
 import type { VehicleDamage } from './damage';
 
 export const BIKE_ENGINE = 2800, BIKE_GRIP = 950;

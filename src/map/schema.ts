@@ -1,5 +1,5 @@
 import type { Vec } from '../physics';
-import { vehicleDefinitions, type VehicleModel } from '../vehicles';
+import { vehicleDefinitions, type VehicleModel } from '../vehicles/vehicles';
 import type { AttachedFeature, KindRegistry } from '../catalogue/schema';
 import { objectKinds } from '../catalogue/content';
 

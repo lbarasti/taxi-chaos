@@ -1,5 +1,5 @@
 import type { Game } from '../game';
-import { menuItem } from '../drawer-markup';
+import { menuItem } from '../ui/drawer-markup';
 import { LAST_EDITION } from './clock';
 import { canApprove } from './events';
 import { editorialMarkup, recordMarkup } from './view';

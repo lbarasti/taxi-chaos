@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from './game';
-import { dist, length, vec } from './physics';
+import { Game } from '../game';
+import { dist, length, vec } from '../physics';
 
 const make = () => { const g = new Game(); g.setTrafficCount(0); g.player.body.position = vec(244, 244); g.setMode('playing'); return g; };
 const run = (g: Game, seconds: number) => { for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); };

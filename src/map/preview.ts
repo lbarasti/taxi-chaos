@@ -1,6 +1,6 @@
 import { Game } from '../game';
 import { contact, dist, vec } from '../physics';
-import { createVehicleBody, vehicleDefinition } from '../vehicles';
+import { createVehicleBody, vehicleDefinition } from '../vehicles/vehicles';
 import { compileMap } from './compile';
 import { entityPosition } from './operations';
 import type { MapDocument } from './schema';

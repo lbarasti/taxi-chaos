@@ -1,9 +1,9 @@
-import type { Game } from './game';
+import type { Game } from '../game';
 import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
-import { calendarLabel } from './campaign/clock';
-import { notebookMarkup, notebookGuideMarkup } from './campaign/view';
-import { newsroomMarkup, type NewsroomSection } from './campaign/newsroom-view';
+import { calendarLabel } from '../campaign/clock';
+import { notebookMarkup, notebookGuideMarkup } from '../campaign/view';
+import { newsroomMarkup, type NewsroomSection } from '../campaign/newsroom-view';
 import { creditsMarkup } from './credits';
 import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';

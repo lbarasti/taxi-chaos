@@ -1,6 +1,6 @@
 import { Body, add, bodyParts, contact, cross, dist, scale, sub, vec, type Vec } from '../physics';
 import { World, blocksWalking, isRigidObstacle } from '../world';
-import { vehicleDefinition, createVehicleBody } from '../vehicles';
+import { vehicleDefinition, createVehicleBody } from '../vehicles/vehicles';
 import type { CompiledObject, ResolvedFeature } from '../catalogue/schema';
 import { compileMap, type CompiledMap } from './compile';
 import type { MapDocument } from './schema';

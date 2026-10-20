@@ -6,7 +6,7 @@ import { defaultCompiledMap } from './map/compile';
 import { Game } from './game';
 import { loadScenario } from './lab';
 import { Body, contact, dist, length, vec } from './physics';
-import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleModel } from './vehicles';
+import { createVehicleBody, createVehicleDynamics, vehicleDefinition, type VehicleModel } from './vehicles/vehicles';
 import { blocksWalking, district, isRigidObstacle } from './world';
 
 const { roadPath } = createNavigation(defaultCompiledMap);

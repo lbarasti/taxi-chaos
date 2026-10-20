@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createVehicleDamage } from './damage';
-import { Game } from './game';
+import { Game } from '../game';
 import { BIKE_FALL_ANGLE, BIKE_MAX_ENGINE_DAMAGE, BIKE_MIN_START_HP, MOTORCYCLE_KNOCKOFF_SPEED, MotorcycleDynamics, motorcycleEngineWorks } from './motorcycle';
-import { Body, length, vec, type Controls } from './physics';
+import { Body, length, vec, type Controls } from '../physics';
 
 const IDLE: Controls = { throttle: 0, turn: 0, handbrake: false };
 const run = (g: Game, seconds: number) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };

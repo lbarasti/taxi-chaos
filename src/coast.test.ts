@@ -4,8 +4,8 @@ import { defaultCompiledMap } from './map/compile';
 import { Body, contact, dist, length, vec } from './physics';
 import { World } from './world';
 import { loadScenario } from './lab';
-import { igniteVehicle } from './damage';
-import { MotorcycleDynamics } from './motorcycle';
+import { igniteVehicle } from './vehicles/damage';
+import { MotorcycleDynamics } from './vehicles/motorcycle';
 
 const HOSPITAL=defaultCompiledMap.city.recovery!;
 const { HIGHLAND_OUTLINE } = defaultCompiledMap.country;

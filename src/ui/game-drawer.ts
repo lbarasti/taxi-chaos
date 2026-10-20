@@ -1,9 +1,9 @@
-import type { Game } from './game';
-import type { AudioFX } from './audio/audio';
+import type { Game } from '../game';
+import type { AudioFX } from '../audio/audio';
 import { createSettings, type SettingsControls } from './settings';
 import { bindSettingControls } from './setting-controls';
-import type { Allegation } from './campaign/model';
-import { isNewsroomSection, type NewsroomSection } from './campaign/newsroom-view';
+import type { Allegation } from '../campaign/model';
+import { isNewsroomSection, type NewsroomSection } from '../campaign/newsroom-view';
 import { DrawerMenu } from './drawer-menu';
 import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
 import { splashPrompts, type InputDevice } from './splash';

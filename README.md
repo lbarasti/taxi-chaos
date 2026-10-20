@@ -237,7 +237,7 @@ It compiles through the same immutable, DOM-free mission engine as the original
 JSON catalogue in [`src/missions/catalogue.json`](src/missions/catalogue.json).
 Stops and cast
 metadata are in [`src/missions/stops.json`](src/missions/stops.json) and
-[`src/characters.json`](src/characters.json). New chapters, side quests,
+[`src/narrative/characters.json`](src/narrative/characters.json). New chapters, side quests,
 dialogue and characters need only config plus portrait assets — no game or view
 code. [`CampaignDefinition`](src/campaign/model.ts) defines world keys,
 materials, claims, operations, observations, scene layers and lifecycle handlers.
@@ -253,7 +253,7 @@ examples are in [`src/missions/schema.ts`](src/missions/schema.ts),
 [`catalogue.json`](src/missions/catalogue.json) and the adjacent tests. Campaign
 content extends these with shared conditions/effects and chronological operations.
 Add portraits to `src/assets/characters/`, declare filenames in
-`src/portrait-manifest.json`, and metadata/attribution in `src/characters.json`.
+`src/narrative/portrait-manifest.json`, and metadata/attribution in `src/narrative/characters.json`.
 The eager inline registry supports SVG, PNG and JPEG; catalogue tests validate
 references and portrait framing without importing browser assets.
 
@@ -329,11 +329,11 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 ## Project map
 
 - `src/physics.ts`: rigid bodies, tyre forces, collision detection, and impulses.
-- `src/vehicles.ts`: typed vehicle catalogue and handling/model definitions.
+- `src/vehicles/vehicles.ts`: typed vehicle catalogue and handling/model definitions.
 - `src/world.ts`: seeded city generation, structures, and road routing.
-- `src/ai.ts`: civilian traffic and police behavior.
-- `src/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
-- `src/characters.json`, `src/characters.ts`, `src/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/portrait-manifest.ts` is the DOM-free declared file list.
+- `src/vehicles/ai.ts`: civilian traffic and police behavior.
+- `src/vehicles/damage.ts`, `src/effects.ts`: damage, fires, destruction, and effects.
+- `src/narrative/characters.json`, `src/narrative/characters.ts`, `src/narrative/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/narrative/portrait-manifest.ts` is the DOM-free declared file list.
 - `src/catalogue/`: shared DOM-free building/prop catalogue records, compiler, browser-free PNG measurement and the generated inline image manifest.
 - `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
 - `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.

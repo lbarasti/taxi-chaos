@@ -6,7 +6,7 @@ import { calendarLabel, dayMinute, LAST_EDITION } from './clock';
 import { approvePublication, receiveMaterial } from './scheduler';
 import { notebookMarkup, recordMarkup } from './view';
 import { newsroomMarkup, newsroomRecords, newsroomSummary } from './newsroom-view';
-import { drawerParent, isDrawerPage } from '../drawer-view';
+import { drawerParent, isDrawerPage } from '../ui/drawer-view';
 
 function collect(game: Game, ...ids: string[]) {
   for (const id of ids) recordNote(game.campaignContext, { id, ...(game.campaignContent.materials[id] ?? { title: 'Ordinary fare', text: 'A regular journey.', kind: 'receipt' as const }) });

@@ -1,4 +1,4 @@
-import { vehicleDefinition } from './vehicles';
+import { vehicleDefinition } from './vehicles/vehicles';
 import { Body, contact, dist, type Vec } from './physics';
 import type { CompiledMap } from './map/compile';
 import type { PropKind } from './catalogue/schema';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
 import { loadScenario, repairVehicle, resumeFromPause, scenarioInfo, scenarioNames, scenarioDescriptions, isScenarioName, type ScenarioName } from './lab';
-import { igniteVehicle } from './damage';
+import { igniteVehicle } from './vehicles/damage';
 import { contact, dist, vec } from './physics';
 
 const make = () => { const g = new Game(); g.setMode('playing'); return g; };

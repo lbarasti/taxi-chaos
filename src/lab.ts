@@ -15,15 +15,15 @@ import type { Renderer } from './renderer';
 import type { OnBoardCue } from './onboard-cue';
 import type { Settings } from './rules';
 import { clamp, contact, vec, type Vec } from './physics';
-import { createAI } from './ai';
-import { createVehicleDamage, igniteVehicle, tickVehicleDamage, type VehicleDamage } from './damage';
+import { createAI } from './vehicles/ai';
+import { createVehicleDamage, igniteVehicle, tickVehicleDamage, type VehicleDamage } from './vehicles/damage';
 import type { AudioFX } from './audio/audio';
 import { isSoundCue, soundLabels, type SoundCue } from './audio/sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from './day-night';
-import { MotorcycleDynamics } from './motorcycle';
+import { MotorcycleDynamics } from './vehicles/motorcycle';
 import { removeStorage, storageKeys } from './storage';
 import type { MapAPI } from './map/workspace';
-import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles';
+import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from './vehicles/vehicles';
 
 const STEP = 1 / 120;
 /** Representative hour for each day/night period; presets set the hour only. */

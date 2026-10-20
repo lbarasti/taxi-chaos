@@ -1,4 +1,4 @@
-import { clamp, type Vec } from './physics';
+import { clamp, type Vec } from '../physics';
 
 export type ExitSide = -1 | 1;
 

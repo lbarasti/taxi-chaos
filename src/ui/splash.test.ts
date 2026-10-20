@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { savedCampaignAvailable, splashMarkup, splashPrompts, shiftMarkup, streetRulesMarkup } from './splash';
 import { drawerHeading, menuItem } from './drawer-markup';
-import { defaultSave, Game } from './game';
+import { defaultSave, Game } from '../game';
 describe('startup splash', () => {
   it('recognizes only a compatible campaign and handles inaccessible storage', () => {
     for (const [value, expected] of [[null, false], ['{', false], ['{}', false], [JSON.stringify(defaultSave()), true]] as const) {

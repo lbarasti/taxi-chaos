@@ -160,8 +160,8 @@ export function cullLights(lights: LightSource[], view: Viewport): LightSource[]
 export type SceneVehicle = {
   id: number;
   kind: 'taxi' | 'police' | 'traffic';
-  model?: import('./vehicles').VehicleModel;
-  definition?: import('./vehicles').VehicleDefinition;
+  model?: import('./vehicles/vehicles').VehicleModel;
+  definition?: import('./vehicles/vehicles').VehicleDefinition;
   alive: boolean;
   parked: boolean;
   driverExited: boolean;

@@ -1,6 +1,6 @@
 import { assertCondition, assertEffects, assertMissionCatalogue, type Condition, type Effect } from '../missions/schema';
-import { isCharacterId } from '../characters';
-import { vehicleDefinitions } from '../vehicles';
+import { isCharacterId } from '../narrative/characters';
+import { vehicleDefinitions } from '../vehicles/vehicles';
 import { CAMPAIGN_START, CAMPAIGN_END } from './clock';
 import type { CampaignDefinition } from './model';
 

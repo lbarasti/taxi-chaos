@@ -12,7 +12,7 @@ cast (Mara, Eli, Victor, Celia, Adrian Vale, Leila, Harker, Lena, Iris, Tom, Rut
 and Bea) plus the bundled `officer.png`. They are raster art supplied for Taxi
 Chaos and are bundled inline as data URLs with no external image service.
 
-The legacy ids `mia` and `frankie` stay in `src/characters.json` because the
+The legacy ids `mia` and `frankie` stay in `src/narrative/characters.json` because the
 authored legacy mission catalogue and the dialogue preview reference them. Their
 supplied rasters are no longer shipped, so each resolves to its own neutral
 placeholder card (`legacy-mia.png`, `legacy-frankie.png`): original flat artwork

@@ -1,9 +1,9 @@
-import type { CharacterId } from '../characters';
+import type { CharacterId } from '../narrative/characters';
 import type { Condition, Effect, MissionCatalogue } from '../missions/schema';
 import type { MissionEvent } from '../missions/director';
 import type { MissionProgress } from '../missions/progress';
-import type { NotebookEntry, PlayerRecords } from '../player-records';
-import type { VehicleModel } from '../vehicles';
+import type { NotebookEntry, PlayerRecords } from '../narrative/player-records';
+import type { VehicleModel } from '../vehicles/vehicles';
 import type { Campaign } from './state';
 
 export type WorldValue = string | number | boolean;

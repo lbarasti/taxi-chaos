@@ -1,6 +1,6 @@
 import { defaultCompiledMap } from './map/compile';
 import { describe, expect, it } from 'vitest';
-import { igniteVehicle } from './damage';
+import { igniteVehicle } from './vehicles/damage';
 import { Game } from './game';
 import { dist, vec } from './physics';
 

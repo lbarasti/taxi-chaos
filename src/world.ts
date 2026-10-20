@@ -4,7 +4,7 @@ import { contains, regionBounds, regionOrder } from './regions';
 import { createAccess, type AccessGeometry } from './access';
 import { pathLength } from './countryside';
 import { defaultCompiledMap, type CompiledMap } from './map/compile';
-import { createVehicleBody, vehicleDefinition } from './vehicles';
+import { createVehicleBody, vehicleDefinition } from './vehicles/vehicles';
 import type { Parking } from './map/schema';
 import { CITY_GRID, CITY_SIZE, citySegmentOpen, type CityBlock, type CityBuilding } from './city';
 import { createCityDetour, type StreetAccess } from './city-navigation';

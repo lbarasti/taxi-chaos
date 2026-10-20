@@ -9,7 +9,7 @@ import { validateMap } from './map/validation';
 import { World } from './world';
 import { Game } from './game';
 import { Body, contact, dist, vec } from './physics';
-import { createVehicleBody, vehicleDefinition } from './vehicles';
+import { createVehicleBody, vehicleDefinition } from './vehicles/vehicles';
 
 const mapWith = (content: CityContent, catalogue = buildingDefinitions) => freezeGeometry({ ...compileMap(copyDefaultMap()), city: createCity(content, catalogue) });
 

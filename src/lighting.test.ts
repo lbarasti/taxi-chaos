@@ -7,7 +7,7 @@ import {
   collectOccluders, convexHull, nearbyOccluders, occluderFor, pointInConvex, shadowVolume, shouldOcclude,
   type OccluderProp,
 } from './lighting-occlusion';
-import { vehicleDefinition } from './vehicles';
+import { vehicleDefinition } from './vehicles/vehicles';
 
 // Lightweight recording contexts so the compositor and sprite cache run under Node (no DOM).
 function mockCtx() {

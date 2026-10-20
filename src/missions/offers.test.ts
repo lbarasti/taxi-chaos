@@ -7,7 +7,7 @@ import { MissionDirector } from './director';
 import { compileMissions } from './compile';
 import catalogue from './catalogue.json';
 import type { MissionCatalogue } from './schema';
-import { parsePlayerRecords } from '../player-records';
+import { parsePlayerRecords } from '../narrative/player-records';
 
 const step = (g: Game, seconds = 0.9) => { for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); };
 const arrive = (g: Game, point: { x: number; y: number }) => {

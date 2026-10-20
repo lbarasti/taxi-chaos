@@ -1,4 +1,4 @@
-import type { StoryCategory } from '../story';
+import type { StoryCategory } from '../narrative/story';
 import type { WorldValue } from '../campaign/model';
 
 export type MissionId = string;

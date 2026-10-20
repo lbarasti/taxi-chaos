@@ -3,12 +3,12 @@ import stopsData from './stops.json';
 import { campaignDefinition } from '../campaign/content';
 import type { CampaignDefinition } from '../campaign/model';
 import { assertCampaignDefinition } from '../campaign/validate';
-import { isCharacterId, type CharacterId } from '../characters';
-import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles';
+import { isCharacterId, type CharacterId } from '../narrative/characters';
+import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles/vehicles';
 import { dist, type Vec } from '../physics';
 import type { CompiledMap } from '../map/compile';
 import { createNavigation } from '../world';
-import type { BeatId, StoryCategory, StoryMessage } from '../story';
+import type { BeatId, StoryCategory, StoryMessage } from '../narrative/story';
 import { assertMissionCatalogue, type ChoiceGroupId, type ChoiceId, type Condition, type Effect, type MissionCatalogue, type MissionId } from './schema';
 import { compileStops, type CompiledStops } from './stops';
 

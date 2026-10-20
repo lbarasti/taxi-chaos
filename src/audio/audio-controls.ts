@@ -1,5 +1,5 @@
-import { menuItem } from '../drawer-markup';
-import { audioCreditsMarkup } from '../credits';
+import { menuItem } from '../ui/drawer-markup';
+import { audioCreditsMarkup } from '../ui/credits';
 import type { AudioFX } from './audio';
 
 export function audioMarkup(audio: AudioFX, { credits = 'inline' }: { credits?: 'inline' | 'page' } = {}) {

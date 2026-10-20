@@ -1,7 +1,7 @@
-import type { Game } from './game';
-import { district } from './world';
-import { navigationTargetKind, type NavigationTargetKind } from './radar';
-import { onBoardCue } from './onboard-cue';
+import type { Game } from '../game';
+import { district } from '../world';
+import { navigationTargetKind, type NavigationTargetKind } from '../radar';
+import { onBoardCue } from '../onboard-cue';
 
 // Original, embedded line artwork; reference mock-up assets are not used.
 const paths = {

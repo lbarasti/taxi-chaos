@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from './game';
 import { loadScenario } from './lab';
-import { igniteVehicle } from './damage';
+import { igniteVehicle } from './vehicles/damage';
 import { vec } from './physics';
 
 const run = (g: Game, seconds: number, keys: string[] = []) => { g.keys = new Set(keys); for (let i = 0; i < seconds * 120; i++) g.update(1 / 120); g.keys.clear(); };

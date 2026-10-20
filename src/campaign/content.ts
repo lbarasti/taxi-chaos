@@ -2,7 +2,7 @@ import { dayMinute } from './clock';
 import type { CampaignDefinition, Claim, WorldOperation } from './model';
 import { rides } from './content-rides';
 import { bulletins, scenes, ordinaryResponses } from './content-presentation';
-import type { CharacterId } from '../characters';
+import type { CharacterId } from '../narrative/characters';
 import type { Mission, MissionCatalogue, MissionDialogueBeat, Condition, Effect } from '../missions/schema';
 
 const freezeFacts = <T>(value: T): T => {

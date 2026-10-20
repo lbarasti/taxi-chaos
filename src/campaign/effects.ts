@@ -1,4 +1,4 @@
-import { MAX_NOTEBOOK_ENTRIES, type NotebookEntry } from '../player-records';
+import { MAX_NOTEBOOK_ENTRIES, type NotebookEntry } from '../narrative/player-records';
 import type { MissionProgress } from '../missions/progress';
 import type { Effect } from '../missions/schema';
 import type { CampaignContext } from './model';

@@ -1,4 +1,4 @@
-import type { StoryMessage } from '../story';
+import type { StoryMessage } from '../narrative/story';
 import { campaignDefinition } from './content';
 import type { Campaign } from './state';
 import type { CampaignDefinition, CampaignInputs } from './model';

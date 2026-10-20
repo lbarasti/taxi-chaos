@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayMinute } from './campaign/clock';
+import { dayMinute } from '../campaign/clock';
 import { textExpiryDiscs, textHistory, textTiming } from './text-messages';
 import { parsePlayerRecords, type TextReceipt } from './player-records';
 
