@@ -22,7 +22,7 @@ function drawResort(r: Renderer, prop: Prop) {
   c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
   // Oversized concrete podiums consume almost the entire eastern sand frontage.
   // Stacked balcony bands and rising penthouse tiers give the blocks urban mass.
-  r.rect(left + 1.1, top + 1.2, w + 1.2, h + 0.3, '#17333566');
+  r.mapShadow(() => r.rect(left + 1.1, top + 1.2, w + 1.2, h + 0.3, '#17333566'));
   r.rect(left, top, w, h, '#929688', '#e5dcc6');
   r.rect(left + 0.3, top + 0.3, w - 0.6, h - 0.6, '#c4c3af');
   const tiers = floors === 9 ? 2 : floors === 14 ? 3 : 4;
@@ -83,7 +83,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.rect(-b.w / 2, -0.3, b.w, 0.6, '#f0e4c660');
     for (let x = -b.w / 2 + 0.3; x < b.w / 2; x += 0.675) r.rect(x, -0.25, 0.12, 0.5, '#c1a47b50');
   } else if (prop.kind === 'lifeguard-tower') {
-    r.rect(-1.65, -1.3, 4.3, 4.2, '#607b6b38');
+    r.mapShadow(() => r.rect(-1.65, -1.3, 4.3, 4.2, '#607b6b38'));
     for (const x of [-1.8, 1.5]) for (const y of [-1.7, 0.5]) r.rect(x, y, 0.3, 0.6, '#a78a65');
     r.rect(-2.3, -2.1, 4.6, 3.3, '#a89778');
     for (let y = -1.8; y < 1.1; y += 0.45) r.rect(-2.1, y, 4.2, 0.07, '#dbc7a0');
@@ -97,7 +97,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.rect(-2.1, -2, 0.1, 1.1, '#7d9189');
     path(r, [vec(-2, -2), vec(-1.2, -1.7), vec(-2, -1.4)], '#e79079', 0, true);
   } else if (prop.kind === 'parasol') {
-    r.circle(vec(0.6, 0.65), 1.65, '#8a7e5840');
+    r.mapShadow(() => r.circle(vec(0.6, 0.65), 1.65, '#8a7e5840'));
     for (let i = 0; i < 8; i++) {
       c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 1.7, i * Math.PI / 4, (i + 1) * Math.PI / 4); c.closePath();
       c.fillStyle = i % 2 ? '#fff0cc' : prop.color; c.fill();
@@ -105,7 +105,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     }
     r.circle(vec(), 0.14, '#fff4d4');
   } else if (prop.kind === 'beach-chair') {
-    r.rect(-0.49, -1.17, 1.08, 2.4, '#aa906333');
+    r.mapShadow(() => r.rect(-0.49, -1.17, 1.08, 2.4, '#aa906333'));
     r.rect(-0.5, -1.2, 1, 2.4, '#eee3c5'); r.rect(-0.4, -1.08, 0.8, 2.14, prop.color);
     for (let y = -1; y < 1; y += 0.38) r.rect(-0.4, y, 0.8, 0.12, '#fff0c997');
     r.rect(-0.5, -0.5, 1, 0.1, '#aa8866');
@@ -117,7 +117,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     r.rect(1.05, 0.3, 0.35, 0.3, '#d58a70');
   } else if (prop.kind === 'palm') {
     const light = r.game.dayNight.lighting;
-    path(r, [vec(), vec(-light.sunDirection.x * 2.5, -light.sunDirection.y * 2.5)], '#63745938', 0.65);
+    r.mapShadow(() => path(r, [vec(), vec(-light.sunDirection.x * 2.5, -light.sunDirection.y * 2.5)], '#63745938', 0.65));
     r.circle(vec(), 0.42, '#9b805b');
     for (let i = 0; i < 7; i++) {
       c.save(); c.rotate(i * Math.PI * 2 / 7 + prop.id * 0.3);
@@ -126,7 +126,7 @@ export function drawObjectFallback(r: Renderer, prop: Prop): boolean {
     }
     r.circle(vec(), 0.27, '#bdac74');
   } else if (prop.kind === 'bollard') {
-    r.circle(vec(0.12, 0.16), 0.32, '#687e6d44'); r.circle(vec(), 0.3, prop.color); r.circle(vec(-0.05, -0.05), 0.2, '#e7dcc0');
+    r.mapShadow(() => r.circle(vec(0.12, 0.16), 0.32, '#687e6d44')); r.circle(vec(), 0.3, prop.color); r.circle(vec(-0.05, -0.05), 0.2, '#e7dcc0');
   } else {
     r.rect(-b.w / 2, -0.3, b.w, 0.6, prop.color, '#b3b9a7');
     for (let x = -b.w / 2 + 1.2; x < b.w / 2 - 0.7; x += 2.4) { r.circle(vec(x, 0), 0.38, '#779072'); r.circle(vec(x - 0.1, -0.1), 0.22, '#a2b788'); }

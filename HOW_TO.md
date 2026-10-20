@@ -113,4 +113,11 @@ The world clock begins at **07:00** and advances while you play; pause, garage, 
 
 Press **F2** to try scenarios, inspect debug views, adjust traffic, use cheats, or audition sound effects. Difficulty, gore, and audio preferences are in the welcome/pause **Settings** menu. Fixtures cover deliveries, vehicles, collisions, recovery, police, fires, coastal hazards, and locations listed above. The lab uses an isolated game without changing normal progress. **Erase saved progress** is a separate action from resetting a test run.
 
+Choose **Map layers** to view land, terrain materials, artwork bounds, collisions,
+prop shadows and light blockers. Use presets, checkboxes or **Solo**, then click/tap
+the world to inspect an entity and its ID. **Free camera** pans by dragging or
+WASD/arrows and zooms with the wheel or +/−; **Follow actor** returns to driving.
+**Pause simulation** freezes the scene for inspection. **Reset view** or closing
+Layers restores normal rendering; **Return to saved game** exits the temporary lab.
+
 Progress and gameplay settings are stored in browser storage when available. If storage is blocked, the game remains playable, but progress may not persist.

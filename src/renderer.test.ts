@@ -39,6 +39,28 @@ function renderer() {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('prop render dispatch', () => {
+  it('isolates actual prop shadows from hidden artwork and preserves the light blockers', () => {
+    const { r } = renderer();
+    const stack: number[] = [];
+    r.ctx.save = () => { stack.push(r.ctx.globalAlpha); };
+    r.ctx.restore = () => { r.ctx.globalAlpha = stack.pop()!; };
+    const shadows: number[] = [], sprites: number[] = [];
+    r.ctx.fill = () => { shadows.push(r.ctx.globalAlpha); };
+    vi.spyOn(artworkImages, 'has').mockReturnValue(true);
+    vi.spyOn(artworkImages, 'draw').mockImplementation(c => { sprites.push(c.globalAlpha); return true; });
+    const building = prop('building', art('building'));
+    r.game.world.props = [building];
+    const occluders = r.worldOccluders();
+    r.inspection.active = true; r.inspection.solo('shadows');
+    r.drawMapProp(building);
+    expect(sprites).toEqual([0]); expect(shadows[0]).toBeGreaterThan(0);
+    expect(r.worldOccluders()).toEqual(occluders);
+    shadows.length = 0; sprites.length = 0;
+    r.inspection.solo('props'); r.drawMapProp(building);
+    expect(shadows).toEqual([]); expect(sprites).toEqual([1]);
+    expect(r.ctx.globalAlpha).toBe(1);
+  });
+
   it('draws decoded catalogue artwork ahead of the procedural beach/port passes', () => {
     const { r, calls } = renderer();
     const draw = vi.spyOn(artworkImages, 'draw').mockReturnValue(true);

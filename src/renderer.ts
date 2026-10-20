@@ -13,6 +13,8 @@ import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint,
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { artworkImages } from './artwork/images';
 import { artworkFor, artRadius, fallbackScale } from './artwork/catalogue';
+import { InspectionState } from './inspection';
+import { drawInspection } from './inspection-renderer';
 
 import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from './harbour';
 import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
@@ -34,6 +36,8 @@ function mixHex(a: string, b: string, t: number): string {
 }
 
 export class Renderer {
+  readonly inspection = new InspectionState();
+  private drawingMapProp = false;
   ctx: CanvasRenderingContext2D; mapCtx: CanvasRenderingContext2D; width = 0; height = 0; dpr = 1; camera = vec(4, 25); zoom = 9; frames = 0; fps = 60; debugColliders = false; debugAI = false;
   lightLayer = new LightingLayer(0.5);
   navigationRouteVisible = true;
@@ -65,6 +69,8 @@ export class Renderer {
   }
   draw(dt: number) {
     this.frames++; const g = this.game, c = this.ctx, p = g.actor;
+    const view = this.inspection;
+    if (!view.freeCamera) {
     const targetZoom = clamp(Math.min(this.width / 125, this.height / 86), 5, 10.5) * (1 - clamp(g.speed / 160, 0, 0.2));
     this.zoom += (targetZoom - this.zoom) * Math.min(1, dt * 3);
     if (g.mode === 'intro') this.ambientTime += dt;
@@ -82,14 +88,17 @@ export class Renderer {
       this.introTransition = null;
       this.camera = add(this.camera, scale(sub(wanted, this.camera), Math.min(1, dt * 5)));
     }
+    }
     const lighting = g.dayNight.lighting;
     this.sun = scale(lighting.sunDirection, Math.max(0, lighting.shadowLength));
     this.shadowT = clamp(lighting.shadowOpacity * 1.4, 0, 1);
     this.shadowAlpha = clamp(0.25 + 0.75 * lighting.shadowOpacity, 0, 1);
     this.daylight = clamp(1 - lighting.darkness, 0, 1);
-    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.fillStyle = mixHex('#183139', '#86a4ad', this.daylight * 0.5); c.fillRect(0, 0, this.width, this.height);
+    const shadowOnly = view.shown('shadows') && !view.shown('props') && !view.shown('actors') && !view.shown('lighting');
+    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.fillStyle = view.shown('ground') ? mixHex('#183139', '#86a4ad', this.daylight * 0.5) : shadowOnly ? '#c2cbc7' : '#18262c'; c.fillRect(0, 0, this.width, this.height);
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
-    this.ground();
+    if (view.shown('ground')) this.ground();
+    if (view.shown('effects')) {
     g.fx.drawGround(c, g.settings.gore);
     const marks = new Map<string, typeof g.skids>();
     for (const s of g.skids) {
@@ -105,16 +114,18 @@ export class Renderer {
       c.beginPath(); for (const s of batch) { c.moveTo(s.a.x, s.a.y); c.lineTo(s.b.x, s.b.y); } c.stroke();
     }
     c.globalAlpha = 1;
+    }
     const groundAura = onBoardLight(g, g.player, this.reducedMotion);
-    if (groundAura?.groundOnly && this.visible(g.player.body.position)) {
+    if (view.shown('actors') && view.shown('lighting') && groundAura?.groundOnly && this.visible(g.player.body.position)) {
       // Ground spill precedes every raised sprite: the bike, rider and parcel retain their colours.
       this.lightLayer.renderGroundGlow(c, {
         width: this.width, height: this.height, dpr: this.dpr, state: lighting, lights: [groundAura],
         zoom: this.zoom, project: point => this.screen(point),
       });
     }
-    for (const prop of g.world.props) if (this.visible(prop.body.position, artRadius(prop))) this.prop(prop);
-    this.campaignFrontages();
+    for (const prop of g.world.props) if (this.visible(prop.body.position, artRadius(prop))) this.drawMapProp(prop);
+    if (view.shown('props')) { c.save(); c.globalAlpha = view.active ? view.options.propOpacity : 1; this.campaignFrontages(); c.restore(); }
+    if (view.shown('actors')) {
     for (const person of g.world.people) if (this.visible(person.position, 2)) {
       if (person.aboard) continue;
       if (!person.alive) { if (g.settings.gore && person.deathTime >= 0) drawCorpse(c, person); continue; }
@@ -169,12 +180,15 @@ export class Renderer {
       c.restore();
     }
     drawHarbourActivity(this);
-    g.fx.drawAir(c, g.time, g.settings.gore);
+    }
+    if (view.shown('effects')) g.fx.drawAir(c, g.time, g.settings.gore);
     c.restore();
-    this.lightingPass(lighting);
+    if (view.shown('lighting')) this.lightingPass(lighting);
+    else this.lastAura = null;
     // Navigation, labels and debug feedback are redrawn above the lighting pass so night never
     // hides the destination markers or the player's read-outs.
     c.save(); c.translate(this.width * 0.53, this.height * 0.54); c.scale(this.zoom, this.zoom); c.translate(-this.camera.x, -this.camera.y);
+    if (view.shown('markers')) {
     if (this.visible(PORT_ENTRY, 10)) this.label('HARBOUR / $75', PORT_ENTRY.x, PORT_ENTRY.y + 3, 0.9, '#a3ddc2', '700');
     this.marker(GARAGE, navigationTargetColours.garage, 'PIT STOP', true);
     if (g.campaignEnabled) this.marker(g.newsroom, '#d5b6e4', 'NEWSROOM', true);
@@ -200,12 +214,14 @@ export class Renderer {
       this.label(g.tumble ? g.tumble.grounded ? 'ROLLING!' : 'JUMP!' : 'YOU', p.x, p.y - 1.8, 0.72, GOLD, '700');
       const car = g.nearestCar; if (car) this.marker(car.body.position, '#8edbe8', g.enterableCar ? car.definition.graphics.sprite === 'motorcycle' ? 'E · RIDE' : 'E · GET IN' : car.definition.graphics.sprite === 'motorcycle' ? 'COURIER BIKE' : 'REPLACEMENT CAR');
     }
-    this.debug();
     for (const feedback of g.feedback) {
       if (!this.visible(feedback.position, 3)) continue;
       c.globalAlpha = Math.min(1, feedback.life / 0.7); this.label(feedback.text, feedback.position.x, feedback.position.y, 1.3, feedback.color, '700');
     }
-    c.globalAlpha = 1; c.restore(); this.edgePointer(); this.minimap();
+    }
+    this.debug();
+    c.globalAlpha = 1; c.restore(); if (view.shown('markers')) this.edgePointer(); this.minimap();
+    drawInspection(this);
   }
   private shadowOffset(angle = 0): Vec {
     const contact = vec(0.16, 0.22);
@@ -230,15 +246,23 @@ export class Renderer {
       c.restore();
     }
   }
-  private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.ctx.save(); this.ctx.globalAlpha *= this.shadowAlpha; this.rect(x, y, w, h, color); this.ctx.restore(); }
-  private shadowCircle(p: Vec, r: number, color: string) { this.ctx.save(); this.ctx.globalAlpha *= this.shadowAlpha; this.circle(p, r, color); this.ctx.restore(); }
+  /** Map shadows have independent visibility/alpha, even when their artwork is hidden.
+   * Keep each callback at its original painter-order position. Actor shadows belong to actors. */
+  mapShadow(draw: () => void) {
+    if (this.drawingMapProp && !this.inspection.shown('shadows')) return;
+    this.ctx.save();
+    if (this.drawingMapProp) this.ctx.globalAlpha = 1;
+    try { draw(); } finally { this.ctx.restore(); }
+  }
+  private shadowRect(x: number, y: number, w: number, h: number, color: string) { this.mapShadow(() => { this.ctx.globalAlpha *= this.shadowAlpha; this.rect(x, y, w, h, color); }); }
+  private shadowCircle(p: Vec, r: number, color: string) { this.mapShadow(() => { this.ctx.globalAlpha *= this.shadowAlpha; this.circle(p, r, color); }); }
   private worldViewport(): Viewport {
     const left = this.camera.x + (0 - this.width * 0.53) / this.zoom, right = this.camera.x + (this.width - this.width * 0.53) / this.zoom;
     const top = this.camera.y + (0 - this.height * 0.54) / this.zoom, bottom = this.camera.y + (this.height - this.height * 0.54) / this.zoom;
     return { minX: left, minY: top, maxX: right, maxY: bottom };
   }
   /** Alive raised structures visible (plus a small margin) that mask/clip street-level beams. */
-  private worldOccluders(): Occluder[] {
+  worldOccluders(): Occluder[] {
     return collectOccluders(this.game.world.props, this.worldViewport(), 20, prop => {
       const art = artworkFor(prop);
       return art && artworkImages.has(art.image) ? art.occluder : prop.building?.silhouette;
@@ -481,8 +505,8 @@ export class Renderer {
       c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
       // Structure artwork shares the old prop pass. Destruction above stays authoritative.
       if (art.castsShadow !== false) {
-        c.save(); c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
-        trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); c.restore();
+        this.mapShadow(() => { c.translate(so.x, so.y); c.globalAlpha *= this.shadowAlpha;
+          trace(c, [...art.silhouette], true); c.fillStyle = '#172c2d80'; c.fill(); });
       }
       artworkImages.draw(c, art);
       if (prop.kind === 'building') {
@@ -516,7 +540,7 @@ export class Renderer {
     } else if (prop.kind === 'rock') {
       const w = b.w / 2, h = b.h / 2;
       const shape = [vec(-w, -h * 0.55), vec(-w * 0.65, -h), vec(w * 0.45, -h), vec(w, -h * 0.2), vec(w * 0.8, h), vec(-w * 0.5, h), vec(-w, h * 0.4)];
-      c.save(); c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); c.restore();
+      this.mapShadow(() => { c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); });
       trace(c, shape, true); c.fillStyle = prop.color; c.fill(); c.strokeStyle = '#b4b49a70'; c.lineWidth = 0.12; c.stroke();
       trace(c, [vec(-w * 0.65, -h), vec(-w * 0.2, 0), vec(w * 0.8, h)]); c.strokeStyle = '#33484070'; c.stroke();
     } else if (prop.kind === 'building' && (prop.label.startsWith('VILLA ') || prop.label === 'FAIRWAY CLUB')) {
@@ -617,6 +641,12 @@ export class Renderer {
       this.rect(-b.w / 2, -0.3, b.w, 0.6, prop.color); for (let i = -1.2; i < 1.4; i += 0.6) this.rect(i, -0.3, 0.22, 0.6, '#31424a');
     } else { this.rect(-0.4, -0.4, 0.8, 0.8, prop.color, '#28483e'); this.rect(-0.32, -0.32, 0.64, 0.22, '#335b52'); }
     c.restore();
+  }
+  drawMapProp(prop: Prop) {
+    const c = this.ctx, view = this.inspection;
+    c.save(); c.globalAlpha = view.shown('props') ? (view.active ? view.options.propOpacity : 1) : 0;
+    this.drawingMapProp = true;
+    try { this.prop(prop); } finally { this.drawingMapProp = false; c.restore(); }
   }
   car(v: Vehicle) {
     if (v.sinking) {

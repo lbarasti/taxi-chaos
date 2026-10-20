@@ -7,7 +7,7 @@ function line(r: Renderer, points: { x: number; y: number }[], color: string, wi
   const c = r.ctx; c.beginPath(); points.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.strokeStyle = color; c.lineWidth = width; c.stroke();
 }
 function box(r: Renderer, x: number, y: number, w: number, h: number, color: string, name = '', tiers = 1) {
-  r.rect(x - w / 2 + 1.1, y - h / 2 + 1.3, w + 0.4, h + 0.4, '#152e3255');
+  r.mapShadow(() => r.rect(x - w / 2 + 1.1, y - h / 2 + 1.3, w + 0.4, h + 0.4, '#152e3255'));
   r.rect(x - w / 2, y - h / 2, w, h, '#314a4d');
   const lift = tiers * 0.35;
   r.rect(x - w / 2 - 0.15, y - h / 2 - lift, w, h, color, '#d6e1bb70');

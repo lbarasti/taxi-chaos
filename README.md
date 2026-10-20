@@ -142,6 +142,38 @@ drafting session, and `preview({ spawnId: 'fairway-club' })` starts an isolated
 persistence-disabled game; `edit()` discards it and `close()` restores the original
 game. `live()` restores realtime preview after fixed stepping.
 
+**F2 → Map layers** opens a read-only inspector in the temporary lab game. The
+**Layers** button also works in validated map previews while the Lab is locked.
+Choose Normal, Land/water, Terrain, Collision/artwork or Lighting; toggle or solo
+scene layers and geometry overlays, and adjust prop/overlay opacity. Click a point
+to inspect overlapping entities, their IDs and owners, the sampled terrain and its
+winning region. Generated scenery without an authored ID is explicitly labelled
+with a runtime ID. Land coverage, tyre materials and light blockers use the current
+compiled map and live world. Hiding artwork never removes physics or light blockers.
+
+Free camera supports pointer drag, WASD/arrows, wheel zoom and touch-friendly +/−
+buttons. Pause stops realtime simulation without changing its prior fixed/live clock;
+explicit fixed steps still work. Reset view restores normal rendering and actor follow;
+closing or changing games clears inspection state. Map prop shadows are independent
+of artwork; actor shadows remain with actors, and baked-in sprite shading stays with
+the image. The map document, saved settings and progress never store these controls.
+
+The same controls are available as `__taxi.layers`: `open`, `close`, `state`,
+`preset`, `solo`, `configure`, `inspect`, `select`, `camera`, `reset`. For example:
+
+```js
+__taxi.layers.preset('terrain');
+__taxi.layers.camera({ x: 185, y: 256 }, 7);
+__taxi.layers.inspect({ x: 200, y: 259 });
+__taxi.layers.configure({ overlays: { collision: true }, propOpacity: 0.25 });
+__taxi.layers.close();
+__taxi.realtime();
+```
+
+After building, `node tools/layers-check.mjs` checks the standalone inspector offline
+on desktop and three touch layouts, including selection, physical driving, free-camera
+input isolation, pause and preview restoration. Captures go to `scenario-runs/layers/`.
+
 For city buildings, edit reusable object records in
 [`src/catalogue/content.ts`](src/catalogue/content.ts) and placements/campuses in
 [`src/city-content.ts`](src/city-content.ts). A type declares its footprint, storeys,
