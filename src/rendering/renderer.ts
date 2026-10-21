@@ -495,11 +495,8 @@ export class Renderer {
   }
   /** Raised course details share the prop pass, never the ground plate. */
   golfFixtures() {
-    const c = this.ctx;
     for (const [i, hole] of this.game.map.country.GOLF_HOLES.entries()) {
       this.circle(hole.green, 0.16, '#253d30');
-      this.rect(hole.green.x, hole.green.y - 1.3, 0.08, 1.3, '#efe9d1');
-      trace(c, [vec(hole.green.x, hole.green.y - 1.3), vec(hole.green.x + 0.8, hole.green.y - 1.1), vec(hole.green.x, hole.green.y - 0.7)], true); c.fillStyle = '#e87663'; c.fill();
       for (const side of [-1, 1]) this.circle(vec(hole.tee.x, hole.tee.y + side * 0.45), 0.12, '#e8d6a0');
       this.label(String(i + 1), hole.tee.x - 1.7, hole.tee.y, 0.55, '#efe6bb', '700');
     }

@@ -71,7 +71,8 @@ describe('southern woodland estates and golf club', () => {
     for (const prop of world.props.filter(p => !p.sourceId && (p.kind === 'tree' || p.kind === 'rock'))) expect(inCountryClearing(prop.body.position), `${prop.kind} ${prop.body.position.x},${prop.body.position.y}`).toBe(false);
     for (const hole of defaultCompiledMap.country.GOLF_HOLES) for (const p of [hole.tee, hole.green]) {
       const probe = new Body(p.x, p.y, 1, 0.7, 0.7);
-      expect([...world.hash.query(probe)].some(prop => contact(probe, prop.body))).toBe(false);
+      const colliders = [...world.hash.query(probe)].filter(prop => contact(probe, prop.body));
+      expect(colliders.map(prop => prop.kind)).toEqual(p === hole.green ? ['golf-flag'] : []);
     }
     expect(inHighlands(GOLF_COURSE.center)).toBe(true);
   });

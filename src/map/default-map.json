@@ -6477,6 +6477,42 @@
       "label": "",
       "width": 1.15,
       "height": 1.15
+    },
+    {
+      "id": "fairway-flag-1",
+      "owner": "southern-estates",
+      "type": "golf-flag",
+      "position": {
+        "x": 192.788,
+        "y": 471.945
+      },
+      "angle": 0,
+      "color": "#e87663",
+      "label": "HOLE 1"
+    },
+    {
+      "id": "fairway-flag-2",
+      "owner": "southern-estates",
+      "type": "golf-flag",
+      "position": {
+        "x": 145.043,
+        "y": 485.437
+      },
+      "angle": 0,
+      "color": "#e87663",
+      "label": "HOLE 2"
+    },
+    {
+      "id": "fairway-flag-3",
+      "owner": "southern-estates",
+      "type": "golf-flag",
+      "position": {
+        "x": 207.05,
+        "y": 498.93
+      },
+      "angle": 0,
+      "color": "#e87663",
+      "label": "HOLE 3"
     }
   ],
   "residents": [
