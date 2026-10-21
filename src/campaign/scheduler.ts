@@ -1,3 +1,4 @@
+import { compareCampaignBoundaries } from './history';
 import { printEdition } from './editions';
 import { campaignDefinition } from './content';
 import { campaignDay, campaignDays, editionTime } from './clock';
@@ -51,7 +52,7 @@ export function advanceCampaignTo(state: Campaign, requested: number, inputs: Ca
         const at = editionTime(day, definition.timing);
         if (at <= target && at <= definition.timing.lastEdition && !s.editions.some(edition => edition.day === day)) due.push({ at, phase: 4 + claims.length, id: `press-${day}`, event: () => ({ type: 'printing', day }) });
       }
-      due.sort((a, b) => a.at - b.at || a.phase - b.phase || a.id.localeCompare(b.id));
+      due.sort(compareCampaignBoundaries);
       if (!due.length && s.minute !== target) { s.minute = target; s.shift = campaignDay(target, definition.timing); continue; }
       if (!due.length) { s.minute = target; s.shift = campaignDay(target, definition.timing); s.finished = target === definition.timing.end; return changed; }
       const next = due[0]; s.minute = Math.max(s.minute, next.at); s.shift = campaignDay(s.minute, definition.timing);

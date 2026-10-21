@@ -44,11 +44,11 @@ function campaignMarkup(game: Game) {
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
 }
-export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom' }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom', articleId }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage; articleId?: string }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
-    case 'publications': return publicationsMarkup(game, editionDay, publicationBack);
+    case 'publications': return publicationsMarkup(game, editionDay, publicationBack, articleId);
     case 'finale': return finaleMarkup(game);
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'notebook': return notebookMarkup(game, entry);

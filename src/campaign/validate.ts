@@ -138,7 +138,20 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     if (new Set(articles.map(a => a.id)).size !== articles.length || new Set(articles.flatMap(a => a.image ? [a.image] : [])).size !== articles.filter(a => a.image).length) throw new Error('Newspaper articles need distinct IDs and pictures');
     for (const a of articles) { id(a.id); if (![a.title, a.deck, a.imageAlt, a.caption, a.section, ...a.body].every(v => typeof v === 'string' && v.length > 0) || !a.body.length || a.body.length > 8) throw new Error('Incomplete newspaper article'); }
     for (const key of Object.keys(press.investigations)) ref(def.claims, key, 'newspaper claim');
-    for (const b of press.briefs) { id(b.id); condition(b.requires); }
+    // Only direct timed operation/reaction writes can be reconstructed from the ledger.
+    const unrecordedWrites = new Set([
+      ...def.handlers.flatMap(handler => handler.effects),
+      ...Object.values(def.missions.missions).flatMap(mission => [...(mission.effects ?? []), ...(mission.contactLost?.effects ?? []),
+        ...(mission.choices ?? []).flatMap(group => group.options.flatMap(option => option.effects ?? []))]),
+    ].flatMap(effect => 'setWorld' in effect ? [effect.setWorld.key] : []));
+    for (const b of press.briefs) {
+      id(b.id); condition(b.requires);
+      if (b.requires) walk(b.requires, node => {
+        if (!['all', 'any', 'not', 'minuteAtLeast', 'minuteBefore', 'shiftAtLeast', 'shiftAtMost', 'worldEquals', 'worldAtLeast', 'occurred', 'published', 'reacted'].some(key => Object.hasOwn(node, key))) throw new Error(`Brief requires a reconstructible historical predicate: ${b.id}`);
+        const key = 'worldEquals' in node ? node.worldEquals.key : 'worldAtLeast' in node ? node.worldAtLeast.key : undefined;
+        if (key && unrecordedWrites.has(key)) throw new Error(`Brief depends on unrecorded world changes: ${b.id} / ${key}`);
+      });
+    }
   }
   for (const milestone of def.milestones ?? []) condition(milestone.requires);
   claimOrder(def);

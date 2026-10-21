@@ -4,7 +4,9 @@ import { campaignCondition } from '../missions/conditions';
 import { claimOrder } from './validate';
 import type { Effect } from '../missions/schema';
 import { campaignDay, nextEdition } from './clock';
-import { printEdition, restoreEditions } from './editions';
+import { advanceCampaignTo } from './scheduler';
+import { compareCampaignBoundaries } from './history';
+import { restoreEditions } from './editions';
 import type { Occurrence } from './events';
 
 export type PrintedEdition = { day: number; at: number; articles: string[]; briefs: string[]; read: boolean };
@@ -19,18 +21,23 @@ export type Campaign = {
   publications: Publication[]; reactions: Partial<Record<Allegation, { at: number }>>;
   regularRides: Record<string, number>; ordinarySinceStory: number; activeRide: ActiveRide | null;
 };
-export function defaultCampaign(definition: CampaignDefinition = campaignDefinition): Campaign {
-  const state: Campaign = { version: 2, minute: definition.timing.start, shift: 1, finished: false, editions: [], endingSeen: false, occurrences: {}, world: { ...definition.initialWorld }, newsroom: { received: {}, cases: {} }, publications: [], reactions: {}, regularRides: {}, ordinarySinceStory: 0, activeRide: null };
-  printEdition({ state, definition }, 1);
+function initialCampaign(definition: CampaignDefinition): Campaign {
+  return { version: 2, minute: definition.timing.start, shift: 1, finished: false, editions: [], endingSeen: false, occurrences: {}, world: { ...definition.initialWorld }, newsroom: { received: {}, cases: {} }, publications: [], reactions: {}, regularRides: {}, ordinarySinceStory: 0, activeRide: null };
+}
+export function defaultCampaign(definition: CampaignDefinition = campaignDefinition, inputs: CampaignInputs = {}): Campaign {
+  const state = initialCampaign(definition);
+  advanceCampaignTo(state, definition.timing.start, inputs, definition);
   return state;
 }
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
 /** Validate current snapshots in chronological domain order, without replaying gameplay effects. */
 export function parseCampaign(raw: unknown, definition: CampaignDefinition = campaignDefinition, inputs: CampaignInputs = {}): Campaign {
-  const state = defaultCampaign(definition), s = object(raw);
+  const s = object(raw);
+  if (s.version !== 2) return defaultCampaign(definition, inputs);
+  // Loading uses ledger reconstruction, never startup gameplay effects.
+  const state = initialCampaign(definition);
   const time = (value: unknown, until: number): value is number => typeof value === 'number' && Number.isFinite(value) && value >= definition.timing.start && value <= until;
-  if (s.version !== 2) return state;
   const minute = time(s.minute, definition.timing.end) ? s.minute : definition.timing.start;
   const allegations = claimOrder(definition), rank = (id: string) => allegations.indexOf(id);
   const savedWorld: WorldState = {};
@@ -111,7 +118,7 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
       worldEffects(definition.claims[id].reactionEffects);
     } });
   }
-  timeline.sort((a, b) => a.at - b.at || a.phase - b.phase || a.id.localeCompare(b.id));
+  timeline.sort(compareCampaignBoundaries);
   for (let i = 0; i < timeline.length;) {
     const at = timeline[i].at; state.minute = at; state.shift = campaignDay(at, definition.timing);
     const group = []; while (i < timeline.length && timeline[i].at === at) group.push(timeline[i++]);

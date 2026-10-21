@@ -6,17 +6,21 @@ import { campaignDays, dayMinute, displayDay, editionTime } from './clock';
 import { advanceCampaignTo, approvePublication, receiveMaterial } from './scheduler';
 import { editionArticle } from './editions';
 import { assertCampaignDefinition } from './validate';
-import { Game } from '../game/game';
+import { Game, defaultSave } from '../game/game';
 import { finaleMarkup, publicationsMarkup } from './newspaper-view';
 import { playerHudState } from '../ui/player-hud';
-import type { CampaignDefinition } from './model';
+import type { CampaignDefinition, EditionCondition } from './model';
+import type { Condition, Effect } from '../missions/schema';
+import { defaultMissionProgress } from '../missions/progress';
+import { defaultPlayerRecords } from '../narrative/player-records';
+import { escape } from './view';
 
-function reported() {
-  const state = defaultCampaign();
-  advanceCampaignTo(state, dayMinute(11, 9));
-  for (const id of ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon']) receiveMaterial(state, id);
-  advanceCampaignTo(state, dayMinute(11, 12));
-  for (const id of ['coordination', 'policing', 'knowledge']) expect(approvePublication(state, id)).toBe(true);
+function reported(definition = campaignDefinition) {
+  const state = defaultCampaign(definition);
+  advanceCampaignTo(state, dayMinute(11, 9), {}, definition);
+  for (const id of ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon']) receiveMaterial(state, id, {}, definition);
+  advanceCampaignTo(state, dayMinute(11, 12), {}, definition);
+  for (const id of ['coordination', 'policing', 'knowledge']) expect(approvePublication(state, id, {}, definition)).toBe(true);
   return state;
 }
 
@@ -147,6 +151,143 @@ describe('daily editions and campaign finale', () => {
     expect(html).not.toContain('Vale retained Meridian'); expect(html).not.toContain('Patrol inquiry opened');
     expect(html).toContain('Edition archive');
     expect(publicationsMarkup(game, 5)).not.toContain('data-edition-day="6"');
+  });
+
+
+  it('settles start-time operations in scheduler order before the opening paper, exactly once', () => {
+    const press = campaignDefinition.newspaper!;
+    const definition: CampaignDefinition = { ...campaignDefinition,
+      initialWorld: { ...campaignDefinition.initialWorld, opening: 'pending' },
+      operations: [
+        { id: 'z-opening', at: campaignDefinition.timing.start, effects: [], outcomes: [
+          { id: 'ready', requires: { worldEquals: { key: 'opening', value: 'ready' } }, effects: [
+            { setWorld: { key: 'opening', value: 'printed' } }, { setFlag: 'opening-recorded' },
+            { relationship: { character: 'bea', delta: 1 } }, { acquireMaterial: 'eli-docket' },
+          ] }, { id: 'missed', effects: [] },
+        ] },
+        { id: 'a-opening', at: campaignDefinition.timing.start, effects: [{ setWorld: { key: 'opening', value: 'ready' } }] },
+        ...campaignDefinition.operations,
+      ],
+      newspaper: { ...press, briefs: [
+        { id: 'opening-ready', requires: { all: [{ occurred: 'z-opening' }, { worldEquals: { key: 'opening', value: 'printed' } }] }, title: 'Opening news', text: 'The opening operations have settled.' },
+        { id: 'opening-pending', requires: { worldEquals: { key: 'opening', value: 'pending' } }, title: 'Pending news', text: 'This should never print.' },
+      ] },
+    };
+    expect(() => assertCampaignDefinition(definition)).not.toThrow();
+    const save = defaultSave(definition);
+    expect(save.campaign.occurrences['z-opening'].outcome).toBe('ready');
+    expect(save.campaign.editions[0].briefs).toEqual(['opening-ready']);
+    expect(save.story.flags).toContain('opening-recorded');
+    expect(save.story.relationships.bea).toBe(1);
+    expect(save.playerRecords.notebook.map(entry => entry.id)).toContain('eli-docket');
+    const inputs = { progress: save.story, records: save.playerRecords };
+    const before = structuredClone(save);
+    expect(advanceCampaignTo(save.campaign, definition.timing.start, inputs, definition)).toBe(false);
+    const parsed = parseCampaign({ ...save.campaign, editions: undefined }, definition, inputs);
+    expect(parsed).toEqual(save.campaign);
+    expect(save).toEqual(before); // Loading must not repeat relationship or knowledge effects.
+    advanceCampaignTo(save.campaign, dayMinute(4), inputs, definition);
+    expect(parseCampaign({ ...save.campaign, editions: undefined }, definition, inputs).editions).toEqual(save.campaign.editions);
+    expect(save.story.relationships.bea).toBe(1);
+  });
+
+  it('reconstructs every supported brief predicate at its own printing boundary', () => {
+    const press = campaignDefinition.newspaper!;
+    const conditions: Record<string, EditionCondition> = {
+      'later-shift': { shiftAtLeast: 3 }, 'opening-shift': { shiftAtMost: 1 },
+      'later-time': { minuteAtLeast: dayMinute(5, 6) }, 'early-time': { minuteBefore: dayMinute(5, 6) },
+      'count-ready': { worldAtLeast: { key: 'history-count', value: 1 } },
+      'count-exact': { worldEquals: { key: 'history-count', value: 1 } },
+      'branch-recorded': { worldEquals: { key: 'history-branch', value: 'chosen' } },
+      'operation-recorded': { occurred: 'z-history' },
+      'report-published': { published: 'knowledge' }, 'response-recorded': { reacted: 'knowledge' },
+      'nested-facts': { all: [{ any: [{ shiftAtMost: 1 }, { worldAtLeast: { key: 'history-count', value: 1 } }] }, { not: { published: 'knowledge' } }] },
+    };
+    const definition: CampaignDefinition = { ...campaignDefinition,
+      initialWorld: { ...campaignDefinition.initialWorld, 'history-count': 0, 'history-branch': 'pending' },
+      operations: [
+        { id: 'z-history', at: dayMinute(2, 6), effects: [{ setWorld: { key: 'history-count', value: 1 } }], outcomes: [
+          { id: 'selected', requires: { flag: 'historical-choice' }, effects: [{ setWorld: { key: 'history-branch', value: 'chosen' } }] },
+          { id: 'fallback', effects: [] },
+        ] },
+        { id: 'a-history', at: dayMinute(2, 6), effects: [{ setWorld: { key: 'history-count', value: 2 } }] },
+        { id: 'reset-history', at: dayMinute(5, 6), effects: [{ setWorld: { key: 'history-count', value: 0 } }] },
+        ...campaignDefinition.operations,
+      ],
+      newspaper: { ...press, briefs: Object.entries(conditions).map(([id, requires]) => ({ id, requires, title: id, text: 'Historical coverage.' })) },
+    };
+    expect(() => assertCampaignDefinition(definition)).not.toThrow();
+    const progress = defaultMissionProgress(), records = defaultPlayerRecords(), inputs = { progress, records };
+    progress.flags.push('historical-choice');
+    const state = defaultCampaign(definition, inputs);
+    // Printing live in small steps and skipping must agree with reconstruction.
+    for (let day = 1; day <= 11; day++) advanceCampaignTo(state, dayMinute(day, 9), inputs, definition);
+    for (const id of ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon']) receiveMaterial(state, id, inputs, definition);
+    advanceCampaignTo(state, dayMinute(11, 12), inputs, definition);
+    for (const id of ['coordination', 'policing', 'knowledge']) expect(approvePublication(state, id, inputs, definition)).toBe(true);
+    advanceCampaignTo(state, definition.timing.end, inputs, definition);
+    progress.flags = []; // Reconstruct the recorded branch, not its final prerequisite.
+    const before = structuredClone(state);
+    const migrated = parseCampaign({ ...state, editions: undefined }, definition);
+    expect(migrated.editions).toEqual(state.editions);
+    expect(state).toEqual(before);
+    expect(migrated.editions[0].briefs).toEqual(['opening-shift', 'early-time', 'nested-facts']);
+    expect(migrated.editions[1].briefs).toContain('count-ready');
+    expect(migrated.editions[1].briefs).toContain('branch-recorded');
+    expect(migrated.editions[1].briefs).not.toContain('later-shift');
+    expect(migrated.editions[4].briefs).not.toContain('count-ready');
+    expect(migrated.editions[11].briefs).toContain('report-published');
+    expect(migrated.editions[11].briefs).not.toContain('response-recorded');
+    expect(migrated.editions[12].briefs).toContain('response-recorded');
+  });
+
+  it.each<Condition>([
+    { flag: 'mutable-flag' }, { knows: 'eli-docket' }, { materialState: { id: 'eli-docket', state: 'verified' } },
+    { caseState: { id: 'knowledge', state: 'approved' } }, { minDeliveries: 1 }, { minCareerDeliveries: 1 },
+    { chapter: 2 }, { relationshipAtLeast: { character: 'bea', value: 1 } },
+    { missionCompleted: Object.keys(campaignDefinition.missions.missions)[0] },
+    { choiceUnset: Object.values(campaignDefinition.missions.missions).flatMap(mission => mission.choices ?? [])[0].id },
+    { choiceEquals: { group: Object.values(campaignDefinition.missions.missions).flatMap(mission => mission.choices ?? [])[0].id, choice: Object.values(campaignDefinition.missions.missions).flatMap(mission => mission.choices ?? [])[0].options[0].id } },
+  ])('rejects brief predicates whose history is not reconstructible: %j', requires => {
+    const press = campaignDefinition.newspaper!;
+    // Imported content must be checked recursively, even if it bypasses TypeScript.
+    const definition = { ...campaignDefinition, newspaper: { ...press, briefs: [{ id: 'unsafe-history', title: 'Unsafe', text: 'Unsafe.', requires: { all: [{ any: [{ not: requires }] }] } }] } } as CampaignDefinition;
+    expect(() => assertCampaignDefinition(definition)).toThrow(/reconstructible historical predicate/);
+  });
+
+  it.each(['handler', 'mission', 'contact', 'choice'] as const)('rejects world briefs with unrecorded %s writes', source => {
+    const press = campaignDefinition.newspaper!, write: Effect = { setWorld: { key: 'cafe', value: 'open' } };
+    const [id, mission] = Object.entries(campaignDefinition.missions.missions)[0];
+    const definition: CampaignDefinition = { ...campaignDefinition,
+      handlers: source === 'handler' ? [...campaignDefinition.handlers, { on: 'pickup', effects: [write] }] : campaignDefinition.handlers,
+      missions: { ...campaignDefinition.missions, missions: { ...campaignDefinition.missions.missions, [id]: { ...mission,
+        ...(source === 'mission' ? { effects: [write] } : {}),
+        ...(source === 'contact' ? { contactLost: { effects: [write] } } : {}),
+        ...(source === 'choice' ? { choices: [{ id: 'history-choice', commit: 'pickup', options: [{ id: 'write', effects: [write] }] }] } : {}),
+      } } },
+      newspaper: { ...press, briefs: [{ id: 'unsafe-world', title: 'Unsafe', text: 'Unsafe.', requires: { worldEquals: { key: 'cafe', value: 'open' } } }] },
+    };
+    expect(() => assertCampaignDefinition(definition)).toThrow(/unrecorded world changes/);
+  });
+
+  it('makes every simultaneously published article readable without changing the front-page hierarchy', () => {
+    const game = new Game(undefined, false);
+    const state = reported(); advanceCampaignTo(state, dayMinute(12, 6));
+    game.save.campaign = state;
+    const snapshot = structuredClone(state), issue = state.editions.at(-1)!;
+    const front = publicationsMarkup(game, 12);
+    expect(front).toContain('data-article="warning-investigation"');
+    expect(front.match(/data-read-article=/g)).toHaveLength(3);
+    for (const id of issue.articles) {
+      const article = editionArticle(game.campaignContent, id)!;
+      const html = publicationsMarkup(game, 12, 'newsroom', id);
+      expect(html).toContain(`data-article="${id}"`);
+      expect(html).toContain('Back to front page');
+      for (const paragraph of article.body) expect(html).toContain(`<p>${escape(paragraph)}</p>`);
+    }
+    expect(publicationsMarkup(game, 12, 'newsroom', 'day-14')).toEqual(front);
+    expect(publicationsMarkup(game, 12, 'newsroom', 'invented-article')).toEqual(front);
+    expect(state).toEqual(snapshot);
   });
 
   it('validates timing, IDs and distinct supplied photographs', () => {

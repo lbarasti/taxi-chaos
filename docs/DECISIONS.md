@@ -141,3 +141,15 @@ outcomes. Story scheduling ends; ordinary dispatch and the visual clock continue
 Keep authored coverage and outcome copy with campaign content, and bundle any
 supplied illustrations offline. Articles without artwork use a text front page
 until their distinct image is authored.
+
+
+## 10. Bound newspaper briefs to reconstructible history
+
+Refine decision 9: brief conditions may use clock/shift bounds, recorded operations,
+publications, reactions and world keys written only by timed operations or reactions.
+Reject mutable player progress and editorial submission/approval states: saves do
+not preserve their ordering relative to printing at the same timestamp. Recorded
+operation outcomes retain their chosen branch without reevaluating old prerequisites.
+Initialize new campaigns through the chronological scheduler so opening operations
+settle before the first edition. Loading reconstructs history without replaying
+gameplay effects.

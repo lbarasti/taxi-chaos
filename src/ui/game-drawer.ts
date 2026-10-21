@@ -15,6 +15,7 @@ export class GameDrawer {
   private refreshSettings = () => {};
   private page: DrawerPage = 'home';
   private editionDay?: number;
+  private articleId?: string;
   private publicationBack: 'newsroom' | 'finale' = 'newsroom';
   private entry: 'home' | 'newsroom' = 'home';
   private newsroomSection: NewsroomSection | null = null;
@@ -36,6 +37,11 @@ export class GameDrawer {
         this.root.scrollTop = 0; this.menu.reset('publication-back');
         return;
       }
+      if (this.page === 'publications' && button.dataset.readArticle && game.save.campaign.editions.find(edition => edition.day === this.editionDay)?.articles.includes(button.dataset.readArticle)) {
+        this.articleId = button.dataset.readArticle;
+        this.refresh(); this.root.scrollTop = 0; this.menu.reset('publication-front');
+        return;
+      }
       if (this.page === 'newsroom' && button.dataset.newsroomSection && isNewsroomSection(button.dataset.newsroomSection)) {
         this.newsroomSection = button.dataset.newsroomSection;
         this.refresh();
@@ -48,6 +54,7 @@ export class GameDrawer {
         return;
       }
       switch (button.id) {
+        case 'publication-front': this.frontPage(); break;
         case 'arcade-continue': if (game.continueArcade()) options.play(); break;
         case 'start': options.play(); break;
         case 'sleep': if (game.sleep()) options.play(); break;
@@ -91,12 +98,13 @@ export class GameDrawer {
   }
   private selectEdition(day?: number) {
     this.editionDay = day;
+    this.articleId = undefined;
     if (day !== undefined) this.options.game().readEdition(day);
   }
   reset() {
     this.transition?.cancel(); this.transition = undefined;
     this.page = this.entry = 'home'; this.selections.clear(); delete this.root.dataset.page;
-    this.newsroomSection = null; this.editionDay = undefined; this.publicationBack = 'newsroom';
+    this.newsroomSection = null; this.editionDay = undefined; this.articleId = undefined; this.publicationBack = 'newsroom';
   }
   refresh() {
     this.transition?.cancel(); this.transition = undefined;
@@ -126,7 +134,7 @@ export class GameDrawer {
   }
   back() {
     if (this.page === 'finale') { if (this.options.game().save.campaign.endingSeen) void this.open('home'); return true; }
-    if (this.page === 'publications') { void this.open(this.publicationBack); return true; }
+    if (this.page === 'publications') { if (this.articleId) this.frontPage(); else void this.open(this.publicationBack); return true; }
     if (this.page === 'newsroom') {
       if (this.root.querySelector('#newsroom-detail')?.contains(document.activeElement)) this.focusNewsroomMenu();
       else this.options.play();
@@ -153,6 +161,12 @@ export class GameDrawer {
     if (prompts) prompts.innerHTML = splashPrompts(device);
     if (hint) hint.textContent = device === 'touch' ? 'Tap to select · Tap again to confirm' : device === 'xbox' || device === 'playstation' ? `D-pad Select · ${device === 'playstation' ? '×' : 'A'} Confirm` : '↑ ↓ Select · Enter Confirm';
   }
+  private frontPage() {
+    const selected = this.articleId;
+    this.articleId = undefined;
+    this.refresh(); this.root.scrollTop = 0; this.menu.reset(selected ? `read-article-${selected}` : 'publication-back');
+    this.root.querySelector('[data-selected]')?.scrollIntoView({ block: 'nearest' });
+  }
   private paint(direction = 0) {
     const samePage = this.root.dataset.page === this.page;
     const selected = samePage ? this.menu.selectionId : this.selections.get(this.page);
@@ -165,7 +179,7 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry, newsroomSection: this.newsroomSection, editionDay: this.editionDay, publicationBack: this.publicationBack })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry, newsroomSection: this.newsroomSection, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);

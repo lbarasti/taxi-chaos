@@ -40,10 +40,17 @@ export type NewsArticle = Readonly<{
   id: string; title: string; deck: string; body: readonly string[];
   image?: string; imageAlt: string; caption: string; section: string;
 }>;
+/** Only clock and scheduled ledger facts have an unambiguous state at printing. */
+export type EditionCondition =
+  | Readonly<{ all: readonly EditionCondition[] }>
+  | Readonly<{ any: readonly EditionCondition[] }>
+  | Readonly<{ not: EditionCondition }>
+  | Extract<Condition, { minuteAtLeast: number } | { minuteBefore: number } | { shiftAtLeast: number } | { shiftAtMost: number }
+    | { worldEquals: unknown } | { worldAtLeast: unknown } | { occurred: string } | { published: string } | { reacted: string }>;
 export type Newspaper = Readonly<{
   masthead: string; byline: string; daily: readonly NewsArticle[];
   investigations: Readonly<Record<string, NewsArticle>>;
-  briefs: readonly Readonly<{ id: string; requires?: Condition; title: string; text: string }>[];
+  briefs: readonly Readonly<{ id: string; requires?: EditionCondition; title: string; text: string }>[];
 }>;
 export type CampaignMilestone = Readonly<{
   requires: Condition; title: string; text: string; missedTitle: string; missedText: string;

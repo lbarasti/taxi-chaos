@@ -47,7 +47,10 @@ export type Save = { cash: number; deliveries: number; garage: GarageSave | null
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
 export { upgradeInfo, type Upgrade } from '../vehicles/vehicle-upgrades';
-export const defaultSave = (definition = campaignDefinition): Save => ({ cash: 80, deliveries: 0, garage: null, best: 0, story: defaultMissionProgress(), playerRecords: defaultPlayerRecords(), campaign: defaultCampaign(definition) });
+export function defaultSave(definition = campaignDefinition): Save {
+  const story = defaultMissionProgress(), playerRecords = defaultPlayerRecords();
+  return { cash: 80, deliveries: 0, garage: null, best: 0, story, playerRecords, campaign: defaultCampaign(definition, { progress: story, records: playerRecords }) };
+}
 function loadSave(definition = campaignDefinition): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(definition); const d = defaultSave(definition); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign, definition, { progress: d.story, records: d.playerRecords }); d.garage = s.garage ? parseGarage(s.garage) : s.upgrades ? legacyGarage(s.upgrades) : null; return d; } catch { return defaultSave(definition); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
@@ -169,7 +172,7 @@ export class Game {
     for (const v of this.vehicles) if (this.isCampaignVehicle(v.sourceId)) v.alive = false;
     this.vehicles = this.vehicles.filter(v => !this.isCampaignVehicle(v.sourceId));
     this.campaignVehiclesSpawned.clear();
-    this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(this.campaignContent); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist();
+    this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(this.campaignContent, { progress: this.save.story, records: this.save.playerRecords }); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist();
   }
   get campaignFinaleReady() {
     return this.campaignEnabled && this.save.campaign.finished && !this.save.campaign.endingSeen

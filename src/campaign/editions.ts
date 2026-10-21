@@ -1,3 +1,4 @@
+import { campaignAt } from './history';
 import { campaignCondition } from '../missions/conditions';
 import { campaignDays, editionTime } from './clock';
 import type { Campaign, PrintedEdition } from './state';
@@ -40,13 +41,7 @@ export function restoreEditions(state: Campaign, raw: unknown, definition: Campa
       state.editions.push({ day, at, articles: [...entry.articles], briefs: [...new Set(entry.briefs)], read: entry.read === true });
       continue;
     }
-    // Rebuild only world facts that already existed at this edition's timestamp.
-    const history: Campaign = { ...state, minute: at, editions: [], world: { ...definition.initialWorld }, publications: state.publications.filter(p => p.at <= at), reactions: Object.fromEntries(Object.entries(state.reactions).filter(([, r]) => r && r.at <= at)), occurrences: Object.fromEntries(Object.entries(state.occurrences).filter(([, o]) => o.at <= at)) };
-    const effects = [
-      ...definition.operations.filter(op => op.at <= at).map(op => ({ at: op.at, effects: [...op.effects, ...(op.outcomes?.find(outcome => outcome.id === state.occurrences[op.id]?.outcome)?.effects ?? [])] })),
-      ...Object.entries(history.reactions).map(([id, reaction]) => ({ at: reaction!.at, effects: definition.claims[id].reactionEffects })),
-    ].sort((a, b) => a.at - b.at);
-    for (const event of effects) for (const effect of event.effects) if ('setWorld' in effect) history.world[effect.setWorld.key] = effect.setWorld.value;
+    const history = campaignAt(state, at, definition);
     printEdition({ state: history, definition }, day);
     state.editions.push(...history.editions);
   }
