@@ -3,7 +3,7 @@ import { clamp, dist, type Vec } from '../physics/physics';
 import type { VehicleUpgrades } from '../vehicles/vehicle-upgrades';
 
 export const soundLabels = {
-  engine: 'Taxi engine', skid: 'Tyre skid', 'boost-start': 'Boost onset', 'boost-loop': 'Boost rush', 'boost-end': 'Boost release',
+  engine: 'Player engine', skid: 'Tyre skid', 'boost-start': 'Boost onset', 'boost-loop': 'Boost rush', 'boost-end': 'Boost release',
   bump: 'Light bump', crunch: 'Metal crunch', crash: 'Heavy crash', wood: 'Wood smash', metal: 'Metal clutter', glass: 'Glass break',
   collapse: 'Structure collapse', explosion: 'Explosion', fire: 'Burning fire', siren: 'Police siren', horn: 'Soft traffic horn', body: 'Body impact', pulp: 'Pulp layer',
   pickup: 'Passenger pickup', payment: 'Fare payment', purchase: 'Upgrade purchase', repair: 'Garage repair', escape: 'Police escaped', arrest: 'Arrest',
@@ -53,11 +53,12 @@ export function drivingSound(speed: number, throttle: number, slip: number, boos
   const load = clamp(throttle, 0, 1), pace = clamp(speed / 40, 0, 1);
   // Blend a low idle with a rougher engine under load; lifting off softens it.
   const power = clamp(load * 0.8 + pace * 0.2 + (boosting ? 0.15 : 0), 0, 1);
-  const gain = 0.22 + pace * 0.08 + load * 0.08;
+  // Layer balance only. The transmission owns RPM, the shift envelope and the
+  // overall gain, so two engine recordings cannot each claim a full engine level.
   return {
-    engineRate: clamp(0.8 + speed / 40 + load * 0.22 + (boosting ? 0.12 : 0), 0.8, 2) * (1 - engine * 0.03),
-    engineGain: gain * (1 - power * 0.65) * (1 + engine * 0.035),
-    engineLoadGain: gain * power * 0.85 * (1 + engine * 0.14),
+    enginePitch: 1 - engine * 0.03,
+    engineGain: (1 - power * 0.65) * (1 + engine * 0.035),
+    engineLoadGain: power * 0.85 * (1 + engine * 0.14),
     engineCutoff: 1300 + load * 2000 + pace * 700 + engine * 400,
     boostGain: boosting ? 0.28 + boost * 0.04 : 0,
     boostRate: 1 + boost * 0.08,

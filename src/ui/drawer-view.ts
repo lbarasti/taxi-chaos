@@ -31,6 +31,7 @@ function settingsMarkup(settings: SettingsControls) {
   </fieldset><fieldset class="settings-group"><legend>AUDIO</legend>
     ${settingRow(settings.muted)}
     ${settingRow(settings.volume)}
+    ${settingRow(settings.playerEngine)}
     ${settingRow(settings.sirens)}
   </fieldset>`;
 }

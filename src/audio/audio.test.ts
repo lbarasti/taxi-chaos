@@ -85,6 +85,7 @@ describe('audio lifecycle and bounded mixer', () => {
     game.player.body.angle = 0; game.player.body.velocity = vec(10, 0); audio.update(game, true, true);
     expect(load.setTargetAtTime.mock.lastCall![0]).toBeLessThan(reversing);
     game.controls.throttle = 1; audio.update(game, true, true);
+    game.time += 0.2; audio.update(game, true, true); // let the 1→2 throttle cut finish
     expect(load.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(reversing);
     game.setMode('paused'); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
   });
@@ -170,10 +171,48 @@ describe('audio lifecycle and bounded mixer', () => {
     expect(audio.state().failures).toHaveLength(audio.state().total);
   });
   it('validates persisted settings and lets zero siren volume disable siren loops', async () => {
-    expect(audioPreferences({ volume: Infinity, sirens: -3 })).toEqual({ muted: false, volume: 0.65, sirens: 0 });
+    expect(audioPreferences({ volume: Infinity, playerEngine: NaN, sirens: -3 })).toEqual({ muted: false, volume: 0.65, playerEngine: 0.7, sirens: 0 });
+    expect(audioPreferences({ playerEngine: -1 }).playerEngine).toBe(0);
+    expect(audioPreferences({ playerEngine: 3 }).playerEngine).toBe(1);
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
     await audio.unlock(); game.start(); const cop = game.vehicle('police', 5, 32, 0, '#fff');
     audio.update(game, true, true); expect(audio.state().loops).toContain(`siren:${cop.id}`);
     audio.configure({ sirens: 0 }); audio.update(game, true, true); expect(audio.state().loops).not.toContain(`siren:${cop.id}`);
+  });
+  it('scales only the player engine, excludes it from traffic and keeps other FX when its level is zero', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);
+    await audio.unlock(); game.start(); game.vehicles = [game.player]; game.player.kind = 'traffic';
+    game.player.body.velocity = vec(10, 0); game.player.body.angle = 0;
+    const traffic = game.vehicle('traffic', game.player.body.position.x + 3, game.player.body.position.y, 0, '#fff');
+    traffic.body.velocity = vec(4, 0); game.controls.boost = true;
+    audio.update(game, true, true);
+    expect(audio.state().loops).not.toContain(`traffic:${game.player.id}`);
+    const source = ctx.createBufferSource.mock.results.map(result => result.value).find(value => value.loop)!;
+    const filter = source.connect.mock.calls[0][0];
+    const gain = filter.connect.mock.calls[0][0].gain;
+    const full = gain.setTargetAtTime.mock.calls.at(-1)![0];
+    audio.configure({ playerEngine: 0.35 }); audio.update(game, true, true);
+    expect(gain.setTargetAtTime.mock.calls.at(-1)![0]).toBeCloseTo(full / 2);
+    audio.configure({ playerEngine: 0 }); game.sounds.emit('crash', game.time); audio.update(game, true, true);
+    expect(audio.state().loops).not.toContain('engine');
+    expect(audio.state().loops).not.toContain('engine-load');
+    expect(audio.state().loops).toContain(`traffic:${traffic.id}`); expect(audio.state().loops).toContain('boost');
+    expect(audio.state().played.crash).toBe(1);
+    audio.configure({ playerEngine: 1 }); audio.update(game, true, true);
+    expect(audio.state().loops).toContain('engine');
+  });
+  it('connects gear drops to the live playback rate and resets them when the run restarts', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);
+    await audio.unlock(); game.start(); game.vehicles = [game.player]; game.player.body.angle = 0;
+    game.player.body.velocity = vec(6.4, 0); game.controls.throttle = 1; audio.update(game, true, true);
+    const source = ctx.createBufferSource.mock.results[0].value;
+    const before = source.playbackRate.setTargetAtTime.mock.calls.at(-1)![0];
+    const loadedSource = ctx.createBufferSource.mock.results[1].value;
+    game.time += 1 / 60; game.player.body.velocity = vec(6.6, 0); audio.update(game, true, true);
+    expect(audio.state().engine?.gear).toBe(2); expect(audio.state().engine?.shifting).toBe(true);
+    expect(source.playbackRate.setTargetAtTime.mock.calls.at(-1)![0]).toBeLessThan(before * 0.85);
+    expect(loadedSource.playbackRate.setTargetAtTime.mock.calls.at(-1)).toEqual(source.playbackRate.setTargetAtTime.mock.calls.at(-1));
+    game.resetRun(); game.start(); audio.update(game, true, true);
+    expect(audio.state().engine?.gear).toBe(1); expect(audio.state().engine?.shifting).toBe(false);
   });
 });

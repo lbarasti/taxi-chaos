@@ -6,6 +6,7 @@ export type VehicleDefinition = {
   readonly chassis: { readonly mass: number; readonly length: number; readonly width: number };
   readonly physics: Partial<CarTuning> & { readonly engineForce: number; readonly grip: number; readonly tyres: readonly TyreLayout[]; readonly dynamics: 'car' | 'motorcycle' };
   readonly graphics: { readonly sprite: 'car' | 'motorcycle' | 'golf-cart' | 'van' | 'truck'; readonly color: string; readonly trim: string; readonly glass: string; readonly roof: string; readonly cargoColor: string; readonly cabLength: number; readonly enginePitch: number };
+  readonly audio: { readonly gearSpeeds: readonly number[]; readonly upgradedSixthSpeed?: number };
   readonly cargo: { readonly kind: 'none' | 'crates' | 'fuel'; readonly mass: number; readonly flammable: boolean; readonly ignitionImpact: number; readonly ignitionBlast: number; readonly fuse: number };
   readonly damage: { readonly impactScale: number; readonly blastScale: number; readonly blastRadius: number; readonly blastPower: number };
   readonly ai: { readonly controller: 'road' | 'golf'; readonly cruiseSpeed: number; readonly cornerSlowdown: number; readonly followingGap: number };
@@ -19,6 +20,7 @@ const car: VehicleDefinition = {
   name: 'City car / taxi / police', chassis: { mass: 1000, length: 4.2, width: 2.1 },
   physics: { dynamics: 'car', engineForce: 10500, grip: 1250, tyres: axles([-1.35, 1.35], 0.7) },
   graphics: { sprite: 'car', color: '#91b5b0', trim: '#24414c', glass: '#29434b', roof: '#e7e5d5', cargoColor: '#dca668', cabLength: 2.45, enginePitch: 1 },
+  audio: { gearSpeeds: [6.5, 10.5, 15.5, 21.5, 29], upgradedSixthSpeed: 38 },
   cargo: noCargo, damage: { impactScale: 1, blastScale: 1, blastRadius: 13, blastPower: 110 },
   ai: { controller: 'road', cruiseSpeed: 9, cornerSlowdown: 1.6, followingGap: 2 },
   access: { playerDrivable: true, job: 'fare' },
@@ -28,6 +30,7 @@ const truck: VehicleDefinition = {
   ...car, name: 'Empty flatbed truck', chassis: { mass: 4200, length: 7.8, width: 2.5 },
   physics: { dynamics: 'car', engineForce: 21500, grip: 2100, brakeDeceleration: 6.5, reverseRatio: 0.4, drag: 25, rollingDrag: 65, steeringLock: 0.75, steeringSpeedFalloff: 0.035, maxLateralAcceleration: 6, tyres: axles([-2.6, -1.5, 2.6], 0.92) },
   graphics: { ...car.graphics, sprite: 'truck', color: '#cd9b66', trim: '#52626a', cargoColor: '#c29762', cabLength: 2.2, enginePitch: 0.7 },
+  audio: { gearSpeeds: [6, 10, 15, 21, 28, 36] },
   damage: { ...car.damage, impactScale: 0.85, blastScale: 0.8 },
   ai: { controller: 'road', cruiseSpeed: 7.5, cornerSlowdown: 2.2, followingGap: 4 },
   access: { playerDrivable: false, job: 'fare' },
@@ -49,12 +52,14 @@ export const vehicleDefinitions = {
     ...car, name: 'Courier motorcycle', chassis: { mass: 260, length: 2.6, width: 0.8 },
     physics: { dynamics: 'motorcycle', engineForce: BIKE_ENGINE, grip: BIKE_GRIP, tyres: [-0.88, 0.88].map(x => ({ x, y: 0, steered: x > 0 })) },
     graphics: { ...car.graphics, sprite: 'motorcycle', color: '#ed9b63', trim: '#24343b', enginePitch: 1.3 },
+    audio: { gearSpeeds: [5.5, 9, 13.5, 18.5, 24.5, 33] },
     access: { playerDrivable: true, job: 'parcel' },
   },
   'golf-cart': {
     ...car, name: 'Country club golf cart', chassis: { mass: 360, length: 2.7, width: 1.6 },
     physics: { dynamics: 'car', engineForce: 2300, grip: 430, tyres: axles([-0.8775, 0.8775], 0.56) },
     graphics: { ...car.graphics, sprite: 'golf-cart', color: '#eee7c8', trim: '#698478', glass: '#b1ddd6', enginePitch: 0.9 },
+    audio: { gearSpeeds: [12] },
     damage: { ...car.damage, impactScale: 3 / 1.45 },
     ai: { ...car.ai, controller: 'golf', cruiseSpeed: 5 }, access: { playerDrivable: false, job: 'fare' },
   },

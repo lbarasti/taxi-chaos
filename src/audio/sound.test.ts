@@ -49,16 +49,13 @@ describe('audio mix signals', () => {
     expect(drivingSound(20, 1, 0, false).skidGain).toBe(0);
     expect(drivingSound(2, 1, 12, false).skidGain).toBe(0);
     expect(drivingSound(20, 1, 8, false).skidGain).toBeGreaterThan(0);
-    expect(drivingSound(20, 1, 0, true).engineRate).toBeGreaterThan(drivingSound(20, 0, 0, false).engineRate);
   });
   it('blends from a low idle to a stronger loaded engine, then softens when lifting off', () => {
     const idle = drivingSound(0, 0, 0, false), coast = drivingSound(20, 0, 0, false), accelerating = drivingSound(20, 1, 0, false);
     expect(idle.engineLoadGain).toBe(0);
-    expect(accelerating.engineRate).toBeGreaterThan(coast.engineRate);
     expect(accelerating.engineLoadGain).toBeGreaterThan(coast.engineLoadGain);
     expect(accelerating.engineCutoff).toBeGreaterThan(coast.engineCutoff);
     expect(accelerating.engineGain + accelerating.engineLoadGain).toBeGreaterThan(idle.engineGain);
-    expect(drivingSound(1000, 1, 0, true).engineRate).toBe(2);
   });
   it('raises traffic noise above three nearby cars and caps the density boost', () => {
     expect(trafficEngineGain(0)).toBe(0);
@@ -71,7 +68,7 @@ describe('audio mix signals', () => {
     let previous = drivingSound(20, 1, 0, false);
     for (let level = 1; level <= 3; level++) {
       const next = drivingSound(20, 1, 0, false, { engine: level, boost: 0 });
-      expect(next.engineRate).toBeLessThan(previous.engineRate);
+      expect(next.enginePitch).toBeLessThan(previous.enginePitch);
       expect(next.engineLoadGain).toBeGreaterThan(previous.engineLoadGain);
       expect(next.engineCutoff).toBeGreaterThan(previous.engineCutoff);
       previous = next;

@@ -78,6 +78,8 @@ async function checkDesktop() {
   await page.keyboard.press('ArrowLeft');
   assert.equal(Number(await page.locator('#volume-option').inputValue()), volume - 1);
   assert.equal(await page.locator('[data-setting="volume"] output').innerText(), `${volume - 1}%`);
+  await page.locator('#playerEngine-option').fill('23');
+  assert.equal(await page.locator('[data-setting="playerEngine"] output').innerText(), '23%');
   await page.locator('#sirens-option').fill('0');
   assert.equal(await page.locator('[data-setting="sirens"] output').innerText(), '0%');
   assert.equal(await page.locator('#modal').getAttribute('data-page'), 'settings');
@@ -131,6 +133,7 @@ async function checkDesktop() {
   assert.equal(await page.locator('#gore-option').isChecked(), true, 'gore preference persists');
   assert.equal(await page.locator('#difficulty-option').inputValue(), '0', 'difficulty preference persists');
   assert.equal(await page.locator('#volume-option').inputValue(), String(volume - 1), 'volume preference persists');
+  assert.equal(await page.locator('#playerEngine-option').inputValue(), '23', 'player engine preference persists');
   await page.locator('#difficulty-option').focus();
   await page.evaluate(()=>{window.testPad.buttons[15].pressed=true}); await page.waitForTimeout(100);
   assert.equal(await page.locator('#difficulty-option').inputValue(), '1', 'controller edits slider');
