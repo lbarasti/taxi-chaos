@@ -21,6 +21,17 @@ const ready = () => {
 };
 
 describe('parallel text offers and physical branches', () => {
+  it('delivers unread texts without replacing an existing status notification', () => {
+    const g = ready();
+    g.save.playerRecords.texts = [];
+    g.notify('CAB ON FIRE', 'danger');
+    const notification = { text: g.toast, kind: g.toastKind, time: g.toastTime };
+    g.syncMissionOffers();
+    expect(g.save.playerRecords.texts.length).toBeGreaterThan(0);
+    expect(g.save.playerRecords.texts.every(text => text.readAt === null)).toBe(true);
+    expect({ text: g.toast, kind: g.toastKind, time: g.toastTime }).toEqual(notification);
+  });
+
   it('gives non-campaign texts a two-day expiry and prevents expired pickups after reload', () => {
     const g = ready(), receipt = g.save.playerRecords.texts.find(t => t.missionId === 'frankie-arcade-lift')!;
     expect(receipt.expiresMinute! - receipt.receivedMinute!).toBe(2880);

@@ -682,7 +682,6 @@ export class Game {
         this.missionOffers.delete(id);
       }
     }
-    let arriving = 0;
     for (const id of available) {
       const mission = this.missions.mission(id), offer = mission.offer!;
       const records = this.save.playerRecords.texts;
@@ -691,12 +690,11 @@ export class Game {
           title: mission.title, text: offer.text, pickup: this.missions.catalogue.stops.byId[mission.stopIds.pickup].name,
           receivedAt: this.save.story.campaignSeconds, readAt: null, receivedMinute: this.textMessageMinute,
           expiresMinute: this.campaignEnabled ? this.campaignContent.jobWindows[id].until : this.textMessageMinute + DEFAULT_TEXT_LIFETIME_MINUTES });
-        arriving++; changed = true;
+        changed = true;
       }
       if (!this.missionOffers.has(id)) this.missionOffers.set(id, this.makeMissionJob(id));
     }
     if (changed) this.persist();
-    if (arriving && this.mode === 'playing') this.notify(`${arriving} new text${arriving === 1 ? '' : 's'} · Open Texts to read your mission offers. Pickup chooses the ride.`);
     if (routedRemoved && this.job.stage === 'pickup') this.newJob(false, 'customer-lost');
   }
   readTextMessages(messageIds: readonly string[]) {

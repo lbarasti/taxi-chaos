@@ -19,6 +19,23 @@ try {
       window.__taxi.campaign(1440 + 420);
       window.__taxi.campaign(2880 + 420);
     });
+    const badge = page.locator('#texts-unread');
+    const checkUnread = async () => {
+      const unread = await page.evaluate(() => window.__taxi.state().playerRecords.texts.filter(text => text.readAt === null).length);
+      await page.waitForFunction(count => {
+        const badge = document.querySelector('#texts-unread');
+        return badge.textContent === String(count) && badge.hidden === (count === 0);
+      }, unread);
+      assert.equal(await badge.isVisible(), unread > 0);
+      assert.equal(await page.locator('#texts').getAttribute('aria-label'), unread ? `Bookings: ${unread} unread text ${unread === 1 ? 'message' : 'messages'}` : 'Bookings: read text messages');
+      return unread;
+    };
+    assert(await checkUnread() > 0, 'arriving texts show an unread count');
+    assert.equal(await page.evaluate(() => window.__taxi.state().events.some(text => /new texts? · Open Texts/.test(text))), false, 'text arrival creates no banner');
+    const badgeBox = await badge.boundingBox(), buttonBox = await page.locator('#texts').boundingBox();
+    assert(badgeBox.x >= 0 && badgeBox.y >= 0 && badgeBox.x + badgeBox.width <= width && badgeBox.y + badgeBox.height <= height, `${name}: badge fits viewport`);
+    assert(badgeBox.x >= buttonBox.x + buttonBox.width / 2 && badgeBox.y < buttonBox.y + buttonBox.height / 2, `${name}: badge is in top-right corner`);
+    await page.screenshot({ path: resolve(output, `${name}-unread.png`) });
     await page.locator('#texts').click();
     const panel = page.locator('#mission-inbox');
     assert.deepEqual(await panel.locator('.inbox-day').evaluateAll(nodes => nodes.map(n => n.dataset.day)), ['3', '2']);
@@ -34,11 +51,19 @@ try {
 
     const receiptIds = await page.evaluate(() => window.__taxi.state().playerRecords.texts.filter(t => t.receivedMinute < 1440).map(t => t.messageId));
     assert.equal(await page.evaluate(ids => window.__taxi.state().playerRecords.texts.some(t => ids.includes(t.messageId) && t.readAt !== null), receiptIds), false, 'unloaded texts remain unread');
+    assert(await checkUnread() > 0, 'unloaded history keeps its unread badge');
     const count = await panel.locator('article').count();
     await panel.locator('#texts-load-more').click();
     assert.deepEqual(await panel.locator('.inbox-day').evaluateAll(nodes => nodes.map(n => n.dataset.day)), ['3', '2', '1']);
     assert(await panel.locator('article').count() > count);
     assert.equal(await panel.locator('#texts-load-more').isVisible(), false);
+    // Read each body: loading history alone must not clear unseen messages.
+    for (const article of await panel.locator('article').all()) {
+      const id = await article.getAttribute('data-message-id');
+      await article.locator('p').scrollIntoViewIfNeeded();
+      await page.waitForFunction(id => window.__taxi.state().playerRecords.texts.find(text => text.messageId === id).readAt !== null, id);
+    }
+    assert.equal(await checkUnread(), 0, 'reading every message hides the badge');
     const ids = await panel.locator('article').evaluateAll(nodes => nodes.map(n => n.dataset.messageId));
     assert.equal(new Set(ids).size, ids.length, 'no duplicate messages');
     await panel.locator('#texts-close').click(); await page.locator('#texts').click();
