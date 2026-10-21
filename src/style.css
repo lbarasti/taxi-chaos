@@ -127,9 +127,10 @@
 .continue-touch{display:none}
 @media(pointer:coarse){.continue-keyboard{display:none}.continue-touch{display:inline}}
 
-/* Pickup conversations: portrait, name and a quiet typewriter cursor. */
-.story{position:fixed;z-index:2;top:28px;right:calc(max(28px,env(safe-area-inset-right,0px)) + 206px);width:420px;padding:8px 16px 0;background:#14232af2;border-color:#9aafa34d;touch-action:manipulation}
+/* Conversations temporarily replace personal status in the same screen corner. */
+.story{position:fixed;z-index:2;top:max(28px,env(safe-area-inset-top,0px));right:max(28px,env(safe-area-inset-right,0px));width:min(420px,calc(100vw - 288px));max-height:calc(50dvh - 128px);overflow:auto;padding:8px 16px 0;background:#14232af2;border-color:#9aafa34d;touch-action:manipulation}
 .story[hidden]{display:none}
+body:has(.story:not([hidden]):not(.collapsed)) .player-hud{visibility:hidden}
 .story-header{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#a8bdb2;font-size:9px;letter-spacing:1.5px}
 .story-header button{width:44px;height:32px;padding:0;border:0;background:none;color:#a8bdb2;font-size:22px;line-height:1}
 .story-header button:hover{color:var(--gold)}
@@ -142,14 +143,12 @@
 .story.typing #story-text:after{content:'';display:inline-block;width:7px;height:1em;background:#e5ede0;vertical-align:-.1em;margin-left:2px}
 .story-read{display:block;width:calc(100% + 32px);margin:0 -16px;min-height:44px;padding:8px 16px;text-align:right;border:0;border-top:1px solid var(--border);border-radius:0 0 12px 12px;background:#ffffff03;font-size:10px;letter-spacing:.5px;color:#c1d0c1}
 .story-read:hover{background:#f7ce5510;color:var(--gold)}
-.story.collapsed{width:240px;padding:0 16px}
+.story.collapsed{left:50%;right:auto;transform:translateX(-50%);width:min(240px,calc(100vw - 540px));padding:0 16px}
 .story.collapsed .story-body,.story.collapsed .story-header{display:none}
-.story.collapsed .story-read{border-top:0;border-radius:12px}
+.story.collapsed .story-read{border-top:0;border-radius:12px;text-align:center}
 .story .story-sr{position:absolute;width:1px;height:1px;min-height:0;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
-@media(max-height:720px) and (min-width:1001px){.story{top:28px}}
-/* Narrow desktop: stack the conversation below status, with radar on the free left edge. */
+/* Narrow desktop warnings keep clear of the radar. */
 @media(min-width:701px) and (max-width:1100px) and (min-height:501px) and (pointer:fine){
-  .story{top:224px;right:28px;width:min(420px,calc(100vw - 384px));max-height:calc(100dvh - 274px);overflow:auto}
   .roadside{top:224px;right:28px;width:min(300px,calc(100vw - 384px));max-height:calc(100dvh - 274px);overflow:auto}
   .toast{top:160px;right:28px;left:auto;bottom:auto;width:min(420px,calc(100vw - 384px));max-width:none;transform:translateY(5px)}
   .toast.visible{transform:none}
@@ -157,7 +156,7 @@
   #map{height:min(144px,calc(100dvh - 430px))}
 }
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
-  .story{top:calc(var(--top-height) + 144px);left:var(--edge-left);right:auto;width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);max-width:360px;max-height:calc(100dvh - var(--top-height) - 156px - max(var(--stick-size),110px) - var(--edge-bottom));overflow:auto;padding:6px 10px 0;border-radius:10px}
+  .story{top:calc(var(--top-height) + 8px);right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--radar-size) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - max(var(--stick-size),112px) - var(--edge-bottom) - 72px);padding:6px 10px 0;border-radius:10px}
   .story-header{font-size:8px;letter-spacing:.5px}
   .story-header button{height:44px;width:44px}
   .story-body{grid-template-columns:52px minmax(0,1fr);gap:10px;padding:0 0 10px;align-items:start}
@@ -165,12 +164,29 @@
   .story-copy{padding:0}
   .story-copy p{font-size:12px;line-height:1.5;min-height:126px}
   .story-read{width:calc(100% + 20px);margin:0 -10px;padding:8px 10px;border-radius:0 0 10px 10px}
-  .story.collapsed{width:calc(100% - var(--edge-left) - var(--edge-right) - 114px);padding:0 10px}
+  /* Centre the replay below the radar on portrait screens so both HUD corners remain clear. */
+  .story.collapsed{top:calc(var(--top-height) + var(--radar-size) + 20px);right:auto;width:min(240px,calc(100vw - var(--edge-left) - var(--edge-right)));padding:0 10px}
+  body:has(.story.collapsed:not([hidden])) .toast{top:calc(var(--top-height) + var(--radar-size) + 76px)}
+}
+/* Portrait touch: conversations span the full width, covering the radar so the
+   panel stays short and leaves the street open. The collapsed replay tucks under
+   the heat meter with tight margins instead of taking a centred band. */
+@media(max-width:700px) and (min-height:501px), (pointer:coarse) and (max-width:1200px) and (min-height:501px){
+  .story{left:var(--edge-left);right:var(--edge-right);width:auto;max-width:none}
+  .story.collapsed{top:calc(var(--top-height) + 100px);left:auto;right:var(--edge-right);width:max-content;max-width:calc(100vw - var(--edge-left) - var(--edge-right));padding:0;transform:none}
+  .story.collapsed .story-read{width:100%;margin:0;padding:8px 12px}
+  body:has(.story.collapsed:not([hidden])) .toast{top:calc(var(--top-height) + 8px + var(--radar-size) + 24px)}
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
-  .story{top:calc(var(--top-height) + 8px);left:auto;right:calc(var(--edge-right) + var(--dash-width) + 12px);width:calc(54vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 22px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 20px)}
+  /* Keep the top-centre shortcut row clear while covering the status corner. */
+  .story{width:calc(50vw - var(--edge-right) - 110px)}
   .story-copy p{font-size:11px;min-height:100px}
-  .story.collapsed{width:calc(54vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 22px)}
+  .story.collapsed{top:calc(var(--top-height) + 64px);width:min(240px,calc(100vw - 2 * var(--radar-size) - var(--edge-left) - var(--edge-right) - 24px))}
+  body:has(.story.collapsed:not([hidden])) .toast{top:calc(var(--top-height) + max(120px,var(--radar-size) + 32px))}
+}
+/* Short desktop windows keep the right-hand shortcut column below dialogue. */
+@media(min-width:701px) and (max-height:500px) and (pointer:fine){
+  .story{max-height:calc(147px - var(--top-height))}
 }
 @media(max-height:500px) and (max-width:650px){
   .story-body{display:flow-root}
