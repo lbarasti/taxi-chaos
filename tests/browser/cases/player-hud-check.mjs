@@ -13,7 +13,7 @@ async function screenshot(page, name, prefix = '') {
     await page.screenshot({ path: path.join(output, `${prefix}${name}.png`) });
   }
 }
-async function checkLayout(page, name, width, height, touch, insets = {}) {
+async function checkLayout(page, name, width, height, touch, insets = {}, allowOverlap = () => false) {
   const rects = await page.evaluate(() => {
     const out = {};
     for (const selector of ['.player-hud', '.navigation-hud', '.navigation-actions', '#story', '#roadside', '#toast', '#joystick', '.thumb-actions', '#interact']) {
@@ -37,7 +37,7 @@ async function checkLayout(page, name, width, height, touch, insets = {}) {
   const entries = Object.entries(rects);
   for (let i = 0; i < entries.length; i++) for (let j = i + 1; j < entries.length; j++) {
     const [a, one] = entries[i], [b, two] = entries[j];
-    assert(!(one.x < two.x + two.width && one.x + one.width > two.x && one.y < two.y + two.height && one.y + one.height > two.y), `${name}: ${a} overlaps ${b}`);
+    assert(allowOverlap(a, b) || !(one.x < two.x + two.width && one.x + one.width > two.x && one.y < two.y + two.height && one.y + one.height > two.y), `${name}: ${a} overlaps ${b}`);
   }
 }
 try {
@@ -163,24 +163,36 @@ try {
     const storyBounds = await page.locator('#story').boundingBox();
     assert.equal(storyBounds.y, touch ? 8 : 28, 'expanded dialogue shares the status top edge');
     assert.equal(width - storyBounds.x - storyBounds.width, touch ? 10 : 28, 'expanded dialogue shares the status right edge');
-    await checkLayout(page, `${name} story`, width, height, touch);
+    const portraitTouch = touch && height > width;
+    if (portraitTouch) {
+      assert.equal(storyBounds.x, 10, 'portrait conversation must reach the left edge');
+      assert.equal(storyBounds.width, width - 20, 'portrait conversation must span the full width over the radar');
+    }
+    const coverRadar = (a, b) => portraitTouch && [a, b].includes('.navigation-hud') && [a, b].includes('#story');
+    await checkLayout(page, `${name} story`, width, height, touch, {}, coverRadar);
     await screenshot(page, name, 'story-');
     await page.locator('#story-close').click();
     assert.equal(await page.locator('.player-hud').isVisible(), true, 'minimizing restores status');
     const replayBounds = await page.locator('#story').boundingBox();
-    assert.equal(replayBounds.x + replayBounds.width / 2, width / 2, 'replay is centred');
-    await checkLayout(page, `${name} minimized story`, width, height, touch);
+    if (touch && height > width) {
+      const statusBounds = await page.locator('.player-hud').boundingBox();
+      assert.equal(width - replayBounds.x - replayBounds.width, 10, 'portrait replay stays at the right edge');
+      assert(replayBounds.y >= statusBounds.y + statusBounds.height, 'portrait replay must sit below the status and heat meter');
+    } else {
+      assert.equal(replayBounds.x + replayBounds.width / 2, width / 2, 'replay is centred');
+    }
+    await checkLayout(page, `${name} minimized story`, width, height, touch, {}, coverRadar);
     await screenshot(page, name, 'collapsed-story-');
     await page.locator('#story-read').click();
     assert.equal(await page.locator('.player-hud').isVisible(), false, 'replay returns to the status corner');
-    await checkLayout(page, `${name} replayed story`, width, height, touch);
+    await checkLayout(page, `${name} replayed story`, width, height, touch, {}, coverRadar);
     await page.locator('#story-close').click();
     if (touch) {
       await page.evaluate(() => {
         document.documentElement.style.setProperty('--top-height', '24px');
         document.documentElement.style.setProperty('--edge-right', '26px');
       });
-      await checkLayout(page, `${name} safe area`, width, height, touch, { top: 32, right: 26 });
+      await checkLayout(page, `${name} safe area`, width, height, touch, { top: 32, right: 26 }, coverRadar);
       await page.evaluate(() => {
         document.documentElement.style.removeProperty('--top-height');
         document.documentElement.style.removeProperty('--edge-right');

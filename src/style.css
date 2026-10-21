@@ -168,6 +168,15 @@ body:has(.story:not([hidden]):not(.collapsed)) .player-hud{visibility:hidden}
   .story.collapsed{top:calc(var(--top-height) + var(--radar-size) + 20px);right:auto;width:min(240px,calc(100vw - var(--edge-left) - var(--edge-right)));padding:0 10px}
   body:has(.story.collapsed:not([hidden])) .toast{top:calc(var(--top-height) + var(--radar-size) + 76px)}
 }
+/* Portrait touch: conversations span the full width, covering the radar so the
+   panel stays short and leaves the street open. The collapsed replay tucks under
+   the heat meter with tight margins instead of taking a centred band. */
+@media(max-width:700px) and (min-height:501px), (pointer:coarse) and (max-width:1200px) and (min-height:501px){
+  .story{left:var(--edge-left);right:var(--edge-right);width:auto;max-width:none}
+  .story.collapsed{top:calc(var(--top-height) + 100px);left:auto;right:var(--edge-right);width:max-content;max-width:calc(100vw - var(--edge-left) - var(--edge-right));padding:0;transform:none}
+  .story.collapsed .story-read{width:100%;margin:0;padding:8px 12px}
+  body:has(.story.collapsed:not([hidden])) .toast{top:calc(var(--top-height) + 8px + var(--radar-size) + 24px)}
+}
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
   /* Keep the top-centre shortcut row clear while covering the status corner. */
   .story{width:calc(50vw - var(--edge-right) - 110px)}
