@@ -8,7 +8,8 @@ one-shots). Playback further changes pitch, volume and filtering.
 
 - **GGBotNet — Car Sound Effects Pack (Low Quality)**
   (`Car_Engine_Loop_2.ogg` → `engine.wav`,
-  `Car_Engine_Loop.ogg` → `engine-load.wav`).
+  `Car_Engine_Loop.ogg` → `engine-load.wav`,
+  `Car_Horn.ogg` → short, quieter `horn.mp3`).
   https://opengameart.org/content/car-sound-effects-pack-low-quality
   Source: https://opengameart.org/sites/default/files/car_sound_effects_pack.zip
   https://creativecommons.org/publicdomain/zero/1.0/
@@ -59,4 +60,4 @@ tyre and siren downloads to `skid.wav`, `siren.mp3`; fire to `fire.ogg`. Then ru
 python3 tools/prepare-audio.py <download-directory> src/assets/audio
 ```
 
-Use `--engines-only` to reproduce the two engine loops from just the car archive.
+Use `--car-only` to reproduce the engine loops and horn from just the car archive.

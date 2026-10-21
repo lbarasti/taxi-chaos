@@ -1,7 +1,7 @@
 """Prepare the curated FX palette. Requires ffmpeg; see src/assets/audio/CREDITS.md.
 
 Usage: python3 tools/prepare-audio.py <download-directory> <existing-output-directory>
-Add --engines-only to prepare just the two engine loops.
+Add --car-only to prepare just the engine loops and horn.
 The download directory contains skid.wav, fire.ogg, siren.mp3 and the
 extracted car-pack/, impact/, scifi/ and boost/ archives listed in CREDITS.md.
 Loops are PCM WAV (no codec padding); one-shots are small MP3s.
@@ -13,7 +13,7 @@ import subprocess
 import sys
 import wave
 
-source, output = map(Path, [arg for arg in sys.argv[1:] if arg != '--engines-only'])
+source, output = map(Path, [arg for arg in sys.argv[1:] if arg != '--car-only'])
 RATE = 22050
 
 
@@ -54,7 +54,8 @@ def prepare(name, path, loop=False, start=0, duration=None, rms=0.18):
 
 prepare('engine', 'car-pack/Car_Engine_Loop_2.ogg', loop=True)
 prepare('engine-load', 'car-pack/Car_Engine_Loop.ogg', loop=True)
-if '--engines-only' in sys.argv:
+prepare('horn', 'car-pack/Car_Horn.ogg', duration=0.38, rms=0.12)
+if '--car-only' in sys.argv:
     sys.exit(0)
 prepare('skid', 'skid.wav', loop=True, rms=0.14)
 prepare('fire', 'fire.ogg', loop=True)

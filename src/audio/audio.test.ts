@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 // Lifecycle tests use tiny fake buffers; real sample decoding/output is browser-tested.
-vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'engine-load', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
+vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'engine-load', 'horn', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
 import { AudioFX, audioPreferences } from './audio';
 import { Game } from '../game/game';
 import { vec } from '../physics/physics';
@@ -14,10 +14,10 @@ function fakeContext() {
     resume: vi.fn(async () => { ctx.state = 'running'; }),
     decodeAudioData: vi.fn(async () => buffer), createBuffer: vi.fn(() => buffer),
     createGain: vi.fn(() => ({ ...node(), gain: param() })), createStereoPanner: () => ({ ...node(), pan: param() }),
-    createBiquadFilter: () => ({ ...node(), frequency: param(), Q: param() }),
+    createBiquadFilter: vi.fn(() => ({ ...node(), frequency: param(), Q: param() })),
     createDynamicsCompressor: () => ({ ...node(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param() }),
     createAnalyser: () => ({ ...node(), fftSize: 0, getFloatTimeDomainData: vi.fn() }),
-    createBufferSource: vi.fn(() => ({ ...node(), playbackRate: param(), start: vi.fn(), stop: vi.fn(), onended: null })),
+    createBufferSource: vi.fn(() => ({ ...node(), loop: false, playbackRate: param(), start: vi.fn(), stop: vi.fn(), onended: null })),
   };
   return ctx;
 }
@@ -87,6 +87,36 @@ describe('audio lifecycle and bounded mixer', () => {
     game.controls.throttle = 1; audio.update(game, true, true);
     expect(load.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(reversing);
     game.setMode('paused'); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+  });
+  it('retunes engine and boost loops from the current car upgrades without restarting them', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); game.vehicles = [game.player]; game.controls.throttle = 1; game.controls.boost = true;
+    audio.update(game, true, true);
+    const loops = ctx.createBufferSource.mock.results.map(r => r.value).filter(source => source.loop);
+    const engine = loops[0].playbackRate, boost = loops[2].playbackRate;
+    const engineRate = engine.setTargetAtTime.mock.lastCall![0], boostRate = boost.setTargetAtTime.mock.lastCall![0];
+    const boostGain = ctx.createGain.mock.results.at(-1)!.value.gain, gain = boostGain.setTargetAtTime.mock.lastCall![0];
+    game.player.upgrades.engine = 3; game.player.upgrades.boost = 3; audio.update(game, true, true);
+    expect(engine.setTargetAtTime.mock.lastCall![0]).toBeLessThan(engineRate);
+    expect(boost.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(boostRate);
+    expect(boostGain.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(gain);
+    expect(ctx.createBufferSource.mock.results.filter(r => r.value.loop)).toHaveLength(3);
+    // Taking a stock ride must not inherit the old vehicle's sound tuning.
+    game.player = game.vehicle('taxi', 4, 32, 0, '#fff'); game.vehicles = [game.player]; audio.update(game, true, true);
+    expect(engine.setTargetAtTime.mock.lastCall![0]).toBe(engineRate);
+    expect(boost.setTargetAtTime.mock.lastCall![0]).toBe(boostRate);
+  });
+  it('plays horns quietly through the world mix, suppresses them while paused and supports audition', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); game.onFoot = true; game.vehicles = [game.player];
+    game.sounds.emit('horn', game.time, { position: game.actor.position }); audio.update(game, true, true);
+    expect(audio.state().played.horn).toBe(1);
+    expect(ctx.createGain.mock.results.at(-1)!.value.gain.setTargetAtTime.mock.lastCall![0]).toBe(0.2);
+    expect(ctx.createBiquadFilter.mock.results.at(-1)!.value.frequency.value).toBe(2400);
+    game.setMode('paused'); game.time = 3; game.sounds.emit('horn', game.time); audio.update(game, true, true);
+    expect(audio.state().played.horn).toBe(1); expect(audio.state().voices).toBe(0);
+    expect(await audio.preview('horn')).toBe(true); expect(audio.state().played.horn).toBe(2);
+    audio.configure({ muted: true }); expect(audio.state().voices).toBe(0);
   });
   it('makes busy nearby traffic louder while keeping at most six engines, including stopped cars', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();

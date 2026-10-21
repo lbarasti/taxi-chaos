@@ -142,13 +142,13 @@ export class AudioFX {
         const slip = player.dynamics.skidding ? Math.max(...player.dynamics.tyres.filter(t => t.skidding).map(t => Math.abs(dot(player.body.velocityAt(player.body.toWorld(t.position)), rotate(vec(0, 1), player.body.angle + t.angle))))) : 0;
         const forwardSpeed = dot(player.body.velocity, rotate(vec(1, 0), player.body.angle));
         const throttle = game.controls.throttle < 0 && forwardSpeed > 0.5 ? 0 : Math.abs(game.controls.throttle);
-        const signal = drivingSound(game.speed, throttle, slip, boost);
+        const signal = drivingSound(game.speed, throttle, slip, boost, player.upgrades);
         const pitch = player.definition.graphics.enginePitch;
         const level = pitch > 1 ? 0.85 : 1;
         desired.set('engine', { asset: 'engine', gain: signal.engineGain * level, rate: signal.engineRate * pitch, cutoff: signal.engineCutoff });
         desired.set('engine-load', { asset: 'engine-load', gain: signal.engineLoadGain * level, rate: signal.engineRate * pitch, cutoff: signal.engineCutoff });
         desired.set('skid', { asset: 'skid', gain: signal.skidGain, rate: 0.92 + clamp(game.speed / 120, 0, 0.3), cutoff: 3500 });
-        if (boost) desired.set('boost', { asset: 'boost-loop', gain: 0.28, cutoff: 3000 });
+        if (boost) desired.set('boost', { asset: 'boost-loop', gain: signal.boostGain, rate: signal.boostRate, cutoff: signal.boostCutoff });
       }
       if (boost !== this.boosting) this.play({ cue: boost ? 'boost-start' : 'boost-end', time: game.time, strength: 1, priority: 2 });
       this.boosting = boost;
@@ -206,10 +206,10 @@ export class AudioFX {
   }
   private play(event: SoundEvent, preview = false) {
     const { cue, priority, strength } = event;
-    const spatial = preview ? { gain: 1, pan: 0 } : spatialSound(this.listener, event.position, cue === 'explosion' || cue === 'collapse' ? 115 : 70);
+    const spatial = preview ? { gain: 1, pan: 0 } : spatialSound(this.listener, event.position, cue === 'horn' ? 40 : cue === 'explosion' || cue === 'collapse' ? 115 : 70);
     if (spatial.gain < 0.005 || strength === 0) { this.dropped++; return; }
     if (!event.position && priority === 4) { this.tone(cue, preview); this.record(cue); return; }
-    const level = spatial.gain * strength * (cue === 'explosion' ? 0.9 : cue === 'pulp' ? 0.32 : cue === 'boost-start' || cue === 'boost-end' ? 0.3 : 0.65);
+    const level = spatial.gain * strength * (cue === 'horn' ? 0.2 : cue === 'explosion' ? 0.9 : cue === 'pulp' ? 0.32 : cue === 'boost-start' || cue === 'boost-end' ? 0.3 : 0.65);
     if (this.shots.size >= MAX_SHOTS) {
       const quietest = [...this.shots].sort((a, b) => a.priority - b.priority || a.level - b.level)[0];
       if (quietest.priority > priority || (quietest.priority === priority && quietest.level >= level)) { this.dropped++; return; }
@@ -217,6 +217,7 @@ export class AudioFX {
     }
     const jitter = 0.94 + Math.random() * 0.12;
     const voice = this.voice(this.choose(cue), level, spatial.pan, cue === 'collapse' ? 0.7 : jitter, priority, preview);
+    if (voice && cue === 'horn') voice.filter.frequency.value = 2400;
     if (voice) this.record(cue);
     if ((cue === 'explosion' || cue === 'collapse') && this.shots.size < MAX_SHOTS) this.voice('rumble', level * 0.7, spatial.pan, cue === 'collapse' ? 0.72 : 0.9, priority, preview);
   }
