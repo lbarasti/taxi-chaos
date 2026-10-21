@@ -38,6 +38,7 @@ export class World {
   parking: ParkingSpot[] = [];
   add(kind: PropKind, x: number, y: number, w: number, h: number, color: string, label = '', angle = 0) {
     const body = new Body(x, y, Infinity, w, h); body.angle = angle;
+    body.collisionRects = this.map.catalogue[kind]?.collision; body.collisionPolygon = this.map.catalogue[kind]?.collisionPolygon;
     const hp = ['fountain', 'building', 'rock', 'container', 'fence', 'port-gate', 'bollard', 'promenade-edge', 'pedestrian-gate'].includes(kind) ? Infinity : kind === 'lifeguard-tower' ? 18 : kind === 'palm' ? 20 : kind === 'sandcastle' ? 1 : kind === 'guardrail' ? 24 : kind === 'barracks' ? 180 : kind === 'station' ? 220 : kind === 'shed' ? 90 : kind === 'pump' ? 18 : kind === 'kiosk' ? 13 : kind === 'tree' ? 20 : kind === 'barrier' ? 7 : 3;
     const prop: Prop = { id: this.props.length, body, kind, alive: true, hp, maxHp: hp, color, label, brokenAt: -1, lastHit: -100, fire: 0, fuelSpent: false, blamed: false };
     this.props.push(prop); this.hash.insert(prop); return prop;
@@ -71,7 +72,7 @@ export class World {
       } else if (special !== 'parking') {
         for (const building of block.buildings) {
           const p = this.add('building', building.position.x, building.position.y, building.width, building.height, building.color, building.label);
-          p.body.collisionRects = building.collision; p.sourceId = building.id; p.building = building; p.features = building.features;
+          p.body.collisionRects = building.collision; p.body.collisionPolygon = building.collisionPolygon; p.sourceId = building.id; p.building = building; p.features = building.features;
         }
         if (special === 'barracks') this.add('barracks', x + 20.5, y + 14, 23, 10, '#69705a', 'CIVIC BARRACKS');
         if (special === 'depot') this.add('shed', x + 20.5, y + 14, 23, 10, '#776255', 'FREIGHT DEPOT');
@@ -102,7 +103,7 @@ export class World {
     for (const p of map.placements) {
       const o=map.objects[p.id];
       const prop=this.add(o.kind,p.position.x,p.position.y,o.width,o.height,p.color,p.label,p.angle);
-      prop.body.collisionRects = o.collision;
+      prop.body.collisionRects = o.collision; prop.body.collisionPolygon = o.collisionPolygon;
       Object.assign(prop,{sourceId:p.id,storeys:o.storeys,artwork:o.artwork,presentation:o.presentation,features:o.features});
     }
     for (const y of BRIDGE_Y) {
@@ -118,7 +119,7 @@ export class World {
       const p=vec(bounds.min.x+ruralRandom()*(bounds.max.x-bounds.min.x),bounds.min.y+ruralRandom()*(bounds.max.y-bounds.min.y));
       const rock=i%8===0, size=rock?3+ruralRandom()*4:1.6, angle=ruralRandom()*Math.PI;
       if(!inHighlands(p)||countryAccess(p).distance<12||inCountryClearing(p)||HIGHLAND_STOPS.some(s=>dist(s.position,p)<20))continue;
-      const body=new Body(p.x,p.y,Infinity,size,rock?size*.8:size); body.angle=angle;
+      const body=new Body(p.x,p.y,Infinity,size,rock?size*.8:size); body.angle=angle; body.collisionPolygon=map.catalogue[rock?'rock':'tree'].collisionPolygon;
       if(body.corners().some(map.land.inOcean)||reserved.some(other=>contact(body,other))||[...this.hash.query(body)].some(other=>contact(body,other.body)))continue;
       this.add(rock?'rock':'tree',p.x,p.y,size,body.h,rock?'#788278':['#3d654f','#426e58','#315747'][i%3],'',angle);
     }

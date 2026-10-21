@@ -17,6 +17,21 @@ export const angleDiff = (a: number, b: number) => Math.atan2(Math.sin(a - b), M
 /** Rectangular solid section, normalized to its parent envelope (±0.5). */
 export type CollisionRect = Readonly<{ x: number; y: number; width: number; height: number }>;
 
+/** Authored convex footprints are bounded so SAT work stays predictable. */
+export function validateCollisionPolygon(points: readonly Vec[], id: string): void {
+  const fail = (reason: string): never => { throw new Error(`${id}: collision polygon ${reason}`); };
+  if (!Array.isArray(points) || points.length < 3 || points.length > 32) fail('needs 3–32 vertices');
+  if (points.some(p => !p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || Math.abs(p.x) > 0.5 || Math.abs(p.y) > 0.5)) fail('must stay inside the normalized footprint');
+  const area = points.reduce((sum, p, i) => sum + cross(p, points[(i + 1) % points.length]), 0);
+  if (Math.abs(area) < 1e-8) fail('must have nonzero area');
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i], edge = sub(points[(i + 1) % points.length], a);
+    if (length(edge) < 1e-6) fail('has a duplicate vertex');
+    if (points.some((p, j) => j !== i && dist(a, p) < 1e-6)) fail('has a duplicate vertex');
+    if (points.some(p => Math.sign(area) * cross(edge, sub(p, a)) < -1e-10)) fail('must be convex and ordered around its boundary');
+  }
+}
+
 export class Body {
   collisionRects?: readonly CollisionRect[];
   /** Optional convex footprint in normalized body coordinates (±0.5). */
@@ -31,9 +46,10 @@ export class Body {
   addForce(f: Vec, p = this.position) { this.force = add(this.force, f); this.torque += cross(sub(p, this.position), f); }
   impulse(f: Vec, p = this.position) { this.velocity = add(this.velocity, scale(f, this.invMass)); this.angularVelocity += cross(sub(p, this.position), f) * this.invInertia; }
   integrate(dt: number) { this.velocity = add(this.velocity, scale(this.force, dt * this.invMass)); this.angularVelocity += this.torque * dt * this.invInertia; this.position = add(this.position, scale(this.velocity, dt)); this.angle += this.angularVelocity * dt; this.force = vec(); this.torque = 0; }
-  corners() { return this.collisionPolygon
-    ? this.collisionPolygon.map(p => this.toWorld(vec(p.x * this.w, p.y * this.h)))
-    : [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)].map(p => this.toWorld(p)); }
+  localCorners() { return this.collisionPolygon
+    ? this.collisionPolygon.map(p => vec(p.x * this.w, p.y * this.h))
+    : [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)]; }
+  corners() { return this.localCorners().map(p => this.toWorld(p)); }
 }
 
 /** Cache only derived geometry; static compounds avoid rebuilding their sections
@@ -127,9 +143,16 @@ function rectangleContact(a: Body, b: Body): Contact | null {
   const axes = [...axesFor(a, ac), ...axesFor(b, bc)];
   for (let axis of axes) {
     const ap = ac.map(p => dot(p, axis)), bp = bc.map(p => dot(p, axis));
-    const overlap = Math.min(Math.max(...ap), Math.max(...bp)) - Math.max(Math.min(...ap), Math.min(...bp));
-    if (overlap <= 0) return null;
-    if (overlap < depth) { depth = overlap; if (dot(sub(a.position, b.position), axis) < 0) axis = scale(axis, -1); normal = axis; }
+    // Compare the two escape distances, including containment. A polygon need not
+    // surround its envelope centre, so body positions cannot orient its contact.
+    const positive = Math.max(...bp) - Math.min(...ap), negative = Math.max(...ap) - Math.min(...bp);
+    if (positive <= 0 || negative <= 0) return null;
+    const overlap = Math.min(positive, negative);
+    if (overlap < depth) {
+      depth = overlap;
+      if (negative < positive || negative === positive && dot(sub(a.position, b.position), axis) < 0) axis = scale(axis, -1);
+      normal = axis;
+    }
   }
   const support = (points: Vec[], sign: number) => {
     const projections = points.map(p => dot(p, normal) * sign), min = Math.min(...projections);
@@ -172,11 +195,24 @@ export class SpatialHash<T extends { body: Body; alive: boolean }> {
   query(body: Body) { const found = new Set<T>(); for (const key of this.keys(body)) for (const item of this.cells.get(key) ?? []) if (item.alive) found.add(item); return found; }
 }
 
-/** Exact segment/OBB test; thin walls cannot be skipped by sampled sight rays. */
+/** Exact segment test for rectangles, convex polygons and compound sections. */
 export function segmentIntersectsBody(a: Vec, b: Vec, body: Body): boolean {
   if (body.collisionRects) return bodyParts(body).some(part => segmentIntersectsBody(a, b, part));
   const start = rotate(sub(a, body.position), -body.angle), end = rotate(sub(b, body.position), -body.angle), delta = sub(end, start);
   let enter = 0, leave = 1;
+  if (body.collisionPolygon) {
+    const points = body.localCorners();
+    const winding = Math.sign(points.reduce((sum, p, i) => sum + cross(p, points[(i + 1) % points.length]), 0));
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i], edge = sub(points[(i + 1) % points.length], p);
+      const offset = winding * cross(edge, sub(start, p)), change = winding * cross(edge, delta);
+      if (Math.abs(change) < 1e-9) { if (offset < -1e-9) return false; continue; }
+      const t = -offset / change;
+      if (change > 0) enter = Math.max(enter, t); else leave = Math.min(leave, t);
+      if (enter > leave) return false;
+    }
+    return leave > 1e-5 && enter < 1 - 1e-5;
+  }
   for (const axis of ['x', 'y'] as const) {
     const half = (axis === 'x' ? body.w : body.h) / 2;
     if (Math.abs(delta[axis]) < 1e-9) { if (Math.abs(start[axis]) > half) return false; continue; }

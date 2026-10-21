@@ -123,8 +123,18 @@ implementation details and validation results in the PR, generated captures in
 ignored `scenario-runs/`, and executable fixtures beside their tools or tests.
 Do not create replacement feature notes, plans or changelogs elsewhere.
 
+## 9. Author physical footprints independently of artwork
 
-## 9. Make editions and campaign completion durable
+Use rectangles for box-shaped props, bounded convex polygons for rounded or
+irregular solids, and compound sections where recesses or holes must remain open.
+Catalogue polygons use normalized coordinates and at most 32 vertices. Keep them
+separate from canopy and roof silhouettes. Compile collision shapes into the map;
+contacts, clearance, sight rays and inspection consume that geometry. Directed
+light uses authored art blockers where present, otherwise the solid footprint of
+raised occluding props. Preserve compound openings and stop destroyed props
+occluding.
+
+## 10. Make editions and campaign completion durable
 
 Campaign content owns its start, end, last printing deadline and publication hour.
 Calendar dates label the HUD and newspapers; overnight working shifts retain their
@@ -143,9 +153,9 @@ supplied illustrations offline. Articles without artwork use a text front page
 until their distinct image is authored.
 
 
-## 10. Bound newspaper briefs to reconstructible history
+## 11. Bound newspaper briefs to reconstructible history
 
-Refine decision 9: brief conditions may use clock/shift bounds, recorded operations,
+Refine decision 10: brief conditions may use clock/shift bounds, recorded operations,
 publications, reactions and world keys written only by timed operations or reactions.
 Reject mutable player progress and editorial submission/approval states: saves do
 not preserve their ordering relative to printing at the same timestamp. Recorded

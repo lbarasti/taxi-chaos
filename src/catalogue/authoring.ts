@@ -1,5 +1,6 @@
-import { Body, contact, dist, vec, type Vec } from '../physics/physics';
+import { Body, bodyParts, contact, dist, vec, type CollisionRect, type Vec } from '../physics/physics';
 import { World } from '../world/world';
+import { collectOccluders } from '../rendering/lighting-occlusion';
 import { artworkFor, artRadius } from '../artwork/catalogue';
 import { compileMap, type CompiledMap } from '../map/compile';
 import { authoredCollection, descriptorBody, entities, entityPosition } from '../map/operations';
@@ -38,6 +39,8 @@ export type AuthoringBody = Readonly<{
   angle: number;
   width: number;
   height: number;
+  collisionRects?: readonly CollisionRect[];
+  collisionPolygon?: readonly Vec[];
   artwork?: AuthoringArtwork;
   cullingRadius: number;
   features: readonly ResolvedFeature[];
@@ -63,6 +66,8 @@ export type AuthoringBlocker = Readonly<{
   angle: number;
   distance: number;
   penetration: number;
+  /** Actual world-space solid sections, including empty compound recesses. */
+  outlines: readonly (readonly Vec[])[];
 }>;
 
 export type AuthoringReport = Readonly<{
@@ -79,7 +84,8 @@ export type AuthoringReport = Readonly<{
   }>;
   artwork: AuthoringArtwork | null;
   shadow: Readonly<{ casts: boolean; silhouette: readonly Vec[] }> | null;
-  lightBlocker: Readonly<{ silhouette: readonly Vec[] }> | null;
+  /** World-space outlines from the same occluder collector as runtime lighting. */
+  lightBlockers: readonly Readonly<{ silhouette: readonly Vec[] }>[];
   cullingRadius: number;
   features: readonly ResolvedFeature[];
   nearbyRoutes: readonly AuthoringRoute[];
@@ -164,6 +170,8 @@ function bodySummary(prop: World['props'][number]): AuthoringBody {
     angle: prop.body.angle,
     width: prop.body.w,
     height: prop.body.h,
+    ...(prop.body.collisionRects ? { collisionRects: prop.body.collisionRects.map(r => ({ ...r })) } : {}),
+    ...(prop.body.collisionPolygon ? { collisionPolygon: clonePoints(prop.body.collisionPolygon) } : {}),
     ...(art ? { artwork: artworkSummary(art) } : {}),
     cullingRadius: artRadius(prop),
     features: features(prop.features),
@@ -179,6 +187,8 @@ function objectBody(object: CompiledObject, propId: number | null): AuthoringBod
     angle: object.angle,
     width: object.width,
     height: object.height,
+    ...(object.collision ? { collisionRects: object.collision.map(r => ({ ...r })) } : {}),
+    ...(object.collisionPolygon ? { collisionPolygon: clonePoints(object.collisionPolygon) } : {}),
     ...(object.artwork ? { artwork: artworkSummary(object.artwork) } : {}),
     // Share the renderer's culling radius helper, so the report, the renderer's
     // visibility test and the map preview all cull with the same compiled geometry.
@@ -232,7 +242,7 @@ function blockersFor(map: CompiledMap, world: World, entityId: string, bodies: r
       const key = prop.sourceId ?? `runtime-prop-${prop.id}`;
       if (seen.has(key)) continue;
       const own = new Body(summary.position.x, summary.position.y, Infinity, summary.width, summary.height);
-      own.angle = summary.angle;
+      own.angle = summary.angle; own.collisionRects = summary.collisionRects; own.collisionPolygon = summary.collisionPolygon;
       const penetration = contact(own, prop.body)?.depth ?? 0;
       // Only report props that collide with this body or sit inside the six-metre
       // authoring halo; distant road clutter stays out of the compact report.
@@ -242,6 +252,7 @@ function blockersFor(map: CompiledMap, world: World, entityId: string, bodies: r
         entityId: key, kind: prop.kind, label: prop.label,
         position: clonePoint(prop.body.position), width: prop.body.w, height: prop.body.h, angle: prop.body.angle,
         distance: dist(prop.body.position, position), penetration,
+        outlines: bodyParts(prop.body).map(part => part.corners()),
       });
     }
   }
@@ -282,6 +293,8 @@ export function inspectAuthoring(
       kind: 'model' in physical ? 'vehicle' : catalogue[physical.type].kind,
       label: descriptorLabel(physical, entityId),
       position: clonePoint(body.position), angle: body.angle, width: body.w, height: body.h,
+      ...(body.collisionRects ? { collisionRects: body.collisionRects.map(r => ({ ...r })) } : {}),
+      ...(body.collisionPolygon ? { collisionPolygon: clonePoints(body.collisionPolygon) } : {}),
       cullingRadius: Math.max(body.w, body.h), features: [],
     }];
   }
@@ -316,7 +329,9 @@ export function inspectAuthoring(
     },
     artwork,
     shadow: artwork ? { casts: artwork.castsShadow, silhouette: clonePoints(artwork.silhouette) } : null,
-    lightBlocker: artwork?.occluder ? { silhouette: clonePoints(artwork.occluder) } : null,
+    lightBlockers: collectOccluders(props, { minX: -Infinity, minY: -Infinity, maxX: Infinity, maxY: Infinity }, 0, prop => {
+      const art = artworkFor(prop); return art ? art.occluder : prop.building?.silhouette;
+    }).map(occluder => ({ silhouette: clonePoints(occluder.points) })),
     cullingRadius: Math.max(...bodies.map(body => body.cullingRadius)),
     features: primary.features,
     nearbyRoutes: routeList(map, primary.position, validation.findings, entityId),

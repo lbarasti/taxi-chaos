@@ -20,8 +20,7 @@
 .navigation-actions #dispatch[aria-pressed="true"]{color:var(--gold);border-color:#f7ce5566}
 /* Desktop: a vertical shortcut column on the right edge, clear of the status corner. */
 .navigation-actions{right:max(28px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column}
-/* Narrow desktop already stacks dialogue and warnings down the right edge, so the
-   shortcuts stay beside the map instead of covering them. */
+/* Narrow desktop shortcuts stay beside the map, clear of the conversation corner. */
 @media(min-width:701px) and (max-width:1100px) and (min-height:501px) and (pointer:fine){
   .navigation-actions{right:auto;top:max(28px,env(safe-area-inset-top,0px));left:calc(max(28px,env(safe-area-inset-left,0px)) + var(--radar-size) + 8px);transform:none}
 }
@@ -30,7 +29,7 @@
 @media(min-width:701px) and (max-height:500px) and (pointer:fine){
   .navigation-actions{top:max(155px,env(safe-area-inset-top,0px));transform:none}
 }
-/* Preserve the existing right-hand personal status and conversation layout. */
+/* Keep status toasts clear of the conversation corner. */
 .toast{max-width:calc(100% - 440px)}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
   :root{--navigation-width:min(196px,calc(100vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 12px));--radar-size:min(170px,var(--navigation-width),46vw)}
@@ -38,17 +37,11 @@
   /* Portrait touch: a vertical shortcut column on the left edge, above the 112 px
      two-button thumb stack (64 × 52 with an 8 px gap). */
   .navigation-actions{left:var(--edge-left);top:auto;right:auto;bottom:calc(var(--edge-bottom) + 122px);transform:none;flex-direction:column}
-  .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 8px + var(--radar-size) + 26px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--radar-size) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--radar-size) - var(--stick-size) - var(--edge-bottom) - 218px)}
-  .story-body{display:flow-root}
-  .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
-  .story-copy p{font-size:11px;min-height:90px}
+  .roadside{top:calc(var(--top-height) + 8px + var(--radar-size) + 26px);left:auto;right:var(--edge-right);width:calc(100vw - var(--edge-left) - var(--edge-right) - var(--radar-size) - 12px);max-width:360px;max-height:calc(100dvh - var(--top-height) - var(--radar-size) - var(--stick-size) - var(--edge-bottom) - 218px)}
   .context-actions:has(#garage-action:not([hidden]))~.toast{bottom:calc(var(--edge-bottom) + var(--stick-size) + 116px)}
   /* Status toasts tuck under the map instead of covering it. */
   .toast{top:calc(var(--top-height) + 8px + var(--radar-size) + 24px);bottom:auto;left:var(--edge-left);width:auto;max-width:min(240px,calc(46vw - 20px));transform:translateY(5px)}
   .toast.visible{transform:translateY(0)}
-}
-@media(max-width:700px) and (min-height:501px), (pointer:coarse) and (max-width:1200px) and (min-height:501px){
-  body:has(#garage-action:not([hidden])) .story{max-height:calc(100dvh - var(--top-height) - var(--radar-size) - var(--stick-size) - var(--edge-bottom) - 270px)}
 }
 @media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
   /* Landscape touch: a horizontal shortcut row across the free top centre. The radar
@@ -56,7 +49,7 @@
      stack, including shallow screens and device cutouts. */
   :root{--radar-size:min(170px,46vw,calc(50vw - var(--edge-left) - 96px),calc(100dvh - var(--top-height) - var(--edge-bottom) - 141px))}
   .navigation-actions{left:50%;right:auto;top:calc(var(--top-height) + 8px);bottom:auto;transform:translateX(-50%);flex-direction:row}
-  .story,.story.collapsed,.roadside{top:calc(var(--top-height) + 64px);left:auto;right:calc(var(--edge-right) + var(--dash-width) + 12px);width:calc(54vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 22px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 84px)}
+  .roadside{top:calc(var(--top-height) + 64px);left:auto;right:calc(var(--edge-right) + var(--dash-width) + 12px);width:calc(54vw - var(--edge-left) - var(--edge-right) - var(--dash-width) - 22px);max-height:calc(100dvh - var(--top-height) - var(--stick-size) - var(--edge-bottom) - 84px)}
   .context-actions{left:auto;right:var(--edge-right);max-width:150px}
 }
 /* A short landscape column cannot fit status, two actions and the joystick. */
@@ -73,7 +66,7 @@
 }
 /* Compact portrait has little space between the map and a four-action column. */
 @media(max-width:360px) and (min-height:501px){
-  body:has(#observe:not([hidden])) .toast{top:calc(var(--top-height) + var(--radar-size) + 16px);max-width:var(--radar-size)}
+  body:has(#observe:not([hidden])):not(:has(.story.collapsed:not([hidden]))) .toast{top:calc(var(--top-height) + var(--radar-size) + 16px);max-width:var(--radar-size)}
 }
 /* Four icons still form one centred row on compact landscape screens, without
    shrinking targets below 44 px or covering the radar/status corners. */
@@ -82,7 +75,7 @@
   .navigation-actions:has(#observe:not([hidden])){gap:6px}
   .navigation-actions:has(#observe:not([hidden])) button{width:44px;height:44px}
   /* Collection feedback uses the free centre, not the thumb buttons below the map. */
-  body:has(#observe:not([hidden])) .toast{top:calc(var(--top-height) + 64px);left:calc(50% - 97px);width:194px;max-width:194px}
+  body:has(#observe:not([hidden])):not(:has(.story.collapsed:not([hidden]))) .toast{top:calc(var(--top-height) + 64px);left:calc(50% - 97px);width:194px;max-width:194px}
 }
 /* Leave room above the desktop control footer when the fourth action is shown. */
 @media(min-width:701px) and (max-height:450px) and (pointer:fine){

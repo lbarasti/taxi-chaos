@@ -1,7 +1,7 @@
 import { CITY_GRID, CITY_SIZE, citySegmentOpen } from '../world/city';
 import { drawCityBuilding } from './city-renderer';
 import { Game, type Vehicle } from '../game/game';
-import { add, clamp, dist, length, rotate, scale, sub, vec, type Vec } from '../physics/physics';
+import { add, bodyParts, clamp, dist, length, rotate, scale, sub, vec, type Vec } from '../physics/physics';
 import { GARAGE, type Prop } from '../world/world';
 import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
@@ -592,7 +592,7 @@ export class Renderer {
       for (let x = -b.w / 2 + 1; x < b.w / 2; x += 4) this.rect(x, -b.h / 2, 0.4, b.h + 0.4, '#d3cf9c');
     } else if (prop.kind === 'rock') {
       const w = b.w / 2, h = b.h / 2;
-      const shape = [vec(-w, -h * 0.55), vec(-w * 0.65, -h), vec(w * 0.45, -h), vec(w, -h * 0.2), vec(w * 0.8, h), vec(-w * 0.5, h), vec(-w, h * 0.4)];
+      const shape = b.localCorners();
       render.shadow(() => { c.translate(so.x + 0.5, so.y + 0.5); trace(c, shape, true); c.fillStyle = '#142b3280'; c.fill(); });
       trace(c, shape, true); c.fillStyle = prop.color; c.fill(); c.strokeStyle = '#b4b49a70'; c.lineWidth = 0.12; c.stroke();
       trace(c, [vec(-w * 0.65, -h), vec(-w * 0.2, 0), vec(w * 0.8, h)]); c.strokeStyle = '#33484070'; c.stroke();
@@ -926,7 +926,7 @@ export class Renderer {
     }
     if (this.debugColliders) {
       c.save(); c.lineWidth = 0.08; c.strokeStyle = '#e9d789';
-      for (const item of [...g.world.props, ...g.vehicles]) if (item.alive && this.visible(item.body.position, Math.max(item.body.w, item.body.h))) { const points = item.body.corners(); c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.stroke(); }
+      for (const item of [...g.world.props, ...g.vehicles]) if (item.alive && this.visible(item.body.position, Math.max(item.body.w, item.body.h))) { for (const part of bodyParts(item.body)) { const points = part.corners(); c.beginPath(); c.moveTo(points[0].x, points[0].y); for (const p of points.slice(1)) c.lineTo(p.x, p.y); c.closePath(); c.stroke(); } }
       c.restore();
     }
   }

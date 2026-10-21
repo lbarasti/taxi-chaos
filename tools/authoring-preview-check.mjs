@@ -60,7 +60,7 @@ test('--json inspects real compiled geometry and the generated inline manifest',
   assert.deepEqual(report.artwork.manifest, { inline: true, measured: true });
   assert.ok(Math.abs(report.artwork.bounds.width - 12.6) < 1e-9);
   assert.equal(report.shadow.casts, true);
-  assert.equal(report.lightBlocker.silhouette.length, 4);
+  assert.equal(report.lightBlockers[0].silhouette.length, 4);
   assert.ok(report.cullingRadius > 6);
   assert.ok(report.nearbyRoutes.length > 0);
   assert.equal(report.preview.allowed, true);

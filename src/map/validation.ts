@@ -57,7 +57,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     }
   }
   const checkLand = (id: string, body: Body, land: (p: Vec) => boolean) => { const outside = footprint(body).find(p => !land(p)); if (outside) push('object-outside-land', [id], 'Composite footprint extends outside its intended land', outside, { length: body.w, width: body.h }); };
-  const compiledBody = (object: CompiledObject) => { const b = new Body(object.position.x, object.position.y, 1, object.width, object.height); b.angle = object.angle; b.collisionRects = object.collision; return b; };
+  const compiledBody = (object: CompiledObject) => { const b = new Body(object.position.x, object.position.y, 1, object.width, object.height); b.angle = object.angle; b.collisionRects = object.collision; b.collisionPolygon = object.collisionPolygon; return b; };
   // Attached features are resolved from local normalized offsets; report any that stray
   // beyond the allowed attachment band, naming the parent and stable feature ID. The
   // `service` role feeds the single city recovery entrance, so it is only consumed on

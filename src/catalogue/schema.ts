@@ -172,6 +172,8 @@ export type ObjectRecord = Readonly<{
   height: number;
   /** Optional union of at most 64 solid sections inside the footprint envelope. */
   collision?: readonly CollisionRect[];
+  /** Convex normalized footprint (3–32 vertices); mutually exclusive with collision sections. */
+  collisionPolygon?: readonly Vec[];
   /** Required for buildings. */
   storeys?: number;
   /** Required for buildings. */
@@ -225,6 +227,8 @@ export type ObjectDefinition = Readonly<{
   height: number;
   storeys?: number;
   collision?: readonly CollisionRect[];
+  /** Convex normalized footprint (3–32 vertices); mutually exclusive with collision sections. */
+  collisionPolygon?: readonly Vec[];
   artwork?: readonly ArtworkTemplate[];
   presentation?: BuildingPresentation;
   /** Artwork-only size multiplier, independent of the collision footprint. */
@@ -255,6 +259,8 @@ export type CompiledObject = Readonly<{
   id: string; type: string; kind: PropKind;
   position: Vec; angle: number; width: number; height: number;
   collision?: readonly CollisionRect[];
+  /** Convex normalized footprint (3–32 vertices); mutually exclusive with collision sections. */
+  collisionPolygon?: readonly Vec[];
   artwork?: PropArtwork; silhouette: readonly Vec[];
   storeys?: number; presentation?: BuildingPresentation;
   /** Local attached features resolved to world positions for this instance. */
@@ -275,6 +281,8 @@ export type CompiledBuilding = Readonly<{
   id: string; type: string; owner: 'city'; blockId: string; position: Vec; label: string; color: string;
   width: number; height: number; storeys: number; silhouette: readonly Vec[];
   collision?: readonly CollisionRect[];
+  /** Convex normalized footprint (3–32 vertices); mutually exclusive with collision sections. */
+  collisionPolygon?: readonly Vec[];
   artwork?: PropArtwork; presentation: BuildingPresentation; features: readonly ResolvedFeature[]; recoveryEntrance?: Vec;
 }>;
 
