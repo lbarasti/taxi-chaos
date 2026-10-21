@@ -6,8 +6,18 @@ import day04 from '../assets/newspapers/day-04.webp';
 import day05 from '../assets/newspapers/day-05.webp';
 import day06 from '../assets/newspapers/day-06.webp';
 import day07 from '../assets/newspapers/day-07.webp';
+import day08 from '../assets/newspapers/day-08.webp';
+import day09 from '../assets/newspapers/day-09.webp';
+import day10 from '../assets/newspapers/day-10.webp';
+import day11 from '../assets/newspapers/day-11.webp';
+import day12 from '../assets/newspapers/day-12.webp';
+import day13 from '../assets/newspapers/day-13.webp';
+import day14 from '../assets/newspapers/day-14.webp';
+import cafeClosure from '../assets/newspapers/investigation-cafe-closure.webp';
+import patrolWithdrawal from '../assets/newspapers/investigation-patrol-withdrawal.webp';
+import valeWarning from '../assets/newspapers/investigation-vale-warning.webp';
 
-const daily = (day: number, image: string | undefined, title: string, deck: string, body: readonly string[], imageAlt: string, caption: string): NewsArticle => ({ id: `day-${day}`, section: 'Life on the waterfront', image, title, deck, body, imageAlt, caption });
+const daily = (day: number, image: string, title: string, deck: string, body: readonly string[], imageAlt: string, caption: string): NewsArticle => ({ id: `day-${day}`, section: 'Life on the waterfront', image, title, deck, body, imageAlt, caption });
 export const newspaper: Newspaper = {
   masthead: 'The Waterfront Record', byline: 'Iris · City desk',
   daily: [
@@ -39,45 +49,45 @@ export const newspaper: Newspaper = {
       'Harbour traders depend on someone answering the telephone when trouble starts. An empty corner is visible; the instruction that sent a patrol somewhere else is usually not.',
       'We are asking for records that explain the assignments. A missing patrol is a question, rather than proof of its cause. Call times and signed orders can help turn that question into an account we can check.',
     ], 'An empty patrol parking space beside shuttered harbour shops', 'Cover is a matter of assignments as well as vehicles.'),
-    daily(8, undefined, 'One radio, a city of small journeys', 'The dispatch office keeps ordinary work moving between the larger headlines.', [
+    daily(8, day08, 'One radio, a city of small journeys', 'The dispatch office keeps ordinary work moving between the larger headlines.', [
       'Before the first fare, someone has to answer the telephone. Bea’s dispatch desk connects shifts, deliveries and appointments that never become a campaign speech.',
       'A spare radio and a colleague who can cover an evening are modest ambitions. For a small operator, they can be the difference between a business and a job that never ends.',
     ], 'An old radio, booking slips and tea on a taxi dispatch desk', 'Dispatch continues while the waterfront story develops.'),
-    daily(9, undefined, 'The reception needs someone to stack the chairs', 'Hotel staff prepare the waterfront’s public face.', [
+    daily(9, day09, 'The reception needs someone to stack the chairs', 'Hotel staff prepare the waterfront’s public face.', [
       'Civic Renewal’s reception preparations bring chairs, refreshments and staff rotas into the hotels. Victor’s customers expect the doors to open whatever is happening on the campaign telephones.',
       'A venue booking is not evidence of misconduct. It is also work: someone carries the boxes, checks the guest list and waits to hear whether another shift has been added.',
     ], 'Chairs and empty sign stands outside a modest seaside hotel', 'The public appearance depends on work done out of sight.'),
-    daily(10, undefined, 'The numbered copy is still on file', 'Public records offer a quieter route through the waterfront argument.', [
+    daily(10, day10, 'The numbered copy is still on file', 'Public records offer a quieter route through the waterfront argument.', [
       'A register does not raise its voice. A numbered council copy can still say when an agreement was made and whose authority was used.',
       'Tom’s records-desk trips are a reminder that an original document and a photograph of people meeting establish different things. Following an authorisation means checking what it refers to, as well as the signature at the bottom.',
     ], 'A supplier register and carbon copies at a public records counter', 'A filing is a starting point for checking a decision.'),
-    daily(11, undefined, 'At the quay, the next shift still starts early', 'Harbour businesses keep working through the redevelopment debate.', [
+    daily(11, day11, 'At the quay, the next shift still starts early', 'Harbour businesses keep working through the redevelopment debate.', [
       'The harbour still needs filters, repairs and deliveries while the waterfront’s future is being discussed elsewhere. The people waiting at a workshop door have an immediate timetable of their own.',
       'Traders do not all want the same future. Their accounts deserve checking on their own terms, including when the person offering a useful record has interests they would rather keep out of the paper.',
     ], 'Working boats, crates and closed workshop doors on the quay', 'The harbour’s daily business continues between the headlines.'),
-    daily(12, undefined, 'A quiet departure leaves a long paper trail', 'For a source, reaching a safe address can matter as much as reaching the newsroom.', [
+    daily(12, day12, 'A quiet departure leaves a long paper trail', 'For a source, reaching a safe address can matter as much as reaching the newsroom.', [
       'Not every important journey ends at a public meeting. A person carrying a record may also need a room, a lift or time away from the people named in it.',
       'This paper will not print a source’s destination to make an account sound more dramatic. An interview is checked independently; a safe address is allowed to remain private.',
     ], 'A suitcase beside a quiet shelter near temporary lodging', 'Illustration: protecting a destination is part of protecting a source.'),
-    daily(13, undefined, 'Last chance to make the morning edition', 'The city desk prepares its election-day printing deadline.', [
+    daily(13, day13, 'Last chance to make the morning edition', 'The city desk prepares its election-day printing deadline.', [
       'The election-day edition is due tomorrow at 06:00. Source checks take three hours, and a complete story still needs the editor’s approval before it can be scheduled.',
       'A copy left on a desk is not a published finding. The original records will remain in the notebook even if the deadline passes. Tonight, a date matters in a very practical way.',
     ], 'An old printing press feeding a fresh stack of newspapers', 'Tomorrow’s election-day edition closes at 06:00.'),
-    daily(14, undefined, 'Polling day waits at the door', 'Stations prepare to open as the waterfront campaign reaches its last day.', [
+    daily(14, day14, 'Polling day waits at the door', 'Stations prepare to open as the waterfront campaign reaches its last day.', [
       'Polling stations are due to open at 07:00. Vale remains the favourite as the city reaches the last day of the Open Shore campaign; this edition makes no prediction about the result.',
       'The waterfront’s shops, jobs and disputed records will still exist after the last election-day booking. People who have an early shift will need a lift, whatever they decide at the ballot box.',
     ], 'A quiet polling-station entrance before its doors open', 'Before opening time: no vote count or election result is implied.'),
   ],
   investigations: {
-    coordination: { id: 'closure-investigation', section: 'Investigation / Garden Café', image: undefined,
+    coordination: { id: 'closure-investigation', section: 'Investigation / Garden Café', image: cafeClosure,
       title: 'Café closure preparations preceded the damage', deck: 'Independently checked records connect Meridian to arrangements made before the windows were broken.',
       body: ['Records and independent accounts checked by this paper establish preparations for Garden Café’s closure before the overnight damage. The material connects those arrangements to Meridian Site Services.', 'The findings concern the sequence of the closure preparations. They do not identify the person who broke the windows. Meridian’s café security contract remains in place as this report first goes to press.'],
       imageAlt: 'Barrier feet and glass at the threshold of a shuttered café', caption: 'The frontage records the damage. Establishing the chronology required independent sources.' },
-    policing: { id: 'patrol-investigation', section: 'Investigation / Patrol cover', image: undefined,
+    policing: { id: 'patrol-investigation', section: 'Investigation / Patrol cover', image: patrolWithdrawal,
       title: 'Signed orders withdrew waterfront patrol cover', deck: 'Independent records corroborate the reassignment of officers while the waterfront needed cover.',
       body: ['Signed instructions and independent records checked by this paper establish the withdrawal of waterfront patrols under Captain Harker’s authority.', 'The account concerns the orders and the absence of replacement cover. It does not clear other harbour operators of their own offences. The department’s response will follow publication; an inquiry has not yet been recorded in this printing.'],
       imageAlt: 'Patrol reassignment sheets and a log beside a station radio', caption: 'Illustration: signed orders and corroborating records underpin the account.' },
-    knowledge: { id: 'warning-investigation', section: 'Investigation / Open Shore', image: undefined,
+    knowledge: { id: 'warning-investigation', section: 'Investigation / Open Shore', image: valeWarning,
       title: 'Vale retained Meridian after receiving warning', deck: 'Acknowledged briefing and retained agreement connect the waterfront findings to the candidate’s office.',
       body: ['Independently checked material establishes that Adrian Vale received a warning about Meridian’s closure arrangements and the withdrawal of patrols before retaining the supplier’s agreement.', 'This report follows the paper’s published findings about the café preparations and withdrawn cover. Vale’s waterfront appearance remains booked as this report first goes to press. Any later cancellation is a subsequent event, not a fact this edition can anticipate.'],
       imageAlt: 'An acknowledged briefing folder beside a retained supplier agreement', caption: 'Illustration: the warning and subsequent authorisation establish more than a reception photograph.' },
