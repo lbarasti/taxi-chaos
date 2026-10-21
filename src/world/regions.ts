@@ -10,15 +10,16 @@ export function contains(ring: readonly Vec[], p: Vec): boolean {
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const a = ring[j],
       b = ring[i];
+    const abx = b.x - a.x, aby = b.y - a.y;
     if (
-      Math.abs(cross(sub(b, a), sub(p, a))) < 1e-8 &&
+      Math.abs(abx * (p.y - a.y) - aby * (p.x - a.x)) < 1e-8 &&
       p.x >= Math.min(a.x, b.x) &&
       p.x <= Math.max(a.x, b.x) &&
       p.y >= Math.min(a.y, b.y) &&
       p.y <= Math.max(a.y, b.y)
     )
       return true;
-    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x)
+    if (a.y > p.y !== b.y > p.y && p.x < (abx * (p.y - a.y)) / (b.y - a.y) + a.x)
       inside = !inside;
   }
   return inside;

@@ -115,12 +115,16 @@ export class World {
     const outline=map.country.HIGHLAND_OUTLINE, bounds=regionBounds(outline);
     const reserved=[...map.document.parking,...map.document.trafficSpawns].map(p=>createVehicleBody(vehicleDefinition(p.model),p.position,p.angle));
     for(const p of map.document.parking) {const bay=new Body(p.position.x,p.position.y,Infinity,5.4,2.6);bay.angle=p.angle;reserved.push(bay);}
+    // Candidate props test up to 1050 rural points against every reserved body;
+    // index them once instead of walking the whole list per candidate.
+    const reservedIndex = new SpatialHash<{ body: Body; alive: boolean }>();
+    for (const body of reserved) reservedIndex.insert({ body, alive: true });
     for (let i=0;i<map.document.generation.candidates;i++) {
       const p=vec(bounds.min.x+ruralRandom()*(bounds.max.x-bounds.min.x),bounds.min.y+ruralRandom()*(bounds.max.y-bounds.min.y));
       const rock=i%8===0, size=rock?3+ruralRandom()*4:1.6, angle=ruralRandom()*Math.PI;
       if(!inHighlands(p)||countryAccess(p).distance<12||inCountryClearing(p)||HIGHLAND_STOPS.some(s=>dist(s.position,p)<20))continue;
       const body=new Body(p.x,p.y,Infinity,size,rock?size*.8:size); body.angle=angle; body.collisionPolygon=map.catalogue[rock?'rock':'tree'].collisionPolygon;
-      if(body.corners().some(map.land.inOcean)||reserved.some(other=>contact(body,other))||[...this.hash.query(body)].some(other=>contact(body,other.body)))continue;
+      if(body.corners().some(map.land.inOcean)||[...reservedIndex.query(body)].some(entry=>contact(body,entry.body))||[...this.hash.query(body)].some(other=>contact(body,other.body)))continue;
       this.add(rock?'rock':'tree',p.x,p.y,size,body.h,rock?'#788278':['#3d654f','#426e58','#315747'][i%3],'',angle);
     }
     const cityRandom = this.random; this.random = ruralRandom;

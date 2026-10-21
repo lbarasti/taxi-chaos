@@ -3,7 +3,8 @@ import type { LandGeometry } from './land';
 import { regionBounds } from './regions';
 import type { MapDocument } from '../map/schema';
 
-export type CountryRoad = { id: string; from: number; to: number; points: Vec[]; bridge: boolean; name: string; length: number; bounds: { min: Vec; max: Vec } };
+export type CountrySegment = { a: Vec; delta: Vec; size: number };
+export type CountryRoad = { id: string; from: number; to: number; points: Vec[]; segments: CountrySegment[]; bridge: boolean; name: string; length: number; bounds: { min: Vec; max: Vec } };
 export type RoadAccess = { road: CountryRoad; point: Vec; segment: number; along: number; distance: number };
 export function pathLength(points: Vec[]) { return points.reduce((sum, p, i) => sum + (i ? dist(points[i - 1], p) : 0), 0); }
 
@@ -48,7 +49,10 @@ export function createCountryside(document: MapDocument, land: LandGeometry) {
   const COUNTRY_ROADS: CountryRoad[] = document.roads.map(r => {
     const points = curve([point(r.from), ...r.via.map(point), point(r.to)]);
     const bounds = { min: vec(Math.min(...points.map(p => p.x)), Math.min(...points.map(p => p.y))), max: vec(Math.max(...points.map(p => p.x)), Math.max(...points.map(p => p.y))) };
-    return { id: r.id, from: document.nodes.indexOf(r.from), to: document.nodes.indexOf(r.to), name: r.name, bridge: r.bridge, points, bounds, length: pathLength(points) };
+    // Segment geometry is immutable; precompute it once so every road-access
+    // query avoids per-candidate vector allocation.
+    const segments = points.slice(1).map((b, i) => { const delta = sub(b, points[i]); return { a: points[i], delta, size: dist(points[i], b) }; });
+    return { id: r.id, from: document.nodes.indexOf(r.from), to: document.nodes.indexOf(r.to), name: r.name, bridge: r.bridge, points, segments, bounds, length: pathLength(points) };
   });
   function countryAccess(p: Vec): RoadAccess {
     let best: RoadAccess | undefined;
@@ -56,10 +60,11 @@ export function createCountryside(document: MapDocument, land: LandGeometry) {
       const dx = p.x - clamp(p.x, road.bounds.min.x, road.bounds.max.x), dy = p.y - clamp(p.y, road.bounds.min.y, road.bounds.max.y);
       if (best && dx * dx + dy * dy > best.distance * best.distance) continue;
       let along = 0;
-      for (let i = 1; i < road.points.length; i++) {
-        const a = road.points[i - 1], delta = sub(road.points[i], a), size = dist(a, road.points[i]);
-        const t = clamp(dot(sub(p, a), delta) / (size * size || 1), 0, 1), point = add(a, scale(delta, t)), distance = dist(p, point);
-        if (!best || distance < best.distance) best = { road, point, segment: i, along: along + size * t, distance };
+      for (let i = 0; i < road.segments.length; i++) {
+        const { a, delta, size } = road.segments[i];
+        const t = clamp(((p.x - a.x) * delta.x + (p.y - a.y) * delta.y) / (size * size || 1), 0, 1);
+        const x = a.x + delta.x * t, y = a.y + delta.y * t, distance = Math.hypot(p.x - x, p.y - y);
+        if (!best || distance < best.distance) best = { road, point: vec(x, y), segment: i + 1, along: along + size * t, distance };
         along += size;
       }
     }

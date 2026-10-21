@@ -11,11 +11,20 @@ import { descriptorBody } from './operations';
 export type Finding = { code: string; severity: 'error' | 'warning' | 'info'; entityIds: string[]; position?: Vec; message: string; measured?: Record<string, number> };
 export type Validation = { revision: string; findings: Finding[]; errors: number; warnings: number; waterGap: number | null; resolution: { roads: number; waterGap: number; footprintEdge: number; tolerance: number } };
 
-function footprint(body: Body): Vec[] {
-  if (body.collisionRects) return bodyParts(body).flatMap(footprint);
-  const corners = body.corners(), points = [body.position, ...corners];
-  for (let i = 0; i < corners.length; i++) { const a = corners[i], b = corners[(i + 1) % corners.length], steps = Math.ceil(dist(a, b) / 0.5); for (let j = 1; j < steps; j++) points.push(add(a, scale(sub(b, a), j / steps))); }
-  return points;
+/** Visit a body's composite footprint in order without materializing its sample array. */
+function firstFootprintPoint(body: Body, visit: (p: Vec) => boolean): Vec | null {
+  if (body.collisionRects) {
+    for (const part of bodyParts(body)) { const hit = firstFootprintPoint(part, visit); if (hit) return hit; }
+    return null;
+  }
+  if (visit(body.position)) return body.position;
+  const corners = body.corners();
+  for (const corner of corners) if (visit(corner)) return corner;
+  for (let i = 0; i < corners.length; i++) {
+    const a = corners[i], b = corners[(i + 1) % corners.length], steps = Math.ceil(dist(a, b) / 0.5);
+    for (let j = 1; j < steps; j++) { const p = add(a, scale(sub(b, a), j / steps)); if (visit(p)) return p; }
+  }
+  return null;
 }
 function intersects(a: Vec, b: Vec, c: Vec, d: Vec) {
   const orient = (a: Vec, b: Vec, c: Vec) => cross(sub(b, a), sub(c, a));
@@ -49,14 +58,14 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       for (let j = 1; j <= steps; j++) for (const lane of [-3, 0, 3]) for (const model of ['car', 'truck-loaded'] as const) {
         const p = add(add(a, scale(sub(b, a), j / steps)), vec(-Math.sin(angle) * lane, Math.cos(angle) * lane));
         const body = createVehicleBody(vehicleDefinition(model), p, angle);
-        const wet = footprint(body).find(land.inOcean);
+        const wet = firstFootprintPoint(body, land.inOcean);
         if (wet && !reported.has(`water-${model}`)) { reported.add(`water-${model}`); push('road-enters-water', [road.id], `${model} footprint crosses ocean on lane ${lane} m`, wet, { lane, length: body.w, width: body.h }); }
         const obstacle = [...world.hash.query(body)].find(prop => isRigidObstacle(prop.kind) && prop.kind !== 'pedestrian-gate' && (contact(body, prop.body)?.depth ?? 0) > 0.04);
         if (obstacle && !reported.has(`solid-${model}`)) { reported.add(`solid-${model}`); push('road-blocked', [road.id, obstacle.sourceId ?? `runtime-prop-${obstacle.id}`], `${model} driving footprint intersects ${obstacle.label || obstacle.kind}`, p, { length: body.w, width: body.h }); }
       }
     }
   }
-  const checkLand = (id: string, body: Body, land: (p: Vec) => boolean) => { const outside = footprint(body).find(p => !land(p)); if (outside) push('object-outside-land', [id], 'Composite footprint extends outside its intended land', outside, { length: body.w, width: body.h }); };
+  const checkLand = (id: string, body: Body, land: (p: Vec) => boolean) => { const outside = firstFootprintPoint(body, p => !land(p)); if (outside) push('object-outside-land', [id], 'Composite footprint extends outside its intended land', outside, { length: body.w, width: body.h }); };
   const compiledBody = (object: CompiledObject) => { const b = new Body(object.position.x, object.position.y, 1, object.width, object.height); b.angle = object.angle; b.collisionRects = object.collision; b.collisionPolygon = object.collisionPolygon; return b; };
   // Attached features are resolved from local normalized offsets; report any that stray
   // beyond the allowed attachment band, naming the parent and stable feature ID. The
@@ -96,7 +105,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     if (solid || land.inOcean(p)) push('recovery-entrance-blocked', [building.id], 'Recovery entrance must be clear and on dry land', p);
   }
   const checkVehicleClearance = (id: string, body: Body, code: string) => {
-    const wet = footprint(body).find(land.inOcean);
+    const wet = firstFootprintPoint(body, land.inOcean);
     if (wet) push(code, [id], 'Vehicle footprint crosses water', wet);
     const prop = [...world.hash.query(body)].find(p => (contact(body, p.body)?.depth ?? 0) > 0.04);
     if (prop) push(code, [id, prop.sourceId ?? `runtime-prop-${prop.id}`], `Vehicle footprint intersects ${prop.label || prop.kind}`, body.position);
@@ -122,7 +131,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
       const distance = dist(from, to), angle = Math.atan2(to.y - from.y, to.x - from.x), steps = Math.ceil(distance);
       for (let i = 0; i <= steps && !reported; i++) {
         const q = add(from, scale(sub(to, from), i / (steps || 1))), body = createVehicleBody(vehicleDefinition(spawn.model), q, angle);
-        if (footprint(body).some(land.inOcean) || [...world.hash.query(body)].some(p => (contact(body, p.body)?.depth ?? 0) > 0.04) || world.pools.some(p => contact(body, p))) {
+        if (firstFootprintPoint(body, land.inOcean) || [...world.hash.query(body)].some(p => (contact(body, p.body)?.depth ?? 0) > 0.04) || world.pools.some(p => contact(body, p))) {
           push('traffic-route-blocked', [spawn.id], 'Initial traffic route crosses water or a collision footprint', q); reported = true;
         }
       }
@@ -135,7 +144,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
     const pool = country.VILLA_POOLS[i]; checkLand(villa.id, new Body(pool.position.x, pool.position.y, 1, pool.width, pool.height), country.inHighlands);
     const drive = country.VILLA_DRIVES[i]; let blocked: Vec | undefined;
     const angle = Math.atan2(drive[1].y - drive[0].y, drive[1].x - drive[0].x), steps = Math.ceil(dist(...drive as [Vec, Vec]));
-    for (let j = 0; j <= steps; j++) { const q = add(drive[0], scale(sub(drive[1], drive[0]), j / (steps || 1))), body = createVehicleBody(vehicleDefinition('car'), q, angle); if (footprint(body).some(land.inOcean) || [...world.hash.query(body)].some(prop => isRigidObstacle(prop.kind) && prop.sourceId !== villa.id && (contact(body, prop.body)?.depth ?? 0) > 0.04)) { blocked = q; break; } }
+    for (let j = 0; j <= steps; j++) { const q = add(drive[0], scale(sub(drive[1], drive[0]), j / (steps || 1))), body = createVehicleBody(vehicleDefinition('car'), q, angle); if (firstFootprintPoint(body, land.inOcean) || [...world.hash.query(body)].some(prop => isRigidObstacle(prop.kind) && prop.sourceId !== villa.id && (contact(body, prop.body)?.depth ?? 0) > 0.04)) { blocked = q; break; } }
     if (blocked) push('villa-drive-blocked', [villa.id], 'Car-sized access drive intersects water or another solid object', blocked);
   }
   const golf = country.GOLF_COURSE;
@@ -158,7 +167,7 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   }
   for (const stop of country.HIGHLAND_STOPS) {
     const body = createVehicleBody(vehicleDefinition('car'), stop.position, 0), access = country.countryAccess(stop.position);
-    if (access.distance > 6 || footprint(body).some(land.inOcean) || !seen.has(access.road.from)) push('unreachable-stop', [stop.id, stop.point], 'Fare destination lacks a dry reachable driving lane', stop.position, { roadDistance: access.distance });
+    if (access.distance > 6 || firstFootprintPoint(body, land.inOcean) || !seen.has(access.road.from)) push('unreachable-stop', [stop.id, stop.point], 'Fare destination lacks a dry reachable driving lane', stop.position, { roadDistance: access.distance });
     if (!world.props.some(p => p.sourceId === stop.id && p.kind === 'kiosk')) push('stop-clearing-unavailable', [stop.id], 'No dry kiosk clearing can be generated beside this stop', stop.position);
   }
   // Sweep authored access with actual bodies and shared water coverage. Runtime
@@ -178,12 +187,12 @@ export function validateMap(document: MapDocument, compiled: CompiledMap = compi
   }
   for(const resident of document.residents) {
     const body=new Body(resident.position.x,resident.position.y,75,.7,.7);
-    if(footprint(body).some(land.inOcean)||[...world.hash.query(body)].some(p=>blocksWalking(p.kind)&&contact(body,p.body)))push('resident-home-blocked',[resident.id],'Resident home crosses water or a collision footprint',resident.position);
+    if(firstFootprintPoint(body, land.inOcean)||[...world.hash.query(body)].some(p=>blocksWalking(p.kind)&&contact(body,p.body)))push('resident-home-blocked',[resident.id],'Resident home crosses water or a collision footprint',resident.position);
   }
   const env = document.envelope, outside = (p: Vec) => p.x < env.min.x - 0.001 || p.x > env.max.x + 0.001 || p.y < env.min.y - 0.001 || p.y > env.max.y + 0.001;
   for (const { e, body } of vehiclePlacements) {
-    const p = footprint(body).find(outside); if (p) push('outside-envelope', [e.id], 'Vehicle footprint is outside the map envelope', p);
-    if ('lot' in e) { const bay = new Body(e.position.x, e.position.y, 1, 5.4, 2.6); bay.angle = e.angle; const edge = footprint(bay).find(outside); if (edge) push('outside-envelope', [e.id], 'Parking marking is outside the map envelope', edge); checkLand(e.id, bay, q => !land.inOcean(q)); }
+    const p = firstFootprintPoint(body, outside); if (p) push('outside-envelope', [e.id], 'Vehicle footprint is outside the map envelope', p);
+    if ('lot' in e) { const bay = new Body(e.position.x, e.position.y, 1, 5.4, 2.6); bay.angle = e.angle; const edge = firstFootprintPoint(bay, outside); if (edge) push('outside-envelope', [e.id], 'Parking marking is outside the map envelope', edge); checkLand(e.id, bay, q => !land.inOcean(q)); }
     if ('path' in e) { const q = e.path.find(outside); if (q) push('outside-envelope', [e.id], 'Traffic waypoint is outside the envelope', q); }
   }
   for (const p of document.points) if (outside(p.position)) push('outside-envelope', [p.id], 'Authored point is outside the map envelope', p.position);
