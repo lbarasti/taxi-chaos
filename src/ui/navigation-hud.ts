@@ -22,7 +22,7 @@ export const navigationHudMarkup = `<aside class="navigation-hud" aria-label="Ta
 </aside>
 <div class="navigation-actions" role="group" aria-label="Dispatch and campaign shortcuts">
   <button id="dispatch" aria-pressed="true" aria-label="Dispatch: route the next fare" title="Dispatch: route the next fare">${icon('dispatch')}</button>
-  <button id="texts" aria-label="Bookings: read text messages" title="Bookings · read text messages">${icon('message')}</button>
+  <button id="texts" aria-label="Bookings: read text messages" title="Bookings · read text messages">${icon('message')}<span id="texts-unread" class="texts-unread" aria-hidden="true" hidden></span></button>
   <button id="newsroom" aria-label="Newsroom: view records and story readiness" title="Newsroom · records and story readiness" aria-haspopup="dialog" aria-controls="modal">${icon('news')}</button>
   <button id="observe" aria-label="Record a nearby observation" title="Record a nearby observation" hidden disabled>${icon('camera')}<span class="observation-recorded" aria-hidden="true">${icon('check')}</span></button>
 </div>`;
@@ -75,6 +75,8 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = root.querySelector<HTMLElement>('.navigation-hud')!;
   const dispatch = get('dispatch') as HTMLButtonElement;
+  const texts = get('texts') as HTMLButtonElement;
+  const unreadBadge = get('texts-unread');
   const observe = get('observe') as HTMLButtonElement;
   const map = get('map');
   const views = new WeakMap<Game, { job: Game['job']; routed: boolean }>();
@@ -143,6 +145,12 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     const text = `Dispatch: ${action}`;
     if (text !== dispatchLabel) { dispatchLabel = text; dispatch.setAttribute('aria-label', text); dispatch.title = text; }
     for (const id of ['texts', 'newsroom']) (get(id) as HTMLButtonElement).disabled = !g.campaignEnabled || g.mode !== 'playing';
+    const unread = g.save.playerRecords.texts.filter(text => text.readAt === null).length;
+    const count = String(unread);
+    if (unreadBadge.textContent !== count) unreadBadge.textContent = count;
+    unreadBadge.hidden = unread === 0;
+    const textsLabel = unread ? `Bookings: ${unread} unread text ${unread === 1 ? 'message' : 'messages'}` : 'Bookings: read text messages';
+    if (texts.getAttribute('aria-label') !== textsLabel) { texts.setAttribute('aria-label', textsLabel); texts.title = textsLabel; }
     const observation = observationActionState(g);
     observe.hidden = !observation;
     observe.disabled = !observation || observation.disabled;

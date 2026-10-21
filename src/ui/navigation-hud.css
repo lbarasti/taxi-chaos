@@ -11,6 +11,8 @@
 .navigation-actions button:hover:not(:disabled){background:#182c38f5;color:var(--gold);border-color:#f7ce5566}
 .navigation-actions button:disabled{opacity:.4}
 .navigation-actions [hidden]{display:none!important}
+.navigation-actions #texts{position:relative}
+.texts-unread{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 4px;display:grid;place-items:center;border:2px solid #10222d;border-radius:10px;background:var(--gold);color:#10222d;font-size:10px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;pointer-events:none}
 .navigation-actions #observe{position:relative}
 .navigation-actions #observe[data-state="available"]{color:var(--gold);border-color:#f7ce5588}
 .navigation-actions #observe[data-state="recorded"]{color:var(--mint);border-color:#a3ddc255;opacity:.8}
