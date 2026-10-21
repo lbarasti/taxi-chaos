@@ -23,7 +23,7 @@ export function compileMap(input: MapDocument, catalogue: ObjectCatalogue = obje
   };
   const placements=[...document.objectPlacements,...boundaryPlacements];
   const objects: Record<string,CompiledObject> = Object.fromEntries(placements.map(p=>[p.id,{...compileObjectPlacement(p,catalogue),...('storeys' in p ? {storeys:p.storeys} : {})}]));
-  return freezeGeometry({ document, revision: revision(document, objectKindRegistry(catalogue)), city, country, terrain, land, presentation, placements, boundaryPlacements, harbour: createHarbourGeometry(land.landRegions.find(r=>r.id===document.generation.harbourLand)!), objects });
+  return freezeGeometry({ document, catalogue: structuredClone(catalogue), revision: revision(document, objectKindRegistry(catalogue)), city, country, terrain, land, presentation, placements, boundaryPlacements, harbour: createHarbourGeometry(land.landRegions.find(r=>r.id===document.generation.harbourLand)!), objects });
 }
 export type CompiledMap = ReturnType<typeof compileMap>;
 export const defaultCompiledMap = compileMap(defaultMap);

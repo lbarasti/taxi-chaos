@@ -41,7 +41,7 @@ describe('DOM-free authoring report', () => {
     expect(report.artwork?.anchor).toEqual(vec(0.5, 0.5));
     expect(report.shadow).toMatchObject({ casts: true });
     expect(report.shadow?.silhouette).toHaveLength(4);
-    expect(report.lightBlocker?.silhouette).toHaveLength(4);
+    expect(report.lightBlockers[0]?.silhouette).toHaveLength(4);
     expect(report.cullingRadius).toBeGreaterThan(6);
     expect(report.nearbyRoutes.length).toBeGreaterThan(0);
     expect(report.nearbyRoutes[0].distance).toBeLessThan(26);
@@ -90,7 +90,8 @@ describe('DOM-free authoring report', () => {
     expect(centre(art.silhouette).y).toBeCloseTo(offset.y);
     expect(centre(report.shadow!.silhouette).x).toBeCloseTo(offset.x);
     expect(centre(report.shadow!.silhouette).y).toBeCloseTo(offset.y);
-    expect(report.lightBlocker!.silhouette).toEqual(report.shadow!.silhouette);
+    const body = report.entity.bodies[0], physical = new Body(body.position.x, body.position.y, Infinity, body.width, body.height); physical.angle = body.angle;
+    report.lightBlockers[0].silhouette.forEach((p, i) => { const expected = physical.toWorld(report.shadow!.silhouette[i]); expect(p.x).toBeCloseTo(expected.x); expect(p.y).toBeCloseTo(expected.y); });
     // Culling radius still reaches the offset drawing from the body centre.
     expect(report.cullingRadius).toBeGreaterThanOrEqual(Math.hypot(Math.abs(offset.x) + art.bounds.width / 2, Math.abs(offset.y) + art.bounds.height / 2));
   });

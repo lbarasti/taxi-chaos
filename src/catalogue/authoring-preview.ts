@@ -1,5 +1,5 @@
 import './authoring-preview.css';
-import { contact, dist, segmentIntersectsBody, vec, type Vec } from '../physics/physics';
+import { Body, bodyParts, contact, dist, segmentIntersectsBody, vec, type Vec } from '../physics/physics';
 import { Game } from '../game/game';
 import type { Renderer } from '../rendering/renderer';
 import { World } from '../world/world';
@@ -128,7 +128,7 @@ function renderHud(mounted: Mounted, report: AuthoringReport): void {
       <div><span>ARTWORK</span><strong>${art ? `${fmt(art.bounds.width, 2)}×${fmt(art.bounds.height, 2)} m` : 'procedural fallback'}</strong></div>
       <div><span>CULL RADIUS</span><strong>${fmt(report.cullingRadius, 2)} m</strong></div>
       <div><span>SHADOW</span><strong>${report.shadow?.casts ? 'casts · ' + report.shadow.silhouette.length + ' pts' : 'none'}</strong></div>
-      <div><span>LIGHT</span><strong>${report.lightBlocker ? report.lightBlocker.silhouette.length + ' pt blocker' : 'no blocker'}</strong></div>
+      <div><span>LIGHT</span><strong>${report.lightBlockers.length ? report.lightBlockers.length + ' blocker(s)' : 'no blocker'}</strong></div>
     </div>
     <section class="authoring-routes"><h2>NEARBY ROUTES <small>conflict?</small></h2><p>${routeText}</p></section>
     <section class="authoring-extra"><h2>BLOCKERS</h2><p>${blockerText}</p><h2>FINDINGS</h2>${findingText}</section>
@@ -202,9 +202,10 @@ function drawOverlay(renderer: Renderer, report: AuthoringReport): void {
   }
   // Nearby blockers and route findings are drawn before the entity so its own geometry stays legible.
   for (const blocker of report.blockers.slice(0, 8)) {
-    c.save(); c.translate(blocker.position.x, blocker.position.y); c.rotate(blocker.angle);
+    c.save();
     c.strokeStyle = blocker.penetration > 0 ? '#ff8d7e' : '#e9a86f'; c.lineWidth = line; c.setLineDash([0.35, 0.3]);
-    c.strokeRect(-blocker.width / 2, -blocker.height / 2, blocker.width, blocker.height); c.setLineDash([]); c.restore();
+    for (const outline of blocker.outlines) { trace(c, outline, true); c.stroke(); }
+    c.setLineDash([]); c.restore();
   }
   const findingPositions = [...report.routeConflicts, ...report.findings].filter(finding => finding.position);
   for (const finding of findingPositions) {
@@ -213,6 +214,9 @@ function drawOverlay(renderer: Renderer, report: AuthoringReport): void {
     c.beginPath(); c.arc(p.x, p.y, 0.8, 0, Math.PI * 2); c.stroke(); c.restore();
     label(c, finding.code, vec(p.x, p.y + 2.1), 0.62, finding.severity === 'error' ? '#ffb1a6' : '#f7e2a3');
   }
+  c.strokeStyle = '#c4a2ee'; c.lineWidth = line * 1.2; c.setLineDash([0.5, 0.32]);
+  for (const blocker of report.lightBlockers) { trace(c, blocker.silhouette, true); c.stroke(); }
+  c.setLineDash([]);
   for (const body of report.entity.bodies) {
     const art = body.artwork;
     c.save(); c.translate(body.position.x, body.position.y); c.rotate(body.angle);
@@ -226,13 +230,12 @@ function drawOverlay(renderer: Renderer, report: AuthoringReport): void {
       c.strokeRect(art.bounds.x, art.bounds.y, art.bounds.width, art.bounds.height);
       // Art silhouette.
       trace(c, art.silhouette, true); c.strokeStyle = '#f7ce55'; c.lineWidth = line; c.stroke();
-      if (art.occluder) {
-        trace(c, art.occluder, true); c.strokeStyle = '#c4a2ee'; c.lineWidth = line * 1.2; c.setLineDash([0.5, 0.32]); c.stroke(); c.setLineDash([]);
-      }
     }
     // Physical collision footprint: always the resolved body, never the drawing.
     c.strokeStyle = '#ff8d7e'; c.lineWidth = line * 1.7;
-    c.strokeRect(-body.width / 2, -body.height / 2, body.width, body.height);
+    const physical = new Body(0, 0, Infinity, body.width, body.height);
+    physical.collisionRects = body.collisionRects; physical.collisionPolygon = body.collisionPolygon;
+    for (const part of bodyParts(physical)) { trace(c, part.corners(), true); c.stroke(); }
     c.restore();
     // Culling radius uses the same compiled artwork the renderer culls with.
     c.save(); c.strokeStyle = '#8edbe8'; c.globalAlpha = 0.7; c.lineWidth = line; c.setLineDash([1.2, 0.9]);

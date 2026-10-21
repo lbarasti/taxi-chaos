@@ -1,7 +1,7 @@
 import type { Renderer } from '../rendering/renderer';
 import { artworkFor, artRadius } from '../artwork/catalogue';
 import { clipLand } from '../rendering/terrain-renderer';
-import type { Vec } from '../physics/physics';
+import { bodyParts, type Vec } from '../physics/physics';
 
 export const inspectionColours = { land: '#65e0ba', terrain: '#e8cb88', artwork: '#ffe16b', collision: '#ff887d', blockers: '#ca9aff' };
 const materialColours = { road: '#597caa', sand: '#ebce80', paving: '#c69ddd', grass: '#78bd68' };
@@ -52,7 +52,7 @@ export function drawInspection(r: Renderer) {
   }
   if (overlays.collision) {
     c.strokeStyle = inspectionColours.collision;
-    for (const item of [...g.world.props, ...g.vehicles]) if (item.alive && r.visible(item.body.position, Math.max(item.body.w, item.body.h))) { path(c, item.body.corners()); c.stroke(); }
+    for (const item of [...g.world.props, ...g.vehicles]) if (item.alive && r.visible(item.body.position, Math.max(item.body.w, item.body.h))) { for (const part of bodyParts(item.body)) { path(c, part.corners()); c.stroke(); } }
     c.strokeStyle = '#7ad9f4'; c.setLineDash([4 / r.zoom, 3 / r.zoom]);
     for (const pool of g.world.pools) { path(c, pool.corners()); c.stroke(); }
     c.setLineDash([]);
@@ -63,10 +63,11 @@ export function drawInspection(r: Renderer) {
   }
   if (state.point) {
     const key = state.selected;
-    const outline = key?.startsWith('prop:') ? g.world.props.find(prop => `prop:${prop.id}` === key)?.body.corners()
-      : key?.startsWith('terrain:') ? g.map.terrain.regions.find(region => `terrain:${region.id}` === key)?.outline
+    const prop = key?.startsWith('prop:') ? g.world.props.find(prop => `prop:${prop.id}` === key) : undefined;
+    const outline = key?.startsWith('terrain:') ? g.map.terrain.regions.find(region => `terrain:${region.id}` === key)?.outline
       : key?.startsWith('land:') ? g.map.land.landRegions.find(region => `land:${region.id}` === key)?.outline : undefined;
     c.globalAlpha = 1; c.strokeStyle = '#ffffff'; c.lineWidth = 3 / r.zoom;
+    if (prop) for (const part of bodyParts(prop.body)) { path(c, part.corners()); c.stroke(); }
     if (outline) { path(c, outline); c.stroke(); }
     c.beginPath(); c.arc(state.point.x, state.point.y, 5 / r.zoom, 0, Math.PI * 2); c.stroke();
   }
