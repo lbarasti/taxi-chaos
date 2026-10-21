@@ -74,7 +74,7 @@ describe('inline audio credits', () => {
   it('keeps the compact lab note and its source links unchanged', () => {
     const html = audioCreditsMarkup();
     expect(html).toContain('<div class="audio-credits">');
-    expect(html).toContain('Engine: <a href="https://opengameart.org/content/racing-car-engine-sound-loops" target="_blank" rel="noopener">domasx2</a>');
+    expect(html).toContain('Engine: <a href="https://opengameart.org/content/car-sound-effects-pack-low-quality" target="_blank" rel="noopener">GGBotNet</a>');
     expect(html).toContain('Impacts/explosions: <a href="https://kenney.nl/assets" target="_blank" rel="noopener">Kenney</a>');
     expect(html).toContain('Siren: <a href="https://opengameart.org/content/sirens-and-alarm-noise" target="_blank" rel="noopener">aquinn</a> (CC0).');
     expect(html).toContain('Tyres: <a href="https://opengameart.org/content/car-tire-squeal-skid-loop" target="_blank" rel="noopener">audible-edge / Tom Haigh, loop by qubodup</a>');

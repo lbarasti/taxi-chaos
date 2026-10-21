@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 // Lifecycle tests use tiny fake buffers; real sample decoding/output is browser-tested.
-vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
+vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'engine-load', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
 import { AudioFX, audioPreferences } from './audio';
 import { Game } from '../game/game';
 import { vec } from '../physics/physics';
@@ -13,7 +13,7 @@ function fakeContext() {
     currentTime: 1, state: 'suspended', sampleRate: 22050, destination: node(),
     resume: vi.fn(async () => { ctx.state = 'running'; }),
     decodeAudioData: vi.fn(async () => buffer), createBuffer: vi.fn(() => buffer),
-    createGain: () => ({ ...node(), gain: param() }), createStereoPanner: () => ({ ...node(), pan: param() }),
+    createGain: vi.fn(() => ({ ...node(), gain: param() })), createStereoPanner: () => ({ ...node(), pan: param() }),
     createBiquadFilter: () => ({ ...node(), frequency: param(), Q: param() }),
     createDynamicsCompressor: () => ({ ...node(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param() }),
     createAnalyser: () => ({ ...node(), fftSize: 0, getFloatTimeDomainData: vi.fn() }),
@@ -73,6 +73,46 @@ describe('audio lifecycle and bounded mixer', () => {
     game.controls.boost = true; audio.update(game, true, true); expect(audio.state().loops).toContain('engine');
     game.player.body.position = vec(50, -30); game.player.body.velocity = vec(0, -30); game.update(1 / 120);
     expect(game.player.sinking).toBeDefined(); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+  });
+  it('adds engine load when accelerating or reversing, softens on braking and stops both layers on pause', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); game.vehicles = [game.player];
+    audio.update(game, true, true); expect(audio.state().loops).toEqual(['engine']);
+    game.controls.throttle = -1; audio.update(game, true, true);
+    expect(audio.state().loops).toEqual(['engine', 'engine-load']);
+    const load = ctx.createGain.mock.results.at(-1)!.value.gain;
+    const reversing = load.setTargetAtTime.mock.lastCall![0];
+    game.player.body.angle = 0; game.player.body.velocity = vec(10, 0); audio.update(game, true, true);
+    expect(load.setTargetAtTime.mock.lastCall![0]).toBeLessThan(reversing);
+    game.controls.throttle = 1; audio.update(game, true, true);
+    expect(load.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(reversing);
+    game.setMode('paused'); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+  });
+  it('makes busy nearby traffic louder while keeping at most six engines, including stopped cars', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); game.start(); game.onFoot = true; game.vehicles = [game.player];
+    const position = game.actor.position;
+    const addCar = (i: number) => game.vehicle('traffic', position.x + 5 + i, position.y, 0, '#fff');
+    const cars = [0, 1, 2].map(addCar);
+    audio.update(game, true, true); expect(audio.state().loops).toEqual(cars.map(car => `traffic:${car.id}`));
+    const nearest = ctx.createGain.mock.results[2].value.gain, quiet = nearest.setTargetAtTime.mock.lastCall![0];
+    cars.push(...[3, 4, 5, 6, 7, 8].map(addCar)); audio.update(game, true, true);
+    expect(nearest.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(quiet);
+    expect(audio.state().loops).toEqual(cars.slice(0, 6).map(car => `traffic:${car.id}`));
+    game.driver.position = vec(position.x + 200, position.y); audio.update(game, true, true);
+    expect(audio.state().loops).toEqual([]);
+  });
+  it('keeps parked, abandoned, destroyed, sinking and distant vehicles out of the traffic mix', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
+    await audio.unlock(); audio.configure({ sirens: 0 }); game.start(); game.onFoot = true; game.vehicles = [game.player];
+    const p = game.actor.position, addCar = () => game.vehicle('traffic', p.x + 8, p.y, 0, '#fff');
+    addCar().parked = true; addCar().driverExited = true; addCar().damage.status = 'wreck'; addCar().alive = false;
+    addCar().sinking = { elapsed: 0, entrySpeed: 1 }; const burning = addCar(); burning.damage.status = 'burning';
+    const distant = addCar(); distant.body.position = vec(p.x + 200, p.y);
+    const traffic = addCar(), cop = game.vehicle('police', p.x + 10, p.y, 0, '#fff');
+    audio.update(game, true, true);
+    expect(audio.state().loops.filter(key => key.startsWith('traffic:'))).toEqual([`traffic:${traffic.id}`, `traffic:${cop.id}`]);
+    expect(audio.state().loops).toContain(`car-fire:${burning.id}`);
   });
   it('limits dense explosions to twenty one-shots and culls inaudible events', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();

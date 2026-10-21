@@ -6,11 +6,12 @@ one-shots). Playback further changes pitch, volume and filtering.
 
 ## CC0 / public domain
 
-- **domasx2 — racing car engine sound loops** (`loop_0.wav` → `engine.wav`).
-  https://opengameart.org/content/racing-car-engine-sound-loops
-  Source: https://opengameart.org/sites/default/files/loop_0.wav
-  The author remade the loops using a public-domain recording, as documented on
-  the source page. https://creativecommons.org/publicdomain/zero/1.0/
+- **GGBotNet — Car Sound Effects Pack (Low Quality)**
+  (`Car_Engine_Loop_2.ogg` → `engine.wav`,
+  `Car_Engine_Loop.ogg` → `engine-load.wav`).
+  https://opengameart.org/content/car-sound-effects-pack-low-quality
+  Source: https://opengameart.org/sites/default/files/car_sound_effects_pack.zip
+  https://creativecommons.org/publicdomain/zero/1.0/
 - **Kenney — Impact Sounds** (two variants each of Generic light, Metal medium,
   Plate heavy, Wood heavy, Glass heavy, Tin medium and Punch heavy).
   https://kenney.nl/assets/impact-sounds
@@ -50,10 +51,12 @@ Web Audio tones created for Taxi Chaos. No music or voice recordings are include
 
 ## Reproducing the edits
 
-Download the above sources; extract Kenney archives to `impact/` and `scifi/`,
-and the boost archive to `boost/`. Rename the engine, tyre and siren downloads to
-`engine.wav`, `skid.wav`, `siren.mp3`; fire to `fire.ogg`. Then run:
+Download the above sources; extract the car archive to `car-pack/`, Kenney
+archives to `impact/` and `scifi/`, and the boost archive to `boost/`. Rename the
+tyre and siren downloads to `skid.wav`, `siren.mp3`; fire to `fire.ogg`. Then run:
 
 ```sh
 python3 tools/prepare-audio.py <download-directory> src/assets/audio
 ```
+
+Use `--engines-only` to reproduce the two engine loops from just the car archive.

@@ -1,7 +1,7 @@
 import type { Game } from '../game/game';
 import { clamp, dist, dot, length, rotate, vec, type Vec } from '../physics/physics';
 import { audioAssets, type AudioAsset } from './audio-assets';
-import { drivingSound, soundLabels, soundPriority, spatialSound, type SoundCue, type SoundEvent } from './sound';
+import { drivingSound, soundLabels, soundPriority, spatialSound, trafficEngineGain, type SoundCue, type SoundEvent } from './sound';
 import { readStorage, storageKeys } from '../game/storage';
 
 export type AudioPreferences = { muted: boolean; volume: number; sirens: number };
@@ -15,6 +15,7 @@ type Voice = { source: AudioBufferSourceNode; gain: GainNode; pan: StereoPannerN
 type LoopTarget = { asset: AudioAsset; gain: number; rate?: number; pan?: number; cutoff?: number };
 const LOOP_CUES = new Set<SoundCue>(['engine', 'skid', 'boost-loop', 'fire', 'siren']);
 const MAX_SHOTS = 20;
+const TRAFFIC_RANGE = 45, MAX_TRAFFIC_ENGINES = 6;
 
 /** Browser-only consumer. No graph exists until a user gesture calls unlock(). */
 export class AudioFX {
@@ -96,9 +97,18 @@ export class AudioFX {
     this.smooth(this.master!.gain, this.preferences.volume, 0.02);
     this.smooth(this.world!.gain, 0, 0.02);
     if (LOOP_CUES.has(cue)) {
-      const gain = cue === 'siren' ? 0.25 * this.preferences.sirens : cue === 'engine' ? 0.35 : 0.4;
-      const voice = this.voice(cue as AudioAsset, gain, 0, cue === 'engine' ? 1.35 : 1, 3, true, true);
-      if (voice) { voice.gain.gain.setTargetAtTime(0, ctx.currentTime + 1.9, 0.015); voice.source.stop(ctx.currentTime + 2); this.record(cue); }
+      const gain = cue === 'siren' ? 0.25 * this.preferences.sirens : 0.4;
+      const engine = drivingSound(16, 0.8, 0, false);
+      const layers: LoopTarget[] = cue === 'engine'
+        ? [{ asset: 'engine', gain: engine.engineGain, rate: engine.engineRate, cutoff: engine.engineCutoff },
+          { asset: 'engine-load', gain: engine.engineLoadGain, rate: engine.engineRate, cutoff: engine.engineCutoff }]
+        : [{ asset: cue as AudioAsset, gain }];
+      let played = false;
+      for (const layer of layers) {
+        const voice = this.voice(layer.asset, layer.gain, 0, layer.rate ?? 1, 3, true, true);
+        if (voice) { voice.filter.frequency.value = layer.cutoff ?? 5000; voice.gain.gain.setTargetAtTime(0, ctx.currentTime + 1.9, 0.015); voice.source.stop(ctx.currentTime + 2); played = true; }
+      }
+      if (played) this.record(cue);
     } else this.play({ cue, time: 0, strength: 1, priority: soundPriority(cue) }, true);
     return true;
   }
@@ -130,19 +140,27 @@ export class AudioFX {
       const boost = driving && game.controls.boost === true;
       if (driving) {
         const slip = player.dynamics.skidding ? Math.max(...player.dynamics.tyres.filter(t => t.skidding).map(t => Math.abs(dot(player.body.velocityAt(player.body.toWorld(t.position)), rotate(vec(0, 1), player.body.angle + t.angle))))) : 0;
-        const signal = drivingSound(game.speed, game.controls.throttle, slip, boost);
+        const forwardSpeed = dot(player.body.velocity, rotate(vec(1, 0), player.body.angle));
+        const throttle = game.controls.throttle < 0 && forwardSpeed > 0.5 ? 0 : Math.abs(game.controls.throttle);
+        const signal = drivingSound(game.speed, throttle, slip, boost);
         const pitch = player.definition.graphics.enginePitch;
-        desired.set('engine', { asset: 'engine', gain: signal.engineGain * (pitch > 1 ? 0.85 : 1), rate: signal.engineRate * pitch, cutoff: (pitch > 1 ? 1400 : 950) + Math.max(0, game.controls.throttle) * 1500 });
+        const level = pitch > 1 ? 0.85 : 1;
+        desired.set('engine', { asset: 'engine', gain: signal.engineGain * level, rate: signal.engineRate * pitch, cutoff: signal.engineCutoff });
+        desired.set('engine-load', { asset: 'engine-load', gain: signal.engineLoadGain * level, rate: signal.engineRate * pitch, cutoff: signal.engineCutoff });
         desired.set('skid', { asset: 'skid', gain: signal.skidGain, rate: 0.92 + clamp(game.speed / 120, 0, 0.3), cutoff: 3500 });
         if (boost) desired.set('boost', { asset: 'boost-loop', gain: 0.28, cutoff: 3000 });
       }
       if (boost !== this.boosting) this.play({ cue: boost ? 'boost-start' : 'boost-end', time: game.time, strength: 1, priority: 2 });
       this.boosting = boost;
-      // Quiet nearest traffic only; never twenty-three equally loud engines.
-      if (game.mode === 'playing') for (const car of game.vehicles.filter(v => v.alive && !v.sinking && v.kind === 'traffic' && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && length(v.body.velocity) > 2)
-        .sort((a, b) => dist(a.body.position, this.listener) - dist(b.body.position, this.listener)).slice(0, 2)) {
-        const spatial = spatialSound(this.listener, car.body.position, 35);
-        desired.set(`traffic:${car.id}`, { asset: 'engine', gain: spatial.gain * 0.055, pan: spatial.pan, rate: (0.8 + length(car.body.velocity) / 35) * car.definition.graphics.enginePitch, cutoff: 1300 });
+      // Include occupied cars waiting in traffic, but keep the voice count fixed.
+      if (game.mode === 'playing') {
+        const traffic = game.vehicles.filter(v => v !== player && v.alive && !v.parked && !v.driverExited && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && dist(v.body.position, this.listener) < TRAFFIC_RANGE)
+          .sort((a, b) => dist(a.body.position, this.listener) - dist(b.body.position, this.listener));
+        const gain = trafficEngineGain(traffic.length);
+        for (const car of traffic.slice(0, MAX_TRAFFIC_ENGINES)) {
+          const spatial = spatialSound(this.listener, car.body.position, TRAFFIC_RANGE);
+          desired.set(`traffic:${car.id}`, { asset: 'engine', gain: spatial.gain * gain, pan: spatial.pan, rate: clamp(0.8 + length(car.body.velocity) / 40, 0.8, 1.8) * car.definition.graphics.enginePitch, cutoff: 1600 });
+        }
       }
       const fires = [...game.vehicles.filter(v => v.alive && v.damage.status === 'burning').map(v => ({ key: `car-fire:${v.id}`, position: v.body.position })),
         ...game.world.props.filter(p => p.fire > 0 && !p.fuelSpent).map(p => ({ key: `prop-fire:${p.id}`, position: p.body.position }))];

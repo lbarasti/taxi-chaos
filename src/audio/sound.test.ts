@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Body, vec } from '../physics/physics';
-import { drivingSound, SoundEvents, spatialSound } from './sound';
+import { drivingSound, SoundEvents, spatialSound, trafficEngineGain } from './sound';
 import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 
@@ -39,6 +39,22 @@ describe('audio mix signals', () => {
     expect(drivingSound(2, 1, 12, false).skidGain).toBe(0);
     expect(drivingSound(20, 1, 8, false).skidGain).toBeGreaterThan(0);
     expect(drivingSound(20, 1, 0, true).engineRate).toBeGreaterThan(drivingSound(20, 0, 0, false).engineRate);
+  });
+  it('blends from a low idle to a stronger loaded engine, then softens when lifting off', () => {
+    const idle = drivingSound(0, 0, 0, false), coast = drivingSound(20, 0, 0, false), accelerating = drivingSound(20, 1, 0, false);
+    expect(idle.engineLoadGain).toBe(0);
+    expect(accelerating.engineRate).toBeGreaterThan(coast.engineRate);
+    expect(accelerating.engineLoadGain).toBeGreaterThan(coast.engineLoadGain);
+    expect(accelerating.engineCutoff).toBeGreaterThan(coast.engineCutoff);
+    expect(accelerating.engineGain + accelerating.engineLoadGain).toBeGreaterThan(idle.engineGain);
+    expect(drivingSound(1000, 1, 0, true).engineRate).toBe(2);
+  });
+  it('raises traffic noise above three nearby cars and caps the density boost', () => {
+    expect(trafficEngineGain(0)).toBe(0);
+    expect(trafficEngineGain(3)).toBe(trafficEngineGain(1));
+    expect(trafficEngineGain(4)).toBeGreaterThan(trafficEngineGain(3));
+    expect(trafficEngineGain(8)).toBeGreaterThan(trafficEngineGain(4));
+    expect(trafficEngineGain(100)).toBe(trafficEngineGain(8));
   });
 });
 

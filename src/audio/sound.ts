@@ -43,10 +43,20 @@ export function spatialSound(listener: Vec, source?: Vec, range = 75) {
   return { gain: (1 - clamp(distance / range, 0, 1)) ** 2, pan: clamp((source.x - listener.x) / 35, -0.8, 0.8) };
 }
 export function drivingSound(speed: number, throttle: number, slip: number, boosting: boolean) {
-  const load = Math.max(0, throttle);
+  const load = clamp(throttle, 0, 1), pace = clamp(speed / 40, 0, 1);
+  // Blend a low idle with a rougher engine under load; lifting off softens it.
+  const power = clamp(load * 0.8 + pace * 0.2 + (boosting ? 0.15 : 0), 0, 1);
+  const gain = 0.22 + pace * 0.08 + load * 0.08;
   return {
-    engineRate: clamp(0.72 + speed / 29 + load * 0.24 + (boosting ? 0.12 : 0), 0.72, 2.45),
-    engineGain: 0.15 + clamp(speed / 36, 0, 1) * 0.12 + load * 0.12,
+    engineRate: clamp(0.8 + speed / 40 + load * 0.22 + (boosting ? 0.12 : 0), 0.8, 2),
+    engineGain: gain * (1 - power * 0.65),
+    engineLoadGain: gain * power * 0.85,
+    engineCutoff: 1300 + load * 2000 + pace * 700,
     skidGain: clamp((slip - 1.1) / 9, 0, 0.5) * clamp((speed - 3) / 7, 0, 1),
   };
+}
+
+/** Above three nearby cars, raise the traffic mix gently, capped at eight. */
+export function trafficEngineGain(nearbyCars: number) {
+  return nearbyCars <= 0 ? 0 : 0.075 * (1 + clamp((nearbyCars - 3) / 5, 0, 1) * 0.5);
 }

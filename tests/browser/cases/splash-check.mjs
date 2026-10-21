@@ -89,7 +89,7 @@ async function checkDesktop() {
   await page.locator('#menu-credits').click(); await waitForDrawer(page, 'credits');
   assert.equal(await page.locator('.credits-section').count(), 4, 'credits are grouped by functional role');
   assert(await page.locator('.credits-section a').count() >= 8, 'source links are preserved');
-  assert.equal(await page.locator('.credits-section a[href="https://opengameart.org/content/racing-car-engine-sound-loops"]').count(), 1);
+  assert.equal(await page.locator('.credits-section a[href="https://opengameart.org/content/car-sound-effects-pack-low-quality"]').count(), 1);
   assert(await page.locator('#modal').evaluate(el => el.scrollWidth <= el.clientWidth), 'credits has no horizontal overflow');
   await page.locator('#drawer-back').focus(); await page.keyboard.press('Tab');
   assert.equal(await selected(page).evaluate(el => el.tagName), 'A', 'keyboard reaches an attribution link');

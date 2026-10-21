@@ -1,8 +1,9 @@
 """Prepare the curated FX palette. Requires ffmpeg; see src/assets/audio/CREDITS.md.
 
 Usage: python3 tools/prepare-audio.py <download-directory> <existing-output-directory>
-The download directory contains engine.wav, skid.wav, fire.ogg, siren.mp3 and the
-extracted impact/, scifi/ and boost/ archives listed in CREDITS.md.
+Add --engines-only to prepare just the two engine loops.
+The download directory contains skid.wav, fire.ogg, siren.mp3 and the
+extracted car-pack/, impact/, scifi/ and boost/ archives listed in CREDITS.md.
 Loops are PCM WAV (no codec padding); one-shots are small MP3s.
 """
 import array
@@ -12,7 +13,7 @@ import subprocess
 import sys
 import wave
 
-source, output = map(Path, sys.argv[1:])
+source, output = map(Path, [arg for arg in sys.argv[1:] if arg != '--engines-only'])
 RATE = 22050
 
 
@@ -51,7 +52,10 @@ def prepare(name, path, loop=False, start=0, duration=None, rms=0.18):
     print(f'{target.name}: {len(samples) / RATE:.2f}s, {target.stat().st_size} bytes')
 
 
-prepare('engine', 'engine.wav', loop=True)
+prepare('engine', 'car-pack/Car_Engine_Loop_2.ogg', loop=True)
+prepare('engine-load', 'car-pack/Car_Engine_Loop.ogg', loop=True)
+if '--engines-only' in sys.argv:
+    sys.exit(0)
 prepare('skid', 'skid.wav', loop=True, rms=0.14)
 prepare('fire', 'fire.ogg', loop=True)
 prepare('siren', 'siren.mp3', loop=True, start=0.5, duration=4, rms=0.12)
