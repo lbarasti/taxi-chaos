@@ -80,9 +80,12 @@ export function renderOrderFor(prop: ArtProp): ArtworkRenderOrder {
 
 export function artRadius(prop: ArtProp): number {
   const b = artworkFor(prop)?.bounds;
+  // The thin flag collider anchors a much taller procedural pole and fallen pennant.
+  const flag = objectDefinitions['golf-flag'];
+  const flagRadius = prop.kind === 'golf-flag' ? 1.6 * Math.max(prop.body.w / flag.width, prop.body.h / flag.height) : 0;
   // Include the maximum sun displacement, so off-screen canopies keep their shadows.
   const radius = b ? Math.hypot(Math.max(Math.abs(b.x), Math.abs(b.x + b.width)), Math.max(Math.abs(b.y), Math.abs(b.y + b.height))) + 3 : 0;
-  return Math.max(prop.body.w, prop.body.h, radius);
+  return Math.max(prop.body.w, prop.body.h, radius, flagRadius);
 }
 
 /** Scale for the procedural crate/tree fallback drawn when a prop carries no decoded PNG

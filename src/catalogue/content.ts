@@ -170,6 +170,7 @@ export const objectRecords = [
   { id: 'lamp', kind: 'lamp', width: 0.6, height: 0.6 },
   { id: 'bench', kind: 'bench', width: 2.4, height: 0.75 },
   { id: 'kiosk', kind: 'kiosk', width: 4, height: 2.8 },
+  { id: 'golf-flag', kind: 'golf-flag', width: 0.24, height: 0.24 },
 ] as const satisfies readonly ObjectRecord[];
 
 /** Type identity → behaviour kind for strict, asset-free map import validation. */

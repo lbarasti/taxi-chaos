@@ -43,6 +43,19 @@ function renderer() {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('prop render dispatch', () => {
+  it('draws a standing flag only through its prop and leaves a fallen pole after destruction', () => {
+    const { r, calls } = renderer();
+    const flag = r.game.world.props.find(p => p.sourceId === 'fairway-flag-3')!;
+    r.golfFixtures();
+    expect(calls.fillRect ?? []).toHaveLength(0);
+    r.drawMapProp(flag);
+    expect(calls.fillRect).toContainEqual([-0.04, -1.3, 0.08, 1.3]);
+    expect(calls.translate).toContainEqual([flag.body.position.x, flag.body.position.y]);
+    flag.alive = false; calls.fillRect = [];
+    r.drawMapProp(flag); r.golfFixtures();
+    expect(calls.fillRect).not.toContainEqual([-0.04, -1.3, 0.08, 1.3]);
+    expect(calls.fillRect).toContainEqual([-0.18, 0.08, 1.35, 0.07]);
+  });
   it('keeps the aerial ground plate after map round trips and draws course objects separately', () => {
     const { r, calls } = renderer();
     r.game = new Game(compileMap(importMap(exportMap(r.game.map.document))), false);

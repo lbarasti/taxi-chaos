@@ -84,7 +84,7 @@ export type ArtworkCatalogue = Readonly<{
 
 /** Existing world prop behaviours. `building` is a prop kind too, so one catalogue
  * vocabulary and one compiler serve both buildings and later beach/countryside props. */
-export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate' | 'fountain';
+export type PropKind = 'building' | 'tree' | 'hydrant' | 'crate' | 'bench' | 'lamp' | 'kiosk' | 'bin' | 'barrier' | 'shed' | 'barracks' | 'station' | 'pump' | 'rock' | 'guardrail' | 'container' | 'fence' | 'port-gate' | 'lifeguard-tower' | 'parasol' | 'beach-chair' | 'sandcastle' | 'palm' | 'bollard' | 'promenade-edge' | 'pedestrian-gate' | 'fountain' | 'golf-flag';
 
 export type BuildingFallback = 'shop' | 'commercial' | 'terraced' | 'wards' | 'resort';
 export type BuildingSign = Readonly<{

@@ -73,6 +73,26 @@ function drawResort(r: Renderer, prop: Prop, render: PropRenderContext) {
 }
 
 export function drawObjectFallback(r: Renderer, prop: Prop, render: PropRenderContext): boolean {
+  if (prop.kind === 'golf-flag') {
+    const c = r.ctx, b = prop.body, definition = objectDefinitions['golf-flag'];
+    c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
+    c.scale(b.w / definition.width, b.h / definition.height);
+    if (prop.alive) {
+      render.shadow(() => {
+        c.globalAlpha *= render.shadowAlpha;
+        path(r, [vec(), render.shadowOffset], '#17333580', 0.08);
+      });
+      r.rect(-0.04, -1.3, 0.08, 1.3, '#efe9d1');
+      path(r, [vec(0, -1.3), vec(0.8, -1.1), vec(0, -0.7)], prop.color, 0, true);
+    } else {
+      // A flattened pole and folded pennant remain; the dead body no longer collides.
+      c.rotate(0.35);
+      r.rect(-0.18, 0.08, 1.35, 0.07, '#d4ccb7');
+      path(r, [vec(1.17, 0.08), vec(0.95, 0.65), vec(0.68, 0.3), vec(0.57, 0.08)], prop.color, 0, true);
+      path(r, [vec(1.17, 0.08), vec(0.68, 0.3)], '#b85b50', 0.04);
+    }
+    c.restore(); return true;
+  }
   if (prop.kind === 'fountain') {
     const c = r.ctx, b = prop.body;
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
