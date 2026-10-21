@@ -49,7 +49,11 @@ export class Body {
   localCorners() { return this.collisionPolygon
     ? this.collisionPolygon.map(p => vec(p.x * this.w, p.y * this.h))
     : [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)]; }
-  corners() { return this.localCorners().map(p => this.toWorld(p)); }
+  corners() {
+    if (this.collisionPolygon) return this.collisionPolygon.map(p => this.toWorld(vec(p.x * this.w, p.y * this.h)));
+    const x = this.w / 2, y = this.h / 2;
+    return [this.toWorld(vec(-x, -y)), this.toWorld(vec(x, -y)), this.toWorld(vec(x, y)), this.toWorld(vec(-x, y))];
+  }
 }
 
 /** Cache only derived geometry; static compounds avoid rebuilding their sections
@@ -135,17 +139,22 @@ export function contact(a: Body, b: Body): Contact | null {
   }
   return deepest;
 }
-function rectangleContact(a: Body, b: Body): Contact | null {
-  const ac = a.corners(), bc = b.corners(); let depth = Infinity, normal = vec();
-  const axesFor = (body: Body, points: Vec[]) => body.collisionPolygon
+function axesFor(body: Body, points: Vec[]) {
+  return body.collisionPolygon
     ? points.map((p, i) => { const edge = sub(points[(i + 1) % points.length], p); return normalize(vec(-edge.y, edge.x)); })
     : [rotate(vec(1, 0), body.angle), rotate(vec(0, 1), body.angle)];
-  const axes = [...axesFor(a, ac), ...axesFor(b, bc)];
+}
+function rectangleContact(a: Body, b: Body): Contact | null {
+  const ac = a.corners(), bc = b.corners(); let depth = Infinity, normal = vec();
+  const axes = axesFor(a, ac);
+  for (const axis of axesFor(b, bc)) axes.push(axis);
   for (let axis of axes) {
-    const ap = ac.map(p => dot(p, axis)), bp = bc.map(p => dot(p, axis));
+    let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
+    for (const p of ac) { const value = p.x * axis.x + p.y * axis.y; if (value < amin) amin = value; if (value > amax) amax = value; }
+    for (const p of bc) { const value = p.x * axis.x + p.y * axis.y; if (value < bmin) bmin = value; if (value > bmax) bmax = value; }
     // Compare the two escape distances, including containment. A polygon need not
     // surround its envelope centre, so body positions cannot orient its contact.
-    const positive = Math.max(...bp) - Math.min(...ap), negative = Math.max(...ap) - Math.min(...bp);
+    const positive = bmax - amin, negative = amax - bmin;
     if (positive <= 0 || negative <= 0) return null;
     const overlap = Math.min(positive, negative);
     if (overlap < depth) {
