@@ -28,7 +28,7 @@ describe('daily editions and campaign finale', () => {
   it('packages complete WebP files for every supplied newspaper photograph', () => {
     const directory = new URL('../assets/newspapers/', import.meta.url);
     const files = readdirSync(directory).filter(file => file.endsWith('.webp'));
-    expect(files).toHaveLength(7);
+    expect(files).toHaveLength(17);
     for (const file of files) {
       const bytes = readFileSync(new URL(file, directory));
       expect(bytes.length, file).toBeGreaterThan(1024);
@@ -53,7 +53,12 @@ describe('daily editions and campaign finale', () => {
     const history = structuredClone(state.editions); advanceCampaignTo(state, CAMPAIGN_END + 100);
     expect(state.editions).toEqual(history);
     const pictures = state.editions.map(issue => editionArticle(campaignDefinition, issue.articles[0])?.image).filter(Boolean);
-    expect(pictures).toHaveLength(7); expect(new Set(pictures).size).toBe(pictures.length);
+    expect(pictures).toHaveLength(14); expect(new Set(pictures).size).toBe(pictures.length);
+    const game = new Game(undefined, false); game.save.campaign = parseCampaign(state);
+    for (const issue of game.save.campaign.editions) {
+      const article = editionArticle(game.campaignContent, issue.articles[0])!;
+      expect(publicationsMarkup(game, issue.day)).toContain(`src="${article.image}" alt="${escape(article.imageAlt)}"`);
+    }
   });
 
   it('includes all simultaneous investigations before selecting the front page and never anticipates reactions', () => {
@@ -283,6 +288,9 @@ describe('daily editions and campaign finale', () => {
       const html = publicationsMarkup(game, 12, 'newsroom', id);
       expect(html).toContain(`data-article="${id}"`);
       expect(html).toContain('Back to front page');
+      expect(article.image).toBeTruthy();
+      expect(html).toContain(`src="${article.image}" alt="${escape(article.imageAlt)}"`);
+      expect(html).toContain(`<figcaption>${escape(article.caption)}</figcaption>`);
       for (const paragraph of article.body) expect(html).toContain(`<p>${escape(paragraph)}</p>`);
     }
     expect(publicationsMarkup(game, 12, 'newsroom', 'day-14')).toEqual(front);

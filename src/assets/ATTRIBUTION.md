@@ -100,11 +100,13 @@ These assets are bundled inline and require no external service.
 
 ## Daily newspaper photographs
 
-`newspapers/day-01.webp` through `day-07.webp` are original images generated with
-the built-in OpenAI image-generation tool for Taxi Chaos on 2026-10-21. They are
-packaged at 1000 px maximum width in WebP and embedded in the standalone game.
-No third-party source photograph was used. Later daily and investigation artwork
-is intentionally deferred; their front pages render without a photograph.
+`newspapers/day-01.webp` through `day-14.webp` and the three
+`newspapers/investigation-*.webp` pictures are original images generated with the
+built-in OpenAI image-generation tool for Taxi Chaos on 2026-10-21. Days 1–7 are
+1000 × 667 px; days 8–14 and the investigation pictures are 1024 × 576 px. All are
+WebP and embedded in the standalone game, displayed at their natural proportions.
+No third-party source photograph was used. Some later scenes were cropped from
+generated contact sheets and are intended for newspaper-size display.
 
 The shared prompt requested one landscape black-and-white editorial photograph
 of a fictional worn coastal city: natural documentary lighting, subtle newspaper
@@ -118,3 +120,13 @@ words, logos, captions, watermarks, invented arrests or election results. Subjec
 - Day 5: telephone, proofs and anonymous envelopes on the local editor’s desk.
 - Day 6: waiting chairs and a folder outside a municipal hearing building.
 - Day 7: an empty patrol parking space beside shuttered harbour shops.
+- Day 8: an old radio, booking slips and tea on a taxi dispatch desk.
+- Day 9: chairs and empty sign stands outside a modest seaside hotel.
+- Day 10: a supplier register and carbon copies at a public records counter.
+- Day 11: working boats, crates and workshop doors on the quay.
+- Day 12: a suitcase near temporary lodging, without identifying a source’s destination.
+- Day 13: a printing press feeding a fresh stack of newspapers.
+- Day 14: a polling-station entrance before opening, without an election result.
+- Café investigation: a shuttered café threshold and barriers.
+- Patrol investigation: a reassignment log beside a station radio.
+- Vale investigation: a briefing folder and retained supplier agreement.

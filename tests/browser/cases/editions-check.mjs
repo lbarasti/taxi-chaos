@@ -23,6 +23,19 @@ try {
       const bounds = await page.locator('#modal').boundingBox();
       assert(bounds.x >= -1 && bounds.x + bounds.width <= width + 1);
     };
+    const picture = async (target = page) => {
+      const image = target.locator('.newspaper img');
+      await image.evaluate(image => image.decode());
+      const dimensions = await image.evaluate(image => ({
+        width: image.naturalWidth, height: image.naturalHeight,
+        displayedWidth: image.getBoundingClientRect().width, displayedHeight: image.getBoundingClientRect().height,
+      }));
+      assert(dimensions.width > 0 && dimensions.height > 0, `${name}: picture decodes`);
+      assert(Math.abs(dimensions.displayedHeight - dimensions.displayedWidth * dimensions.height / dimensions.width) < 1, `${name}: natural picture proportions`);
+      const source = await image.getAttribute('src');
+      assert(source.startsWith('data:image/webp;base64,'), `${name}: embedded WebP picture`);
+      return source;
+    };
     await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     await page.evaluate(() => {
@@ -37,9 +50,7 @@ try {
     await waitForDrawer(page, 'publications');
     assert.equal(await page.locator('.newspaper').getAttribute('data-edition-day'), '3');
     assert.match(await page.locator('.newspaper-headline').textContent(), /windows broken overnight/);
-    await page.locator('.newspaper img').evaluate(image => image.decode());
-    assert.equal(await page.locator('.newspaper img').evaluate(image => image.complete && image.naturalWidth > 0), true);
-    const thirdPicture = await page.locator('.newspaper img').getAttribute('src');
+    const thirdPicture = await picture();
     await page.evaluate(() => document.fonts.ready);
     await layout(); await page.screenshot({ path: resolve(output, `${name}-front-page.png`) });
     await activate('#edition-1');
@@ -74,6 +85,15 @@ try {
     else await endingPage.locator('#final-edition').click();
     await waitForDrawer(endingPage, 'publications');
     assert.equal(await endingPage.locator('.newspaper').getAttribute('data-edition-day'), '14');
+    const pictures = new Set([await picture(endingPage)]);
+    for (let day = 8; day <= 13; day++) {
+      if (touch) await tapToConfirm(endingPage, `#edition-${day}`);
+      else await endingPage.locator(`#edition-${day}`).click();
+      assert.equal(await endingPage.locator('.newspaper').getAttribute('data-edition-day'), String(day));
+      pictures.add(await picture(endingPage));
+      assert.equal(await endingPage.locator('#modal').evaluate(modal => modal.scrollWidth > modal.clientWidth), false, `${name}: day ${day} fits`);
+    }
+    assert.equal(pictures.size, 7, `${name}: each later daily edition has its own picture`);
     await endingPage.keyboard.press('Escape'); await waitForDrawer(endingPage, 'finale');
     if (touch) await tapToConfirm(endingPage, '#arcade-continue');
     else await endingPage.locator('#arcade-continue').click();

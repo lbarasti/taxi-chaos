@@ -23,7 +23,7 @@ export function publicationsMarkup(game: Game, selectedDay?: number, back: Drawe
       <div class="newspaper-dateline"><span>Day ${edition.day} · ${edition.at === game.campaignContent.timing.lastEdition ? 'Final campaign edition' : 'Morning edition'}</span><time>${escape(calendarLabel(edition.at).split(' · ')[1])}</time></div>
       <p class="newspaper-section">${escape(article.section)}</p><h3 class="newspaper-headline">${escape(article.title)}</h3><p class="newspaper-deck">${escape(article.deck)}</p>
       <div class="newspaper-lead${article.image ? '' : ' newspaper-text-only'}" data-article="${escape(article.id)}">
-        ${article.image ? `<figure><img src="${escape(article.image)}" alt="${escape(article.imageAlt)}" width="1000" height="667"><figcaption>${escape(article.caption)}</figcaption></figure>` : ''}
+        ${article.image ? `<figure><img src="${escape(article.image)}" alt="${escape(article.imageAlt)}"><figcaption>${escape(article.caption)}</figcaption></figure>` : ''}
         <div class="newspaper-copy"><p class="newspaper-byline">${escape(press.byline)}</p>${article.body.map(paragraph => `<p>${escape(paragraph)}</p>`).join('')}</div>
       </div>
       ${!reading && (others.length || briefs.length) ? `<div class="newspaper-briefs">${others.map(article => `<section><h4>${escape(article.title)}</h4><p>${escape(article.deck)}</p><button class="menu-item newspaper-read" id="read-article-${escape(article.id)}" data-read-article="${escape(article.id)}" aria-label="Read ${escape(article.title)}"><span>Read article</span></button></section>`).join('')}${briefs.map(brief => `<section><h4>${escape(brief.title)}</h4><p>${escape(brief.text)}</p></section>`).join('')}</div>` : ''}
