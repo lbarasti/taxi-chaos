@@ -3,28 +3,35 @@ import type { Allegation, CampaignDefinition, CampaignInputs, WorldState } from 
 import { campaignCondition } from '../missions/conditions';
 import { claimOrder } from './validate';
 import type { Effect } from '../missions/schema';
-import { CAMPAIGN_END, CAMPAIGN_START, LAST_EDITION, campaignDay, nextEdition } from './clock';
+import { campaignDay, nextEdition } from './clock';
+import { printEdition, restoreEditions } from './editions';
 import type { Occurrence } from './events';
 
+export type PrintedEdition = { day: number; at: number; articles: string[]; briefs: string[]; read: boolean };
 export type Publication = { allegation: Allegation; submittedShift: number; publishedShift: number; at: number };
 export type EditorialCase = { verifiedAt: number; approvedAt: number | null; editionAt: number | null };
 export type ActiveRide = { missionId: string; type: 'fare' | 'parcel'; elapsed: number; comfort: number; rideBeat: number };
 export type Campaign = {
+  editions: PrintedEdition[]; endingSeen: boolean;
   version: 2; minute: number; shift: number; finished: boolean;
   occurrences: Record<string, Occurrence>; world: WorldState;
   newsroom: { received: Record<string, { at: number; verifiedAt: number | null }>; cases: Partial<Record<Allegation, EditorialCase>> };
   publications: Publication[]; reactions: Partial<Record<Allegation, { at: number }>>;
   regularRides: Record<string, number>; ordinarySinceStory: number; activeRide: ActiveRide | null;
 };
-export const defaultCampaign = (definition: CampaignDefinition = campaignDefinition): Campaign => ({ version: 2, minute: CAMPAIGN_START, shift: 1, finished: false, occurrences: {}, world: { ...definition.initialWorld }, newsroom: { received: {}, cases: {} }, publications: [], reactions: {}, regularRides: {}, ordinarySinceStory: 0, activeRide: null });
+export function defaultCampaign(definition: CampaignDefinition = campaignDefinition): Campaign {
+  const state: Campaign = { version: 2, minute: definition.timing.start, shift: 1, finished: false, editions: [], endingSeen: false, occurrences: {}, world: { ...definition.initialWorld }, newsroom: { received: {}, cases: {} }, publications: [], reactions: {}, regularRides: {}, ordinarySinceStory: 0, activeRide: null };
+  printEdition({ state, definition }, 1);
+  return state;
+}
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-const time = (value: unknown, until: number): value is number => typeof value === 'number' && Number.isFinite(value) && value >= CAMPAIGN_START && value <= until;
 
 /** Validate current snapshots in chronological domain order, without replaying gameplay effects. */
 export function parseCampaign(raw: unknown, definition: CampaignDefinition = campaignDefinition, inputs: CampaignInputs = {}): Campaign {
   const state = defaultCampaign(definition), s = object(raw);
+  const time = (value: unknown, until: number): value is number => typeof value === 'number' && Number.isFinite(value) && value >= definition.timing.start && value <= until;
   if (s.version !== 2) return state;
-  const minute = time(s.minute, CAMPAIGN_END) ? s.minute : CAMPAIGN_START;
+  const minute = time(s.minute, definition.timing.end) ? s.minute : definition.timing.start;
   const allegations = claimOrder(definition), rank = (id: string) => allegations.indexOf(id);
   const savedWorld: WorldState = {};
   for (const [key, value] of Object.entries(object(s.world))) if (Object.hasOwn(definition.initialWorld, key) && typeof value === typeof definition.initialWorld[key] && (typeof value !== 'number' || Number.isFinite(value))) savedWorld[key] = value as WorldState[string];
@@ -75,10 +82,10 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
     const approvedAt = c.approvedAt;
     timeline.push({ at: approvedAt, phase: 3 + allegations.length + rank(id), id, apply: () => {
       const validated = state.newsroom.cases[id];
-      if (!validated || nextEdition(approvedAt) > LAST_EDITION || !matches(claim.approveRequires)) return false;
+      if (!validated || nextEdition(approvedAt, definition.timing) > definition.timing.lastEdition || !matches(claim.approveRequires)) return false;
       {
         validated.approvedAt = approvedAt;
-        validated.editionAt = time(c.editionAt, LAST_EDITION) && c.editionAt === nextEdition(approvedAt) ? c.editionAt : null;
+        validated.editionAt = time(c.editionAt, definition.timing.lastEdition) && c.editionAt === nextEdition(approvedAt, definition.timing) ? c.editionAt : null;
       }
     } });
   }
@@ -89,7 +96,7 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
     timeline.push({ at, phase: 3 + allegations.length * 2 + rank(id), id, apply: () => {
       const c = state.newsroom.cases[id];
       if (!c || c.editionAt !== at || state.publications.some(p => p.allegation === id) || !matches(definition.claims[id].publishRequires)) return false;
-      state.publications.push({ allegation: id, submittedShift: campaignDay(c.verifiedAt - 180), publishedShift: campaignDay(at), at });
+      state.publications.push({ allegation: id, submittedShift: campaignDay(c.verifiedAt - 180, definition.timing), publishedShift: campaignDay(at, definition.timing), at });
       state.occurrences[`edition-${id}`] = { at, outcome: 'published' };
     } });
   }
@@ -106,7 +113,7 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   }
   timeline.sort((a, b) => a.at - b.at || a.phase - b.phase || a.id.localeCompare(b.id));
   for (let i = 0; i < timeline.length;) {
-    const at = timeline[i].at; state.minute = at; state.shift = campaignDay(at);
+    const at = timeline[i].at; state.minute = at; state.shift = campaignDay(at, definition.timing);
     const group = []; while (i < timeline.length && timeline[i].at === at) group.push(timeline[i++]);
     // A case can be admitted by an edition at the same timestamp. Retry blocked
     // milestones after other domain phases have committed, until no work remains.
@@ -117,7 +124,7 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
       pending = retry;
     }
   }
-  state.minute = minute; state.shift = campaignDay(minute); state.finished = minute === CAMPAIGN_END;
+  state.minute = minute; state.shift = campaignDay(minute, definition.timing); state.finished = minute === definition.timing.end;
   Object.assign(state.world, savedWorld);
   const active = object(s.activeRide);
   if (typeof active.missionId === 'string' && Object.hasOwn(definition.missions.missions, active.missionId) && (active.type === 'fare' || active.type === 'parcel')) {
@@ -125,5 +132,7 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   }
   for (const [name, count] of Object.entries(object(s.regularRides)).slice(0, definition.everydayJobs.length)) if (definition.everydayJobs.some(job => job.name === name) && typeof count === 'number' && Number.isInteger(count) && count >= 0) state.regularRides[name] = Math.min(1e6, count);
   state.ordinarySinceStory = typeof s.ordinarySinceStory === 'number' && Number.isInteger(s.ordinarySinceStory) ? Math.max(0, Math.min(2, s.ordinarySinceStory)) : 0;
+  restoreEditions(state, s.editions, definition);
+  state.endingSeen = state.finished && s.endingSeen === true;
   return state;
 }

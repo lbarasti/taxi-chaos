@@ -17,6 +17,7 @@ import type { CampaignContext, CampaignDefinition } from './model';
 
 /** Independent authored thread: no Open Shore operations, claims or world keys. */
 const festival: CampaignDefinition = {
+  timing: { start: dayMinute(1), end: dayMinute(4), lastEdition: dayMinute(3, 6), editionHour: 6 },
   id: 'lantern-festival', title: 'Lantern Festival', finishedLabel: 'Festival finished', completionText: 'Festival complete.',
   dispatcher: 'bea', initialWorld: { quay: 'locked', attendance: 0, ferry: 'waiting' },
   materials: {

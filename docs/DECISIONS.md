@@ -122,3 +122,22 @@ player instructions in HOW_TO and provenance in asset attribution files. Put
 implementation details and validation results in the PR, generated captures in
 ignored `scenario-runs/`, and executable fixtures beside their tools or tests.
 Do not create replacement feature notes, plans or changelogs elsewhere.
+
+
+## 9. Make editions and campaign completion durable
+
+Campaign content owns its start, end, last printing deadline and publication hour.
+Calendar dates label the HUD and newspapers; overnight working shifts retain their
+07:00 boundary so existing booking windows do not change. Print daily coverage only
+after all investigations at that timestamp settle, and save the selected article
+and brief IDs with read status. Later reactions do not rewrite past editions.
+Migrate older version-2 saves into a historical archive without replaying gameplay
+effects or using future world facts in earlier coverage.
+
+Campaign completion is independent of investigation success. Keep a pending recap
+across saves and open it at a safe stop after any on-board fare. An explicit arcade
+continuation acknowledges it without resetting cash, vehicles, upgrades or city
+outcomes. Story scheduling ends; ordinary dispatch and the visual clock continue.
+Keep authored coverage and outcome copy with campaign content, and bundle any
+supplied illustrations offline. Articles without artwork use a text front page
+until their distinct image is authored.

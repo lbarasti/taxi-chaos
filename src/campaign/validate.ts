@@ -1,7 +1,7 @@
 import { assertCondition, assertEffects, assertMissionCatalogue, type Condition, type Effect } from '../missions/schema';
 import { isCharacterId } from '../narrative/characters';
 import { vehicleDefinitions } from '../vehicles/vehicles';
-import { CAMPAIGN_START, CAMPAIGN_END } from './clock';
+import { CAMPAIGN_START, campaignDays, editionTime } from './clock';
 import type { CampaignDefinition } from './model';
 
 const id = (value: string) => { if (!/^[a-z][a-z0-9-]{0,79}$/.test(value)) throw new Error(`Invalid campaign id: ${value}`); };
@@ -13,13 +13,13 @@ function walk(c: Condition, visit: (c: Condition) => void): void {
 }
 
 /** Time predicates must be checked at their own boundary during large skips. */
-export function conditionTimes(c: Condition | undefined): number[] {
+export function conditionTimes(c: Condition | undefined, start = CAMPAIGN_START): number[] {
   const times: number[] = [];
   if (c) walk(c, node => {
     if ('minuteAtLeast' in node) times.push(node.minuteAtLeast);
     if ('minuteBefore' in node) times.push(node.minuteBefore);
-    if ('shiftAtLeast' in node) times.push(Math.max(CAMPAIGN_START, CAMPAIGN_START + (node.shiftAtLeast - 1) * 1440));
-    if ('shiftAtMost' in node) times.push(CAMPAIGN_START + node.shiftAtMost * 1440);
+    if ('shiftAtLeast' in node) times.push(Math.max(start, start + (node.shiftAtLeast - 1) * 1440));
+    if ('shiftAtMost' in node) times.push(start + node.shiftAtMost * 1440);
   });
   return times;
 }
@@ -43,6 +43,8 @@ export function claimOrder(def: CampaignDefinition): string[] {
 
 /** Validate workload, shapes and cross-domain references before dispatch. */
 export function assertCampaignDefinition(def: CampaignDefinition): void {
+  const t = def.timing;
+  if (!t || ![t.start, t.end, t.lastEdition, t.editionHour].every(Number.isInteger) || t.start < 0 || t.end <= t.start || campaignDays(t) > 366 || t.lastEdition < t.start || t.lastEdition >= t.end || t.editionHour < 0 || t.editionHour > 23) throw new Error('Invalid campaign timing');
   id(def.id); assertMissionCatalogue(def.missions);
   for (const [name, items, max] of [
     ['world', Object.keys(def.initialWorld), 128], ['materials', Object.keys(def.materials), 100], ['claims', Object.keys(def.claims), 100],
@@ -86,7 +88,7 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
   const ids = new Set<string>();
   for (const op of def.operations) {
     if (ids.has(op.id)) throw new Error(`Duplicate operation: ${op.id}`); id(op.id); ids.add(op.id);
-    if (!Number.isInteger(op.at) || op.at < CAMPAIGN_START || op.at >= CAMPAIGN_END) throw new Error(`Invalid operation time: ${op.id}`);
+    if (!Number.isInteger(op.at) || op.at < t.start || op.at >= t.end) throw new Error(`Invalid operation time: ${op.id}`);
     effects(op.effects);
     if (op.outcomes) {
       if (!op.outcomes.length || op.outcomes.length > 16 || op.outcomes.at(-1)!.requires || op.outcomes.slice(0, -1).some(o => !o.requires)) throw new Error(`Operation needs a final fallback outcome: ${op.id}`);
@@ -115,7 +117,7 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
   }
   for (const [id, m] of Object.entries(def.missions.missions)) {
     const window = def.jobWindows[id];
-    if (!window || !Number.isInteger(window.from) || !Number.isInteger(window.until) || window.from < CAMPAIGN_START || window.until > CAMPAIGN_END || window.from >= window.until) throw new Error(`Invalid campaign job window: ${id}`);
+    if (!window || !Number.isInteger(window.from) || !Number.isInteger(window.until) || window.from < t.start || window.until > t.end || window.from >= window.until) throw new Error(`Invalid campaign job window: ${id}`);
     condition(m.requires); effects(m.effects ?? []); effects(m.contactLost?.effects ?? []);
     for (const g of m.choices ?? []) for (const o of g.options) { condition(o.requires); effects(o.effects ?? []); }
   }
@@ -130,5 +132,14 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     condition(s.requires);
   }
   for (const t of [...def.bulletins, ...def.ordinaryResponses]) condition(t.requires);
+  if (def.newspaper) {
+    const press = def.newspaper, articles = [...press.daily, ...Object.values(press.investigations)];
+    if (press.daily.length !== campaignDays(t) || editionTime(press.daily.length, t) > t.lastEdition) throw new Error('Every campaign day needs a newspaper edition');
+    if (new Set(articles.map(a => a.id)).size !== articles.length || new Set(articles.flatMap(a => a.image ? [a.image] : [])).size !== articles.filter(a => a.image).length) throw new Error('Newspaper articles need distinct IDs and pictures');
+    for (const a of articles) { id(a.id); if (![a.title, a.deck, a.imageAlt, a.caption, a.section, ...a.body].every(v => typeof v === 'string' && v.length > 0) || !a.body.length || a.body.length > 8) throw new Error('Incomplete newspaper article'); }
+    for (const key of Object.keys(press.investigations)) ref(def.claims, key, 'newspaper claim');
+    for (const b of press.briefs) { id(b.id); condition(b.requires); }
+  }
+  for (const milestone of def.milestones ?? []) condition(milestone.requires);
   claimOrder(def);
 }

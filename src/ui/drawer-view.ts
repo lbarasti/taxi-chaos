@@ -1,9 +1,10 @@
 import type { Game } from '../game/game';
 import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
-import { calendarLabel } from '../campaign/clock';
+import { campaignDays, displayDay, calendarLabel } from '../campaign/clock';
 import { notebookMarkup, notebookGuideMarkup } from '../campaign/view';
 import { newsroomMarkup, type NewsroomSection } from '../campaign/newsroom-view';
+import { publicationsMarkup, finaleMarkup } from '../campaign/newspaper-view';
 import { creditsMarkup } from './credits';
 import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
@@ -15,6 +16,8 @@ const pages = {
   shift: { title: 'This shift.', parent: 'home' },
   credits: { title: 'Credits.', parent: 'home' },
   newsroom: { title: '', parent: null },
+  publications: { title: '', parent: 'newsroom' },
+  finale: { title: '', parent: null },
   notebook: { title: '', parent: 'home' },
   'notebook-guide': { title: 'Keeping records.', parent: 'notebook' },
 } as const satisfies Record<DrawerPage, { title: string; parent: DrawerPage | null }>;
@@ -34,17 +37,19 @@ function settingsMarkup(settings: SettingsControls) {
 function campaignMarkup(game: Game) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';
   const preview = game.sleepPreview;
-  return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${game.save.campaign.shift} OF 14 · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p>
+  return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${displayDay(game.save.campaign.minute, game.campaignContent.timing)} OF ${campaignDays(game.campaignContent.timing)} · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p>
     ${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}
     ${menuItem(game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !!game.sleepReason })}
     <p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
 }
-export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom' }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
+    case 'publications': return publicationsMarkup(game, editionDay, publicationBack);
+    case 'finale': return finaleMarkup(game);
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;

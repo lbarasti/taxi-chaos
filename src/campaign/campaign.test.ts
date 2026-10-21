@@ -9,7 +9,8 @@ import { storageKeys } from '../game/storage';
 import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../narrative/player-records';
 import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
 import { defaultCampaign, parseCampaign } from './state';
-import { CAMPAIGN_END, LAST_EDITION, dayMinute } from './clock';
+import { dayMinute } from './clock';
+import { CAMPAIGN_END, LAST_EDITION } from './content';
 import { notebookMarkup } from './view';
 import { rideDialogueIds } from './ride-dialogue';
 

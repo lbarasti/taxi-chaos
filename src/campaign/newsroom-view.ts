@@ -1,12 +1,11 @@
 import type { Game } from '../game/game';
 import { menuItem } from '../ui/drawer-markup';
-import { LAST_EDITION } from './clock';
 import { canApprove } from './events';
 import { editorialMarkup, recordMarkup } from './view';
 
 /** Route membership, not merely authored-material membership, makes a publication source. */
 const publicationSources = (game: Game) => new Set(Object.values(game.campaignContent.claims).flatMap(claim => claim.routes.flat()));
-const sections = { sources: 'Sources', stories: 'Published stories' } as const;
+const sections = { sources: 'Sources', stories: 'Stories at the editor' } as const;
 export type NewsroomSection = keyof typeof sections;
 export const isNewsroomSection = (id: string): id is NewsroomSection => Object.hasOwn(sections, id);
 
@@ -27,7 +26,7 @@ export function newsroomSummary(game: Game) {
   const records = newsroomRecords(game);
   const toSubmit = records.toSubmit.length, checking = records.checking.length;
   const ready = Object.keys(campaign.newsroom.cases).filter(id => canApprove(game.campaignContext, id)).length;
-  const closed = campaign.finished || campaign.minute >= LAST_EDITION;
+  const closed = campaign.finished || campaign.minute >= game.campaignContent.timing.lastEdition;
   const summary = [
     `${toSubmit} ${toSubmit === 1 ? 'source' : 'sources'} ${closed ? 'not submitted' : 'to submit'}`,
     `${checking} ${checking === 1 ? 'source' : 'sources'} being checked`,
@@ -59,6 +58,7 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
     <nav class="game-menu" aria-label="Newsroom actions">
       ${menuItem(game.navToNewsroom ? 'Cancel newsroom route' : 'Route to newsroom', { id: 'notebook-route' })}
       ${Object.entries(sections).map(([id, label]) => `<button class="menu-item" id="newsroom-open-${id}" data-newsroom-section="${id}" aria-controls="newsroom-detail" aria-pressed="${selected === id}"><span>${label}</span></button>`).join('')}
+      ${menuItem('Publications', { id: 'newsroom-publications', page: 'publications' })}
       ${menuItem('Back to the streets', { id: 'start' })}
     </nav><p class="menu-hint" id="menu-hint"></p></div></div>
     <section class="newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">

@@ -38,7 +38,13 @@ Normal dispatch mixes ordinary jobs with recurring customers. **Texts** lets
 you choose a booking with an exact pickup-before deadline; competing bookings
 commit only when you stop at the deliberately selected pickup. Pause →
 **Ask dispatch for an ordinary fare** skips a suggested story booking. Dialogue
-continues during travel and at arrival. Free driving continues after the campaign.
+continues during travel and at arrival. The HUD shows the calendar day alongside
+its clock; overnight booking shifts still turn over at 07:00.
+
+A persistent morning headline opens the latest unread newspaper. **Newsroom →
+Publications** keeps the edition archive, including days when you did not pursue
+an investigation. Reading pauses the game. Each edition keeps the findings and
+public responses that were known when it printed; later events do not rewrite it.
 
 The **Pause → Dispatch notebook** keeps signed receipts, ride conversations
 and documents.
@@ -55,6 +61,14 @@ grouped into To submit, Being checked and Checked sources. General notes stay
 in the notebook. Near an eligible observation site, activate the camera shortcut
 to collect the scene deliberately; seeing it alone adds no record. The calendar
 continues through fourteen nights, ending on Day 15 at 07:00.
+
+At the end, a **Campaign complete** recap records both achieved and unresolved
+outcomes. It waits for an active fare and immediate danger to pass before opening
+automatically; a persistent notice also lets you open it yourself. Choose
+**Continue in arcade mode** to keep your cash, garage and vehicle upgrades while
+ordinary dispatcher work continues. The clock keeps running, and the recap and
+edition archive remain available from the pause menu. Completion and unread
+editions survive reloading.
 
 ## Explore the city
 

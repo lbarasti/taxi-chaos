@@ -2,6 +2,8 @@ import './style.css';
 import { savedCampaignAvailable, type InputDevice } from './ui/splash';
 import { GameDrawer } from './ui/game-drawer';
 import './ui/drawer.css';
+import './ui/newspaper.css';
+import { campaignNoticeMarkup, bindCampaignNotice } from './ui/campaign-notice';
 import { bindTouchControls } from './ui/touch-controls';
 import { Game, upgradeInfo, type Upgrade } from './game/game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './vehicles/motorcycle';
@@ -33,6 +35,7 @@ document.querySelector('#app')!.innerHTML = `
   ${storyMarkup}
   ${inboxMarkup}
   ${playerHudMarkup}
+  ${campaignNoticeMarkup}
   <div class="context-actions" role="group" aria-label="Vehicle actions"><button id="garage-action" class="context-action" hidden>Garage</button><button id="interact" class="context-action" hidden>Get in</button></div>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
@@ -61,6 +64,7 @@ const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: op
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
 const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu });
 drawer.setInputDevice(inputDevice);
+const refreshCampaignNotice = bindCampaignNotice($('app'), () => game, { editions: () => drawer.openPublications(), finale: () => drawer.openFinale() });
 function detectInput(device: InputDevice) { inputDevice = device; drawer.setInputDevice(device); }
 let splashExiting = false;
 let lab: LabAPI | undefined;
@@ -121,6 +125,8 @@ function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(
 bindGame();
 
 function hud() {
+  if (!scenarioPreviewMode && !authoringPreviewMode && !dialoguePreviewMode && game.campaignFinaleReady) drawer.openFinale();
+  refreshCampaignNotice();
   refreshInbox();
   refreshPlayerHud();
   const g = game, bike = g.player.definition.graphics.sprite === 'motorcycle', vehicleName = bike ? 'BIKE' : g.player.model === 'pickup' ? 'PICKUP' : 'CAB';
@@ -186,7 +192,7 @@ document.addEventListener('pointerdown', event => {
 // Refresh hints after the click target is fixed. Changing their wrapping while a
 // finger is down can shift a scrolled menu row away from the release position.
 document.addEventListener('click', () => detectInput(inputDevice), { capture: true });
-function pause() { if (drafting()) return; if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
+function pause() { if (drafting() || drawer.showingFinale) return; if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
 document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a, .credits-section a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   detectInput('keyboard');

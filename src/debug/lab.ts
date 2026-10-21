@@ -1,4 +1,4 @@
-import { dayMinute } from '../campaign/clock';
+import { campaignDays } from '../campaign/clock';
 // LAB — desktop-only dev playground for Taxi Chaos.
 //
 // Owned entirely by this module: `main.ts` only has to call `setupLab(game, renderer, hooks)`
@@ -557,7 +557,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
         <button data-lab="collapse" aria-label="Collapse LAB panel">Collapse ▾</button>
       </div>
 
-      <section class="lab-sec" aria-label="Campaign time"><h4>Campaign time · advances story</h4><div class="lab-row"><label>Day <input type="number" min="1" max="15" value="3" data-lab="campaign-day"></label><button data-lab="campaign-advance">Advance to 07:00</button></div><p class="lab-desc">Lighting presets below only preview the sky. Campaign advance resolves world events and deadlines in this temporary game.</p></section>
+      <section class="lab-sec" aria-label="Campaign time"><h4>Campaign time · advances story</h4><div class="lab-row"><label>Day <input type="number" min="1" max="${campaignDays(game.campaignContent.timing) + 1}" value="3" data-lab="campaign-day"></label><button data-lab="campaign-advance">Advance to 07:00</button></div><p class="lab-desc">Lighting presets below only preview the sky. Campaign advance resolves world events and deadlines in this temporary game.</p></section>
       <section class="lab-sec" aria-label="Scenario">
         <h4>Scenario</h4>
         <div class="lab-row">
@@ -920,7 +920,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
 
   q<HTMLButtonElement>('leave')?.addEventListener('click', () => { api.realtime(); hooks.leave?.(); });
   q<HTMLButtonElement>('layers')?.addEventListener('click', () => { api.close(); hooks.layers?.open(); });
-  q<HTMLButtonElement>('campaign-advance')?.addEventListener('click', () => api.campaign(dayMinute(clamp(Number(q<HTMLInputElement>('campaign-day')!.value) || 1, 1, 15))));
+  q<HTMLButtonElement>('campaign-advance')?.addEventListener('click', () => api.campaign(game.campaignContent.timing.start + (clamp(Number(q<HTMLInputElement>('campaign-day')!.value) || 1, 1, campaignDays(game.campaignContent.timing) + 1) - 1) * 1440));
   expandButton.addEventListener('click', () => api.toggle());
   if (hooks.audio) {
     q<HTMLButtonElement>('sound-play')!.addEventListener('click', () => { void api.sound(q<HTMLSelectElement>('sound-cue')!.value as SoundCue); });

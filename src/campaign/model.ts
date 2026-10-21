@@ -5,6 +5,7 @@ import type { MissionProgress } from '../missions/progress';
 import type { NotebookEntry, PlayerRecords } from '../narrative/player-records';
 import type { VehicleModel } from '../vehicles/vehicles';
 import type { Campaign } from './state';
+import type { CampaignTiming } from './clock';
 
 export type WorldValue = string | number | boolean;
 export type WorldState = Record<string, WorldValue>;
@@ -35,6 +36,18 @@ export type EventHandler = Readonly<{
   on: CampaignEvent['type']; id?: string; requires?: Condition; effects: readonly Effect[];
 }>;
 export type ConditionalText = Readonly<{ requires?: Condition; text: string }>;
+export type NewsArticle = Readonly<{
+  id: string; title: string; deck: string; body: readonly string[];
+  image?: string; imageAlt: string; caption: string; section: string;
+}>;
+export type Newspaper = Readonly<{
+  masthead: string; byline: string; daily: readonly NewsArticle[];
+  investigations: Readonly<Record<string, NewsArticle>>;
+  briefs: readonly Readonly<{ id: string; requires?: Condition; title: string; text: string }>[];
+}>;
+export type CampaignMilestone = Readonly<{
+  requires: Condition; title: string; text: string; missedTitle: string; missedText: string;
+}>;
 export type ScenePrimitive =
   | Readonly<{ rect: readonly [number, number, number, number, string] }>
   | Readonly<{ label: readonly [string, number, number, number, string, string?] }>;
@@ -43,6 +56,7 @@ export type SceneLayer = Readonly<{
 }>;
 export type CampaignDefinition = Readonly<{
   id: string; title: string; finishedLabel: string; completionText: string;
+  timing: CampaignTiming; newspaper?: Newspaper; milestones?: readonly CampaignMilestone[];
   initialWorld: Readonly<WorldState>; operations: readonly WorldOperation[];
   materials: Readonly<Record<string, Material>>; claims: Readonly<Record<string, Claim>>;
   missions: MissionCatalogue; jobWindows: Readonly<Record<string, Readonly<{ from: number; until: number }>>>;

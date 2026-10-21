@@ -2,14 +2,14 @@ import { menuItem } from '../ui/drawer-markup';
 import type { Game } from '../game/game';
 import type { NotebookEntry } from '../narrative/player-records';
 import { canApprove } from './events';
-import { LAST_EDITION, calendarLabel } from './clock';
+import { campaignDays, displayDay, calendarLabel } from './clock';
 import { VERIFICATION_MINUTES } from './scheduler';
 
 export const escape = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 
 /** Shared notebook record widget; general notes can explicitly omit source controls. */
 export function recordMarkup(game: Game, entry: NotebookEntry, source = Object.hasOwn(game.campaignContent.materials, entry.id), selectable = false): string {
-  const campaign = game.save.campaign, closed = campaign.minute >= LAST_EDITION || campaign.finished;
+  const campaign = game.save.campaign, closed = campaign.minute >= game.campaignContent.timing.lastEdition || campaign.finished;
   const receipt = campaign.newsroom.received[entry.id];
   const label = receipt ? receipt.verifiedAt !== null ? 'Source checked · copy retained' : `Received · source check due ${calendarLabel(receipt.at + VERIFICATION_MINUTES)}` : closed ? 'Edition closed · record retained' : game.newsroomNear ? 'Leave a copy at the newsroom' : `Bring to ${escape(game.campaignContent.newsroom.name)}`;
   const metadata = `${entry.minute !== undefined ? calendarLabel(entry.minute).toUpperCase() : `DAY ${entry.shift}`} · ${entry.kind.toUpperCase()}`;
@@ -20,7 +20,7 @@ export function recordMarkup(game: Game, entry: NotebookEntry, source = Object.h
 
 /** Only admitted cases are shown here; detailed incomplete-story guidance is separate. */
 export function editorialMarkup(game: Game): string {
-  const campaign = game.save.campaign, closed = campaign.minute >= LAST_EDITION || campaign.finished;
+  const campaign = game.save.campaign, closed = campaign.minute >= game.campaignContent.timing.lastEdition || campaign.finished;
   const { claims, newsroom } = game.campaignContent;
   return Object.entries(campaign.newsroom.cases).filter(([id]) => Object.hasOwn(claims, id)).map(([id, editorial]) => {
     if (!editorial) return '';
@@ -39,7 +39,7 @@ export function notebookMarkup(game: Game, back: 'home' | 'newsroom' = 'home'): 
   const campaign = game.save.campaign;
   const entries = [...game.save.playerRecords.notebook].reverse();
   const cases = editorialMarkup(game);
-  return `<div class="eyebrow">DISPATCH NOTEBOOK · DAY ${campaign.shift} / 14 · ${calendarLabel(campaign.minute).split(' · ')[1]}</div>
+  return `<div class="eyebrow">DISPATCH NOTEBOOK · DAY ${displayDay(campaign.minute, game.campaignContent.timing)} / ${campaignDays(game.campaignContent.timing)} · ${calendarLabel(campaign.minute).split(' · ')[1]}</div>
     <h2 id="modal-title">Your working day.</h2>
     <p>Signed slips, things people said, and scenes you bookmarked. Keep your own interpretation.</p>
     <div class="city-bulletin"><small>LOCAL COVERAGE</small><p>${escape(game.campaignBulletin)}</p></div>

@@ -7,7 +7,7 @@ describe('minimal player HUD', () => {
     const game = new Game(undefined, false);
     game.save.cash = 1122;
     game.shiftEarnings = 83;
-    expect(playerHudState(game)).toEqual({ time: '07:00', cash: '$1,122', health: 100, heat: 0, stars: 0, starFills: [0, 0, 0] });
+    expect(playerHudState(game)).toEqual({ day: 'Day 1', time: '07:00', cash: '$1,122', health: 100, heat: 0, stars: 0, starFills: [0, 0, 0] });
     expect(playerHudMarkup).not.toMatch(/speed|boost|chassis|earnings/i);
   });
 
