@@ -133,3 +133,33 @@ contacts, clearance, sight rays and inspection consume that geometry. Directed
 light uses authored art blockers where present, otherwise the solid footprint of
 raised occluding props. Preserve compound openings and stop destroyed props
 occluding.
+
+## 10. Make editions and campaign completion durable
+
+Campaign content owns its start, end, last printing deadline and publication hour.
+Calendar dates label the HUD and newspapers; overnight working shifts retain their
+07:00 boundary so existing booking windows do not change. Print daily coverage only
+after all investigations at that timestamp settle, and save the selected article
+and brief IDs with read status. Later reactions do not rewrite past editions.
+Migrate older version-2 saves into a historical archive without replaying gameplay
+effects or using future world facts in earlier coverage.
+
+Campaign completion is independent of investigation success. Keep a pending recap
+across saves and open it at a safe stop after any on-board fare. An explicit arcade
+continuation acknowledges it without resetting cash, vehicles, upgrades or city
+outcomes. Story scheduling ends; ordinary dispatch and the visual clock continue.
+Keep authored coverage and outcome copy with campaign content, and bundle any
+supplied illustrations offline. Articles without artwork use a text front page
+until their distinct image is authored.
+
+
+## 11. Bound newspaper briefs to reconstructible history
+
+Refine decision 10: brief conditions may use clock/shift bounds, recorded operations,
+publications, reactions and world keys written only by timed operations or reactions.
+Reject mutable player progress and editorial submission/approval states: saves do
+not preserve their ordering relative to printing at the same timestamp. Recorded
+operation outcomes retain their chosen branch without reevaluating old prerequisites.
+Initialize new campaigns through the chronological scheduler so opening operations
+settle before the first edition. Loading reconstructs history without replaying
+gameplay effects.

@@ -4,7 +4,7 @@ import { previewInputs } from '../missions/dialogue-preview';
 import { parseMissionProgress } from '../missions/progress';
 import { parsePlayerRecords } from '../narrative/player-records';
 import { parseCampaign } from '../campaign/state';
-import { CAMPAIGN_END, CAMPAIGN_START, dayMinute } from '../campaign/clock';
+import { dayMinute } from '../campaign/clock';
 import { campaignDefinition } from '../campaign/content';
 import type { Allegation } from '../campaign/model';
 import { GARAGE } from '../world/world';
@@ -89,7 +89,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   }
   if (op === 'advance') {
     if (['minutes', 'to', 'event'].filter(key => Object.hasOwn(c, key)).length !== 1) throw new Error('advance requires exactly one of minutes, to, event');
-    if (c.minutes !== undefined) number(c.minutes, 'minutes', 0, CAMPAIGN_END);
+    if (c.minutes !== undefined) number(c.minutes, 'minutes', 0, 1e6);
     if (c.to !== undefined) calendar(c.to);
     if (c.event !== undefined) string(c.event, 'event');
   }
@@ -230,7 +230,7 @@ export class ScenarioRunner {
         const event = c.event === undefined ? undefined : g.campaignContent.operations.find(op => op.id === c.event);
         if (c.event !== undefined && !event) throw new Error(`Unknown event: ${c.event}`);
         const target = c.to ? calendar(c.to) : event ? event.at : g.save.campaign.minute + c.minutes!;
-        number(target, 'campaign minute', CAMPAIGN_START, CAMPAIGN_END);
+        number(target, 'campaign minute', g.campaignContent.timing.start, g.campaignContent.timing.end);
         if (target < g.save.campaign.minute) throw new Error('Campaign time cannot move backwards');
         const changed = g.advanceNarrativeTo(target); g.syncMissionOffers(); g.persist(); return { target, changed, physicsSkipped: true };
       }

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../game/game';
 import { recordNote } from './effects';
 import { campaignDefinition } from './content';
-import { calendarLabel, dayMinute, LAST_EDITION } from './clock';
+import { calendarLabel, dayMinute } from './clock';
+import { LAST_EDITION } from './content';
 import { approvePublication, receiveMaterial } from './scheduler';
 import { notebookMarkup, recordMarkup } from './view';
 import { newsroomMarkup, newsroomRecords, newsroomSummary } from './newsroom-view';
@@ -49,7 +50,7 @@ describe('newsroom drawer', () => {
     expect(records.checking.map(e => e.id)).toEqual(['cleaner-note']);
     expect(records.checked).toEqual([]);
     const html = newsroomMarkup(game);
-    for (const [key, title] of [['sources', 'Sources'], ['stories', 'Published stories']]) {
+    for (const [key, title] of [['sources', 'Sources'], ['stories', 'Stories at the editor']]) {
       expect(html).toContain(`data-newsroom-section="${key}"`);
       expect(html).toContain(`<span>${title}</span>`);
       expect(html).toContain(`aria-controls="newsroom-detail" aria-pressed="false"`);

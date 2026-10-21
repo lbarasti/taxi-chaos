@@ -54,7 +54,7 @@ try {
       __taxi.scenario('first-fare');
       document.querySelector('#debug-panel').hidden = true;
     });
-    assert.equal(await page.locator('.player-hud > *').count(), 4);
+    assert.equal(await page.locator('.player-hud > *').count(), 5);
     assert.equal(await page.locator('#player-heat svg').count(), 3);
     if (name === 'desktop') {
       assert.equal(await page.locator('#player-time').textContent(), '07:00');

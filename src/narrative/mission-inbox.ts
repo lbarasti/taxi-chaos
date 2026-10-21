@@ -1,3 +1,4 @@
+import { campaignDays } from '../campaign/clock';
 import type { Game } from '../game/game';
 import { characters, isCharacterId } from './characters';
 import { showCharacterPortrait } from './story-view';
@@ -37,7 +38,7 @@ export function bindMissionInbox(root: HTMLElement, currentGame: () => Game, foc
     const now = game.textMessageMinute;
     const windowFor = (id: string) => game.campaignEnabled ? game.campaignContent.jobWindows[id] : undefined;
     const ids = game.missions.available({ deliveries: game.save.story.deliveries, careerDeliveries: game.save.deliveries,
-      jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds, minute: game.save.campaign.minute, shift: game.save.campaign.finished ? 15 : game.save.campaign.shift })
+      jobType: game.player.definition.access.job, model: game.player.model, kind: game.player.kind, time: game.save.story.campaignSeconds, minute: game.save.campaign.minute, shift: game.save.campaign.finished ? campaignDays(game.campaignContent.timing) + 1 : game.save.campaign.shift })
       .filter(id => game.missions.mission(id).offer && !game.save.playerRecords.texts.some(t => t.missionId === id && textTiming(t, windowFor(id)).expiresMinute <= now));
     const receipts = game.save.playerRecords.texts;
     const history = textHistory(receipts, now, historyDays, windowFor);

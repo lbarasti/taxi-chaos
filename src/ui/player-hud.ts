@@ -1,3 +1,4 @@
+import { displayDay } from '../campaign/clock';
 import type { Game } from '../game/game';
 import { wantedThresholds } from '../game/rules';
 
@@ -9,15 +10,17 @@ const starMarkup = wantedThresholds.map((_, index) => `<svg class="heat-star" vi
 </svg>`).join('');
 
 export const playerHudMarkup = `<section class="player-hud" aria-label="Player status">
+  <small id="player-day">Day 1</small>
   <time id="player-time" aria-label="Time of day">07:00</time>
   <strong id="player-cash" aria-label="Cash">$0</strong>
   <div id="player-health" class="player-health" role="meter" aria-label="Personal health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i></div>
   <div id="player-heat" class="player-heat" role="meter" aria-label="Police attention" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">${starMarkup}</div>
 </section>`;
 
-export function playerHudState(game: Pick<Game, 'dayNight' | 'save' | 'driverHealth' | 'heat' | 'stars'>) {
+export function playerHudState(game: Pick<Game, 'dayNight' | 'save' | 'driverHealth' | 'heat' | 'stars' | 'campaignEnabled' | 'campaignContent'>) {
   const heat = Math.max(0, Math.min(100, game.heat));
   return {
+    day: game.campaignEnabled ? game.save.campaign.finished ? 'Arcade' : `Day ${displayDay(game.save.campaign.minute, game.campaignContent.timing)}` : '',
     time: game.dayNight.snapshot().time,
     cash: `$${Math.floor(game.save.cash).toLocaleString('en-US')}`,
     health: Math.max(0, Math.min(100, game.driverHealth)),
@@ -40,6 +43,7 @@ export function bindPlayerHud(root: HTMLElement, currentGame: () => Game) {
   const starClips = Array.from(heat.querySelectorAll('clipPath rect'));
   return () => {
     const state = playerHudState(currentGame());
+    root.querySelector<HTMLElement>('#player-day')!.textContent = state.day;
     time.textContent = state.time;
     time.dateTime = state.time;
     cash.textContent = state.cash;

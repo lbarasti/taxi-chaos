@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultCampaign, parseCampaign } from './state';
 import { approvePublication, advanceCampaignTo, receiveMaterial } from './scheduler';
-import { CAMPAIGN_END, LAST_EDITION, dayMinute } from './clock';
+import { dayMinute } from './clock';
+import { CAMPAIGN_END, LAST_EDITION } from './content';
 import { assertWorldOperations, worldOperations } from './events';
 
 const sources = ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon'];

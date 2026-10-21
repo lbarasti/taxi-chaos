@@ -96,3 +96,25 @@ ordinary catalogue placements for the clubhouse, trees and furniture. The
 previous four course candidates and separate water texture have been removed.
 Changed course geometry or a failed decode uses the existing geometric fallback.
 These assets are bundled inline and require no external service.
+
+
+## Daily newspaper photographs
+
+`newspapers/day-01.webp` through `day-07.webp` are original images generated with
+the built-in OpenAI image-generation tool for Taxi Chaos on 2026-10-21. They are
+packaged at 1000 px maximum width in WebP and embedded in the standalone game.
+No third-party source photograph was used. Later daily and investigation artwork
+is intentionally deferred; their front pages render without a photograph.
+
+The shared prompt requested one landscape black-and-white editorial photograph
+of a fictional worn coastal city: natural documentary lighting, subtle newspaper
+grain, convincing weathered materials, a clear thumbnail composition, no readable
+words, logos, captions, watermarks, invented arrests or election results. Subjects:
+
+- Day 1: maintenance workers repairing a promenade streetlamp at sunrise.
+- Day 2: temporary delivery barriers beside a still-open waterfront café.
+- Day 3: freshly shattered café windows before the morning boarding work.
+- Day 4: boarded café windows beside a cleaner’s broom and bucket.
+- Day 5: telephone, proofs and anonymous envelopes on the local editor’s desk.
+- Day 6: waiting chairs and a folder outside a municipal hearing building.
+- Day 7: an empty patrol parking space beside shuttered harbour shops.

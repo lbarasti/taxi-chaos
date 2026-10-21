@@ -237,7 +237,27 @@ try {
     await command({ op: 'advance', to: { day: 4, hour: 6 } });
     await open(empty); await select('stories');
     assert.match(await page.locator('[data-story="coordination"]').textContent(), /Published · Day 4 · 06:00 edition/);
-    await shot('published'); await close();
+    await shot('published');
+    await activate('#newsroom-publications'); await waitForDrawer(page, 'publications');
+    assert.equal(await page.locator('.newspaper-lead').getAttribute('data-article'), 'closure-investigation');
+    await activate('#read-article-day-4');
+    assert.equal(await page.locator('.newspaper-lead').getAttribute('data-article'), 'day-4');
+    assert.match(await page.locator('.newspaper-copy').textContent(), /Plywood now covers/);
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'publication-front');
+    assert.equal(await page.locator('#modal').evaluate(modal => modal.scrollWidth > modal.clientWidth), false);
+    await shot('article');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.newspaper-lead').getAttribute('data-article'), 'closure-investigation');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'read-article-day-4');
+    await activate('#read-article-day-4');
+    await activate('#publication-front');
+    assert.equal(await page.locator('.newspaper-lead').getAttribute('data-article'), 'closure-investigation');
+    await activate('#read-article-day-4');
+    await activate('#edition-3');
+    assert.equal(await page.locator('.newspaper-lead').getAttribute('data-article'), 'day-3', 'changing editions clears article selection');
+    assert.equal(await page.locator('#publication-front').count(), 0);
+    await page.keyboard.press('Escape'); await waitForDrawer(page, 'newsroom');
+    await close();
     await page.locator('#city').focus(); await page.keyboard.press('KeyE'); assert.equal((await state()).onFoot, true);
     await open(empty); await select('sources'); assert.equal((await records('checked')).length, 3); await close();
     // The notebook remains available from the ordinary pause menu, not the newsroom.

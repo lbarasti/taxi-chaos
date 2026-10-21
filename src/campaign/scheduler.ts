@@ -1,5 +1,7 @@
+import { compareCampaignBoundaries } from './history';
+import { printEdition } from './editions';
 import { campaignDefinition } from './content';
-import { CAMPAIGN_END, LAST_EDITION, campaignDay } from './clock';
+import { campaignDay, campaignDays, editionTime } from './clock';
 import { dispatchCampaignEvent, reduceCampaignEvent, settleCases } from './events';
 import { campaignTransaction } from './effects';
 import { campaignCondition } from '../missions/conditions';
@@ -23,17 +25,17 @@ export function operationOutcome(op: WorldOperation, ctx: CampaignContext) {
   return { outcome: outcome?.id ?? 'occurred', effects: [...op.effects, ...(outcome?.effects ?? [])] };
 }
 
-type Boundary = { at: number; phase: number; id: string; event: () => CampaignEvent };
+type Boundary = { at: number; phase: number; id: string; event: () => CampaignEvent | { type: 'printing'; day: number } };
 /** All skipping and live-time boundaries use the same atomic event reducer. */
 export function advanceCampaignTo(state: Campaign, requested: number, inputs: CampaignInputs | readonly string[] = {}, definition = campaignDefinition): boolean {
   if (!Number.isFinite(requested) || requested < state.minute || state.finished) return false;
   const resolved: CampaignInputs = Array.isArray(inputs) ? { progress: { ...defaultMissionProgress(), flags: [...inputs] } } : inputs as CampaignInputs;
   return campaignTransaction(context(state, resolved, definition), ctx => {
-    const s = ctx.state, target = Math.min(CAMPAIGN_END, requested), claims = claimOrder(definition);
+    const s = ctx.state, target = Math.min(definition.timing.end, requested), claims = claimOrder(definition);
     let changed = target !== s.minute;
     // Derived from validated content, rather than a story-specific event count.
-    const times = [...new Set(claims.flatMap(id => conditionTimes(definition.claims[id].verifyRequires)))];
-    const budget = definition.operations.length + Object.keys(definition.materials).length + claims.length * 3 + times.length + 2;
+    const times = [...new Set(claims.flatMap(id => conditionTimes(definition.claims[id].verifyRequires, definition.timing.start)))];
+    const budget = definition.operations.length + Object.keys(definition.materials).length + claims.length * 3 + times.length + campaignDays(definition.timing) + 2;
     for (let work = 0; work < budget; work++) {
       if (settleCases(ctx)) changed = true;
       const due: Boundary[] = [];
@@ -42,15 +44,22 @@ export function advanceCampaignTo(state: Campaign, requested: number, inputs: Ca
       for (const [id, r] of Object.entries(s.newsroom.received)) if (r.verifiedAt === null && r.at + VERIFICATION_MINUTES <= target) due.push({ at: r.at + VERIFICATION_MINUTES, phase: 1, id, event: () => ({ type: 'material-verified', id, at: r.at + VERIFICATION_MINUTES }) });
       for (const [index, id] of claims.entries()) {
         const c = s.newsroom.cases[id];
-        if (c?.editionAt != null && c.editionAt <= Math.min(target, LAST_EDITION) && !s.publications.some(p => p.allegation === id)) due.push({ at: c.editionAt, phase: 3 + index, id: `edition-${id}`, event: () => ({ type: 'edition', id, at: c.editionAt! }) });
+        if (c?.editionAt != null && c.editionAt <= Math.min(target, definition.timing.lastEdition) && !s.publications.some(p => p.allegation === id)) due.push({ at: c.editionAt, phase: 3 + index, id: `edition-${id}`, event: () => ({ type: 'edition', id, at: c.editionAt! }) });
         const pub = s.publications.find(p => p.allegation === id);
         if (pub && !s.reactions[id] && pub.at + REACTION_MINUTES <= target) due.push({ at: pub.at + REACTION_MINUTES, phase: 3 + claims.length, id: `reaction-${id}`, event: () => ({ type: 'reaction', id, at: pub.at + REACTION_MINUTES }) });
       }
-      due.sort((a, b) => a.at - b.at || a.phase - b.phase || a.id.localeCompare(b.id));
-      if (!due.length && s.minute !== target) { s.minute = target; s.shift = campaignDay(target); continue; }
-      if (!due.length) { s.minute = target; s.shift = campaignDay(target); s.finished = target === CAMPAIGN_END; return changed; }
-      const next = due[0]; s.minute = Math.max(s.minute, next.at); s.shift = campaignDay(s.minute);
-      reduceCampaignEvent(ctx, next.event()); changed = true;
+      if (definition.newspaper) for (let day = 1; day <= campaignDays(definition.timing); day++) {
+        const at = editionTime(day, definition.timing);
+        if (at <= target && at <= definition.timing.lastEdition && !s.editions.some(edition => edition.day === day)) due.push({ at, phase: 4 + claims.length, id: `press-${day}`, event: () => ({ type: 'printing', day }) });
+      }
+      due.sort(compareCampaignBoundaries);
+      if (!due.length && s.minute !== target) { s.minute = target; s.shift = campaignDay(target, definition.timing); continue; }
+      if (!due.length) { s.minute = target; s.shift = campaignDay(target, definition.timing); s.finished = target === definition.timing.end; return changed; }
+      const next = due[0]; s.minute = Math.max(s.minute, next.at); s.shift = campaignDay(s.minute, definition.timing);
+      const event = next.event();
+      if (event.type === 'printing') printEdition(ctx, event.day);
+      else reduceCampaignEvent(ctx, event);
+      changed = true;
     }
     throw new Error('Campaign scheduler exceeded its authored work budget');
   });

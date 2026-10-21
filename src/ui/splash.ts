@@ -1,6 +1,6 @@
 import { menuItem } from './drawer-markup';
 import type { Game } from '../game/game';
-import { calendarLabel } from '../campaign/clock';
+import { campaignDays, displayDay, calendarLabel } from '../campaign/clock';
 import { readStorage, storageKeys } from '../game/storage';
 
 export type InputDevice = 'keyboard' | 'touch' | 'xbox' | 'playstation';
@@ -30,8 +30,8 @@ export function splashMarkup(game: Game, saved: boolean): string {
     <h2 id="modal-title">A little cab.<br><em>A lot of trouble.</em></h2>
     <p class="intro-copy">Pick up. Drop off. Get paid.<br>How you get there is entirely your business.</p>
     <section class="splash-save" aria-label="${paused ? 'Current shift' : saved ? 'Saved campaign' : 'Your first shift'}">
-      <div class="splash-save-heading"><span class="live-dot"></span><span>${paused ? 'YOUR CURRENT SHIFT · PAUSED' : saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(calendarLabel(game.save.campaign.minute))}</small></div>
-      <div class="splash-snapshot"><div><small>WALLET</small><strong>$${game.save.cash.toLocaleString()}</strong></div><div><small>DELIVERIES</small><strong>${game.save.deliveries}</strong></div><div><small>CAMPAIGN</small><strong>Day ${game.save.campaign.shift}<span> / 14</span></strong></div></div>
+      <div class="splash-save-heading"><span class="live-dot"></span><span>${paused ? 'YOUR CURRENT SHIFT · PAUSED' : saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(game.save.campaign.finished ? `Arcade · ${game.dayNight.snapshot().time}` : calendarLabel(game.save.campaign.minute))}</small></div>
+      <div class="splash-snapshot"><div><small>WALLET</small><strong>$${game.save.cash.toLocaleString()}</strong></div><div><small>DELIVERIES</small><strong>${game.save.deliveries}</strong></div><div><small>CAMPAIGN</small><strong>${game.save.campaign.finished ? 'Complete' : `Day ${displayDay(game.save.campaign.minute, game.campaignContent.timing)}<span> / ${campaignDays(game.campaignContent.timing)}</span>`}</strong></div></div>
       <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
     </section>
     <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
@@ -39,7 +39,7 @@ export function splashMarkup(game: Game, saved: boolean): string {
       ${menuItem('The street rules', { id: 'menu-rules', page: 'rules' })}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
       ${menuItem('Credits', { id: 'menu-credits', page: 'credits' })}
-      ${paused ? `${game.campaignEnabled ? menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' }) : ''}${menuItem('This shift', { id: 'menu-shift', page: 'shift' })}` : ''}
+      ${paused ? `${game.campaignEnabled ? `${menuItem('Newsroom', { id: 'menu-newsroom', page: 'newsroom' })}${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}${game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}` : ''}${menuItem('This shift', { id: 'menu-shift', page: 'shift' })}` : ''}
     </nav>
     <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
 }

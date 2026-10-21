@@ -1,3 +1,4 @@
+import { newspaper, milestones } from './content-newspaper';
 import { dayMinute } from './clock';
 import type { CampaignDefinition, Claim, WorldOperation } from './model';
 import { rides } from './content-rides';
@@ -130,7 +131,12 @@ export const claims: Readonly<Record<string, Claim>> = freezeFacts({
     verifyRequires: dependencies('verified'), approveRequires: dependencies('approved'),
     publishRequires: { all: [{ published: 'coordination' }, { published: 'policing' }] }, reactionEffects: change({ appearance: 'cancelled' }) },
 });
+export const CAMPAIGN_END = dayMinute(15);
+export const LAST_EDITION = dayMinute(14, 6);
+export const campaignTiming = { start: dayMinute(1), end: CAMPAIGN_END, lastEdition: LAST_EDITION, editionHour: 6 } as const;
+
 export const campaignDefinition: CampaignDefinition = freezeFacts({
+  timing: campaignTiming, newspaper, milestones,
   id: 'open-shore', title: 'Open Shore', finishedLabel: 'ELECTION DAY · OFF THE CLOCK', completionText: 'Election-day campaign complete.',
   initialWorld: { cafe: 'open', van: 'absent', patrol: 'normal', security: 'none', hearing: 'pending', appearance: 'booked', operator: 'unannounced', polls: false },
   operations: worldOperations, materials, claims, missions: openShoreCatalogue, jobWindows, jobNames, handlers: [],
