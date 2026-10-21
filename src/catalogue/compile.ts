@@ -1,4 +1,4 @@
-import { vec, type Vec } from '../physics/physics';
+import { validateCollisionPolygon, vec, type Vec } from '../physics/physics';
 import type {
   ArtworkCatalogue, ArtworkOutline, ArtworkPresentation, ArtworkRecord, ArtworkSilhouette, ArtworkSource, ArtworkTemplate,
   AttachedFeature, BuildingCatalogue, BuildingDefinition, BuildingFallback, BuildingSign, CatalogueSources, CompiledBuilding, CompiledObject,
@@ -230,6 +230,10 @@ export function compileObjectCatalogue(
     if (record.kind === 'building') validateBuilding(record);
     else if (record.storeys !== undefined || record.fallback !== undefined || record.sign !== undefined) throw new Error(`Object ${record.id}: only buildings declare storeys, fallback or sign`);
     if (record.artworkScale !== undefined && (!Number.isFinite(record.artworkScale) || record.artworkScale <= 0)) throw new Error(`Object ${record.id}: invalid artwork scale`);
+    if (record.collisionPolygon !== undefined) {
+      if (record.collision !== undefined) throw new Error(`Object ${record.id}: choose collision sections or a collision polygon`);
+      validateCollisionPolygon(record.collisionPolygon, `Object ${record.id}`);
+    }
     if (record.collision !== undefined) {
       if (!Array.isArray(record.collision) || record.collision.length < 1 || record.collision.length > 64) throw new Error(`Object ${record.id}: collision needs 1–64 rectangles`);
       for (const r of record.collision) {
@@ -278,6 +282,7 @@ export function compileObjectCatalogue(
       ...(record.storeys === undefined ? {} : { storeys: record.storeys }),
       ...(templates.length ? { artwork: templates } : {}),
       ...(record.collision ? { collision: record.collision.map(r => ({ ...r })) } : {}),
+      ...(record.collisionPolygon ? { collisionPolygon: record.collisionPolygon.map(p => ({ ...p })) } : {}),
       ...(record.kind === 'building' ? { presentation: {
         fallback: record.fallback!, sign: record.sign!,
         ...(record.frontage === undefined ? {} : { frontage: record.frontage }),
@@ -409,9 +414,10 @@ export function compileObjectPlacement(placement: ObjectPlacementRecord, catalog
     position: { ...placement.position }, angle, width, height,
     ...(artwork ? { artwork } : {}),
     ...(definition.collision ? { collision: definition.collision.map(r => ({ ...r })) } : {}),
+    ...(definition.collisionPolygon ? { collisionPolygon: definition.collisionPolygon.map(p => ({ ...p })) } : {}),
     ...(definition.storeys === undefined ? {} : { storeys: definition.storeys }),
     ...(definition.presentation === undefined ? {} : { presentation: definition.presentation }),
-    silhouette: artwork?.silhouette ?? footprintSilhouette(width, height),
+    silhouette: artwork?.silhouette ?? definition.collisionPolygon?.map(p => vec(p.x * width, p.y * height)) ?? footprintSilhouette(width, height),
     features,
   };
 }
@@ -431,6 +437,7 @@ export function compilePlacement(placement: PlacementRecord<string>, catalogue: 
   const entrance = features.find(feature => feature.role === 'service')?.position;
   return { ...instance, width, height, storeys: placement.storeys ?? definition.storeys, artwork: compiled.artwork,
     ...(compiled.collision ? { collision: compiled.collision } : {}),
+    ...(compiled.collisionPolygon ? { collisionPolygon: compiled.collisionPolygon.map(p => ({ ...p })) } : {}),
     presentation: { ...definition.presentation, sign: { ...definition.presentation.sign, ...sign } },
     silhouette: [vec(-width / 2 - 0.25, -height / 2 - 0.6), vec(width / 2, -height / 2 - 0.6), vec(width / 2, height / 2), vec(-width / 2 - 0.25, height / 2)],
     features,

@@ -122,3 +122,14 @@ player instructions in HOW_TO and provenance in asset attribution files. Put
 implementation details and validation results in the PR, generated captures in
 ignored `scenario-runs/`, and executable fixtures beside their tools or tests.
 Do not create replacement feature notes, plans or changelogs elsewhere.
+
+## 9. Author physical footprints independently of artwork
+
+Use rectangles for box-shaped props, bounded convex polygons for rounded or
+irregular solids, and compound sections where recesses or holes must remain open.
+Catalogue polygons use normalized coordinates and at most 32 vertices. Keep them
+separate from canopy and roof silhouettes. Compile collision shapes into the map;
+contacts, clearance, sight rays and inspection consume that geometry. Directed
+light uses authored art blockers where present, otherwise the solid footprint of
+raised occluding props. Preserve compound openings and stop destroyed props
+occluding.

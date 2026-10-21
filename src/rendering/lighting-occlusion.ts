@@ -1,4 +1,4 @@
-import type { CollisionRect } from '../physics/physics';
+import type { CollisionRect, Vec } from '../physics/physics';
 
 // Cheap 2D light occlusion for Taxi Chaos's reduced-resolution lighting compositor.
 //
@@ -42,7 +42,7 @@ export type Occluder = {
 export type OccluderProp = {
   kind: string;
   alive: boolean;
-  body: { position: OcclusionPoint; angle?: number; w: number; h: number; collisionRects?: readonly CollisionRect[] };
+  body: { position: OcclusionPoint; angle?: number; w: number; h: number; collisionRects?: readonly CollisionRect[]; collisionPolygon?: readonly Vec[] };
 };
 
 /** Kinds whose roofs are raised above the street and must not receive street-level light. */
@@ -75,7 +75,8 @@ export function occluderFor(prop: OccluderProp, outline?: readonly OcclusionPoin
   const x0 = -hw + (lifted ? FACADE_OFFSET_X : 0);
   const y0 = -hh + (lifted ? FACADE_OFFSET_Y : 0);
   const angle = finite(body.angle, 0), cos = Math.cos(angle), sin = Math.sin(angle);
-  const points = outline ? outline.map(p => ({ x: body.position.x + p.x * cos - p.y * sin, y: body.position.y + p.x * sin + p.y * cos }))
+  const localOutline = outline ?? body.collisionPolygon?.map(p => ({ x: p.x * body.w, y: p.y * body.h }));
+  const points = localOutline ? localOutline.map(p => ({ x: body.position.x + p.x * cos - p.y * sin, y: body.position.y + p.x * sin + p.y * cos }))
     : rectCorners(body.position, angle, x0, y0, hw, hh);
   let cx = 0, cy = 0;
   for (const p of points) { cx += p.x; cy += p.y; }

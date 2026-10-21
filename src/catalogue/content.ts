@@ -21,6 +21,9 @@ export const artworkRecords: readonly ArtworkRecord[] = [
   { id: 'golf-course', png: 'map/golf-course.png', layer: 'ground', tileMetres: 110 },
 ];
 
+/** Compact rounded physical footprint, independent of canopy/roof artwork. */
+const roundedFootprint = Array.from({ length: 8 }, (_, i) => ({ x: Math.cos(i * Math.PI / 4) * 0.5, y: Math.sin(i * Math.PI / 4) * 0.5 }));
+
 const commercialSign: BuildingSign = { width: 14, inset: 1.72, size: 0.78, color: '#eadab8' };
 const hotelSign: BuildingSign = { width: 12, inset: 1.2, size: 0.8, color: '#f0e6ce' };
 // The condo predates the shared sign data and used the generic south-face label
@@ -51,7 +54,10 @@ export const objectRecords = [
   { id: 'barrier', kind: 'barrier', width: 3.1, height: 0.6 },
   { id: 'shed', kind: 'shed', width: 8, height: 5 },
   { id: 'pump', kind: 'pump', width: 1.2, height: 2.4 },
-  { id: 'rock', kind: 'rock', width: 4, height: 3.2 },
+  { id: 'rock', kind: 'rock', width: 4, height: 3.2, collisionPolygon: [
+    { x: -0.5, y: -0.275 }, { x: -0.325, y: -0.5 }, { x: 0.225, y: -0.5 },
+    { x: 0.5, y: -0.1 }, { x: 0.4, y: 0.5 }, { x: -0.25, y: 0.5 }, { x: -0.5, y: 0.2 },
+  ] },
   { id: 'coastal-guardrail', kind: 'guardrail', width: 8, height: 0.8 },
   {
     id: 'shop', kind: 'building', width: 10, height: 10, storeys: 2,
@@ -112,7 +118,7 @@ export const objectRecords = [
   // Representative existing-behaviour props. The tree reuses shared artwork with a
   // normalized outline; the crate has no imported art and keeps procedural drawing.
   {
-    id: 'tree', kind: 'tree', width: 1.8, height: 1.8,
+    id: 'tree', kind: 'tree', width: 1.8, height: 1.8, collisionPolygon: roundedFootprint,
     variants: ['tree-worn'],
     artwork: { fit: 'stretch', width: 5.2 / 1.8, height: 5.2 / 1.8, outline: { shape: 'circle', radius: 2.4 / 2.6 } },
   },
@@ -121,11 +127,7 @@ export const objectRecords = [
   // rounded trunk is solid; vehicles can pass underneath the overhanging fronds.
   {
     id: 'palm', kind: 'palm', width: 0.8, height: 0.8,
-    collision: [
-      { x: -0.35, y: -0.5, width: 0.7, height: 0.25 },
-      { x: -0.5, y: -0.25, width: 1, height: 0.5 },
-      { x: -0.35, y: 0.25, width: 0.7, height: 0.25 },
-    ],
+    collisionPolygon: roundedFootprint,
     image: 'map/palm-canopy.png',
     // Preserve the source frame: the crown is at (140, 133), so the image anchor
     // anchors that point to the trunk rather than centring the irregular leaf tips.
@@ -164,13 +166,13 @@ export const objectRecords = [
   { id: 'parasol', kind: 'parasol', width: 3.4, height: 3.4 },
   { id: 'beach-chair', kind: 'beach-chair', width: 1.1, height: 2.4 },
   { id: 'sandcastle', kind: 'sandcastle', width: 1.8, height: 1.6 },
-  { id: 'bollard', kind: 'bollard', width: 0.6, height: 0.6 },
+  { id: 'bollard', kind: 'bollard', collisionPolygon: roundedFootprint, width: 0.6, height: 0.6 },
   { id: 'promenade-edge', kind: 'promenade-edge', width: 4, height: 0.6 },
   { id: 'pedestrian-gate', kind: 'pedestrian-gate', width: 4.8, height: 0.6 },
   { id: 'lamp', kind: 'lamp', width: 0.6, height: 0.6 },
   { id: 'bench', kind: 'bench', width: 2.4, height: 0.75 },
   { id: 'kiosk', kind: 'kiosk', width: 4, height: 2.8 },
-  { id: 'golf-flag', kind: 'golf-flag', width: 0.24, height: 0.24 },
+  { id: 'golf-flag', kind: 'golf-flag', width: 0.24, height: 0.24, collisionPolygon: roundedFootprint },
 ] as const satisfies readonly ObjectRecord[];
 
 /** Type identity → behaviour kind for strict, asset-free map import validation. */
