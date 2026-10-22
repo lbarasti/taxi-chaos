@@ -94,7 +94,11 @@ try {
     await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
     await run(page, { op: 'pickup' });
     await run(page, { op: 'read' });
+    const cashBeforeDelivery = (await run(page, { op: 'step', seconds: 0.01 })).cash;
     let delivered = await run(page, { op: 'deliver' });
+    assert.equal(await page.locator('[data-receipt=payout]').textContent(), `$${(delivered.cash - cashBeforeDelivery).toLocaleString('en-US')}`);
+    assert.equal(await page.locator('.receipt-title').textContent(), 'Fare complete');
+    assert(!(await page.locator('#toast').textContent()).includes('Answer Dispatch'));
     const goodbye = delivered.dialogue.beatId;
     assert(!(await page.locator('#story-label').textContent()).startsWith('Head to '), 'arrival dialogue must not point at the next fare’s destination');
     const waiting = page.locator('#dispatch-waiting');

@@ -30,9 +30,12 @@ function setup(speed: number, model: 'car' | 'motorcycle' = 'car') {
 describe('moving vehicle exit / ground contact', () => {
   it('animates a door before launching, carries momentum, and leaves the car coasting', () => {
     const g = setup(20), car = g.player;
+    g.notifications.clear();
+    g.notify('Keep this receipt', '', { category: 'newsroom', duration: null });
     expect(g.interact()).toBe(true);
     expect(g.pendingExit).not.toBeNull();
     expect(g.onFoot).toBe(false);
+    expect(g.notifications.items).toHaveLength(1);
     expect(car.door?.side).toBe(1);
     expect(doorOpenness(0)).toBe(0);
     run(g, 0.17);
@@ -42,6 +45,9 @@ describe('moving vehicle exit / ground contact', () => {
     expect(g.pendingExit).toBeNull();
     expect(g.onFoot).toBe(true);
     expect(g.tumble).not.toBeNull();
+    expect(g.notifications.items).toHaveLength(2);
+    expect(g.notifications.current).toMatchObject({ category: 'movement', kind: 'danger' });
+    expect(g.toast).toMatch(/Bailed out at speed.*landing.*blue route/);
     expect(g.driver.velocity.x).toBeGreaterThan(12);
     expect(g.driver.velocity.y).toBeGreaterThan(1);
     expect(car.parked).toBe(true);
@@ -53,6 +59,9 @@ describe('moving vehicle exit / ground contact', () => {
     expect(g.tumble?.grounded).toBe(true);
     expect(g.driverHealth).toBeLessThan(100);
     expect(g.mode).toBe('playing');
+    expect(g.notifications.items).toHaveLength(2);
+    g.notifications.tick(4);
+    expect(g.toast).toBe('Keep this receipt');
     run(g, 1.4);
     expect(g.tumble).toBeNull();
     expect(g.driver.angularVelocity).toBe(0);

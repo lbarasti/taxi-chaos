@@ -440,7 +440,6 @@ export class Game {
       const delay = Math.min(DOOR_OPEN_TIME, Math.max(0, fuse - 0.05));
       if (delay > 0.02) {
         this.pendingExit = { vehicle: this.player, side: point.side, at: this.time, delay };
-        this.notify(this.player.model === 'motorcycle' ? 'JUMPING OFF · Hold on for the landing!' : 'DOOR OPENING · Brace for the landing!', 'danger', { category: 'movement' });
         return true;
       }
     }
@@ -485,7 +484,7 @@ export class Game {
       this.newJob(false, 'left-vehicle');
     }
     this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.persist();
-    this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.', '', { category: 'movement' });
+    this.notify(moving ? 'Bailed out at speed. Brace for the landing; speed costs health. Follow the blue route to another ride.' : 'Follow the blue route to a parked car or motorbike.', moving ? 'danger' : '', { category: 'movement' });
   }
   walk(dt: number) {
     const { inOcean } = this.map.land, { leavesTracks: inSand } = this.map.terrain;
@@ -1389,7 +1388,13 @@ export class Game {
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
           this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.save.shiftStats.earnings += payout; this.jobsDone++; this.save.shiftStats.jobs++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
-          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). ${this.campaignEnabled ? 'Answer Dispatch for the next call.' : 'Next pickup marked.'}`, 'success', { category: 'dispatch', duration: null });
+          const speedScore = j.time > 0 ? Math.round(clamp((j.time - j.elapsed) / j.time, 0, 1) * 100) : 0;
+          const comfortScore = Math.round(clamp(j.comfort, 0, 100));
+          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd');
+          this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Speed ${speedScore}/100 · Comfort ${comfortScore}/100.`, 'success', {
+            category: 'dispatch', duration: null,
+            receipt: { type: j.type, baseFare: j.fare, payout, tips: timeBonus + comfortBonus, speedScore, comfortScore, speedBonus: timeBonus, comfortBonus },
+          });
           this.sounds.emit('payment', this.time);
           const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel', this.campaignContent) : null, completedId = j.missionId;
           this.newJob();
