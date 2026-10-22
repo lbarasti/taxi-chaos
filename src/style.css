@@ -183,10 +183,11 @@ body:has(.story:not([hidden]):not(.collapsed)) .player-hud{visibility:hidden}
   .story-speaker{float:left;width:44px;margin:0 9px 8px 0}
 }
 @media(max-width:360px) and (min-height:501px){
-  body:has(.story:not([hidden]):not(.collapsed)) .navigation-actions{visibility:hidden}
+  .story:not(.collapsed){max-height:calc(100dvh - var(--top-height) - var(--edge-bottom) - 338px)}
+  body:has(#observe:not([hidden])) .story:not(.collapsed){max-height:calc(100dvh - var(--top-height) - var(--edge-bottom) - 390px)}
 }
 @media(min-width:701px) and (max-width:800px) and (min-height:501px) and (pointer:fine){
-  body:has(.story:not([hidden]):not(.collapsed)) .navigation-actions{visibility:hidden}
+  .story:not(.collapsed){width:calc(100vw - 366px)}
   .story.collapsed{top:calc(max(28px,env(safe-area-inset-top,0px)) + 160px)}
 }
 @media(max-width:360px){
