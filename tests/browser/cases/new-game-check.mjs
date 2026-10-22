@@ -47,6 +47,38 @@ async function pressPad(page, button) {
   await page.evaluate(button => { window.testPad.buttons[button].pressed = false; }, button);
   await page.waitForTimeout(80);
 }
+async function observeCamera(page) {
+  // Observe the world-camera translation actually painted by the real renderer.
+  await page.evaluate(() => {
+    window.cameraFrames = [];
+    let translations = 0;
+    const setTransform = CanvasRenderingContext2D.prototype.setTransform;
+    const translate = CanvasRenderingContext2D.prototype.translate;
+    CanvasRenderingContext2D.prototype.setTransform = function (...args) {
+      if (this.canvas.id === 'city') translations = 0;
+      return setTransform.apply(this, args);
+    };
+    CanvasRenderingContext2D.prototype.translate = function (x, y) {
+      if (this.canvas.id === 'city' && ++translations === 2) {
+        window.cameraFrames.push({ x: -x, y: -y, transitioning: document.querySelector('#overlay').inert });
+      }
+      return translate.call(this, x, y);
+    };
+  });
+  await page.waitForFunction(() => window.cameraFrames.length > 0);
+  return page.evaluate(() => window.cameraFrames.at(-1));
+}
+async function checkGlide(page, before, previousSpawn, freshSpawn) {
+  await page.locator('#overlay').waitFor({ state: 'hidden' });
+  const frames = await page.evaluate(() => window.cameraFrames.filter(frame => frame.transitioning));
+  assert(frames.length > 3, 'intro paints multiple moving camera frames');
+  const expected = { x: freshSpawn.x + before.x - previousSpawn.x, y: freshSpawn.y + before.y - previousSpawn.y };
+  const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  assert(distance(frames[0], expected) < 1, 'glide starts at the title offset around the fresh spawn');
+  assert(distance(frames[0], freshSpawn) > 5, 'New game does not snap straight to the cab');
+  assert(distance(frames.at(-1), freshSpawn) < distance(frames[0], freshSpawn) - 1, 'camera glides toward the cab');
+  assert(frames.every(frame => distance(frame, freshSpawn) < 40), 'glide stays near the fresh spawn instead of crossing the map');
+}
 try {
   const page = await openGame(browser, html, { viewport: { width: 1440, height: 900 } });
   await waitForDrawer(page, 'home');
@@ -54,6 +86,7 @@ try {
   assert.equal(await selected(page), 'new-game');
   assert.equal(await readSave(page), null);
   await page.screenshot({ path: `${output}/title-fresh-desktop.png` });
+  const firstTitleCamera = await observeCamera(page);
   await page.keyboard.press('Enter');
   // Persist before the splash finishes and before the first periodic autosave.
   const initial = await readSave(page);
@@ -61,6 +94,7 @@ try {
   assert(initial.playerRecords.texts.length > 0, 'opening texts are initialized');
   assert(initial.campaign.editions.length > 0, 'opening newspaper is initialized');
   assert(await page.locator('#overlay.splash-exiting[inert]').count(), 'uses the normal splash transition');
+  await checkGlide(page, firstTitleCamera, initial.garage.current.position, initial.garage.current.position);
   await page.reload(); await waitForDrawer(page, 'home');
   assertFreshSave(await readSave(page), initial, 'immediate reload keeps new progress');
   assert.deepEqual(await menu(page), ['start', 'new-game', 'menu-settings', 'menu-credits']);
@@ -134,8 +168,9 @@ try {
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
   await seed(page, progressed);
   await page.locator('#new-game').click(); await waitForDrawer(page, 'new-game');
+  const savedTitleCamera = await observeCamera(page);
   await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter');
-  await page.locator('#overlay').waitFor({ state: 'hidden' });
+  await checkGlide(page, savedTitleCamera, progressed.garage.current.position, initial.garage.current.position);
   assert.equal(await page.locator('#player-cash').innerText(), `$${initial.cash}`);
   // Physical driving verifies that input, camera and renderer follow the replacement.
   await page.keyboard.down('w'); await page.waitForTimeout(450); await page.keyboard.up('w');
