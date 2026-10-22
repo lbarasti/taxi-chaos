@@ -11,6 +11,7 @@ import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
 
 const pages = {
   home: { title: '', parent: null },
+  'new-game': { title: '', parent: 'home' },
   settings: { title: 'Settings.', parent: 'home' },
   shift: { title: 'This shift.', parent: 'home' },
   credits: { title: 'Credits.', parent: 'home' },
@@ -49,6 +50,12 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
+    case 'new-game': return `<div class="intro-eyebrow">TAXI CHAOS / NEW GAME</div><h2 id="modal-title">Start a new game?</h2>
+      <p class="intro-copy">Your current progress will be replaced. Your settings will be kept.</p>
+      <nav class="game-menu" aria-label="New game confirmation">
+        ${menuItem('Cancel', { id: 'cancel-new-game', page: 'home' })}
+        ${menuItem('New game', { id: 'confirm-new-game' })}
+      </nav><p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p>`;
     case 'publications': return publicationsMarkup(game, editionDay, publicationBack, articleId);
     case 'finale': return finaleMarkup(game);
     case 'newsroom': return newsroomMarkup(game, newsroomSection);

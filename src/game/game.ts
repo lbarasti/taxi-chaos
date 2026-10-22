@@ -624,6 +624,14 @@ export class Game {
     v.upgrades = stockUpgrades(); this.applyUpgrades(v); this.persist();
   }
   get persistenceEnabled() { return this.persistence; }
+  /** Rebuild durable progress and the physical scene through normal initialization. */
+  freshGame() {
+    const next = new Game(this.map, this.persistence, this.campaignEnabled, defaultSave(this.campaignContent), this.campaignContent);
+    next.preferences = { ...this.preferences };
+    Object.assign(next.settings, next.preferences);
+    next.persist();
+    return next;
+  }
   get garageNear() { return !this.onFoot && dist(this.player.body.position, GARAGE) < 9; }
   persist() {
     this.save.garage = { version: 1, current: saveCar(this.player), parked: this.vehicles.filter(v => v !== this.player && v.alive && !v.sinking && v.damage.status !== 'wreck' && hasUpgrades(v.upgrades)).map(saveCar), onFoot: this.onFoot, driver: { ...this.driver.position }, driverHealth: this.driverHealth, boost: this.boost };
