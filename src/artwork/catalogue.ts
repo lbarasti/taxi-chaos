@@ -72,14 +72,23 @@ export function artworkFor(prop: ArtProp): PropArtwork | undefined {
  * Countryside trees retain their procedural needles while their canopy and shadow
  * use the same overhead pass as park trees and palms. */
 export function renderOrderFor(prop: ArtProp): ArtworkRenderOrder {
-  const art = artworkFor(prop);
+  return renderOrderForArt(prop, artworkFor(prop));
+}
+
+/** Same decision for a caller that already resolved the artwork this frame. */
+export function renderOrderForArt(prop: ArtProp, art: PropArtwork | undefined): ArtworkRenderOrder {
   if (art) return art.renderOrder ?? 'below-actors';
   return objectDefinitions[prop.kind]?.artwork?.[0]?.renderOrder
     ?? 'below-actors';
 }
 
 export function artRadius(prop: ArtProp): number {
-  const b = artworkFor(prop)?.bounds;
+  return artRadiusFor(prop, artworkFor(prop));
+}
+
+/** Culling extent for a prop whose artwork was resolved once by the render loop. */
+export function artRadiusFor(prop: ArtProp, art: PropArtwork | undefined): number {
+  const b = art?.bounds;
   // The thin flag collider anchors a much taller procedural pole and fallen pennant.
   const flag = objectDefinitions['golf-flag'];
   const flagRadius = prop.kind === 'golf-flag' ? 1.6 * Math.max(prop.body.w / flag.width, prop.body.h / flag.height) : 0;

@@ -45,6 +45,27 @@ const nearestSolidGap = (w: World, p: Person) => {
 };
 
 describe('pedestrian impacts and gore gating', () => {
+  it('rejects a sliding rider step when separation cycles back into a narrow slot', () => {
+    const w = clearWorld();
+    w.add('building', -0.5, 2, 1, 4, '#000');
+    w.add('building', 0.9, 2, 1, 4, '#000');
+    const person = w.addPerson(vec(0.2, -0.1));
+    // A 0.6 m person cannot fit between the walls' x=0 and x=0.4 faces.
+    // Six alternating corrections return exactly to this penetrating candidate.
+    const candidateX = 0.09900000000000003;
+    person.velocity = vec((candidateX - person.position.x) * 120, 12);
+    person.fall = { elapsed: 0.3, duration: 1.5, angularVelocity: 0 };
+
+    updatePedestrians(w, [], { gore: false }, 1 / 120, 1);
+
+    expect(person.position.y).toBeLessThan(-0.2);
+    for (const { body } of w.props) {
+      const dx = Math.max(0, Math.abs(person.position.x - body.position.x) - body.w / 2);
+      const dy = Math.max(0, Math.abs(person.position.y - body.position.y) - body.h / 2);
+      expect(Math.hypot(dx, dy)).toBeGreaterThanOrEqual(PERSON_RADIUS - 1e-4);
+    }
+  });
+
   it.each([false, true])('tumbling riders still take vehicle hits with gore=%s', gore => {
     const w = clearWorld(), person = w.addPerson(vec(12.2, 10));
     person.fall = { elapsed: 0.3, duration: 1.5, angularVelocity: 4 };

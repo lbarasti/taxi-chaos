@@ -58,6 +58,13 @@ export function drawTerrainMiniMap(c: CanvasRenderingContext2D, map: CompiledMap
 export function drawTerrainGround(r: Renderer) {
   const c = r.ctx,
     map = r.game.map;
+  // Every region paints inside its own bounds; anything wholly off-screen cannot
+  // contribute a pixel, so skip its clip, fill and texture work entirely.
+  const viewW = r.width / r.zoom, viewH = r.height / r.zoom;
+  const view = {
+    left: r.camera.x - viewW * 0.53 - 6, right: r.camera.x + viewW * 0.47 + 6,
+    top: r.camera.y - viewH * 0.54 - 6, bottom: r.camera.y + viewH * 0.46 + 6,
+  };
   c.save();
   clipLand(c, map);
   // Painter order is exactly the sampler's low-to-high priority order.
@@ -65,6 +72,7 @@ export function drawTerrainGround(r: Renderer) {
     const b = region.bounds,
       w = b.max.x - b.min.x,
       h = b.max.y - b.min.y;
+    if (b.max.x < view.left || b.min.x > view.right || b.max.y < view.top || b.min.y > view.bottom) continue;
     c.save();
     trace(c, region.outline);
     c.closePath();

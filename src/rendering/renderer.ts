@@ -12,7 +12,7 @@ import { doorOpenness, LANDING_TIME } from '../vehicles/vehicle-exit';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { artworkImages } from '../artwork/images';
-import { artworkFor, artRadius, fallbackScale, renderOrderFor, type PropArtwork } from '../artwork/catalogue';
+import { artworkFor, artRadiusFor, fallbackScale, renderOrderForArt, type PropArtwork } from '../artwork/catalogue';
 import { InspectionState } from '../debug/inspection';
 import { drawInspection } from '../debug/inspection-renderer';
 import { defaultMap } from '../map/default';
@@ -67,7 +67,14 @@ export class Renderer {
   }
   resize() { this.width = window.innerWidth; this.height = window.innerHeight; this.dpr = Math.min(window.devicePixelRatio || 1, 2); this.canvas.width = this.width * this.dpr; this.canvas.height = this.height * this.dpr; this.map.width = 220 * this.dpr; this.map.height = 190 * this.dpr; }
   screen(p: Vec) { return vec((p.x - this.camera.x) * this.zoom + this.width * 0.53, (p.y - this.camera.y) * this.zoom + this.height * 0.54); }
-  visible(p: Vec, r = 10) { const s = this.screen(p); return s.x > -r * this.zoom && s.x < this.width + r * this.zoom && s.y > -r * this.zoom && s.y < this.height + r * this.zoom; }
+  /** Allocation-free visibility test: called once per prop, person, vehicle and light. */
+  visible(p: Vec, r = 10) {
+    const margin = r * this.zoom;
+    const x = (p.x - this.camera.x) * this.zoom + this.width * 0.53;
+    if (x <= -margin || x >= this.width + margin) return false;
+    const y = (p.y - this.camera.y) * this.zoom + this.height * 0.54;
+    return y > -margin && y < this.height + margin;
+  }
   rect(x: number, y: number, w: number, h: number, color: string, stroke?: string) { const c = this.ctx; c.fillStyle = color; c.fillRect(x, y, w, h); if (stroke) { c.strokeStyle = stroke; c.lineWidth = 0.1; c.strokeRect(x, y, w, h); } }
   circle(p: Vec, r: number, color: string) { const c = this.ctx; c.beginPath(); c.arc(p.x, p.y, r, 0, Math.PI * 2); c.fillStyle = color; c.fill(); }
   label(text: string, x: number, y: number, size: number, color: string, weight = '500') { const c = this.ctx; c.font = `${weight} ${size}px "Space Grotesk", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = color; c.fillText(text, x, y); }
@@ -135,10 +142,14 @@ export class Renderer {
         zoom: this.zoom, project: point => this.screen(point),
       });
     }
-    const overheadProps: Prop[] = [];
-    for (const prop of g.world.props) if (this.visible(prop.body.position, artRadius(prop))) {
-      if (prop.alive && renderOrderFor(prop) === 'above-actors') overheadProps.push(prop);
-      else this.drawMapProp(prop);
+    const overheadProps: { prop: Prop; art: PropArtwork | undefined }[] = [];
+    for (const prop of g.world.props) {
+      // Resolve catalogue artwork once per prop per frame: the cull radius, the render
+      // order and the sprite itself all read the same compiled record.
+      const art = prop.alive ? artworkFor(prop) : undefined;
+      if (!this.visible(prop.body.position, artRadiusFor(prop, art))) continue;
+      if (prop.alive && renderOrderForArt(prop, art) === 'above-actors') overheadProps.push({ prop, art });
+      else this.drawMapProp(prop, art ?? null);
     }
     if (view.shown('props')) { c.save(); c.globalAlpha = view.active ? view.options.propOpacity : 1; this.golfFixtures(); this.campaignFrontages(); c.restore(); }
     if (view.shown('actors')) {
@@ -199,7 +210,7 @@ export class Renderer {
     }
     // Elevated artwork and its shadow cover actors together, once, before air FX
     // and lighting. Destroyed props stay in the ordinary ground-level pass.
-    for (const prop of overheadProps) this.drawMapProp(prop);
+    for (const { prop, art } of overheadProps) this.drawMapProp(prop, art ?? null);
     if (view.shown('effects')) g.fx.drawAir(c, g.time, g.settings.gore);
     c.restore();
     if (view.shown('lighting')) this.lightingPass(lighting);
@@ -518,9 +529,10 @@ export class Renderer {
     if (prop.kind === 'station') { drawFire(c, vec(), 2.8, this.game.time, prop.id); drawSmoke(c, vec(0, -2), 3, this.game.time, prop.id); return; }
     drawFire(c, vec(), 1.4, this.game.time, prop.id);
   }
-  prop(prop: Prop) {
+  prop(prop: Prop, resolved?: PropArtwork | null) {
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
-    const art = prop.alive ? artworkFor(prop) : undefined;
+    // null is a resolved miss; undefined preserves the standalone caller's lookup.
+    const art = prop.alive ? (resolved === undefined ? artworkFor(prop) : resolved ?? undefined) : undefined;
     const render: PropRenderContext = {
       artwork: art,
       shadow: draw => { if (!art) this.mapShadow(draw); },
@@ -698,11 +710,11 @@ export class Renderer {
     } else { this.rect(-0.4, -0.4, 0.8, 0.8, prop.color, '#28483e'); this.rect(-0.32, -0.32, 0.64, 0.22, '#335b52'); }
     c.restore();
   }
-  drawMapProp(prop: Prop) {
+  drawMapProp(prop: Prop, resolved?: PropArtwork | null) {
     const c = this.ctx, view = this.inspection;
     c.save(); c.globalAlpha = view.shown('props') ? (view.active ? view.options.propOpacity : 1) : 0;
     this.drawingMapProp = true;
-    try { this.prop(prop); } finally { this.drawingMapProp = false; c.restore(); }
+    try { this.prop(prop, resolved); } finally { this.drawingMapProp = false; c.restore(); }
   }
   car(v: Vehicle) {
     if (v.sinking) {
