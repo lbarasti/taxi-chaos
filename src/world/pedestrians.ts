@@ -100,7 +100,9 @@ function penetration(world: World, center: Vec, radius: number): number {
 
 /** Push a circle out of every alive static prop, iterating until it is clear. */
 function separate(world: World, center: Vec, radius: number): Vec {
-  let p = { ...center };
+  // Preserve identity only when no correction ran. A bounded solver can cycle back
+  // to the starting coordinates while still penetrating two opposing obstacles.
+  let p = center;
   for (let iter = 0; iter < 6; iter++) {
     const probe = separateProbe;
     probe.position.x = p.x; probe.position.y = p.y;
@@ -128,7 +130,7 @@ function separate(world: World, center: Vec, radius: number): Vec {
  */
 function moveTo(world: World, person: Person, candidate: Vec, radius: number): void {
   const next = separate(world, candidate, radius);
-  if (next.x === candidate.x && next.y === candidate.y) { person.position = next; return; }
+  if (next === candidate) { person.position = next; return; }
   const before = penetration(world, person.position, radius);
   const after = penetration(world, next, radius);
   person.position = after > Math.max(before, 0.03) + 1e-3 ? separate(world, person.position, radius) : next;
@@ -197,9 +199,7 @@ function updateCorpse(world: World, person: Person, movers: PedestrianMover[], d
   // Always keep the corpse clear of statics, and never resting inside a vehicle.
   person.position = separate(world, person.position, PERSON_RADIUS);
   for (const mover of movers) {
-    const dx = mover.x - person.position.x, dy = mover.y - person.position.y;
-    if (dx * dx + dy * dy > mover.reach2) continue;
-    const hit = circleBody(mover.vehicle.body, person.position, PERSON_RADIUS);
+    const hit = circleMover(mover, person.position);
     if (hit) person.position = separate(world, add(person.position, scale(hit.normal, hit.depth + 0.02)), PERSON_RADIUS);
   }
   // Shoreline props and bridge rails bound corpses just like living pedestrians.
@@ -208,18 +208,24 @@ function updateCorpse(world: World, person: Person, movers: PedestrianMover[], d
 
 /** Vehicle facts that stay constant for one pedestrian tick: position, speed and the
  *  circumradius used as a conservative contact broad phase. */
-type PedestrianMover = { vehicle: PedestrianVehicle; x: number; y: number; cos: number; sin: number; speed: number; moving: boolean; reach2: number };
+type PedestrianMover = { vehicle: PedestrianVehicle; x: number; y: number; cos: number; sin: number; moving: boolean; reach2: number };
+
+/** Conservative rejection shared by living pedestrians, corpses and sliding riders. */
+function circleMover(mover: PedestrianMover, center: Vec): CircleHit | null {
+  const dx = mover.x - center.x, dy = mover.y - center.y;
+  return dx * dx + dy * dy > mover.reach2 ? null : circleBody(mover.vehicle.body, center, PERSON_RADIUS);
+}
 
 function moversFor(vehicles: PedestrianVehicle[]): PedestrianMover[] {
   const movers: PedestrianMover[] = [];
   for (const vehicle of vehicles) {
     const body = vehicle.body;
     const speed = Math.hypot(body.velocity.x, body.velocity.y);
-    const reach = Math.hypot(body.w, body.h) / 2 + PERSON_RADIUS;
+    const reach = body.radius + PERSON_RADIUS;
     movers.push({
       vehicle, x: body.position.x, y: body.position.y,
       cos: Math.cos(body.angle), sin: Math.sin(body.angle),
-      speed, moving: speed > MOVING_SPEED, reach2: reach * reach,
+      moving: speed > MOVING_SPEED, reach2: reach * reach,
     });
   }
   return movers;
@@ -286,10 +292,8 @@ export function updatePedestrians(
     // The circumradius test rejects the far majority of person/vehicle pairs without
     // any trig or allocation; anything inside it still takes the exact circle test.
     for (const mover of movers) {
-      const dx = mover.x - person.position.x, dy = mover.y - person.position.y;
-      if (dx * dx + dy * dy > mover.reach2) continue;
       const vehicle = mover.vehicle;
-      const hit = circleBody(vehicle.body, person.position, PERSON_RADIUS);
+      const hit = circleMover(mover, person.position);
       if (!hit) continue;
       const incoming = vehicle.body.velocityAt(hit.point);
       const closing = Math.max(0, dot(sub(incoming, person.velocity), hit.normal));
@@ -353,9 +357,7 @@ export function updatePedestrians(
         moveTo(world, person, intended, PERSON_RADIUS);
         if (dist(person.position, intended) > 0.1) person.velocity = scale(person.velocity, 0.65);
         for (const mover of movers) {
-          const dx = mover.x - person.position.x, dy = mover.y - person.position.y;
-          if (dx * dx + dy * dy > mover.reach2) continue;
-          const hit = circleBody(mover.vehicle.body, person.position, PERSON_RADIUS);
+          const hit = circleMover(mover, person.position);
           if (hit) person.position = separate(world, add(person.position, scale(hit.normal, hit.depth + 0.04)), PERSON_RADIUS);
         }
       }

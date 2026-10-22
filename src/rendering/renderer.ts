@@ -149,7 +149,7 @@ export class Renderer {
       const art = prop.alive ? artworkFor(prop) : undefined;
       if (!this.visible(prop.body.position, artRadiusFor(prop, art))) continue;
       if (prop.alive && renderOrderForArt(prop, art) === 'above-actors') overheadProps.push({ prop, art });
-      else this.drawMapProp(prop, art);
+      else this.drawMapProp(prop, art ?? null);
     }
     if (view.shown('props')) { c.save(); c.globalAlpha = view.active ? view.options.propOpacity : 1; this.golfFixtures(); this.campaignFrontages(); c.restore(); }
     if (view.shown('actors')) {
@@ -210,7 +210,7 @@ export class Renderer {
     }
     // Elevated artwork and its shadow cover actors together, once, before air FX
     // and lighting. Destroyed props stay in the ordinary ground-level pass.
-    for (const { prop, art } of overheadProps) this.drawMapProp(prop, art);
+    for (const { prop, art } of overheadProps) this.drawMapProp(prop, art ?? null);
     if (view.shown('effects')) g.fx.drawAir(c, g.time, g.settings.gore);
     c.restore();
     if (view.shown('lighting')) this.lightingPass(lighting);
@@ -529,9 +529,10 @@ export class Renderer {
     if (prop.kind === 'station') { drawFire(c, vec(), 2.8, this.game.time, prop.id); drawSmoke(c, vec(0, -2), 3, this.game.time, prop.id); return; }
     drawFire(c, vec(), 1.4, this.game.time, prop.id);
   }
-  prop(prop: Prop, resolved?: PropArtwork) {
+  prop(prop: Prop, resolved?: PropArtwork | null) {
     const c = this.ctx, b = prop.body, so = this.shadowOffset(b.angle);
-    const art = prop.alive ? resolved ?? artworkFor(prop) : undefined;
+    // null is a resolved miss; undefined preserves the standalone caller's lookup.
+    const art = prop.alive ? (resolved === undefined ? artworkFor(prop) : resolved ?? undefined) : undefined;
     const render: PropRenderContext = {
       artwork: art,
       shadow: draw => { if (!art) this.mapShadow(draw); },
@@ -709,7 +710,7 @@ export class Renderer {
     } else { this.rect(-0.4, -0.4, 0.8, 0.8, prop.color, '#28483e'); this.rect(-0.32, -0.32, 0.64, 0.22, '#335b52'); }
     c.restore();
   }
-  drawMapProp(prop: Prop, resolved?: PropArtwork) {
+  drawMapProp(prop: Prop, resolved?: PropArtwork | null) {
     const c = this.ctx, view = this.inspection;
     c.save(); c.globalAlpha = view.shown('props') ? (view.active ? view.options.propOpacity : 1) : 0;
     this.drawingMapProp = true;

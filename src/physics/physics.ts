@@ -119,7 +119,7 @@ export class CarDynamics {
       tyre.angle = tyre.steered ? controls.turn * (this.tuning.steeringLock / (1 + Math.abs(speed) * this.tuning.steeringSpeedFalloff)) : 0;
       const local = tyre.position;
       const p = vec(body.position.x + (cos * local.x - sin * local.y), body.position.y + (sin * local.x + cos * local.y));
-      // Inline `body.velocityAt(p)` to keep the four tyre loops allocation-free.
+      // Inline `body.velocityAt(p)` to avoid its intermediate vectors per tyre.
       const rx = p.x - body.position.x, ry = p.y - body.position.y;
       const v = vec(body.velocity.x + -body.angularVelocity * ry, body.velocity.y + body.angularVelocity * rx);
       const rollAngle = body.angle + tyre.angle, rolling = vec(Math.cos(rollAngle), Math.sin(rollAngle)), lateral = vec(-rolling.y, rolling.x);
@@ -240,7 +240,7 @@ export class SpatialHash<T extends { body: Body; alive: boolean }> {
   // Numeric cell keys avoid building template strings on every query; the hash is
   // queried per vehicle per collision pass and per pedestrian move.
   cells = new Map<number, T[]>();
-  private empty = new Set<T>();
+  private readonly empty: ReadonlySet<T> = new Set<T>();
   constructor(public size = 12) {}
   private key(x: number, y: number) { return (x + 4096) * 8192 + (y + 4096); }
   private cellRange(body: Body) {
@@ -258,7 +258,7 @@ export class SpatialHash<T extends { body: Body; alive: boolean }> {
   insert(item: T) { for (const key of this.keys(item.body)) { const cell = this.cells.get(key) ?? []; cell.push(item); this.cells.set(key, cell); } }
   /** Candidates whose cells overlap `body`. The result is read-only: an empty query
    *  shares one set so per-frame probes allocate nothing. */
-  query(body: Body) {
+  query(body: Body): ReadonlySet<T> {
     const { x0, x1, y0, y1 } = this.cellRange(body);
     if (x0 === x1 && y0 === y1) {
       const cell = this.cells.get(this.key(x0, y0));
