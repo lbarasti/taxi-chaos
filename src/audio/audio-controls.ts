@@ -8,8 +8,9 @@ export function audioMarkup(audio: AudioFX, { credits = 'inline' }: { credits?: 
     <label class="audio-toggle menu-field"><input type="checkbox" data-audio="muted" ${p.muted ? 'checked' : ''}> Mute FX</label>
     <label class="menu-field">FX volume <input type="range" min="0" max="100" step="1" value="${Math.round(p.volume * 100)}" data-audio="volume" aria-label="FX volume"><output data-audio-out="volume">${Math.round(p.volume * 100)}%</output></label>
     <label class="menu-field">Player engine <input type="range" min="0" max="100" step="1" value="${Math.round(p.playerEngine * 100)}" data-audio="playerEngine" aria-label="Player engine volume"><output data-audio-out="playerEngine">${Math.round(p.playerEngine * 100)}%</output></label>
-    <label class="menu-field">Ambient sounds <input type="range" min="0" max="100" step="1" value="${Math.round(p.ambient * 100)}" data-audio="ambient" aria-label="Ambient sounds volume"><output data-audio-out="ambient">${Math.round(p.ambient * 100)}%</output></label>
+    <label class="menu-field">Ambient <input type="range" min="0" max="100" step="1" value="${Math.round(p.ambient * 100)}" data-audio="ambient" aria-label="Ambient volume"><output data-audio-out="ambient">${Math.round(p.ambient * 100)}%</output></label>
     <label class="menu-field">Sirens <input type="range" min="0" max="100" step="1" value="${Math.round(p.sirens * 100)}" data-audio="sirens" aria-label="Siren volume"><output data-audio-out="sirens">${Math.round(p.sirens * 100)}%</output></label>
+    <small>FX volume controls all sound effects. Ambient adjusts traffic, horns, fire and impacts within that level.</small>
     <small data-audio-status>Sound starts with your first click or driving key.</small>
     ${credits === 'page' ? menuItem('Sound credits & licences', { id: 'menu-credits', page: 'credits' }) : audioCreditsMarkup()}
   </fieldset>`;

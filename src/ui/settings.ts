@@ -27,7 +27,7 @@ export function createSettings(game: () => Game, audio: Pick<AudioFX, 'preferenc
       write: (muted: boolean) => { audio.configure({ muted }); void audio.unlock(); },
     },
     volume: {
-      id: 'volume', icon: 'volume', label: 'FX volume', type: 'slider',
+      id: 'volume', icon: 'volume', label: 'FX volume', hint: 'All sound effects', type: 'slider',
       min: 0, max: 100, step: 1, format: percent,
       read: () => Math.round(audio.preferences.volume * 100),
       write: (volume: number) => { audio.configure({ volume: volume / 100 }); void audio.unlock(); },
@@ -39,7 +39,7 @@ export function createSettings(game: () => Game, audio: Pick<AudioFX, 'preferenc
       write: (playerEngine: number) => { audio.configure({ playerEngine: playerEngine / 100 }); void audio.unlock(); },
     },
     ambient: {
-      id: 'ambient', icon: 'volume', label: 'Ambient sounds', hint: 'Traffic, horns & world FX', type: 'slider',
+      id: 'ambient', icon: 'volume', label: 'Ambient', hint: 'Traffic, horns, fire & impacts', type: 'slider',
       min: 0, max: 100, step: 1, format: percent,
       read: () => Math.round(audio.preferences.ambient * 100),
       write: (ambient: number) => { audio.configure({ ambient: ambient / 100 }); void audio.unlock(); },
