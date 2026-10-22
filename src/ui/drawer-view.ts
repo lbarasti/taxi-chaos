@@ -32,6 +32,7 @@ function settingsMarkup(settings: SettingsControls) {
     ${settingRow(settings.muted)}
     ${settingRow(settings.volume)}
     ${settingRow(settings.playerEngine)}
+    ${settingRow(settings.ambient)}
     ${settingRow(settings.sirens)}
   </fieldset>`;
 }

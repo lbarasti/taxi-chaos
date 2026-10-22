@@ -14,7 +14,7 @@ function fakeContext() {
     resume: vi.fn(async () => { ctx.state = 'running'; }),
     decodeAudioData: vi.fn(async () => buffer), createBuffer: vi.fn(() => buffer),
     createGain: vi.fn(() => ({ ...node(), gain: param() })), createStereoPanner: () => ({ ...node(), pan: param() }),
-    createBiquadFilter: vi.fn(() => ({ ...node(), frequency: param(), Q: param() })),
+    createBiquadFilter: vi.fn(() => ({ ...node(), frequency: param(), Q: param(), gain: param() })),
     createDynamicsCompressor: () => ({ ...node(), threshold: param(), knee: param(), ratio: param(), attack: param(), release: param() }),
     createAnalyser: () => ({ ...node(), fftSize: 0, getFloatTimeDomainData: vi.fn() }),
     createBufferSource: vi.fn(() => ({ ...node(), loop: false, playbackRate: param(), start: vi.fn(), stop: vi.fn(), onended: null })),
@@ -126,7 +126,7 @@ describe('audio lifecycle and bounded mixer', () => {
     const addCar = (i: number) => game.vehicle('traffic', position.x + 5 + i, position.y, 0, '#fff');
     const cars = [0, 1, 2].map(addCar);
     audio.update(game, true, true); expect(audio.state().loops).toEqual(cars.map(car => `traffic:${car.id}`));
-    const nearest = ctx.createGain.mock.results[2].value.gain, quiet = nearest.setTargetAtTime.mock.lastCall![0];
+    const nearest = ctx.createGain.mock.results[4].value.gain, quiet = nearest.setTargetAtTime.mock.lastCall![0];
     cars.push(...[3, 4, 5, 6, 7, 8].map(addCar)); audio.update(game, true, true);
     expect(nearest.setTargetAtTime.mock.lastCall![0]).toBeGreaterThan(quiet);
     expect(audio.state().loops).toEqual(cars.slice(0, 6).map(car => `traffic:${car.id}`));
@@ -171,7 +171,7 @@ describe('audio lifecycle and bounded mixer', () => {
     expect(audio.state().failures).toHaveLength(audio.state().total);
   });
   it('validates persisted settings and lets zero siren volume disable siren loops', async () => {
-    expect(audioPreferences({ volume: Infinity, playerEngine: NaN, sirens: -3 })).toEqual({ muted: false, volume: 0.65, playerEngine: 0.7, sirens: 0 });
+    expect(audioPreferences({ volume: Infinity, playerEngine: NaN, sirens: -3 })).toEqual({ muted: false, volume: 0.65, playerEngine: 0.7, ambient: 1, sirens: 0 });
     expect(audioPreferences({ playerEngine: -1 }).playerEngine).toBe(0);
     expect(audioPreferences({ playerEngine: 3 }).playerEngine).toBe(1);
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
@@ -189,7 +189,8 @@ describe('audio lifecycle and bounded mixer', () => {
     expect(audio.state().loops).not.toContain(`traffic:${game.player.id}`);
     const source = ctx.createBufferSource.mock.results.map(result => result.value).find(value => value.loop)!;
     const filter = source.connect.mock.calls[0][0];
-    const gain = filter.connect.mock.calls[0][0].gain;
+    const bass = filter.connect.mock.calls[0][0];
+    const gain = bass.connect.mock.calls[0][0].gain;
     const full = gain.setTargetAtTime.mock.calls.at(-1)![0];
     audio.configure({ playerEngine: 0.35 }); audio.update(game, true, true);
     expect(gain.setTargetAtTime.mock.calls.at(-1)![0]).toBeCloseTo(full / 2);
@@ -200,6 +201,62 @@ describe('audio lifecycle and bounded mixer', () => {
     expect(audio.state().played.crash).toBe(1);
     audio.configure({ playerEngine: 1 }); audio.update(game, true, true);
     expect(audio.state().loops).toContain('engine');
+  });
+  it('warms both player layers at source creation and keeps traffic EQ unchanged', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);
+    await audio.unlock(); game.start(); game.vehicles = [game.player]; game.controls.throttle = 1;
+    game.vehicle('traffic', game.player.body.position.x + 4, game.player.body.position.y, 0, '#fff');
+    audio.update(game, true, true);
+    const sources = ctx.createBufferSource.mock.results.map(r => r.value);
+    for (const source of sources.slice(0, 2)) {
+      const filter = source.connect.mock.calls[0][0], bass = filter.connect.mock.calls[0][0];
+      expect(filter.frequency.value).toBeLessThan(1900);
+      expect(bass.type).toBe('lowshelf'); expect(bass.frequency.value).toBe(240); expect(bass.gain.value).toBe(5);
+    }
+    const trafficFilter = sources[2].connect.mock.calls[0][0];
+    expect(trafficFilter.connect.mock.calls[0][0].type).not.toBe('lowshelf');
+    expect(trafficFilter.frequency.setTargetAtTime.mock.lastCall![0]).toBe(1600);
+    await audio.preview('engine');
+    for (const source of ctx.createBufferSource.mock.results.slice(-2).map(r => r.value)) {
+      expect(source.connect.mock.calls[0][0].connect.mock.calls[0][0].type).toBe('lowshelf');
+    }
+  });
+  it('changes active ambient loops and shots together, including previews, independently of player and sirens', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);
+    await audio.unlock(); game.start(); game.vehicles = [game.player];
+    const p = game.player.body.position;
+    game.vehicle('traffic', p.x + 4, p.y, 0, '#fff');
+    const cop = game.vehicle('police', p.x + 8, p.y, 0, '#fff');
+    game.sounds.emit('horn', game.time, { position: p }); audio.update(game, true, true);
+    const master = ctx.createGain.mock.results[0].value, world = ctx.createGain.mock.results[1].value;
+    const ambient = ctx.createGain.mock.results[2].value, previewAmbient = ctx.createGain.mock.results[3].value;
+    const destination = (source: ReturnType<typeof ctx.createBufferSource>) => {
+      let node = source.connect.mock.calls[0][0];
+      while (node.connect.mock.calls.length) {
+        const next = node.connect.mock.calls[0][0];
+        if ([master, world, ambient, previewAmbient].includes(next)) return next;
+        node = next;
+      }
+    };
+    const sources = ctx.createBufferSource.mock.results.map(r => r.value);
+    expect(destination(sources[0])).toBe(ambient); // horn already playing
+    expect(destination(sources[1])).toBe(world); // player engine
+    expect(destination(sources[2])).toBe(ambient); // surrounding traffic
+    expect(destination(sources.at(-1)!)).toBe(world); // siren
+    audio.configure({ ambient: 0 });
+    expect(ambient.gain.setTargetAtTime.mock.lastCall![0]).toBe(0);
+    expect(previewAmbient.gain.setTargetAtTime.mock.lastCall![0]).toBe(0);
+    audio.update(game, true, true);
+    expect(audio.state().loops).toContain('engine'); expect(audio.state().loops).toContain(`siren:${cop.id}`);
+    expect(world.gain.setTargetAtTime.mock.lastCall![0]).toBe(1);
+    await audio.preview('horn');
+    expect(destination(ctx.createBufferSource.mock.results.at(-1)!.value)).toBe(previewAmbient);
+    audio.configure({ ambient: 0.4 });
+    expect(previewAmbient.gain.setTargetAtTime.mock.lastCall![0]).toBe(0.4);
+    expect(audio.preferences.playerEngine).toBe(0.7); expect(audio.preferences.sirens).toBe(0.25);
+    expect(audioPreferences({ ambient: -2 }).ambient).toBe(0);
+    expect(audioPreferences({ ambient: 2 }).ambient).toBe(1);
+    expect(audioPreferences({ ambient: NaN }).ambient).toBe(1);
   });
   it('connects gear drops to the live playback rate and resets them when the run restarts', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);

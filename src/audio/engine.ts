@@ -45,7 +45,7 @@ export class EngineSound {
     const load = clamp(this.gear < 0 ? -throttle : throttle, 0, 1);
     const rpm = clamp(Math.max(roadSpeed / gearSpeeds[Math.max(0, this.gear - 1)], load * 0.18) + (boosting && !shifting ? 0.04 : 0), 0, 1);
     return { gear: this.gear, gears, rpm, shifting,
-      rate: 0.7 + rpm * 1.25,
+      rate: 0.56 + rpm,
       // Leave headroom for tyres, impacts, boost and nearby world effects.
       gain: (0.055 + rpm * 0.035 + load * 0.035) * (shifting ? 0.28 : 1),
     };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Body, vec } from '../physics/physics';
-import { drivingSound, soundPriority, SoundEvents, spatialSound, trafficEngineGain } from './sound';
+import { drivingSound, soundPriority, SoundEvents, spatialSound, trafficEngineGain, isAmbientCue } from './sound';
 import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 
@@ -56,6 +56,16 @@ describe('audio mix signals', () => {
     expect(accelerating.engineLoadGain).toBeGreaterThan(coast.engineLoadGain);
     expect(accelerating.engineCutoff).toBeGreaterThan(coast.engineCutoff);
     expect(accelerating.engineGain + accelerating.engineLoadGain).toBeGreaterThan(idle.engineGain);
+  });
+  it('keeps treble subdued at idle and under full load, including upgrades and boost', () => {
+    expect(drivingSound(0, 0, 0, false).engineCutoff).toBeLessThan(700);
+    for (let engine = 0; engine <= 3; engine++) {
+      expect(drivingSound(60, 1, 0, true, { engine, boost: 3 }).engineCutoff).toBeLessThan(1900);
+    }
+  });
+  it('routes surrounding FX to ambience while retaining independent driving and feedback', () => {
+    for (const cue of ['horn', 'fire', 'crash', 'body', 'pulp', 'explosion'] as const) expect(isAmbientCue(cue)).toBe(true);
+    for (const cue of ['engine', 'skid', 'boost-start', 'boost-loop', 'siren', 'payment', 'pickup'] as const) expect(isAmbientCue(cue)).toBe(false);
   });
   it('raises traffic noise above three nearby cars and caps the density boost', () => {
     expect(trafficEngineGain(0)).toBe(0);

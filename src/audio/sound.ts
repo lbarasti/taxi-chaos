@@ -13,6 +13,12 @@ export type SoundEvent = { cue: SoundCue; time: number; position?: Vec; strength
 export const isSoundCue = (value: string): value is SoundCue => Object.hasOwn(soundLabels, value);
 export function soundPriority(cue: SoundCue) { return cue === 'horn' ? 1 : cue === 'explosion' || cue === 'collapse' ? 5 : ['pickup', 'payment', 'purchase', 'repair', 'escape', 'arrest'].includes(cue) ? 4 : cue === 'crash' ? 3 : 2; }
 
+/** Surrounding world FX share ambience; the player's driving and feedback stay independent.
+ * New world cues (such as crowd reactions) join the ambient mix by default. */
+export function isAmbientCue(cue: SoundCue) {
+  return !(['engine', 'skid', 'boost-start', 'boost-loop', 'boost-end', 'siren', 'pickup', 'payment', 'purchase', 'repair', 'escape', 'arrest'] as SoundCue[]).includes(cue);
+}
+
 export class SoundEvents {
   private queue: SoundEvent[] = [];
   private cooldowns = new Map<string, number>();
@@ -59,7 +65,7 @@ export function drivingSound(speed: number, throttle: number, slip: number, boos
     enginePitch: 1 - engine * 0.03,
     engineGain: (1 - power * 0.65) * (1 + engine * 0.035),
     engineLoadGain: power * 0.85 * (1 + engine * 0.14),
-    engineCutoff: 1300 + load * 2000 + pace * 700 + engine * 400,
+    engineCutoff: 650 + load * 700 + pace * 250 + engine * 70,
     boostGain: boosting ? 0.28 + boost * 0.04 : 0,
     boostRate: 1 + boost * 0.08,
     boostCutoff: 3000 + boost * 650,

@@ -30,6 +30,11 @@ describe('engine transmission sound', () => {
     expect(gears).toEqual(Array.from({ length: count }, (_, i) => i + 1));
   });
 
+  it('keeps idle and full rev pitch in a lower road-car range', () => {
+    expect(new EngineSound().update(input(0, 0, { throttle: 0 })).rate).toBe(0.56);
+    expect(new EngineSound().update(input(100, 0)).rate).toBe(1.56);
+  });
+
   it('does not hunt near an upshift boundary and downshifts with a rev rise on deceleration', () => {
     const engine = new EngineSound(); engine.update(input(6.4, 0));
     expect(engine.update(input(6.6, 0.01)).gear).toBe(2);
@@ -45,7 +50,7 @@ describe('engine transmission sound', () => {
     const engine = new EngineSound();
     for (let frame = 0; frame < 600; frame++) {
       const signal = engine.update(input(-frame / 30, frame / 60, { throttle: -1 }));
-      expect(signal.gear).toBe(-1); expect(signal.shifting).toBe(false); expect(signal.rate).toBeLessThanOrEqual(1.95);
+      expect(signal.gear).toBe(-1); expect(signal.shifting).toBe(false); expect(signal.rate).toBeLessThanOrEqual(1.56);
     }
     const coast = new EngineSound().update(input(12, 0, { throttle: 0 }));
     const brake = new EngineSound().update(input(12, 0, { throttle: -1 }));

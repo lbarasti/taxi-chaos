@@ -1,20 +1,22 @@
 import type { Game } from '../game/game';
 import { clamp, dist, dot, length, rotate, vec, type Vec } from '../physics/physics';
 import { audioAssets, type AudioAsset } from './audio-assets';
-import { drivingSound, soundLabels, soundPriority, spatialSound, trafficEngineGain, type SoundCue, type SoundEvent } from './sound';
+import { drivingSound, soundLabels, soundPriority, spatialSound, trafficEngineGain, isAmbientCue, type SoundCue, type SoundEvent } from './sound';
 import { readStorage, storageKeys } from '../game/storage';
 import { EngineSound, type EngineSignal } from './engine';
 
-export type AudioPreferences = { muted: boolean; volume: number; playerEngine: number; sirens: number };
+export type AudioPreferences = { muted: boolean; volume: number; playerEngine: number; ambient: number; sirens: number };
 export function audioPreferences(value: Partial<AudioPreferences> = {}): AudioPreferences {
   return { muted: value.muted === true, volume: typeof value.volume === 'number' && Number.isFinite(value.volume) ? clamp(value.volume, 0, 1) : 0.65,
     playerEngine: typeof value.playerEngine === 'number' && Number.isFinite(value.playerEngine) ? clamp(value.playerEngine, 0, 1) : 0.7,
+    ambient: typeof value.ambient === 'number' && Number.isFinite(value.ambient) ? clamp(value.ambient, 0, 1) : 1,
     sirens: typeof value.sirens === 'number' && Number.isFinite(value.sirens) ? clamp(value.sirens, 0, 1) : 0.25 };
 }
 function loadPreferences() { try { return audioPreferences(JSON.parse(readStorage(storageKeys.audio) ?? '{}') ?? {}); } catch { return audioPreferences(); } }
 
-type Voice = { source: AudioBufferSourceNode; gain: GainNode; pan: StereoPannerNode; filter: BiquadFilterNode; priority: number; level: number; preview: boolean };
-type LoopTarget = { asset: AudioAsset; gain: number; rate?: number; pan?: number; cutoff?: number };
+type Voice = { source: AudioBufferSourceNode; gain: GainNode; pan: StereoPannerNode; filter: BiquadFilterNode; bass?: BiquadFilterNode; priority: number; level: number; preview: boolean };
+type VoiceOptions = { ambient?: boolean; engineTone?: boolean; cutoff?: number };
+type LoopTarget = VoiceOptions & { asset: AudioAsset; gain: number; rate?: number; pan?: number };
 const LOOP_CUES = new Set<SoundCue>(['engine', 'skid', 'boost-loop', 'fire', 'siren']);
 const MAX_SHOTS = 20;
 const TRAFFIC_RANGE = 45, MAX_TRAFFIC_ENGINES = 6;
@@ -25,6 +27,8 @@ export class AudioFX {
   private context?: AudioContext;
   private master?: GainNode;
   private world?: GainNode;
+  private ambient?: GainNode;
+  private ambientPreview?: GainNode;
   private analyser?: AnalyserNode;
   private samples = new Map<AudioAsset, AudioBuffer>();
   private loading?: Promise<void>;
@@ -56,6 +60,8 @@ export class AudioFX {
         const ctx = this.context = this.createContext();
         this.master = ctx.createGain(); this.master.gain.value = 0;
         this.world = ctx.createGain(); this.world.gain.value = 0; this.world.connect(this.master);
+        this.ambient = ctx.createGain(); this.ambient.gain.value = this.preferences.ambient; this.ambient.connect(this.world);
+        this.ambientPreview = ctx.createGain(); this.ambientPreview.gain.value = this.preferences.ambient; this.ambientPreview.connect(this.master);
         const compressor = ctx.createDynamicsCompressor();
         compressor.threshold.value = -12; compressor.knee.value = 12; compressor.ratio.value = 6;
         compressor.attack.value = 0.004; compressor.release.value = 0.16;
@@ -81,7 +87,11 @@ export class AudioFX {
     this.preferences = audioPreferences({ ...this.preferences, ...patch });
     try { localStorage.setItem(storageKeys.audio, JSON.stringify(this.preferences)); } catch {}
     if (this.preferences.muted || this.preferences.volume === 0) { this.stopAll(); this.audible = false; }
-    if (this.context && this.master) this.smooth(this.master.gain, this.preferences.muted ? 0 : this.preferences.volume, 0.025);
+    if (this.context && this.master) {
+      this.smooth(this.master.gain, this.preferences.muted ? 0 : this.preferences.volume, 0.025);
+      this.smooth(this.ambient!.gain, this.preferences.ambient, 0.025);
+      this.smooth(this.ambientPreview!.gain, this.preferences.ambient, 0.025);
+    }
   }
   state() {
     return { status: this.status, context: this.context?.state ?? 'not-created', ...this.preferences,
@@ -106,12 +116,12 @@ export class AudioFX {
       const engine = drivingSound(16, 0.8, 0, false);
       const engineLevel = 0.1 * this.preferences.playerEngine;
       const layers: LoopTarget[] = cue === 'engine'
-        ? [{ asset: 'engine', gain: engine.engineGain * engineLevel, rate: 1.35, cutoff: engine.engineCutoff },
-          { asset: 'engine-load', gain: engine.engineLoadGain * engineLevel, rate: 1.35, cutoff: engine.engineCutoff }]
-        : [{ asset: cue as AudioAsset, gain }];
+        ? [{ asset: 'engine', gain: engine.engineGain * engineLevel, rate: 1.08, cutoff: engine.engineCutoff, engineTone: true },
+          { asset: 'engine-load', gain: engine.engineLoadGain * engineLevel, rate: 1.08, cutoff: engine.engineCutoff, engineTone: true }]
+        : [{ asset: cue as AudioAsset, gain, ambient: isAmbientCue(cue) }];
       let played = false;
       for (const layer of layers) {
-        const voice = this.voice(layer.asset, layer.gain, 0, layer.rate ?? 1, 3, true, true);
+        const voice = this.voice(layer.asset, layer.gain, 0, layer.rate ?? 1, 3, true, true, undefined, layer);
         if (voice) { voice.filter.frequency.value = layer.cutoff ?? 5000; voice.gain.gain.setTargetAtTime(0, ctx.currentTime + 1.9, 0.015); voice.source.stop(ctx.currentTime + 2); played = true; }
       }
       if (played) this.record(cue);
@@ -140,7 +150,7 @@ export class AudioFX {
     this.audible = running || ambient;
     const desired = new Map<string, LoopTarget>();
     this.engineSignal = null;
-    if (ambient) desired.set('engine', { asset: 'engine', gain: 0.055 * this.preferences.playerEngine, rate: 0.85, cutoff: 950 });
+    if (ambient) desired.set('engine', { asset: 'engine', gain: 0.055 * this.preferences.playerEngine, rate: 0.56, cutoff: 650, engineTone: true });
     if (running) {
       for (const event of events.sort((a, b) => b.priority - a.priority)) if (event.cue !== 'pulp' || game.settings.gore) this.play(event);
       const player = game.player, driving = game.mode === 'playing' && !game.onFoot && !player.sinking && player.damage.status !== 'wreck';
@@ -157,8 +167,8 @@ export class AudioFX {
         const pitch = player.definition.graphics.enginePitch;
         const level = engine.gain * this.preferences.playerEngine * (pitch > 1 ? 0.85 : 1);
         const rate = engine.rate * signal.enginePitch * pitch, cutoff = signal.engineCutoff * (engine.shifting ? 0.6 : 1);
-        desired.set('engine', { asset: 'engine', gain: signal.engineGain * level, rate, cutoff });
-        desired.set('engine-load', { asset: 'engine-load', gain: signal.engineLoadGain * level, rate, cutoff });
+        desired.set('engine', { asset: 'engine', gain: signal.engineGain * level, rate, cutoff, engineTone: true });
+        desired.set('engine-load', { asset: 'engine-load', gain: signal.engineLoadGain * level, rate, cutoff, engineTone: true });
         desired.set('skid', { asset: 'skid', gain: signal.skidGain, rate: 0.92 + clamp(game.speed / 120, 0, 0.3), cutoff: 3500 });
         if (boost) desired.set('boost', { asset: 'boost-loop', gain: signal.boostGain, rate: signal.boostRate, cutoff: signal.boostCutoff });
       }
@@ -171,14 +181,14 @@ export class AudioFX {
         const gain = trafficEngineGain(traffic.length);
         for (const car of traffic.slice(0, MAX_TRAFFIC_ENGINES)) {
           const spatial = spatialSound(this.listener, car.body.position, TRAFFIC_RANGE);
-          desired.set(`traffic:${car.id}`, { asset: 'engine', gain: spatial.gain * gain, pan: spatial.pan, rate: clamp(0.8 + length(car.body.velocity) / 40, 0.8, 1.8) * car.definition.graphics.enginePitch, cutoff: 1600 });
+          desired.set(`traffic:${car.id}`, { asset: 'engine', gain: spatial.gain * gain, pan: spatial.pan, rate: clamp(0.8 + length(car.body.velocity) / 40, 0.8, 1.8) * car.definition.graphics.enginePitch, cutoff: 1600, ambient: true });
         }
       }
       const fires = [...game.vehicles.filter(v => v.alive && v.damage.status === 'burning').map(v => ({ key: `car-fire:${v.id}`, position: v.body.position })),
         ...game.world.props.filter(p => p.fire > 0 && !p.fuelSpent).map(p => ({ key: `prop-fire:${p.id}`, position: p.body.position }))];
       for (const fire of fires.sort((a, b) => dist(a.position, this.listener) - dist(b.position, this.listener)).slice(0, 3)) {
         const spatial = spatialSound(this.listener, fire.position, 55);
-        desired.set(fire.key, { asset: 'fire', gain: spatial.gain * 0.32, pan: spatial.pan, cutoff: 4000 });
+        desired.set(fire.key, { asset: 'fire', gain: spatial.gain * 0.32, pan: spatial.pan, cutoff: 4000, ambient: true });
       }
       if (game.mode === 'playing' && this.preferences.sirens > 0) for (const cop of game.police.filter(v => v.damage.status !== 'burning')
         .sort((a, b) => dist(a.body.position, this.listener) - dist(b.body.position, this.listener)).slice(0, 2)) {
@@ -198,7 +208,7 @@ export class AudioFX {
     for (const [key, target] of desired) {
       if (target.gain <= minimumGain(key)) continue;
       let voice = this.loops.get(key);
-      if (!voice) { voice = this.voice(target.asset, 0, target.pan ?? 0, target.rate ?? 1, 1, false, true); if (voice) this.loops.set(key, voice); }
+      if (!voice) { voice = this.voice(target.asset, 0, target.pan ?? 0, target.rate ?? 1, 1, false, true, undefined, target); if (voice) this.loops.set(key, voice); }
       if (!voice) continue;
       const engineLoop = key === 'engine' || key === 'engine-load';
       this.smooth(voice.gain.gain, target.gain, engineLoop ? 0.018 : key === 'skid' || key === 'boost' ? 0.035 : 0.09);
@@ -232,21 +242,28 @@ export class AudioFX {
       this.stopVoice(quietest);
     }
     const jitter = 0.94 + Math.random() * 0.12;
-    const voice = this.voice(this.choose(cue), level, spatial.pan, cue === 'collapse' ? 0.7 : jitter, priority, preview);
+    const voice = this.voice(this.choose(cue), level, spatial.pan, cue === 'collapse' ? 0.7 : jitter, priority, preview, false, undefined, { ambient: isAmbientCue(cue) });
     if (voice && cue === 'horn') voice.filter.frequency.value = 2400;
     if (voice) this.record(cue);
-    if ((cue === 'explosion' || cue === 'collapse') && this.shots.size < MAX_SHOTS) this.voice('rumble', level * 0.7, spatial.pan, cue === 'collapse' ? 0.72 : 0.9, priority, preview);
+    if ((cue === 'explosion' || cue === 'collapse') && this.shots.size < MAX_SHOTS) this.voice('rumble', level * 0.7, spatial.pan, cue === 'collapse' ? 0.72 : 0.9, priority, preview, false, undefined, { ambient: isAmbientCue(cue) });
   }
-  private voice(asset: AudioAsset, level: number, pan: number, rate: number, priority: number, preview: boolean, loop = false, buffer?: AudioBuffer): Voice | undefined {
+  private voice(asset: AudioAsset, level: number, pan: number, rate: number, priority: number, preview: boolean, loop = false, buffer?: AudioBuffer, options: VoiceOptions = {}): Voice | undefined {
     const ctx = this.context!, sample = buffer ?? this.samples.get(asset); if (!sample) return;
     const source = ctx.createBufferSource(); source.buffer = sample; source.loop = loop; source.playbackRate.value = rate;
     const gain = ctx.createGain(); gain.gain.value = 0;
     const panner = ctx.createStereoPanner(); panner.pan.value = pan;
-    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 6000; filter.Q.value = 0.5;
-    source.connect(filter); filter.connect(gain); gain.connect(panner); panner.connect(preview || priority === 4 ? this.master! : this.world!);
-    const voice: Voice = { source, gain, pan: panner, filter, priority, level, preview };
+    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = options.cutoff ?? 6000; filter.Q.value = 0.5;
+    // Only the player's engine gets the warm exhaust EQ, including auditions.
+    let bass: BiquadFilterNode | undefined;
+    if (options.engineTone) {
+      bass = ctx.createBiquadFilter(); bass.type = 'lowshelf'; bass.frequency.value = 240; bass.gain.value = 5;
+      filter.connect(bass); bass.connect(gain);
+    } else filter.connect(gain);
+    source.connect(filter); gain.connect(panner);
+    panner.connect(options.ambient ? (preview ? this.ambientPreview! : this.ambient!) : preview || priority === 4 ? this.master! : this.world!);
+    const voice: Voice = { source, gain, pan: panner, filter, bass, priority, level, preview };
     if (!loop || preview) this.shots.add(voice);
-    source.onended = () => { source.disconnect(); gain.disconnect(); panner.disconnect(); filter.disconnect(); this.shots.delete(voice); };
+    source.onended = () => { source.disconnect(); gain.disconnect(); panner.disconnect(); filter.disconnect(); bass?.disconnect(); this.shots.delete(voice); };
     source.start(0, loop && !preview ? Math.random() * sample.duration : 0);
     this.smooth(gain.gain, level, 0.008);
     return voice;

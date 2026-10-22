@@ -120,7 +120,7 @@ dismounting is immediate.
 
 ## Settings and sound
 
-Pulp gore and difficulty can be changed in **Settings** from the welcome or pause screen. Sound effects start after your first click, tap, or key press. Adjust FX volume, mute, **Player engine**, and separate siren volume in the same Settings menu. Player engine changes only your vehicle's engine; 0% silences it while keeping tyres, boost, traffic and impacts audible. Audio preferences are saved independently from progress. Engines audibly shift through five gears; motorcycles and cars with engine upgrade level 2 or 3 have a sixth gear. There is no music or voice audio.
+Pulp gore and difficulty can be changed in **Settings** from the welcome or pause screen. Sound effects start after your first click, tap, or key press. Adjust FX volume, mute, **Player engine**, **Ambient sounds**, and separate siren volume in the same Settings menu. Player engine changes only your vehicle's engine; 0% silences it while keeping tyres, boost, traffic and impacts audible. Ambient sounds controls surrounding traffic, horns, fire and world impacts; player engine, tyres, boost, sirens and fare/menu cues keep their own levels. Audio preferences are saved independently from progress. Engines audibly shift through five gears; motorcycles and cars with engine upgrade level 2 or 3 have a sixth gear. There is no music or voice audio.
 
 The world clock begins at **07:00** and advances while you play; pause, garage, and game-over states stop it. Lighting transitions through morning, afternoon, evening, and night. The time of day does not change fare or fire timers.
 

@@ -38,6 +38,12 @@ export function createSettings(game: () => Game, audio: Pick<AudioFX, 'preferenc
       read: () => Math.round(audio.preferences.playerEngine * 100),
       write: (playerEngine: number) => { audio.configure({ playerEngine: playerEngine / 100 }); void audio.unlock(); },
     },
+    ambient: {
+      id: 'ambient', icon: 'volume', label: 'Ambient sounds', hint: 'Traffic, horns & world FX', type: 'slider',
+      min: 0, max: 100, step: 1, format: percent,
+      read: () => Math.round(audio.preferences.ambient * 100),
+      write: (ambient: number) => { audio.configure({ ambient: ambient / 100 }); void audio.unlock(); },
+    },
     sirens: {
       id: 'sirens', icon: 'sirens', label: 'Sirens', type: 'slider',
       min: 0, max: 100, step: 1, format: percent,

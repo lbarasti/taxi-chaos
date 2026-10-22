@@ -80,6 +80,8 @@ async function checkDesktop() {
   assert.equal(await page.locator('[data-setting="volume"] output').innerText(), `${volume - 1}%`);
   await page.locator('#playerEngine-option').fill('23');
   assert.equal(await page.locator('[data-setting="playerEngine"] output').innerText(), '23%');
+  await page.locator('#ambient-option').fill('38');
+  assert.equal(await page.locator('[data-setting="ambient"] output').innerText(), '38%');
   await page.locator('#sirens-option').fill('0');
   assert.equal(await page.locator('[data-setting="sirens"] output').innerText(), '0%');
   assert.equal(await page.locator('#modal').getAttribute('data-page'), 'settings');
@@ -134,6 +136,7 @@ async function checkDesktop() {
   assert.equal(await page.locator('#difficulty-option').inputValue(), '0', 'difficulty preference persists');
   assert.equal(await page.locator('#volume-option').inputValue(), String(volume - 1), 'volume preference persists');
   assert.equal(await page.locator('#playerEngine-option').inputValue(), '23', 'player engine preference persists');
+  assert.equal(await page.locator('#ambient-option').inputValue(), '38', 'ambient preference persists');
   await page.locator('#difficulty-option').focus();
   await page.evaluate(()=>{window.testPad.buttons[15].pressed=true}); await page.waitForTimeout(100);
   assert.equal(await page.locator('#difficulty-option').inputValue(), '1', 'controller edits slider');
@@ -212,18 +215,19 @@ async function checkTouchLayouts() {
     assert.equal(await mobile.locator('#modal').getAttribute('data-page'), 'home');
     await mobile.locator('#menu-settings').tap(); await waitForDrawer(mobile, 'settings');
     assert(await mobile.evaluate(() => document.querySelector('#modal').scrollWidth <= document.querySelector('#modal').clientWidth));
-    await mobile.screenshot({ path: `${output}/settings-touch-${name}.png` });
+
     await mobile.locator('#gore-option').tap();
     assert.equal(await mobile.locator('#gore-option').isChecked(), true, 'toggle edits on first tap');
-    await mobile.locator('#sirens-option').scrollIntoViewIfNeeded();
-    const slider = await mobile.locator('#sirens-option').boundingBox();
+    await mobile.locator('#ambient-option').scrollIntoViewIfNeeded();
+    const slider = await mobile.locator('#ambient-option').boundingBox();
     const cdp = await mobile.context().newCDPSession(mobile);
     const y = slider.y + slider.height / 2;
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: slider.x + 7 + (slider.width - 14) * 0.25, y, id: 1 }] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: slider.x + slider.width * 0.8, y, id: 1 }] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    assert(Number(await mobile.locator('#sirens-option').inputValue()) > 50, 'touch drag edits slider');
-    assert.equal(await mobile.locator('[data-setting="sirens"] output').innerText(), `${await mobile.locator('#sirens-option').inputValue()}%`);
+    assert(Number(await mobile.locator('#ambient-option').inputValue()) > 50, 'touch drag edits slider');
+    assert.equal(await mobile.locator('[data-setting="ambient"] output').innerText(), `${await mobile.locator('#ambient-option').inputValue()}%`);
+    await mobile.screenshot({ path: `${output}/settings-touch-${name}.png` });
     await tapToConfirm(mobile, '#drawer-back'); await waitForDrawer(mobile, 'home');
     await tapToConfirm(mobile, '#menu-credits'); await waitForDrawer(mobile, 'credits');
     assert.equal(await mobile.locator('.credits-section').count(), 4);
