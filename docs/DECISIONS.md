@@ -163,3 +163,13 @@ operation outcomes retain their chosen branch without reevaluating old prerequis
 Initialize new campaigns through the chronological scheduler so opening operations
 settle before the first edition. Loading reconstructs history without replaying
 gameplay effects.
+
+## 12. Keep morning checkpoints separate from Continue
+
+Continue follows the latest rolling autosave. Archive one detached Save snapshot per
+playable campaign morning at 07:00 in a separate, versioned localStorage collection
+scoped to the campaign. New game replaces Day 1 after opening initialization; loading
+a morning replaces the rolling session through a fresh Game instance. Both retain
+other archived days, which are replaced individually when their mornings are reached
+again. Sleep captures only after wake-up reconciliation; live crossings preserve
+the current ride and shift totals. The campaign endpoint is not a playable morning.

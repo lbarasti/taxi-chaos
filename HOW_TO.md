@@ -21,6 +21,17 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 
 On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/reverse. Small sideways movements around the centre keep you driving straight; push further left or right to turn, with steering growing smoothly to full lock. It also moves you while on foot. Hold **BOOST** or **DRIFT** at the bottom left with your left thumb: BOOST is above DRIFT. Vehicle actions appear when available; tilt the joystick left or right before tapping **Jump** to choose a side when leaving a moving vehicle. The top bar and taxi menu have been removed. Pause and Test Lab currently require a keyboard; sound settings remain on the welcome/pause screens. There is no in-game fullscreen button.
 
+## Saving and returning
+
+**Continue** resumes your latest autosave. **Load game** on the title screen lists
+saved campaign mornings in day order, each starting at **07:00**. Starting a
+**New game** saves Day 1; later mornings save automatically whether you sleep or
+keep driving. Loading a morning also makes it your current autosave for Continue.
+
+Loading an earlier day keeps the other mornings available. Reaching a morning
+again replaces only that day's checkpoint. New game replaces Day 1 and keeps
+later days until you reach them again. These saves use this browser's local storage.
+
 ## Your shift
 
 Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to the **green ring** for base pay plus possible time and comfort tips. A late delivery can still be completed; the timer affects the bonus, not whether you get paid. Drifts and near-misses earn small skill bonuses, and nitro recharges automatically.

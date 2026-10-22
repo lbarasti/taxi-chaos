@@ -14,6 +14,7 @@ export class GameDrawer {
   private settings: SettingsControls;
   private refreshSettings = () => {};
   private page: DrawerPage = 'home';
+  private loadFailed = false;
   private editionDay?: number;
   private articleId?: string;
   private publicationBack: 'newsroom' | 'finale' = 'newsroom';
@@ -23,13 +24,17 @@ export class GameDrawer {
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
   private device: InputDevice = 'keyboard';
-  constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void; newGame: () => void }) {
+  constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void; newGame: () => void; loadGame: (day: number) => boolean }) {
     this.settings = createSettings(options.game, options.audio);
     this.menu = new DrawerMenu(root, () => this.active && !this.transition && !root.closest('[inert]'));
     root.addEventListener('click', event => {
       const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
       if (!this.active || this.transition || !button || button.disabled || button.getAttribute('aria-disabled') === 'true') return;
       const game = options.game(), page = button.dataset.page;
+      if (this.page === 'load-game' && game.mode === 'intro' && /^load-day-\d+$/.test(button.id)) {
+        if (!options.loadGame(Number(button.id.slice('load-day-'.length)))) { this.loadFailed = true; this.refresh(); }
+        return;
+      }
       if (page === 'publications') { this.openPublications(this.page === 'finale'); return; }
       if (page && isDrawerPage(page)) { void this.open(page); return; }
       if (button.dataset.edition) {
@@ -116,6 +121,7 @@ export class GameDrawer {
   }
   reset() {
     this.transition?.cancel(); this.transition = undefined;
+    this.loadFailed = false;
     this.page = this.entry = 'home'; this.selections.clear(); delete this.root.dataset.page;
     this.newsroomSection = null; this.editionDay = undefined; this.articleId = undefined; this.publicationBack = 'newsroom';
   }
@@ -193,7 +199,7 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry, newsroomSection: this.newsroomSection, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry, newsroomSection: this.newsroomSection, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId, loadFailed: this.loadFailed })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);

@@ -21,7 +21,7 @@ import type { AudioFX } from '../audio/audio';
 import { isSoundCue, soundLabels, type SoundCue } from '../audio/sound';
 import { DAY_MINUTES, type DayNightOptions, type DayPeriod } from '../world/day-night';
 import { MotorcycleDynamics } from '../vehicles/motorcycle';
-import { removeStorage, storageKeys } from '../game/storage';
+import { eraseSavedProgress } from '../game/storage';
 import type { MapAPI } from '../map/workspace';
 import { vehicleDefinitions, type VehicleDefinition, type VehicleModel, type VehicleSpawn } from '../vehicles/vehicles';
 
@@ -832,7 +832,7 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       game.garage();
       hooks.refresh(); refreshUI();
     },
-    resetSave: () => { try { removeStorage(storageKeys.save); location.reload(); } catch { /* storage/location unavailable */ } },
+    resetSave: () => { try { eraseSavedProgress(game.campaignContent.id); location.reload(); } catch { /* storage/location unavailable */ } },
     configure: (settings) => { game.configure(settings); hooks.refresh(); refreshUI(); },
     upgrades: (patch) => {
       for (const key of Object.keys(patch) as Upgrade[]) {
