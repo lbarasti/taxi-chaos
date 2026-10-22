@@ -13,6 +13,20 @@ try {
     await page.evaluate(upgrade => {
       // Inspect real Web Audio responses without replacing the game mixer.
       window.engineFilters = [];
+      window.engineSources = [];
+      const createSource = AudioContext.prototype.createBufferSource;
+      AudioContext.prototype.createBufferSource = function () {
+        const source = createSource.call(this); engineSources.push(source); return source;
+      };
+      const createAnalyser = AudioContext.prototype.createAnalyser;
+      AudioContext.prototype.createAnalyser = function () {
+        const analyser = createAnalyser.call(this), capture = this.createMediaStreamDestination();
+        analyser.connect(capture);
+        window.engineRecorder = new MediaRecorder(capture.stream, { mimeType: 'audio/webm;codecs=opus' });
+        window.engineRecording = [];
+        engineRecorder.ondataavailable = event => engineRecording.push(event.data);
+        return analyser;
+      };
       const createFilter = AudioContext.prototype.createBiquadFilter;
       AudioContext.prototype.createBiquadFilter = function () {
         const filter = createFilter.call(this); engineFilters.push(filter); return filter;
@@ -26,16 +40,30 @@ try {
       window.engineTrace = [];
       window.engineTimer = setInterval(() => {
         const audio = __taxi.audio(), game = __taxi.state();
-        if (audio.engine) engineTrace.push({ time: game.time, speed: game.speed, ...audio.engine, peak: audio.peak });
+        if (audio.engine) engineTrace.push({ time: game.time, speed: game.speed, ...audio.engine, peak: audio.peak, playbackRate: engineSources.find(source => source.loop)?.playbackRate.value });
       }, 20);
     }, upgrade);
     await page.locator('#city').click({ position: { x: 500, y: 300 } });
     await page.waitForFunction(() => __taxi.audio()?.engine?.gear === 1);
     const idle = await page.evaluate(() => __taxi.audio().engine);
     assert(idle.rate < 0.7, 'occupied idle uses a lower engine pitch');
+    await page.evaluate(() => engineRecorder.start());
+    await page.waitForTimeout(1000);
+    const nativeRate = await page.evaluate(() => engineSources.find(source => source.loop).playbackRate.value);
+    assert(Math.abs(nativeRate - (1 - upgrade * 0.03)) < 0.01, 'idle preserves native road-car pitch and upgrade character');
     await page.keyboard.down('w');
     await page.waitForFunction(count => engineTrace.some(sample => sample.gear === count), count, { timeout: 25000 });
     await page.keyboard.up('w');
+    await page.waitForTimeout(300);
+    const recording = await page.evaluate(() => new Promise(resolve => {
+      engineRecorder.onstop = () => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(new Blob(engineRecording, { type: 'audio/webm' }));
+      };
+      engineRecorder.stop();
+    }));
+    await writeFile(`${output}/road-car-${count}-gears.webm`, Buffer.from(recording, 'base64'));
     const trace = await page.evaluate(() => { clearInterval(engineTimer); return engineTrace; });
     assert.deepEqual([...new Set(trace.map(sample => sample.gear))], Array.from({ length: count }, (_, i) => i + 1));
     assert(trace.some(sample => sample.shifting), 'live shifts reach the mixer');
@@ -43,7 +71,8 @@ try {
     const state = await page.evaluate(() => __taxi.audio());
     assert.equal(state.status, 'ready'); assert.deepEqual(state.failures, []);
     assert(state.loops.includes('engine') && state.loops.includes('engine-load'));
-    assert(trace.every(sample => sample.rate <= 1.56), 'road-car revs stay lower across all gears');
+    assert(trace.every(sample => sample.rate <= 1.56), 'transmission pitch stays bounded across all gears');
+    assert(trace.every(sample => sample.playbackRate < 2.8), 'real idle recordings rise only through a modest road-car rev range');
     const eq = await page.evaluate(() => {
       const bass = engineFilters.find(filter => filter.type === 'lowshelf');
       const magnitude = new Float32Array(2), phase = new Float32Array(2);
@@ -81,6 +110,6 @@ try {
     await page.waitForFunction(() => __taxi.audio().engine !== null);
     await page.context().close();
   }
-  console.log('Offline engine audio passed: physical 1–5/1–6 acceleration, live shifts, real decoded output, bass EQ, lower revs, independent player/ambient levels, muted horn output, other FX and realtime restoration; no console errors or external requests.');
+  console.log('Offline engine audio passed: physical 1–5/1–6 acceleration, live shifts, real decoded output, native recorded idle, recorded audio preview, bass EQ, bounded revs, independent player/ambient levels, muted horn output, other FX and realtime restoration; no console errors or external requests.');
 } catch (error) { await captureFailure(); throw error; }
 finally { await closeBrowser(browser); }

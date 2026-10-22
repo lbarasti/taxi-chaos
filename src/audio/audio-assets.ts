@@ -1,5 +1,6 @@
 // ?inline forces data URLs in dev AND production. No file:// fetch/CORS dependency.
 import engine from '../assets/audio/engine.wav?inline';
+import playerEngine from '../assets/audio/player-engine.wav?inline';
 import engineLoad from '../assets/audio/engine-load.wav?inline';
 import horn from '../assets/audio/horn.mp3?inline';
 import skid from '../assets/audio/skid.wav?inline';
@@ -28,7 +29,7 @@ import rumble from '../assets/audio/rumble.mp3?inline';
 import pulp from '../assets/audio/pulp.mp3?inline';
 
 export const audioAssets = {
-  engine, 'engine-load': engineLoad, horn, skid, fire, siren, 'boost-loop': boostLoop, 'boost-start': boostStart, 'boost-end': boostEnd,
+  engine, 'player-engine': playerEngine, 'engine-load': engineLoad, horn, skid, fire, siren, 'boost-loop': boostLoop, 'boost-start': boostStart, 'boost-end': boostEnd,
   'bump-0': bump0, 'bump-1': bump1, 'crunch-0': crunch0, 'crunch-1': crunch1, 'crash-0': crash0, 'crash-1': crash1,
   'wood-0': wood0, 'wood-1': wood1, 'metal-0': metal0, 'metal-1': metal1, 'glass-0': glass0, 'glass-1': glass1,
   'body-0': body0, 'body-1': body1, 'explosion-0': explosion0, 'explosion-1': explosion1, rumble, pulp,

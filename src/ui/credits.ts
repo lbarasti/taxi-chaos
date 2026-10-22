@@ -11,7 +11,9 @@ export type AudioLicence = keyof typeof LICENCE_URL;
 // Sound samples, grouped by the role each one plays in the mix.
 export type AudioCredit = { role: string; label: string; inlineLabel: string; href: string; licence: AudioLicence };
 export const audioCredits: readonly AudioCredit[] = [
-  { role: 'Engines & horns', label: 'GGBotNet', inlineLabel: 'Engines/horns', href: 'https://opengameart.org/content/car-sound-effects-pack-low-quality', licence: 'CC0' },
+  { role: 'Player engine (interior)', label: 'Nox Sound Design', inlineLabel: 'Player idle', href: 'https://freesound.org/people/Nox_Sound/sounds/522223/', licence: 'CC0' },
+  { role: 'Player engine (exterior)', label: 'Nox Sound Design', inlineLabel: 'Player load', href: 'https://freesound.org/people/Nox_Sound/sounds/522225/', licence: 'CC0' },
+  { role: 'Traffic engine & horns', label: 'GGBotNet', inlineLabel: 'Traffic/horns', href: 'https://opengameart.org/content/car-sound-effects-pack-low-quality', licence: 'CC0' },
   { role: 'Impacts & explosions', label: 'Kenney', inlineLabel: 'Impacts/explosions', href: 'https://kenney.nl/assets', licence: 'CC0' },
   { role: 'Sirens', label: 'aquinn', inlineLabel: 'Siren', href: 'https://opengameart.org/content/sirens-and-alarm-noise', licence: 'CC0' },
   { role: 'Tyres', label: 'audible-edge / Tom Haigh, loop by qubodup', inlineLabel: 'Tyres', href: 'https://opengameart.org/content/car-tire-squeal-skid-loop', licence: 'CC BY 3.0' },

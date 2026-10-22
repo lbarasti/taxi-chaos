@@ -1,5 +1,8 @@
 import { clamp } from '../physics/physics';
 
+// Normalised transmission pitch; recordings calibrate their native idle against it.
+export const ENGINE_IDLE_RATE = 0.56;
+
 export type EngineSignal = { gear: number; gears: number; rpm: number; shifting: boolean; rate: number; gain: number };
 type EngineInput = { vehicle: number; time: number; speed: number; throttle: number; boosting: boolean; gearSpeeds: readonly number[] };
 
@@ -45,7 +48,7 @@ export class EngineSound {
     const load = clamp(this.gear < 0 ? -throttle : throttle, 0, 1);
     const rpm = clamp(Math.max(roadSpeed / gearSpeeds[Math.max(0, this.gear - 1)], load * 0.18) + (boosting && !shifting ? 0.04 : 0), 0, 1);
     return { gear: this.gear, gears, rpm, shifting,
-      rate: 0.56 + rpm,
+      rate: ENGINE_IDLE_RATE + rpm,
       // Leave headroom for tyres, impacts, boost and nearby world effects.
       gain: (0.055 + rpm * 0.035 + load * 0.035) * (shifting ? 0.28 : 1),
     };

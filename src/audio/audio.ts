@@ -3,7 +3,7 @@ import { clamp, dist, dot, length, rotate, vec, type Vec } from '../physics/phys
 import { audioAssets, type AudioAsset } from './audio-assets';
 import { drivingSound, soundLabels, soundPriority, spatialSound, trafficEngineGain, isAmbientCue, type SoundCue, type SoundEvent } from './sound';
 import { readStorage, storageKeys } from '../game/storage';
-import { EngineSound, type EngineSignal } from './engine';
+import { ENGINE_IDLE_RATE, EngineSound, type EngineSignal } from './engine';
 
 export type AudioPreferences = { muted: boolean; volume: number; playerEngine: number; ambient: number; sirens: number };
 export function audioPreferences(value: Partial<AudioPreferences> = {}): AudioPreferences {
@@ -116,8 +116,8 @@ export class AudioFX {
       const engine = drivingSound(16, 0.8, 0, false);
       const engineLevel = 0.1 * this.preferences.playerEngine;
       const layers: LoopTarget[] = cue === 'engine'
-        ? [{ asset: 'engine', gain: engine.engineGain * engineLevel, rate: 1.08, cutoff: engine.engineCutoff, engineTone: true },
-          { asset: 'engine-load', gain: engine.engineLoadGain * engineLevel, rate: 1.08, cutoff: engine.engineCutoff, engineTone: true }]
+        ? [{ asset: 'player-engine', gain: engine.engineGain * engineLevel, rate: 1.65, cutoff: engine.engineCutoff, engineTone: true },
+          { asset: 'engine-load', gain: engine.engineLoadGain * engineLevel, rate: 1.65, cutoff: engine.engineCutoff, engineTone: true }]
         : [{ asset: cue as AudioAsset, gain, ambient: isAmbientCue(cue) }];
       let played = false;
       for (const layer of layers) {
@@ -150,7 +150,7 @@ export class AudioFX {
     this.audible = running || ambient;
     const desired = new Map<string, LoopTarget>();
     this.engineSignal = null;
-    if (ambient) desired.set('engine', { asset: 'engine', gain: 0.055 * this.preferences.playerEngine, rate: 0.56, cutoff: 650, engineTone: true });
+    if (ambient) desired.set('engine', { asset: 'player-engine', gain: 0.055 * this.preferences.playerEngine, rate: 1, cutoff: 650, engineTone: true });
     if (running) {
       for (const event of events.sort((a, b) => b.priority - a.priority)) if (event.cue !== 'pulp' || game.settings.gore) this.play(event);
       const player = game.player, driving = game.mode === 'playing' && !game.onFoot && !player.sinking && player.damage.status !== 'wreck';
@@ -166,8 +166,8 @@ export class AudioFX {
           speed: forwardSpeed, throttle: game.controls.throttle, boosting: boost, gearSpeeds: gears });
         const pitch = player.definition.graphics.enginePitch;
         const level = engine.gain * this.preferences.playerEngine * (pitch > 1 ? 0.85 : 1);
-        const rate = engine.rate * signal.enginePitch * pitch, cutoff = signal.engineCutoff * (engine.shifting ? 0.6 : 1);
-        desired.set('engine', { asset: 'engine', gain: signal.engineGain * level, rate, cutoff, engineTone: true });
+        const rate = engine.rate / ENGINE_IDLE_RATE * signal.enginePitch * pitch, cutoff = signal.engineCutoff * (engine.shifting ? 0.6 : 1);
+        desired.set('engine', { asset: 'player-engine', gain: signal.engineGain * level, rate, cutoff, engineTone: true });
         desired.set('engine-load', { asset: 'engine-load', gain: signal.engineLoadGain * level, rate, cutoff, engineTone: true });
         desired.set('skid', { asset: 'skid', gain: signal.skidGain, rate: 0.92 + clamp(game.speed / 120, 0, 0.3), cutoff: 3500 });
         if (boost) desired.set('boost', { asset: 'boost-loop', gain: signal.boostGain, rate: signal.boostRate, cutoff: signal.boostCutoff });

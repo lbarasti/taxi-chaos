@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 // Lifecycle tests use tiny fake buffers; real sample decoding/output is browser-tested.
-vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'engine-load', 'horn', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
+vi.mock('./audio-assets', () => ({ audioAssets: Object.fromEntries(['engine', 'player-engine', 'engine-load', 'horn', 'skid', 'fire', 'siren', 'boost-loop', 'boost-start', 'boost-end', 'bump-0', 'crunch-0', 'crash-0', 'explosion-0', 'rumble', 'pulp'].map(name => [name, 'data:audio/wav;base64,AAAA'])) }));
 import { AudioFX, audioPreferences } from './audio';
 import { Game } from '../game/game';
 import { vec } from '../physics/physics';
@@ -201,6 +201,20 @@ describe('audio lifecycle and bounded mixer', () => {
     expect(audio.state().played.crash).toBe(1);
     audio.configure({ playerEngine: 1 }); audio.update(game, true, true);
     expect(audio.state().loops).toContain('engine');
+  });
+  it('plays the road-car idle at its native recorded pitch and raises it with RPM', async () => {
+    const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);
+    await audio.unlock(); game.start(); game.vehicles = [game.player];
+    audio.update(game, true, true);
+    const source = ctx.createBufferSource.mock.results[0].value;
+    expect(source.playbackRate.value).toBe(1);
+    expect(source.playbackRate.setTargetAtTime.mock.lastCall![0]).toBe(1);
+    game.controls.throttle = 1; game.player.body.angle = 0; game.player.body.velocity = vec(6.4, 0);
+    audio.update(game, true, true);
+    const beforeShift = source.playbackRate.setTargetAtTime.mock.lastCall![0];
+    expect(beforeShift).toBeGreaterThan(2); expect(beforeShift).toBeLessThan(2.8);
+    game.time += 1 / 60; game.player.body.velocity = vec(6.6, 0); audio.update(game, true, true);
+    expect(source.playbackRate.setTargetAtTime.mock.lastCall![0]).toBeLessThan(beforeShift * 0.85);
   });
   it('warms both player layers at source creation and keeps traffic EQ unchanged', async () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game(undefined, false);
