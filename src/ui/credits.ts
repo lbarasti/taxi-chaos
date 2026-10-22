@@ -1,31 +1,22 @@
-// Credits page data. One authoring source feeds both the grouped credits page
-// and the compact inline note used by the lab, so attribution and licence
-// wording never drift. Standalone builds also embed src/assets/audio/CREDITS.md
+// Credits page data. Standalone builds also embed src/assets/audio/CREDITS.md
 // and src/assets/OFL.txt as HTML comments (see vite.config.ts).
 const escape = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 const link = (label: string, href: string) => `<a href="${href}" target="_blank" rel="noopener">${escape(label)}</a>`;
 
 const LICENCE_URL = { CC0: 'https://creativecommons.org/publicdomain/zero/1.0/', 'CC BY 3.0': 'https://creativecommons.org/licenses/by/3.0/' } as const;
-export type AudioLicence = keyof typeof LICENCE_URL;
 
 // Sound samples, grouped by the role each one plays in the mix.
-export type AudioCredit = { role: string; label: string; inlineLabel: string; href: string; licence: AudioLicence };
+type AudioCredit = { role: string; label: string; href: string; licence: keyof typeof LICENCE_URL };
 export const audioCredits: readonly AudioCredit[] = [
-  { role: 'Player engine (interior)', label: 'Nox Sound Design', inlineLabel: 'Player idle', href: 'https://freesound.org/people/Nox_Sound/sounds/522223/', licence: 'CC0' },
-  { role: 'Player engine (exterior)', label: 'Nox Sound Design', inlineLabel: 'Player load', href: 'https://freesound.org/people/Nox_Sound/sounds/522225/', licence: 'CC0' },
-  { role: 'Traffic engine & horns', label: 'GGBotNet', inlineLabel: 'Traffic/horns', href: 'https://opengameart.org/content/car-sound-effects-pack-low-quality', licence: 'CC0' },
-  { role: 'Impacts & explosions', label: 'Kenney', inlineLabel: 'Impacts/explosions', href: 'https://kenney.nl/assets', licence: 'CC0' },
-  { role: 'Sirens', label: 'aquinn', inlineLabel: 'Siren', href: 'https://opengameart.org/content/sirens-and-alarm-noise', licence: 'CC0' },
-  { role: 'Tyres', label: 'audible-edge / Tom Haigh, loop by qubodup', inlineLabel: 'Tyres', href: 'https://opengameart.org/content/car-tire-squeal-skid-loop', licence: 'CC BY 3.0' },
-  { role: 'Boost', label: 'Iwan Gabovitch / qubodup', inlineLabel: 'Boost', href: 'https://opengameart.org/content/racing-speed-boost-sound', licence: 'CC BY 3.0' },
-  { role: 'Fire', label: 'qubodup', inlineLabel: 'Fire', href: 'https://opengameart.org/content/fire-loop', licence: 'CC BY 3.0' },
+  { role: 'Player engine (interior)', label: 'Nox Sound Design', href: 'https://freesound.org/people/Nox_Sound/sounds/522223/', licence: 'CC0' },
+  { role: 'Player engine (exterior)', label: 'Nox Sound Design', href: 'https://freesound.org/people/Nox_Sound/sounds/522225/', licence: 'CC0' },
+  { role: 'Traffic engine & horns', label: 'GGBotNet', href: 'https://opengameart.org/content/car-sound-effects-pack-low-quality', licence: 'CC0' },
+  { role: 'Impacts & explosions', label: 'Kenney', href: 'https://kenney.nl/assets', licence: 'CC0' },
+  { role: 'Sirens', label: 'aquinn', href: 'https://opengameart.org/content/sirens-and-alarm-noise', licence: 'CC0' },
+  { role: 'Tyres', label: 'audible-edge / Tom Haigh, loop by qubodup', href: 'https://opengameart.org/content/car-tire-squeal-skid-loop', licence: 'CC BY 3.0' },
+  { role: 'Boost', label: 'Iwan Gabovitch / qubodup', href: 'https://opengameart.org/content/racing-speed-boost-sound', licence: 'CC BY 3.0' },
+  { role: 'Fire', label: 'qubodup', href: 'https://opengameart.org/content/fire-loop', licence: 'CC BY 3.0' },
 ];
-
-// The compact two-line form kept beside the lab's audio controls.
-export function audioCreditsMarkup() {
-  const group = (licence: AudioLicence) => audioCredits.filter(credit => credit.licence === licence).map(credit => `${escape(credit.inlineLabel)}: ${link(credit.label, credit.href)}`).join(' · ');
-  return `<div class="audio-credits"><p>${group('CC0')} (CC0).</p><p>${group('CC BY 3.0')} (${link('CC BY 3.0', LICENCE_URL['CC BY 3.0'])}). Samples edited for mono, loudness, loop seams and size; pitch/filter changes in-game.</p></div>`;
-}
 
 const row = (role: string, value: string, tag = '') =>
   `<div class="credit-row"><dt>${escape(role)}</dt><dd>${value}${tag ? ` <span class="credit-tag">${escape(tag)}</span>` : ''}</dd></div>`;

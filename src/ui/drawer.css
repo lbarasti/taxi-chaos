@@ -16,12 +16,9 @@
 .splash-modal .menu-item:disabled{opacity:.4}
 .menu-hint{font-size:10px;letter-spacing:.4px;color:#aebcaf;margin:17px 0 0}
 .splash-modal .intro-controls{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:14px;font-size:10px;margin:17px 0}.splash-modal .intro-controls>span{display:flex;align-items:center;gap:6px}
-.splash-modal .play-options{display:grid;align-items:stretch;gap:10px;font-size:13px;margin:24px 0}
-.splash-modal .play-options label{min-height:48px;justify-content:space-between}.splash-modal .play-options label>span{font-size:10px}
 .splash-modal .menu-field{border:1px solid transparent;border-radius:4px;padding:8px;transition:background .16s,border-color .16s}
 .splash-modal .menu-field:has([data-selected]){background:#f7ce5510;border-color:#f7ce5555}
-.splash-modal .audio-settings{gap:12px;padding:16px 8px;font-size:13px}.splash-modal .audio-settings label{min-height:44px}.splash-modal .audio-settings label:not(.audio-toggle){grid-template-columns:65px minmax(0,1fr) 36px}.splash-modal .audio-settings input[type=range]{min-width:0}.splash-modal .audio-settings .menu-item{font-size:13px}
-.splash-modal .audio-credits{font-size:13px;line-height:1.8;margin:24px 0}.splash-modal .audio-credits p{font-size:12px;margin:16px 0}.splash-modal .audio-credits a{overflow-wrap:anywhere}.splash-modal a[data-selected]{outline:2px solid var(--gold);outline-offset:3px}
+.splash-modal a[data-selected]{outline:2px solid var(--gold);outline-offset:3px}
 /* Settings and credits share unboxed sections and the same heading hierarchy. */
 .credits-section,.settings-group{min-width:0;margin:22px 0 0;padding:0;border:0}
 .credits-title,.settings-group legend{margin:0 0 10px;padding:0;font-size:12px;font-weight:600;line-height:1.5;letter-spacing:1.5px;text-transform:uppercase;color:var(--mint)}
