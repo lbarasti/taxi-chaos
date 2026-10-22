@@ -24,25 +24,24 @@
 .notification-timer i{display:block;height:100%;background:var(--notice-accent);transform:scaleX(var(--remaining,1));transform-origin:left}
 .notification-card .receipt-summary{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .notification-receipt{container-type:inline-size;min-height:0;overflow:auto;scrollbar-width:thin;touch-action:pan-y}
-.receipt-money,.receipt-scores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.receipt-money>div{min-width:0}
-.receipt-money span{display:block;font-size:9px;line-height:1.4;letter-spacing:.4px;text-transform:uppercase}
-.receipt-money strong{display:block;font-size:clamp(18px,12cqi,32px);font-weight:600;line-height:1.2;letter-spacing:-1px;font-variant-numeric:tabular-nums;margin:5px 0 3px}
-.receipt-money small{display:block;color:#a5bcb2;font-size:9px;line-height:1.4}
-.receipt-total{color:var(--mint)}
-.receipt-tips{color:var(--gold)}
-.receipt-tips strong{font-size:clamp(18px,10cqi,28px)}
-.receipt-scores{margin-top:14px;padding-top:12px;border-top:1px solid #c6d9c51c}
-.receipt-score{min-width:0;color:#edcc7d}
+.receipt-card{background:#1c2b27f5}
+.receipt-card .notification-category{font-size:12px;letter-spacing:.3px}
+.receipt-money{min-width:0}
+.receipt-total{display:block;color:var(--mint);font-size:44px;font-weight:600;line-height:1.1;letter-spacing:-1.8px;font-variant-numeric:tabular-nums}
+.receipt-breakdown{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;color:#b8c7bd;font-size:11px;line-height:1.4;font-variant-numeric:tabular-nums}
+.receipt-breakdown>span{white-space:nowrap}
+.receipt-scores{display:grid;gap:13px;margin-top:14px;max-width:150px}
+.receipt-score{display:grid;grid-template-columns:24px minmax(0,1fr) max-content;align-items:center;gap:7px;min-width:0;color:#edcc7d}
 .receipt-comfort{color:#8fd3e0}
-.receipt-score>span{font-size:10px;line-height:1.4}
-.receipt-score>strong{display:block;font-size:21px;line-height:1.2;font-weight:500;font-variant-numeric:tabular-nums;margin:3px 0 6px}
-.receipt-score b{font-weight:inherit}
-.receipt-score strong small{font-size:9px;color:#9cafa9;margin-left:2px}
-.receipt-meter{height:5px;background:#ffffff0d;border-radius:3px;overflow:hidden}
-.receipt-meter i{display:block;width:100%;height:100%;border-radius:3px;background:currentColor;transform:scaleX(var(--score,0));transform-origin:left}
-.receipt-bonus{display:block;margin-top:6px;font-size:9px;line-height:1.4;color:#b8c7bd}
-@container(max-width:180px){.receipt-money span{min-height:2.8em}}
+.receipt-icon{width:24px;height:24px}
+.receipt-meter{height:5px;background:color-mix(in srgb,currentColor 20%,transparent);border-radius:2px;overflow:hidden}
+.receipt-meter i{display:block;width:100%;height:100%;border-radius:2px;background:currentColor;transform:scaleX(var(--score,0));transform-origin:left}
+.receipt-bonus{font-size:10px;line-height:1.4;font-variant-numeric:tabular-nums}
+@container(min-width:220px){
+  .receipt-money{float:left;width:52%;padding-right:10px}
+  .receipt-scores{margin:8px 0 5px 52%;max-width:140px}
+}
+@container(max-width:180px){.receipt-total{font-size:38px}}
 body:has(.mission-inbox:not([hidden])) .notification-stack,
 body:has(.mission-inbox:not([hidden])) .campaign-notice{visibility:hidden}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){

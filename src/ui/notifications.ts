@@ -17,12 +17,12 @@ export const notificationsMarkup = `<section id="notifications" class="notificat
     <p class="notification-message" role="status" aria-live="polite" aria-atomic="true"></p>
     <div class="notification-receipt" aria-label="Trip receipt" tabindex="0" hidden>
       <div class="receipt-money">
-        <div class="receipt-total"><span class="receipt-title"></span><strong data-receipt="payout"></strong><small class="receipt-base"></small></div>
-        <div class="receipt-tips"><span>Tips included</span><strong data-receipt="tips"></strong><small>In your total</small></div>
+        <strong class="receipt-total" data-receipt="payout"></strong>
+        <div class="receipt-breakdown"><span class="receipt-base"></span><span>Tip <span data-receipt="tips"></span></span></div>
       </div>
       <div class="receipt-scores">
-        <div class="receipt-score receipt-speed" title="Score based on time remaining against the fare target."><span>Speed</span><strong><b data-receipt="speedScore"></b><small>/100</small></strong><div class="receipt-meter" role="meter" aria-label="Speed score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="speedBonus"></small></div>
-        <div class="receipt-score receipt-comfort" title="Comfort retained through the ride."><span>Comfort</span><strong><b data-receipt="comfortScore"></b><small>/100</small></strong><div class="receipt-meter" role="meter" aria-label="Comfort score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="comfortBonus"></small></div>
+        <div class="receipt-score receipt-comfort"><svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 9 2 8h7 M8 6v.5 M7 9h3l2 6h5"/></svg><div class="receipt-meter" role="meter" aria-label="Comfort score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="comfortBonus"></small></div>
+        <div class="receipt-score receipt-speed"><svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M5 16a8 8 0 1 1 14 0 M12 5v2 M5 10l2 1 M19 10l-2 1 M12 13l4-5"/><circle cx="12" cy="13" r="1"/></svg><div class="receipt-meter" role="meter" aria-label="Speed score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="speedBonus"></small></div>
       </div>
     </div>
     <footer><span class="notification-count"></span><span class="notification-lifetime"></span></footer>
@@ -58,9 +58,11 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
     if (!current) { displayedId = undefined; game.notificationsVisible = false; return; }
     displayedId = current.id;
     stack.dataset.depth = String(Math.min(3, game.notifications.items.length));
-    card.className = `notification-card visible ${current.kind}`;
+    card.className = `notification-card visible ${current.kind}${current.receipt ? ' receipt-card' : ''}`;
     card.dataset.category = current.category;
-    stack.querySelector('.notification-category')!.textContent = labels[current.category];
+    const heading = stack.querySelector('.notification-category')!;
+    heading.textContent = current.receipt ? current.receipt.type === 'parcel' ? 'Delivery complete' : 'Fare complete' : labels[current.category];
+    heading.classList.toggle('receipt-title', !!current.receipt);
     if (displayedCategory !== current.category) {
       stack.querySelector('.notification-symbol')!.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${symbols[current.category]}"/></svg>`;
       displayedCategory = current.category;
@@ -74,14 +76,17 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
       receiptView.scrollTop = 0;
       if (displayedReceipt) {
         const receipt = displayedReceipt;
-        receiptView.querySelector('.receipt-title')!.textContent = receipt.type === 'parcel' ? 'Delivery complete' : 'Fare complete';
         receiptView.querySelector('.receipt-base')!.textContent = `Base ${money(receipt.baseFare)}`;
-        for (const key of ['payout', 'tips', 'speedScore', 'comfortScore', 'speedBonus', 'comfortBonus'] as const) {
-          receiptView.querySelector(`[data-receipt="${key}"]`)!.textContent = key.endsWith('Score') ? String(receipt[key]) : key.endsWith('Bonus') ? `+${money(receipt[key])} bonus` : money(receipt[key]);
+        for (const key of ['payout', 'tips', 'speedBonus', 'comfortBonus'] as const) {
+          receiptView.querySelector(`[data-receipt="${key}"]`)!.textContent = key.endsWith('Bonus') ? `+${receipt[key]}` : money(receipt[key]);
         }
         for (const [selector, score] of [['.receipt-speed', receipt.speedScore], ['.receipt-comfort', receipt.comfortScore]] as const) {
           const meter = receiptView.querySelector<HTMLElement>(`${selector} .receipt-meter`)!;
+          const label = selector === '.receipt-speed' ? 'Speed' : 'Comfort';
+          const bonus = selector === '.receipt-speed' ? receipt.speedBonus : receipt.comfortBonus;
           meter.setAttribute('aria-valuenow', String(score));
+          meter.setAttribute('aria-valuetext', `${score} out of 100; ${money(bonus)} bonus`);
+          meter.parentElement!.title = `${label}: ${score}/100 · ${money(bonus)} bonus`;
           meter.style.setProperty('--score', String(score / 100));
         }
       }

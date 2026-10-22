@@ -105,10 +105,17 @@ try {
     }));
     assert.equal(await page.locator('#campaign-notice').isVisible(), false);
     assert.equal(await page.locator('.receipt-title').textContent(), 'Fare complete');
+    assert.equal(await page.locator('.receipt-scores > :first-child').getAttribute('class'), 'receipt-score receipt-comfort');
+    assert.equal(await page.locator('.receipt-breakdown').innerText(), 'Base $97\nTip $35');
     assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$132');
     assert.equal(await page.locator('[data-receipt=tips]').textContent(), '$35');
     assert.equal(await page.locator('.receipt-speed [role=meter]').getAttribute('aria-valuenow'), '65');
     assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuenow'), '90');
+    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuetext'), '90 out of 100; $27 bonus');
+    for (const bar of await page.locator('.receipt-meter').all()) {
+      const size = await bar.boundingBox();
+      assert(size.width > 20 && size.width <= 100, `${name}: compact score bars remain readable`);
+    }
     assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--score')), '0.65');
     assert.equal(await page.locator('.receipt-comfort [role=meter]').evaluate(e => e.style.getPropertyValue('--score')), '0.9');
     assert.equal(await page.locator('#toast footer').isVisible(), false);
@@ -129,6 +136,7 @@ try {
       assert(Math.hypot(scrolled.position.x - parked.position.x, scrolled.position.y - parked.position.y) < 0.05, 'scrolling a receipt must not drive the car');
     }
     await page.evaluate(() => __taxi.notify('Stop the cab to enter Pit Stop.', '', { category: 'services' }));
+    assert.equal(await page.locator('.notification-category').textContent(), 'Roadside & services');
     assert.equal(await page.locator('.notification-receipt').isVisible(), false);
     await page.evaluate(() => __taxi.step(4));
     assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$132', `${name}: covered receipt retains its totals`);
