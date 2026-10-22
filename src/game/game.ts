@@ -1032,7 +1032,6 @@ export class Game {
     const local = rotate(sub(point, v.body.position), -v.body.angle), cargo = v.definition.cargo;
     const result = impactDamage(v.damage, { impact, localPoint: vec(local.x * 4.2 / v.body.w, local.y * 2.1 / v.body.h), armor: v.upgrades.armor + (v.kind === 'police' ? 1 : 0), time: this.time, scale: this.rules.damageScale * v.definition.damage.impactScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
     if (cargo.flammable && result.damage > 0 && closingSpeed >= cargo.ignitionImpact && local.x < v.body.w / 2 - v.definition.graphics.cabLength) igniteVehicle(v.damage, cargo.fuse, blamed);
-    if (result.ignited && v === this.player && !this.onFoot) this.notify(`${v.definition.graphics.sprite === 'motorcycle' ? 'BIKE' : 'CAB'} ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
   }
   igniteProp(prop: Prop, blamed: boolean, fuse = 4.5) {
     if (prop.fuelSpent || !['pump', 'station'].includes(prop.kind)) return;
@@ -1068,7 +1067,6 @@ export class Game {
       const result = blastDamage(v.damage, effect.damage, { armor: v.upgrades.armor, time: this.time, scale: this.rules.damageScale * v.definition.damage.blastScale, blamed: blast.blamed, fuse: Math.min(this.rules.fireFuse, 1.7), invincible: v.kind === 'taxi' && this.settings.invincible });
       const cargo = v.definition.cargo;
       if (cargo.flammable && result.damage > 0 && effect.damage >= cargo.ignitionBlast) igniteVehicle(v.damage, Math.min(cargo.fuse, 1.7), blast.blamed);
-      if (result.ignited && v === this.player && !this.onFoot) this.notify('FUEL ON FIRE · Press E to bail out, then run clear!', 'danger');
     }
     for (const prop of this.world.props) {
       if (!prop.alive || prop.kind === 'building' || prop.id === blast.sourceProp) continue;
