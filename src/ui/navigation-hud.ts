@@ -7,6 +7,7 @@ import { onBoardCue } from '../rendering/onboard-cue';
 const paths = {
   dispatch: '<path d="M4.5 13.5v-1.6a7.5 7.5 0 0 1 15 0v1.6"/><path d="M4.5 12.5h2.2a1 1 0 0 1 1 1v3.4a1 1 0 0 1-1 1H5.6a1.1 1.1 0 0 1-1.1-1.1zM19.5 12.5h-2.2a1 1 0 0 0-1 1v3.4a1 1 0 0 0 1 1h1.1a1.1 1.1 0 0 0 1.1-1.1z"/><path d="M17 19.4a3.4 3.4 0 0 1-3 1.6h-1.4"/>',
   message: '<path d="M21 14a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 8h10M7 12h7"/>',
+  shift: '<path d="M5 3h14v18H5zM9 3v3h6V3M8 11h8M8 15h8M8 18h5"/>',
   news: '<path d="M4 5h13v15H4zM17 9h3v11H7M7 9h7M7 13h7M7 17h4"/>',
   camera: '<path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
@@ -23,6 +24,7 @@ export const navigationHudMarkup = `<aside class="navigation-hud" aria-label="Ta
 <div class="navigation-actions" role="group" aria-label="Dispatch and campaign shortcuts">
   <button id="dispatch" aria-pressed="true" aria-label="Dispatch: route the next fare" title="Dispatch: route the next fare">${icon('dispatch')}</button>
   <button id="texts" aria-label="Bookings: read text messages" title="Bookings · read text messages">${icon('message')}<span id="texts-unread" class="texts-unread" aria-hidden="true" hidden></span></button>
+  <button id="shift" aria-label="This shift: stats since waking" title="This shift · Tab" aria-keyshortcuts="Tab" aria-haspopup="dialog" aria-controls="modal">${icon('shift')}</button>
   <button id="newsroom" aria-label="Newsroom: view records and story readiness" title="Newsroom · records and story readiness" aria-haspopup="dialog" aria-controls="modal">${icon('news')}</button>
   <button id="observe" aria-label="Record a nearby observation" title="Record a nearby observation" hidden disabled>${icon('camera')}<span class="observation-recorded" aria-hidden="true">${icon('check')}</span></button>
 </div>`;
@@ -71,7 +73,7 @@ export function navigationHudState(g: Game, fareRouted = true) {
   };
 }
 
-export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, actions: { texts: () => void; newsroom: () => void; focus: () => void; routeVisibility: (visible: boolean) => void }) {
+export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, actions: { texts: () => void; shift: () => void; newsroom: () => void; focus: () => void; routeVisibility: (visible: boolean) => void }) {
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = root.querySelector<HTMLElement>('.navigation-hud')!;
   const dispatch = get('dispatch') as HTMLButtonElement;
@@ -111,6 +113,7 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     refresh(); actions.focus();
   });
   get('texts').addEventListener('click', actions.texts);
+  get('shift').addEventListener('click', actions.shift);
   get('newsroom').addEventListener('click', () => {
     const g = currentGame();
     if (g.mode === 'playing' && g.campaignEnabled) actions.newsroom();
@@ -151,6 +154,7 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     unreadBadge.hidden = unread === 0;
     const textsLabel = unread ? `Bookings: ${unread} unread text ${unread === 1 ? 'message' : 'messages'}` : 'Bookings: read text messages';
     if (texts.getAttribute('aria-label') !== textsLabel) { texts.setAttribute('aria-label', textsLabel); texts.title = textsLabel; }
+    (get('shift') as HTMLButtonElement).disabled = g.mode !== 'playing';
     const observation = observationActionState(g);
     observe.hidden = !observation;
     observe.disabled = !observation || observation.disabled;

@@ -17,11 +17,11 @@ describe('startup splash', () => {
   });
   it('reuses the start drawer with live progress and resume for a paused shift', () => {
     const game = new Game(undefined, false); game.start(); game.setMode('paused');
-    game.shiftEarnings = 175; game.jobsDone = 3; game.smashed = 9; game.kills = 2;
+    game.save.shiftStats = { earnings: 175, jobs: 3, smashed: 9, kills: 2 };
     const html = splashMarkup(game, false);
     expect(html).toContain('A little cab.'); expect(html).toContain('Resume your shift');
     expect(html).toContain('YOUR CURRENT SHIFT · PAUSED'); expect(html).not.toContain('Start your shift');
-    expect(html).toContain('Dispatch notebook');
+    expect(html).toContain('Dispatch notebook'); expect(html).not.toContain('menu-shift'); expect(html).toContain('Since you last woke up.'); expect(html).toContain('$175');
     const shift = shiftMarkup(game, '<button>Sleep</button>');
     expect(shift).toContain('$175'); expect(shift).toContain('PEDESTRIAN FATALITIES'); expect(shift).toContain('Sleep');
     game.mode = 'intro';

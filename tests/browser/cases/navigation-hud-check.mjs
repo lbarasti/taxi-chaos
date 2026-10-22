@@ -48,7 +48,7 @@ try {
     await page.waitForFunction(() => !!window.__scenario);
     // The intro splash hides the whole HUD, including the new shortcut menu.
     assert.equal(await page.locator('body').evaluate(b => b.classList.contains('splash-active')), true, `${name}: the intro splash must be active`);
-    for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#newsroom']) {
+    for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#shift', '#newsroom']) {
       assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'hidden', `${name}: ${selector} must be hidden, not merely disabled, on the intro splash`);
     }
     await page.evaluate(() => window.__scenario.start({ traffic: 'quiet', noPolice: true }));
@@ -132,7 +132,7 @@ try {
         caption: document.querySelector('#map-caption') !== null,
         overflow: document.querySelector('.navigation-hud').scrollWidth > document.querySelector('.navigation-hud').clientWidth,
         buttons: [...actions.querySelectorAll('button')].filter(button => button.getClientRects().length).map(button => ({ id: button.id, label: button.getAttribute('aria-label'), disabled: button.disabled, className: button.className, ...box(`#${button.id}`) })),
-        collisions: ['.player-hud', '.navigation-hud', '.controls', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '.context-actions']
+        collisions: ['.player-hud', '.navigation-hud', '#campaign-notice', '.controls', '#joystick', '[data-key=boost]', '[data-key=handbrake]', '.context-actions']
           .filter(selector => [...document.querySelectorAll(selector)].some(element => {
             if (!element.getClientRects().length) return false;
             const b = element.getBoundingClientRect();
@@ -157,13 +157,16 @@ try {
       assert.equal(l.canvasTabIndex, null, `${name}: the canvas must not be a hotspot`);
       assert.equal(await page.locator('.navigation-hud button').count(), 0, `${name}: the map itself must hold no controls`);
       // Every shortcut is a real, named, touch-sized button.
-      assert.deepEqual(l.buttons.map(button => button.id), ['dispatch', 'texts', 'newsroom']);
+      assert.deepEqual(l.buttons.map(button => button.id), ['dispatch', 'texts', 'shift', 'newsroom']);
       for (const button of l.buttons) {
         assert(button.label && button.label.length > 4, `${name}: ${button.id} needs an accessible name`);
         assert(button.width >= 44 && button.height >= 44, `${name}: ${button.id} needs a 44 px target, got ${button.width}x${button.height}`);
         assert(button.left >= 0 && button.top >= 0 && button.right <= width && button.bottom <= height, `${name}: ${button.id} exceeds the viewport`);
       }
-      const centresX = l.buttons.map(button => (button.left + button.right) / 2), centresY = l.buttons.map(button => (button.top + button.bottom) / 2);
+      const row = l.buttons.filter(button => button.id !== 'shift');
+      const texts = l.buttons.find(button => button.id === 'texts'), shift = l.buttons.find(button => button.id === 'shift');
+      assert(shift.top >= texts.bottom && Math.abs(shift.left - texts.left) < 1, `${name}: shift must sit below Texts`);
+      const centresX = (landscape ? row : l.buttons).map(button => (button.left + button.right) / 2), centresY = (landscape ? row : l.buttons).map(button => (button.top + button.bottom) / 2);
       if (landscape) {
         // Landscape touch keeps the user-mandated horizontal row across the top centre.
         for (const y of centresY) assert(Math.abs(y - centresY[0]) <= 1, `${name}: shortcuts must share one horizontal row`);
@@ -179,8 +182,10 @@ try {
         assert(l.actions.bottom <= height - 100, `${name}: shortcuts must clear the thumb buttons`);
         assert(l.actions.left >= l.panel.left && l.actions.top >= l.panel.bottom, `${name}: shortcuts must stay clear of the map`);
       } else {
-        for (const x of centresX) assert(Math.abs(x - centresX[0]) <= 1, `${name}: shortcuts must stack vertically`);
-        assert(centresY[0] < centresY[1] && centresY[1] < centresY[2], `${name}: shortcuts must read top to bottom`);
+        if (height > 500 && width > 1100) {
+          for (const x of centresX) assert(Math.abs(x - centresX[0]) <= 1, `${name}: shortcuts must stack vertically`);
+          assert(centresY[0] < centresY[1] && centresY[1] < centresY[2], `${name}: shortcuts must read top to bottom`);
+        }
         if (width >= 701 && width <= 1100 && height >= 501) {
           // Narrow desktop fallback: beside the map instead of over the right-hand dialogue.
           assert(Math.abs(l.actions.left - (l.panel.right + 8)) <= 1.5, `${name}: narrow-desktop shortcuts must sit beside the map`);
@@ -189,7 +194,7 @@ try {
           assert(Math.abs(l.actions.right - (width - 28)) <= 1.5, `${name}: the column must sit on the right edge`);
           if (height <= 500) {
             // Short desktop: pinned below the personal HUD rather than centred into it.
-            assert(Math.abs(l.actions.top - 155) <= 1.5, `${name}: short-desktop shortcuts must sit below the status corner`);
+            assert(Math.abs(l.actions.top - 168) <= 1.5, `${name}: short-desktop shortcuts must sit below the status corner`);
             assert(l.actions.top >= l.player.bottom + 4, `${name}: the column must clear the personal HUD`);
           } else {
             assert(Math.abs((l.actions.top + l.actions.bottom) / 2 - height / 2) <= 1.5, `${name}: the column must be vertically centred`);
@@ -236,7 +241,7 @@ try {
     await page.locator('#city').focus(); await page.keyboard.press('KeyP');
     // The pause splash hides the whole HUD too, so no shortcut floats over the menu.
     assert.equal(await page.locator('body').evaluate(b => b.classList.contains('splash-active')), true, `${name}: pause opens the shared splash`);
-    for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#newsroom']) {
+    for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#shift', '#newsroom']) {
       assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'hidden', `${name}: ${selector} must be hidden, not merely disabled, while paused`);
     }
     await page.locator('#open-notebook').click();

@@ -14,6 +14,7 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 | R | Optional tow and repair when near a wreck |
 | H | Set or cancel a route to harbour security |
 | G | Set or cancel a garage route; enter when stopped nearby |
+| Tab / HUD clipboard below Texts | Open This shift (Tab again resumes) |
 | P / Escape | Pause or resume |
 | M | Mute or unmute sound effects |
 | F2 | Open scenarios and the inspector |
@@ -24,19 +25,19 @@ On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/
 
 Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to the **green ring** for base pay plus possible time and comfort tips. A late delivery can still be completed; the timer affects the bonus, not whether you get paid. Drifts and near-misses earn small skill bonuses, and nitro recharges automatically.
 
-You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Upgrades belong to the individual vehicle: repairs preserve them, another vehicle has its own levels, and explosion or sinking destroys them. Wallet and completed-job progress persist between runs, along with upgrades on surviving invested vehicles. The pause menu's **Shift stats** shows earnings, completed jobs, smashed objects, and pedestrian fatalities.
+You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Upgrades belong to the individual vehicle: repairs preserve them, another vehicle has its own levels, and explosion or sinking destroys them. Wallet and completed-job progress persist between runs, along with upgrades on surviving invested vehicles. **This shift**, opened with **Tab** or the HUD clipboard below Texts, shows earnings, completed jobs, smashed objects, and pedestrian fatalities since you last woke from sleep. The pause screen shows the same stats. These totals survive reloading and reset after sleeping.
 
 ### Open Shore, texts and your notebook
 
 The campaign lasts **fourteen full days**, beginning at 07:00 and including the
 fourteenth night. Time advances while driving. Park at Pit Stop and use
-**Pause → Sleep at Pit Stop** to skip to the next 07:00. The menu previews known
+**This shift → Sleep at Pit Stop** to skip to the next 07:00. The menu previews known
 bookings closing during sleep; passengers, pursuits and fires block sleeping.
 Recovery, reload and run reset preserve the date.
 
 Normal dispatch mixes ordinary jobs with recurring customers. **Texts** lets
 you choose a booking with an exact pickup-before deadline; competing bookings
-commit only when you stop at the deliberately selected pickup. Pause →
+commit only when you stop at the deliberately selected pickup. This shift →
 **Ask dispatch for an ordinary fare** skips a suggested story booking. Dialogue
 continues during travel and at arrival. The HUD shows the calendar day alongside
 its clock; overnight booking shifts still turn over at 07:00.
@@ -92,12 +93,12 @@ rides, the garage and the newsroom stay marked and no permanent instruction bar
 covers the map.
 
 The **shortcut menu** is separate from the map. The dispatcher button routes the
-next fare or hides fare guidance, the speech bubble opens your texts, and the
+next fare or hides fare guidance, the speech bubble opens your texts, the clipboard below it opens This shift, and the
 newspaper opens the newsroom panel, where you can choose a route. On a desktop
-the shortcuts sit on the right edge; in a narrow desktop window (about 701–1100 px wide) they move just to the
-right of the map instead, clear of the right-hand conversation; on a portrait
+the shortcuts sit on the right edge; in a narrow desktop window (about 701–1100 px wide) they form two columns just to the
+right of the map, clear of the right-hand conversation; on a portrait
 phone they stack on the left above BOOST and DRIFT; on a landscape phone they
-form a row across the top centre, shrinking the map so the two never overlap.
+form a row across the top centre with the shift clipboard below Texts, shrinking the map so the controls stay clear. Shallow desktop windows use two columns below the personal status display.
 
 Press the dispatcher button before pickup to hide fare guidance (and its route
 and destination symbol) while you browse your texts and the newsroom; press it

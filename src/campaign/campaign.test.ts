@@ -11,6 +11,7 @@ import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materi
 import { defaultCampaign, parseCampaign } from './state';
 import { dayMinute } from './clock';
 import { CAMPAIGN_END, LAST_EDITION } from './content';
+import { shiftStatsMarkup, splashMarkup } from '../ui/splash';
 import { notebookMarkup } from './view';
 import { rideDialogueIds } from './ride-dialogue';
 
@@ -98,6 +99,31 @@ describe('Open Shore world-driven campaign', () => {
     g.setMode('wasted'); g.recover(); expect(g.save.campaign.minute).toBe(minute);
     g.dayNight.configure({ hour: 20, rate: 60 }); step(g, 1); expect(g.save.campaign.minute).toBeCloseTo(minute + 1, 5);
     expect(g.save.campaign.shift).toBe(2);
+  });
+
+  it('shares wake-to-sleep totals across both menus, midnight, reload and recovery', () => {
+    const g = make(); finish(g);
+    expect(g.jobsDone).toBe(1); expect(g.shiftEarnings).toBeGreaterThan(0);
+    const prop = g.world.props.find(p => p.alive && p.kind === 'crate')!;
+    g.destroy(prop, g.player, 10);
+    g.death(g.world.people[0], vec(), 1, false);
+    const stats = structuredClone(g.save.shiftStats);
+    expect(stats).toMatchObject({ jobs: 1, smashed: 1, kills: 1 });
+    g.advanceNarrativeTo(dayMinute(2, 8)); // Driving past midnight and 07:00 is not sleeping.
+    g.setMode('paused');
+    expect(splashMarkup(g, true)).toContain(shiftStatsMarkup(g));
+    expect(splashMarkup(g, true)).not.toContain('menu-shift');
+    expect(g.save.shiftStats).toEqual(stats);
+    const loaded = new Game(defaultCompiledMap, false, true, g.save);
+    expect(shiftStatsMarkup(loaded)).toBe(shiftStatsMarkup(g));
+    loaded.resetRun(); loaded.setMode('wasted'); loaded.recover();
+    expect(loaded.save.shiftStats).toEqual(stats);
+    loaded.player.body.position = { ...GARAGE }; loaded.player.body.velocity = vec(); loaded.heat = 0;
+    loaded.onFoot = false; loaded.player.damage.status = 'intact'; loaded.settings.noPolice = true; loaded.dialogue.clear(); loaded.setMode('paused');
+    expect(loaded.sleepReason).toBeNull();
+    expect(loaded.sleep()).toBe(true);
+    expect(loaded.save.shiftStats).toEqual({ earnings: 0, jobs: 0, smashed: 0, kills: 0 });
+    expect(new Game(defaultCompiledMap, false, true, loaded.save).save.shiftStats).toEqual(loaded.save.shiftStats);
   });
 
   it('sleeps only at a safe parked Pit Stop, traverses events, and preserves physics and economy', () => {
