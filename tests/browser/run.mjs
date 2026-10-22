@@ -10,7 +10,7 @@ const suites = new Map([
   ['audio', ['engine-audio']],
   ['input', ['mobile-controls', 'mobile-hud']],
   ['hud', ['navigation-hud', 'player-hud']],
-  ['campaign-ui', ['newsroom', 'observations', 'text-messages', 'editions']],
+  ['campaign-ui', ['newsroom', 'observations', 'text-messages', 'editions', 'dialogue']],
   ['world', ['artwork', 'condo', 'city-scale', 'beach']],
   ['map-inspection', ['layers']],
 ]);

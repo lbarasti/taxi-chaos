@@ -46,7 +46,7 @@ const festival: CampaignDefinition = {
   ] }],
   newsroom: { stop: 'east-village', name: 'Quay office', editor: 'Festival editor', guide: 'Bring your records here.' },
   sites: { office: 'east-village' }, observations: [], vehicles: [], scenes: [], bulletins: [{ text: 'The lantern festival is underway.' }],
-  rides: {}, everydayJobs: [{ name: 'Ash', family: 'Festival staff', lines: ['Off to work.'], during: 'The lamps look lovely.' }], ordinaryResponses: [],
+  rides: {}, everydayJobs: [{ character: 'eli', name: 'Ash', family: 'Festival staff', lines: ['Off to work.'], during: 'The lamps look lovely.' }], ordinaryResponses: [],
 };
 const driving: DirectorContext = { deliveries: 0, jobType: 'fare', model: 'car', kind: 'taxi', time: 0 };
 function setup(definition = festival) {

@@ -46,6 +46,7 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
   const t = def.timing;
   if (!t || ![t.start, t.end, t.lastEdition, t.editionHour].every(Number.isInteger) || t.start < 0 || t.end <= t.start || campaignDays(t) > 366 || t.lastEdition < t.start || t.lastEdition >= t.end || t.editionHour < 0 || t.editionHour > 23) throw new Error('Invalid campaign timing');
   id(def.id); assertMissionCatalogue(def.missions);
+  for (const job of def.everydayJobs) if (!isCharacterId(job.character)) throw new Error(`Unknown everyday character: ${job.character}`);
   for (const [name, items, max] of [
     ['world', Object.keys(def.initialWorld), 128], ['materials', Object.keys(def.materials), 100], ['claims', Object.keys(def.claims), 100],
     ['operations', def.operations, 256], ['handlers', def.handlers, 256], ['scenes', def.scenes, 256],

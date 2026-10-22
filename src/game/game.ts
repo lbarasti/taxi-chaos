@@ -11,7 +11,7 @@ import { SoundEvents } from '../audio/sound';
 import { DayNight } from '../world/day-night';
 import { textTiming, DEFAULT_TEXT_LIFETIME_MINUTES } from '../narrative/text-messages';
 import { Dialogue } from '../narrative/story';
-import { characters } from '../narrative/characters';
+import { characters, type CharacterId } from '../narrative/characters';
 import { missionsFor, neutralMissions, campaignMissions } from '../missions/compile';
 import { MissionDirector, type AbandonReason, type DirectorContext } from '../missions/director';
 import { defaultMissionProgress, parseMissionProgress, type MissionProgress } from '../missions/progress';
@@ -42,7 +42,7 @@ import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EX
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
-export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; everyday?: { family: string; line: string } };
+export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; everyday?: { character: CharacterId; family: string; line: string } };
 // One saved shift lasts until the next successful sleep, including reloads and recovery.
 export type ShiftStats = { earnings: number; jobs: number; smashed: number; kills: number };
 const emptyShiftStats = (): ShiftStats => ({ earnings: 0, jobs: 0, smashed: 0, kills: 0 });
@@ -94,6 +94,7 @@ export class Game {
   private offerCheckpoint = 0;
   private rideBeat = 0;
   private dialogueStartedAt = 0;
+  private pendingDispatch: Job | null = null;
   private rideDistance = 0;
   private lastRidePosition = vec();
   private campaignVehiclesSpawned = new Set<string>();
@@ -726,11 +727,13 @@ export class Game {
       this.releaseMission('replaced');
     }
     this.job.wait = 0; offer.wait = 0; this.job = offer;
+    this.pendingDispatch = null;
     this.dialogue.clear(); this.navToGarage = false; this.navToHarbour = false;
     this.navToNewsroom = false;
     return true;
   }
   newJob(first = false, reason?: AbandonReason, ordinaryOnly = false) {
+    this.pendingDispatch = null;
     this.dialogue.clear(); this.rideBeat = 0; this.rideDistance = 0;
     if (this.job && !this.missionOffers.has(this.job.missionId ?? '')) { const old = this.world.people.find(p => p.id === this.job.customerId); if (old?.alive) { old.role = 'civilian'; old.color = '#d4b487'; } }
     this.releaseMission(reason ?? 'replaced');
@@ -766,7 +769,8 @@ export class Game {
     this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
     if (regular) {
       this.job.name = regular.name;
-      this.job.everyday = { family: type === 'parcel' ? 'Small deliveries' : regular.family, line: type === 'parcel' ? `${regular.name}’s ordinary delivery. Please keep the signed slip.` : regular.lines[Math.min(regularRides, regular.lines.length - 1)] };
+      this.job.everyday = { character: regular.character, family: type === 'parcel' ? 'Small deliveries' : regular.family, line: type === 'parcel' ? `${regular.name}’s ordinary delivery. Please keep the signed slip.` : regular.lines[Math.min(regularRides, regular.lines.length - 1)] };
+      this.pendingDispatch = this.job;
     }
   }
   setJobType() {
@@ -1271,6 +1275,13 @@ export class Game {
     if (this.mode !== 'playing' || this.onFoot) { this.job.wait = 0; return; }
     this.dialogue.update(dt);
     if (this.dialogue.complete && this.dialogue.active?.expanded && !this.save.playerRecords.notebook.some(e => e.id === this.dialogue.active!.beatId)) this.recordDialogue();
+    // Leave the previous passenger's goodbye readable before the next request.
+    // A pickup or route change cancels a request that has not been presented yet.
+    if (this.pendingDispatch === this.job && this.job.stage === 'pickup' && (!this.dialogue.active || !this.dialogue.active.expanded || this.dialogue.complete && this.time - this.dialogueStartedAt >= 8)) {
+      const j = this.job;
+      this.speak(`ordinary-${this.save.story.deliveries + 1}-dispatch`, { speaker: this.campaignContent.dispatcher, category: 'lore', channel: 'dispatch', text: `New ${j.type === 'parcel' ? 'delivery' : 'fare'} · ${j.name}. ${j.everyday!.family}. Pickup marked; destination ${j.destination}.` });
+      this.pendingDispatch = null;
+    }
     if (this.save.story.campaignSeconds >= this.offerCheckpoint) this.syncMissionOffers();
     // Legacy fixtures retain their distinct-ring physical offer selection. The
     // campaign’s co-located competing bookings require an explicit route choice.
@@ -1283,7 +1294,7 @@ export class Game {
     if (j.stage === 'dropoff') {
       j.elapsed += dt; this.rideDistance += dist(this.player.body.position, this.lastRidePosition); this.lastRidePosition = { ...this.player.body.position };
       if (this.campaignEnabled && this.rideBeat === 0 && j.elapsed >= 8 && this.rideDistance >= 10 && (!this.dialogue.active || this.dialogue.complete) && this.time - this.dialogueStartedAt >= 8) {
-        const message = j.missionId ? rideMessage(j.missionId, 'during', j.type === 'parcel', this.campaignContent) : j.everyday ? { speaker: this.campaignContent.dispatcher, category: 'lore' as const, channel: 'sender' as const, text: `${j.name}: “${ordinaryDuring(j.name, this.save.campaign, this.campaignContext, this.campaignContent)}”` } : null;
+        const message = j.missionId ? rideMessage(j.missionId, 'during', j.type === 'parcel', this.campaignContent) : j.everyday ? { speaker: j.everyday.character, category: 'lore' as const, channel: j.type === 'parcel' ? 'sender' as const : 'passenger' as const, text: ordinaryDuring(j.name, this.save.campaign, this.campaignContext, this.campaignContent) } : null;
         if (message) { this.speak(`ride-${j.missionId ?? `ordinary-${this.save.story.deliveries + 1}`}-during`, message); this.rideBeat = 1; }
       }
     }
@@ -1312,7 +1323,8 @@ export class Game {
           this.syncMissionOffers(); this.syncCampaignWorld();
           if (outcome?.message) this.speak(`ride-${j.missionId}-pickup`, outcome.message);
           if (this.campaignEnabled && j.everyday) {
-            this.speak(`ordinary-${this.save.story.deliveries + 1}-pickup`, { speaker: this.campaignContent.dispatcher, category: 'lore', channel: 'sender', text: `Dispatch note · ${j.name}: “${j.everyday.line}”` });
+            this.pendingDispatch = null;
+            this.speak(`ordinary-${this.save.story.deliveries + 1}-pickup`, { speaker: j.everyday.character, category: 'lore', channel: j.type === 'parcel' ? 'sender' : 'passenger', text: j.everyday.line });
           }
           if (j.missionId) this.persist();
           this.sounds.emit('pickup', this.time);

@@ -13,6 +13,7 @@ export const storyMarkup = `
   </aside>`;
 
 const categoryLabels = { plot: 'STORY', 'side-quest': 'SIDE QUEST', lore: 'CITY LORE' };
+const channelLabels = { passenger: 'ON BOARD', sender: 'SENDER NOTE', dispatch: 'DISPATCH' };
 
 /**
  * Applies immutable character metadata to the panel image. The display name sits
@@ -50,7 +51,7 @@ export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focus
       shown = active;
       showCharacterPortrait(portrait, speaker);
       get('story-name').textContent = speaker.name.toUpperCase();
-      get('story-label').textContent = `${categoryLabels[active.message.category]} / ${active.message.channel === 'sender' ? 'SENDER NOTE' : 'ON BOARD'}`;
+      get('story-label').textContent = `${categoryLabels[active.message.category]} / ${channelLabels[active.message.channel]}`;
       // Announce a whole message once, never each typewriter letter.
       get('story-accessible').textContent = `${speaker.name}: ${active.message.text}`;
     }

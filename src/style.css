@@ -126,7 +126,7 @@
 @media(pointer:coarse){.continue-keyboard{display:none}.continue-touch{display:inline}}
 
 /* Conversations temporarily replace personal status in the same screen corner. */
-.story{position:fixed;z-index:2;top:max(28px,env(safe-area-inset-top,0px));right:max(28px,env(safe-area-inset-right,0px));width:min(420px,calc(100vw - 288px));max-height:calc(50dvh - 128px);overflow:auto;padding:8px 16px 0;background:#14232af2;border-color:#9aafa34d;touch-action:manipulation}
+.story{position:fixed;z-index:4;top:max(28px,env(safe-area-inset-top,0px));right:max(28px,env(safe-area-inset-right,0px));width:min(420px,calc(100vw - 288px));max-height:calc(50dvh - 128px);overflow:auto;padding:8px 16px 0;background:#14232af2;border-color:#9aafa34d;touch-action:manipulation}
 .story[hidden]{display:none}
 body:has(.story:not([hidden]):not(.collapsed)) .player-hud{visibility:hidden}
 .story-header{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#a8bdb2;font-size:9px;letter-spacing:1.5px}
