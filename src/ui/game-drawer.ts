@@ -59,7 +59,7 @@ export class GameDrawer {
         case 'start': options.play(); break;
         case 'sleep': if (game.sleep()) options.play(); break;
         case 'sleep-route': options.play(); game.garage(); break;
-        case 'ordinary-fare': game.newJob(false, 'replaced', true); options.play(); break;
+        case 'ordinary-fare': game.newJob(false, 'replaced', true); options.play(); game.answerDispatch(); break;
         case 'abandon-ride': game.newJob(false, 'shift'); this.refresh(); break;
         case 'notebook-route': options.play(); game.navigateNewsroom(); break;
         case 'newsroom-menu': this.focusNewsroomMenu(); break;

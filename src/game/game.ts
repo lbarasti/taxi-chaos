@@ -732,6 +732,17 @@ export class Game {
     this.navToNewsroom = false;
     return true;
   }
+  get dispatchWaiting() { return this.pendingDispatch === this.job && this.job.stage === 'pickup'; }
+  /** Answer a waiting call before its pickup can be routed or boarded. */
+  answerDispatch(): boolean {
+    if (!this.dispatchWaiting || this.mode !== 'playing' || this.onFoot) return false;
+    const j = this.job;
+    this.pendingDispatch = null;
+    this.navToGarage = this.navToHarbour = this.navToNewsroom = false;
+    const detail = j.everyday?.family ?? (j.missionId ? this.missions.mission(j.missionId).title : 'Customer waiting');
+    this.speak(`ordinary-${this.save.story.deliveries + 1}-dispatch`, { speaker: this.campaignContent.dispatcher, category: 'lore', channel: 'dispatch', text: `New ${j.type === 'parcel' ? 'delivery' : 'fare'} · ${j.name}. ${detail}. Pickup marked; destination ${j.destination}.` });
+    return true;
+  }
   newJob(first = false, reason?: AbandonReason, ordinaryOnly = false) {
     this.pendingDispatch = null;
     this.dialogue.clear(); this.rideBeat = 0; this.rideDistance = 0;
@@ -1275,13 +1286,6 @@ export class Game {
     if (this.mode !== 'playing' || this.onFoot) { this.job.wait = 0; return; }
     this.dialogue.update(dt);
     if (this.dialogue.complete && this.dialogue.active?.expanded && !this.save.playerRecords.notebook.some(e => e.id === this.dialogue.active!.beatId)) this.recordDialogue();
-    // Leave the previous passenger's goodbye readable before the next request.
-    // A pickup or route change cancels a request that has not been presented yet.
-    if (this.pendingDispatch === this.job && this.job.stage === 'pickup' && (!this.dialogue.active || !this.dialogue.active.expanded || this.dialogue.complete && this.time - this.dialogueStartedAt >= 8)) {
-      const j = this.job;
-      this.speak(`ordinary-${this.save.story.deliveries + 1}-dispatch`, { speaker: this.campaignContent.dispatcher, category: 'lore', channel: 'dispatch', text: `New ${j.type === 'parcel' ? 'delivery' : 'fare'} · ${j.name}. ${j.everyday!.family}. Pickup marked; destination ${j.destination}.` });
-      this.pendingDispatch = null;
-    }
     if (this.save.story.campaignSeconds >= this.offerCheckpoint) this.syncMissionOffers();
     // Legacy fixtures retain their distinct-ring physical offer selection. The
     // campaign’s co-located competing bookings require an explicit route choice.
@@ -1299,7 +1303,7 @@ export class Game {
       }
     }
     const jobTarget = j.stage === 'pickup' ? j.pickup : j.dropoff;
-    if (!this.navToNewsroom && dist(this.player.body.position, jobTarget) < 5.3 && this.speed < 2.8) {
+    if (!this.dispatchWaiting && !this.navToNewsroom && dist(this.player.body.position, jobTarget) < 5.3 && this.speed < 2.8) {
       j.wait += dt;
       if (j.wait >= 0.8) {
         if (j.stage === 'pickup') {
@@ -1339,10 +1343,11 @@ export class Game {
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
           this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.save.shiftStats.earnings += payout; this.jobsDone++; this.save.shiftStats.jobs++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
-          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next pickup marked.`, 'success');
+          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). ${this.campaignEnabled ? 'Answer Dispatch for the next call.' : 'Next pickup marked.'}`, 'success');
           this.sounds.emit('payment', this.time);
           const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel', this.campaignContent) : null, completedId = j.missionId;
           this.newJob();
+          if (this.campaignEnabled) this.pendingDispatch = this.job;
           if (arrival) this.speak(`ride-${completedId}-arrival`, arrival);
           this.persist();
         }

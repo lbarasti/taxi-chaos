@@ -86,6 +86,48 @@ try {
         assert.equal(await page.locator('#story-name').textContent(), 'SAM');
       }
     }
+    // Delivery fixtures isolate the UI handoff from the physical driving checks above.
+    await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
+    await run(page, { op: 'pickup' });
+    await run(page, { op: 'read' });
+    let delivered = await run(page, { op: 'deliver' });
+    const goodbye = delivered.dialogue.beatId;
+    const waiting = page.locator('#dispatch-waiting');
+    assert(await waiting.isVisible(), 'delivery signals a waiting call on Dispatch');
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-state'), 'vacant');
+    assert.equal(await page.locator('#dispatch').getAttribute('aria-pressed'), 'false');
+    assert.match(await page.locator('#dispatch').getAttribute('aria-label'), /new call waiting/);
+    await run(page, { op: 'read' });
+    delivered = await run(page, { op: 'step', seconds: 12 });
+    assert.equal(delivered.dialogue.beatId, goodbye, 'waiting never replaces the goodbye');
+    await capture(page, `${viewport}-call-waiting`, width, height);
+    await page.locator('#story-close').click();
+    delivered = await run(page, { op: 'step', seconds: 12 });
+    assert.equal(delivered.dialogue.beatId, goodbye, 'collapsing the goodbye does not answer Dispatch');
+    if (touch) await page.locator('#dispatch').tap();
+    else { await page.locator('#dispatch').focus(); await page.keyboard.press('Enter'); }
+    let answered = await run(page, { op: 'step', seconds: 0.01 });
+    assert.equal(answered.job.name, delivered.job.name, 'answer the waiting call without replacing it');
+    assert.equal(answered.dialogue.message.channel, 'dispatch');
+    assert.equal(answered.dialogue.message.speaker, 'bea');
+    assert(answered.dialogue.message.text.includes(answered.job.destination));
+    assert.equal(await waiting.isVisible(), false);
+    assert.equal(await page.locator('.navigation-hud').getAttribute('data-state'), 'engaged');
+    assert.equal(await page.locator('#dispatch').getAttribute('aria-pressed'), 'true');
+    await run(page, { op: 'read' });
+    await capture(page, `${viewport}-call-answered`, width, height);
+    const elapsed = (await run(page, { op: 'step', seconds: 0.01 })).dialogue.elapsed;
+    await page.locator('#dispatch').click();
+    await page.locator('#dispatch').click();
+    answered = await run(page, { op: 'step', seconds: 0.01 });
+    assert(answered.dialogue.elapsed >= elapsed, 'guidance toggles do not restart Bea');
+    // Routing a text booking instead consumes the waiting call without a later pop-in.
+    await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
+    await run(page, { op: 'pickup' });
+    await run(page, { op: 'deliver' });
+    await run(page, { op: 'route', mission: 'celia-barriers' });
+    assert.equal(await waiting.isVisible(), false);
+    assert.equal((await run(page, { op: 'step', seconds: 12 })).dialogue, null);
     assert.deepEqual(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
     await context.close();
     console.log(`PASS ${viewport}: dispatch, passenger identity, cabin portraits, physical during-ride transition and replay`);
