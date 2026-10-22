@@ -6,13 +6,12 @@ import { notebookMarkup, notebookGuideMarkup } from '../campaign/view';
 import { newsroomMarkup, type NewsroomSection } from '../campaign/newsroom-view';
 import { publicationsMarkup, finaleMarkup } from '../campaign/newspaper-view';
 import { creditsMarkup } from './credits';
-import { splashMarkup, streetRulesMarkup, shiftMarkup } from './splash';
+import { splashMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
 
 const pages = {
   home: { title: '', parent: null },
   settings: { title: 'Settings.', parent: 'home' },
-  rules: { title: 'The street rules.', parent: 'home' },
   shift: { title: 'This shift.', parent: 'home' },
   credits: { title: 'Credits.', parent: 'home' },
   newsroom: { title: '', parent: null },
@@ -55,7 +54,6 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;
-    case 'rules': body = streetRulesMarkup(); break;
     case 'shift': return `<div class="intro-eyebrow">TAXI CHAOS / SHIFT</div><h2 id="modal-title">This shift.</h2>${menuItem('Resume your shift', { id: 'start' })}${shiftMarkup(game, campaignMarkup(game))}`;
     case 'credits': body = creditsMarkup(); break;
     case 'notebook-guide': body = notebookGuideMarkup(game); break;
