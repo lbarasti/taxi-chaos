@@ -48,7 +48,7 @@ try {
     save.shiftStats = { earnings: day * 10, jobs: day, smashed: day, kills: 0 };
     collection.days[String(day)] = save;
   }
-  collection.days['2'] = { campaign: { version: 999 } }; // One bad slot cannot hide the rest.
+  delete collection.days['2'].garage.driverHealth; // An incomplete garage cannot hide valid mornings.
   const latest = structuredClone(collection.days['8']); latest.cash = 9999; latest.campaign.minute += 600;
   await seed(page, { [saveKey]: latest, [checkpointKey]: collection, [settingsKey]: settings, [audioKey]: audio });
   const before = await stored(page, saveKey);

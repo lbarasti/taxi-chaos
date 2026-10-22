@@ -154,6 +154,44 @@ describe('automatic campaign morning checkpoints', () => {
     }
   });
 
+  it('excludes incomplete garages without touching Continue or hiding valid mornings', () => {
+    const { values, api } = storage(); const game = play(new Game().freshGame());
+    game.advanceNarrativeTo(dayMinute(2)); game.save.cash = 1234; game.persist();
+    const collection = JSON.parse(values.get(key)!);
+    const current = values.get(storageKeys.save), running = structuredClone(game.save);
+    const incomplete = structuredClone(collection); delete incomplete.days['1'].garage.driverHealth;
+    values.set(key, JSON.stringify(incomplete)); api.setItem.mockClear();
+    expect(days()).toEqual([2]); expect(game.loadMorning(1)).toBeNull();
+    expect(values.get(storageKeys.save)).toBe(current); expect(game.save).toEqual(running);
+    expect(api.setItem).not.toHaveBeenCalled();
+    // The same rejection applies to other required driver and vehicle fields.
+    for (const path of ['boost', 'onFoot', 'driver.x', 'current.damage.health', 'current.upgrades.engine', 'parked.0.damage.critical.fuel']) {
+      const broken = structuredClone(collection), garage = broken.days['1'].garage;
+      garage.parked = [structuredClone(garage.current)];
+      const parts = path.split('.'), field = parts.pop()!;
+      const owner = parts.reduce((value, part) => value[part], garage); delete owner[field];
+      values.set(key, JSON.stringify(broken));
+      expect(days(), path).toEqual([2]); expect(game.loadMorning(1), path).toBeNull();
+      expect(values.get(storageKeys.save), path).toBe(current);
+    }
+    incomplete.days['1'].garage = structuredClone(collection.days['1'].garage);
+    incomplete.days['1'].garage.parked = [{ ...incomplete.days['1'].garage.current, model: 'unknown' }];
+    values.set(key, JSON.stringify(incomplete));
+    expect(days()).toEqual([2]); expect(game.loadMorning(1)).toBeNull();
+    expect(values.get(storageKeys.save)).toBe(current);
+    expect(api.setItem).not.toHaveBeenCalled();
+    expect(game.loadMorning(2)).not.toBeNull();
+  });
+
+  it('keeps legacy Continue garage normalization separate from checkpoint validation', () => {
+    const { values } = storage(); const game = play(new Game().freshGame());
+    const save = JSON.parse(values.get(storageKeys.save)!); delete save.garage.driverHealth;
+    values.set(storageKeys.save, JSON.stringify(save));
+    const loaded = new Game();
+    expect(loaded.driverHealth).toBe(0); expect(loaded.save.cash).toBe(game.save.cash);
+    expect(loaded.save.garage).not.toBeNull(); expect(days()).toEqual([1]);
+  });
+
   it('leaves old data intact and reports failed capture or rolling-save writes', () => {
     const { values, api } = storage(); const game = play(new Game().freshGame()); const archived = values.get(key), rolling = values.get(storageKeys.save);
     api.setItem.mockImplementation(() => { throw Error('quota'); });
