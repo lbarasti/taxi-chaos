@@ -222,8 +222,9 @@ export class Game {
   sleep(): boolean {
     if ((this.mode !== 'paused' && this.mode !== 'garage') || this.sleepReason) return false;
     this.releaseMission('shift'); this.dialogue.clear();
+    // The new day is reported by the front page and campaign notice; waking stays silent.
     this.advanceNarrativeTo(this.sleepPreview.until); this.save.shiftStats = emptyShiftStats(); this.newJob(false, 'shift'); this.persist();
-    this.setMode('playing'); this.notify(`Morning · ${this.campaignBulletin}`); return true;
+    this.setMode('playing'); return true;
   }
   get campaignContext(): CampaignContext { return { state: this.save.campaign, definition: this.campaignContent, progress: this.save.story, records: this.save.playerRecords }; }
   campaignMatches(condition: import('../missions/schema').Condition | undefined) { return campaignCondition(condition, this.save.campaign, this.campaignContext); }
@@ -236,11 +237,9 @@ export class Game {
     const changed = advanceCampaignTo(this.save.campaign, minute, this.campaignContext, this.campaignContent);
     this.dayNight.synchronize(this.save.campaign.minute);
     if (changed) this.syncCampaignWorld();
-    if (!wasFinished && this.save.campaign.finished) {
-      this.syncMissionOffers();
-      // Finish a fare already on board; no new campaign fare can be accepted.
-      this.notify(`${this.campaignContent.completionText} ${this.campaignBulletin}`); this.persist();
-    }
+    // Nothing is announced: the campaign notice and finale own completion. Offers retract
+    // here so no new campaign fare can be accepted once the story has ended.
+    if (!wasFinished && this.save.campaign.finished) { this.syncMissionOffers(); this.persist(); }
     return changed;
   }
   private syncCampaignWorld() {

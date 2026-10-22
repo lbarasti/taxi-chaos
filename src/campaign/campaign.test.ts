@@ -130,11 +130,21 @@ describe('Open Shore world-driven campaign', () => {
     const g = make(); g.player.body.position = { ...GARAGE }; g.advanceNarrativeTo(dayMinute(2, 20)); g.setMode('paused');
     const cash = g.save.cash, time = g.time, health = g.health, player = g.player, keys = g.world;
     expect(g.sleepPreview.label).toBe('Day 3 · 07:00'); expect(g.sleepPreview.expiring).toContain('Temporary barriers');
+    const toast = { text: g.toast, time: g.toastTime };
     expect(g.sleep()).toBe(true); expect(g.save.campaign.world.cafe).toBe('boarded');
+    expect(g.toast).toBe(toast.text); expect(g.toastTime).toBe(toast.time); // Waking relies on the front page, not a toast.
     expect(g.save.campaign.occurrences['cafe-windows-broken'].at).toBe(dayMinute(2, 23));
     expect(g.save.playerRecords.notebook).toEqual([]); expect(g.save.cash).toBe(cash);
     expect(g.player).toBe(player); expect(g.world).toBe(keys); expect(g.health).toBe(health); expect(g.time).toBe(time);
     expect(g.sleep()).toBe(false); // playing; duplicate clicks cannot consume another day
+  });
+
+  it('wakes silently on the final morning and leaves completion to the newsroom', () => {
+    const g = make(); g.player.body.position = { ...GARAGE }; g.advanceNarrativeTo(dayMinute(14, 20)); g.setMode('paused');
+    g.toast = ''; g.toastTime = 0;
+    expect(g.sleepReason).toBeNull(); expect(g.sleep()).toBe(true);
+    expect(g.save.campaign.finished).toBe(true);
+    expect(g.toast).toBe(''); expect(g.toastTime).toBe(0);
   });
 
   it('rejects sleep with passengers, pursuits, burning vehicles and away from Pit Stop', () => {
