@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { openGame, launchBrowser, newContext, closeBrowser, captureFailure, viewportTuples } from '../runtime.mjs';
+import { launchBrowser, newContext, closeBrowser, captureFailure, viewportTuples } from '../runtime.mjs';
 
 const output = resolve(process.env.SCREENSHOT_DIR ?? 'scenario-runs/notifications');
 await mkdir(output, { recursive: true });
 const browser = await launchBrowser();
+const standalone = await readFile('dist/index.html', 'utf8');
 try {
   for (const [name, width, height, touch] of [
     ...viewportTuples('desktop', 'portrait', 'compact', 'landscape', 'compactLandscape'),
@@ -14,8 +14,9 @@ try {
     ['narrow-desktop', 900, 650, false], ['short-desktop', 1280, 400, false],
   ]) {
     const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
+    await context.route('http://localhost:4173/**', route => route.fulfill({ contentType: 'text/html', body: standalone }));
     const page = await context.newPage();
-    await openGame(page, `${pathToFileURL(resolve('dist/index.html'))}?dialogue-preview=1&debug=1`);
+    await page.goto('http://localhost:4173/?dialogue-preview=1&debug=1');
     await page.waitForFunction(() => !!window.__taxi);
     await page.addStyleTag({ content: '#layers-badge{display:none!important}' });
     await page.evaluate(() => {
@@ -40,6 +41,8 @@ try {
     await page.evaluate(() => __taxi.step(4));
     assert.equal(await page.locator('.notification-dismiss').isVisible(), true);
     assert.equal(await page.locator('.notification-timer').isVisible(), false);
+    assert.equal(await page.locator('.notification-lifetime').textContent(), '');
+    assert(!(await page.locator('#toast').textContent()).includes('Dismiss when ready'));
     assert.match(await page.locator('#toast').textContent(), /Source checks take three game hours/);
 
     const overlap = await page.locator('#toast').evaluate(card => {
@@ -96,8 +99,49 @@ try {
     assert.equal((await read())[0].remaining, 4, `${name}: reading the inbox pauses alerts`);
     await page.locator('#texts-close').click();
     await page.evaluate(() => __taxi.step(4));
-    await page.evaluate(() => __taxi.notify('FARE COMPLETE · $72 ($12 in tips). Next pickup marked.', 'success', { category: 'dispatch', duration: null }));
+    await page.evaluate(() => __taxi.notify('FARE COMPLETE · $132 ($35 in tips). Speed 65/100 · Comfort 90/100.', 'success', {
+      category: 'dispatch', duration: null,
+      receipt: { type: 'fare', baseFare: 97, payout: 132, tips: 35, speedScore: 65, comfortScore: 90, speedBonus: 8, comfortBonus: 27 },
+    }));
     assert.equal(await page.locator('#campaign-notice').isVisible(), false);
+    assert.equal(await page.locator('.receipt-title').textContent(), 'Fare complete');
+    assert.equal(await page.locator('.receipt-scores > :first-child').getAttribute('class'), 'receipt-score receipt-comfort');
+    assert.equal(await page.locator('.receipt-breakdown').innerText(), 'Base $97\nTip $35');
+    assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$132');
+    assert.equal(await page.locator('[data-receipt=tips]').textContent(), '$35');
+    assert.equal(await page.locator('.receipt-speed [role=meter]').getAttribute('aria-valuenow'), '65');
+    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuenow'), '90');
+    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuetext'), '90 out of 100; $27 bonus');
+    for (const bar of await page.locator('.receipt-meter').all()) {
+      const size = await bar.boundingBox();
+      assert(size.width > 20 && size.width <= 100, `${name}: compact score bars remain readable`);
+    }
+    assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--score')), '0.65');
+    assert.equal(await page.locator('.receipt-comfort [role=meter]').evaluate(e => e.style.getPropertyValue('--score')), '0.9');
+    assert.equal(await page.locator('#toast footer').isVisible(), false);
+    assert(!(await page.locator('#toast').textContent()).includes('Answer Dispatch'));
+    assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}: receipt has no horizontal overflow`);
+    const receiptBounds = await page.locator('#toast').boundingBox();
+    assert(receiptBounds.x >= 0 && receiptBounds.y + receiptBounds.height <= height, `${name}: receipt stays in the viewport`);
+    await page.screenshot({ path: resolve(output, `${name}-receipt.png`) });
+    await page.locator('#toast').screenshot({ path: resolve(output, `${name}-receipt-card.png`) });
+    await page.locator('.receipt-comfort .receipt-meter').scrollIntoViewIfNeeded();
+    if (name === 'desktop') {
+      await page.locator('.notification-receipt').focus();
+      const parked = await page.evaluate(() => { const state = __taxi.state(); __taxi.realtime(); return state; });
+      await page.keyboard.down('ArrowUp');
+      await page.waitForFunction(time => __taxi.state().time > time + 0.25, parked.time);
+      await page.keyboard.up('ArrowUp');
+      const scrolled = await page.evaluate(() => __taxi.step(0));
+      assert(Math.hypot(scrolled.position.x - parked.position.x, scrolled.position.y - parked.position.y) < 0.05, 'scrolling a receipt must not drive the car');
+    }
+    await page.evaluate(() => __taxi.notify('Stop the cab to enter Pit Stop.', '', { category: 'services' }));
+    assert.equal(await page.locator('.notification-category').textContent(), 'Roadside & services');
+    assert.equal(await page.locator('.notification-receipt').isVisible(), false);
+    await page.evaluate(() => __taxi.step(4));
+    assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$132', `${name}: covered receipt retains its totals`);
+    await page.evaluate(() => __taxi.step(8));
+    assert.equal(await page.locator('.notification-dismiss').isVisible(), true);
     await page.locator('.notification-dismiss').click();
     assert.equal(await page.locator('#campaign-notice').isVisible(), true);
 
@@ -109,6 +153,14 @@ try {
       assert(Math.hypot(after.position.x - before.position.x, after.position.y - before.position.y) > 1);
       await page.evaluate(() => __taxi.realtime());
     }
+    await page.evaluate(() => { __taxi.scenario('moving-car-exit'); document.querySelector('#debug-panel').hidden = true; });
+    const beforeExit = await read();
+    await page.evaluate(() => { __taxi.interact(); __taxi.step(0.6); });
+    const afterExit = await read();
+    const added = afterExit.filter(card => !beforeExit.some(old => old.id === card.id));
+    assert.equal(added.length, 1, `${name}: one voluntary bailout creates one notice`);
+    assert.match(added[0].message, /Bailed out at speed.*landing.*blue route/);
+    assert(!afterExit.some(card => /DOOR OPENING|JUMPING OFF|ROLL WITH THE LANDING/.test(card.message)));
     await context.close();
   }
 } catch (error) { await captureFailure(); throw error; }

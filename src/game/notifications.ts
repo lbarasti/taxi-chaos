@@ -1,9 +1,14 @@
 export type NotificationCategory = 'newsroom' | 'movement' | 'services' | 'danger' | 'dispatch';
 export type NotificationKind = '' | 'danger' | 'success';
-export type NotificationOptions = { category?: NotificationCategory; duration?: number | null };
+export type TripReceipt = {
+  type: 'fare' | 'parcel'; baseFare: number; payout: number; tips: number;
+  speedScore: number; comfortScore: number; speedBonus: number; comfortBonus: number;
+};
+export type NotificationOptions = { category?: NotificationCategory; duration?: number | null; receipt?: TripReceipt };
 export type Notification = {
   id: number; message: string; kind: NotificationKind; category: NotificationCategory;
   duration: number | null; remaining: number | null;
+  receipt?: TripReceipt;
 };
 
 /** Newest first. Only the exposed card spends its own display time. */
@@ -17,9 +22,10 @@ export class NotificationStack {
     const duration = options.duration === null ? null : Math.max(0.1, options.duration ?? 4);
     const category = options.category ?? (kind === 'danger' ? 'danger' : 'dispatch');
     // Holding an unavailable action must not bury the same instruction repeatedly.
-    const duplicate = this.cards.findIndex(card => card.message === message && card.category === category && card.kind === kind);
+    const duplicate = options.receipt ? -1 : this.cards.findIndex(card => !card.receipt && card.message === message && card.category === category && card.kind === kind);
     if (duplicate >= 0) this.cards.splice(duplicate, 1);
-    this.cards.unshift({ id: ++this.serial, message, kind, category, duration, remaining: duration });
+    this.cards.unshift({ id: ++this.serial, message, kind, category, duration, remaining: duration,
+      ...(options.receipt ? { receipt: { ...options.receipt } } : {}) });
   }
 
   dismiss(id = this.current?.id) {

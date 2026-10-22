@@ -1,5 +1,5 @@
 import type { Game } from '../game/game';
-import type { NotificationCategory } from '../game/notifications';
+import type { NotificationCategory, TripReceipt } from '../game/notifications';
 
 const labels: Record<NotificationCategory, string> = {
   newsroom: 'Newsroom', movement: 'On the street', services: 'Roadside & services', danger: 'Warning', dispatch: 'Dispatch',
@@ -14,7 +14,17 @@ const symbols: Record<NotificationCategory, string> = {
 export const notificationsMarkup = `<section id="notifications" class="notification-stack" aria-label="Notifications" hidden>
   <article id="toast" class="notification-card">
     <header><span class="notification-symbol" aria-hidden="true"></span><span class="notification-category"></span><button class="notification-dismiss" aria-label="Dismiss notification" hidden>×</button></header>
-    <p role="status" aria-live="polite" aria-atomic="true"></p>
+    <p class="notification-message" role="status" aria-live="polite" aria-atomic="true"></p>
+    <div class="notification-receipt" aria-label="Trip receipt" tabindex="0" hidden>
+      <div class="receipt-money">
+        <strong class="receipt-total" data-receipt="payout"></strong>
+        <div class="receipt-breakdown"><span class="receipt-base"></span><span>Tip <span data-receipt="tips"></span></span></div>
+      </div>
+      <div class="receipt-scores">
+        <div class="receipt-score receipt-comfort"><svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 9 2 8h7 M8 6v.5 M7 9h3l2 6h5"/></svg><div class="receipt-meter" role="meter" aria-label="Comfort score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="comfortBonus"></small></div>
+        <div class="receipt-score receipt-speed"><svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M5 16a8 8 0 1 1 14 0 M12 5v2 M5 10l2 1 M19 10l-2 1 M12 13l4-5"/><circle cx="12" cy="13" r="1"/></svg><div class="receipt-meter" role="meter" aria-label="Speed score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="speedBonus"></small></div>
+      </div>
+    </div>
     <footer><span class="notification-count"></span><span class="notification-lifetime"></span></footer>
     <div class="notification-timer" aria-hidden="true"><i></i></div>
   </article>
@@ -25,8 +35,15 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
   const card = stack.querySelector<HTMLElement>('.notification-card')!;
   const dismiss = stack.querySelector<HTMLButtonElement>('button')!;
   const message = stack.querySelector<HTMLElement>('p')!;
+  const receiptView = stack.querySelector<HTMLElement>('.notification-receipt')!;
+  const footer = stack.querySelector<HTMLElement>('footer')!;
   let displayedId: number | undefined;
   let displayedCategory: NotificationCategory | undefined;
+  let displayedReceipt: TripReceipt | undefined;
+  const money = (amount: number) => `$${amount.toLocaleString('en-US')}`;
+  receiptView.addEventListener('keydown', event => {
+    if (['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Space'].includes(event.code)) event.stopPropagation();
+  });
   dismiss.addEventListener('click', () => {
     const game = currentGame();
     if (game.mode !== 'playing') return;
@@ -41,19 +58,44 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
     if (!current) { displayedId = undefined; game.notificationsVisible = false; return; }
     displayedId = current.id;
     stack.dataset.depth = String(Math.min(3, game.notifications.items.length));
-    card.className = `notification-card visible ${current.kind}`;
+    card.className = `notification-card visible ${current.kind}${current.receipt ? ' receipt-card' : ''}`;
     card.dataset.category = current.category;
-    stack.querySelector('.notification-category')!.textContent = labels[current.category];
+    const heading = stack.querySelector('.notification-category')!;
+    heading.textContent = current.receipt ? current.receipt.type === 'parcel' ? 'Delivery complete' : 'Fare complete' : labels[current.category];
+    heading.classList.toggle('receipt-title', !!current.receipt);
     if (displayedCategory !== current.category) {
       stack.querySelector('.notification-symbol')!.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${symbols[current.category]}"/></svg>`;
       displayedCategory = current.category;
     }
     // Avoid re-announcing unchanged content on every HUD refresh.
     if (message.textContent !== current.message) { message.textContent = current.message; message.scrollTop = 0; }
+    receiptView.hidden = !current.receipt;
+    message.classList.toggle('receipt-summary', !!current.receipt);
+    if (current.receipt !== displayedReceipt) {
+      displayedReceipt = current.receipt;
+      receiptView.scrollTop = 0;
+      if (displayedReceipt) {
+        const receipt = displayedReceipt;
+        receiptView.querySelector('.receipt-base')!.textContent = `Base ${money(receipt.baseFare)}`;
+        for (const key of ['payout', 'tips', 'speedBonus', 'comfortBonus'] as const) {
+          receiptView.querySelector(`[data-receipt="${key}"]`)!.textContent = key.endsWith('Bonus') ? `+${receipt[key]}` : money(receipt[key]);
+        }
+        for (const [selector, score] of [['.receipt-speed', receipt.speedScore], ['.receipt-comfort', receipt.comfortScore]] as const) {
+          const meter = receiptView.querySelector<HTMLElement>(`${selector} .receipt-meter`)!;
+          const label = selector === '.receipt-speed' ? 'Speed' : 'Comfort';
+          const bonus = selector === '.receipt-speed' ? receipt.speedBonus : receipt.comfortBonus;
+          meter.setAttribute('aria-valuenow', String(score));
+          meter.setAttribute('aria-valuetext', `${score} out of 100; ${money(bonus)} bonus`);
+          meter.parentElement!.title = `${label}: ${score}/100 · ${money(bonus)} bonus`;
+          meter.style.setProperty('--score', String(score / 100));
+        }
+      }
+    }
     dismiss.hidden = current.remaining !== null;
     const waiting = game.notifications.items.length - 1;
     stack.querySelector('.notification-count')!.textContent = waiting ? `${waiting} waiting` : '';
-    stack.querySelector('.notification-lifetime')!.textContent = current.remaining === null ? 'Dismiss when ready' : 'Auto dismiss';
+    stack.querySelector('.notification-lifetime')!.textContent = current.remaining === null ? '' : 'Auto dismiss';
+    footer.hidden = current.remaining === null && waiting === 0;
     const timer = stack.querySelector<HTMLElement>('.notification-timer')!;
     timer.hidden = current.remaining === null;
     timer.style.setProperty('--remaining', String(current.remaining === null ? 1 : current.remaining / current.duration!));

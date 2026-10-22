@@ -92,6 +92,10 @@ covered cards resume with their remaining time. Pausing the game, hiding the tab
 or opening a menu also pauses the countdown. The unread-paper invitation returns
 when the stack is clear.
 
+Completed fares and deliveries show total cash earned, tips included in that
+total, and Speed and Comfort scores with their tip contributions. Speed reflects
+time left against the fare target; Comfort reflects how much comfort you retained.
+
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
 
 The **circular minimap** in the top-left corner is the whole navigation panel:

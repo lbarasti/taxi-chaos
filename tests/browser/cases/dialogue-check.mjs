@@ -61,7 +61,9 @@ try {
       assert.equal(state.dialogue.message.speaker, character.toLowerCase());
       assert.equal(state.dialogue.message.channel, 'passenger');
       assert.equal(await page.locator('#story-name').textContent(), character.toUpperCase());
-      assert.match(await page.locator('#story-label').textContent(), /ON BOARD/);
+      assert.equal(await page.locator('#story-label').textContent(), `Head to ${state.job.destination}`);
+      assert.match(await page.locator('#story-accessible').textContent(), /^Head to /);
+      assert.equal(await page.locator('#notifications').isVisible(), false, 'boarding uses the dialogue heading without adding a notification');
       const passengerPortrait = await page.locator('#story-portrait').getAttribute('src');
       assert.notEqual(passengerPortrait, dispatchPortrait);
       await run(page, { op: 'read' });
@@ -73,6 +75,7 @@ try {
         assert.match(state.dialogue.beatId, /-during$/);
         assert.equal(state.dialogue.message.speaker, 'sam');
         assert.equal(state.dialogue.message.channel, 'passenger');
+        assert.equal(await page.locator('#story-label').textContent(), `Head to ${state.job.destination}`);
         assert.equal(await page.locator('#story-portrait').getAttribute('src'), passengerPortrait);
         await run(page, { op: 'read' });
         await capture(page, `${viewport}-sam-during`, width, height);
@@ -84,14 +87,20 @@ try {
         assert.match(await page.locator('#story-read').textContent(), /Sam.*Replay/);
         await page.locator('#story-read').click();
         assert.equal(await page.locator('#story-name').textContent(), 'SAM');
+        assert.equal(await page.locator('#story-label').textContent(), `Head to ${state.job.destination}`);
       }
     }
     // Delivery fixtures isolate the UI handoff from the physical driving checks above.
     await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
     await run(page, { op: 'pickup' });
     await run(page, { op: 'read' });
+    const cashBeforeDelivery = (await run(page, { op: 'step', seconds: 0.01 })).cash;
     let delivered = await run(page, { op: 'deliver' });
+    assert.equal(await page.locator('[data-receipt=payout]').textContent(), `$${(delivered.cash - cashBeforeDelivery).toLocaleString('en-US')}`);
+    assert.equal(await page.locator('.receipt-title').textContent(), 'Fare complete');
+    assert(!(await page.locator('#toast').textContent()).includes('Answer Dispatch'));
     const goodbye = delivered.dialogue.beatId;
+    assert(!(await page.locator('#story-label').textContent()).startsWith('Head to '), 'arrival dialogue must not point at the next fare’s destination');
     const waiting = page.locator('#dispatch-waiting');
     assert(await waiting.isVisible(), 'delivery signals a waiting call on Dispatch');
     assert.equal(await page.locator('.navigation-hud').getAttribute('data-state'), 'vacant');
@@ -133,6 +142,11 @@ try {
     assert.equal(routed.job.missionId, 'celia-barriers');
     assert.notEqual(routed.dialogue?.message.channel, 'dispatch');
     assert.equal(await waiting.isVisible(), false);
+    if (routed.job.stage === 'dropoff') {
+      assert.equal(await page.locator('#story-label').textContent(), `Head to ${routed.job.destination}`);
+      await run(page, { op: 'read' });
+      await capture(page, `${viewport}-celia-destination`, width, height);
+    }
     assert.deepEqual(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
     await context.close();
     console.log(`PASS ${viewport}: dispatch, passenger identity, cabin portraits, physical during-ride transition and replay`);

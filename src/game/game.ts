@@ -429,7 +429,7 @@ export class Game {
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
       if (next.model === 'motorcycle') next.body.mass = next.definition.chassis.mass;
-      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!', '', { category: 'movement' }); return true;
+      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); return true;
     }
     const point = this.exitLocation(this.player, this.exitSide);
     if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger', { category: 'movement' }); return false; }
@@ -440,7 +440,6 @@ export class Game {
       const delay = Math.min(DOOR_OPEN_TIME, Math.max(0, fuse - 0.05));
       if (delay > 0.02) {
         this.pendingExit = { vehicle: this.player, side: point.side, at: this.time, delay };
-        this.notify(this.player.model === 'motorcycle' ? 'JUMPING OFF · Hold on for the landing!' : 'DOOR OPENING · Brace for the landing!', 'danger', { category: 'movement' });
         return true;
       }
     }
@@ -485,7 +484,7 @@ export class Game {
       this.newJob(false, 'left-vehicle');
     }
     this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.persist();
-    this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.', '', { category: 'movement' });
+    this.notify(moving ? 'Bailed out at speed. Brace for the landing; speed costs health. Follow the blue route to another ride.' : 'Follow the blue route to a parked car or motorbike.', moving ? 'danger' : '', { category: 'movement' });
   }
   walk(dt: number) {
     const { inOcean } = this.map.land, { leavesTracks: inSand } = this.map.terrain;
@@ -1033,7 +1032,6 @@ export class Game {
     const local = rotate(sub(point, v.body.position), -v.body.angle), cargo = v.definition.cargo;
     const result = impactDamage(v.damage, { impact, localPoint: vec(local.x * 4.2 / v.body.w, local.y * 2.1 / v.body.h), armor: v.upgrades.armor + (v.kind === 'police' ? 1 : 0), time: this.time, scale: this.rules.damageScale * v.definition.damage.impactScale, blamed, fuse: this.rules.fireFuse, invincible: v.kind === 'taxi' && this.settings.invincible });
     if (cargo.flammable && result.damage > 0 && closingSpeed >= cargo.ignitionImpact && local.x < v.body.w / 2 - v.definition.graphics.cabLength) igniteVehicle(v.damage, cargo.fuse, blamed);
-    if (result.ignited && v === this.player && !this.onFoot) this.notify(`${v.definition.graphics.sprite === 'motorcycle' ? 'BIKE' : 'CAB'} ON FIRE · ${v.damage.fuse.toFixed(1)}s. Press E to bail out, then run clear!`, 'danger');
   }
   igniteProp(prop: Prop, blamed: boolean, fuse = 4.5) {
     if (prop.fuelSpent || !['pump', 'station'].includes(prop.kind)) return;
@@ -1069,7 +1067,6 @@ export class Game {
       const result = blastDamage(v.damage, effect.damage, { armor: v.upgrades.armor, time: this.time, scale: this.rules.damageScale * v.definition.damage.blastScale, blamed: blast.blamed, fuse: Math.min(this.rules.fireFuse, 1.7), invincible: v.kind === 'taxi' && this.settings.invincible });
       const cargo = v.definition.cargo;
       if (cargo.flammable && result.damage > 0 && effect.damage >= cargo.ignitionBlast) igniteVehicle(v.damage, Math.min(cargo.fuse, 1.7), blast.blamed);
-      if (result.ignited && v === this.player && !this.onFoot) this.notify('FUEL ON FIRE · Press E to bail out, then run clear!', 'danger');
     }
     for (const prop of this.world.props) {
       if (!prop.alive || prop.kind === 'building' || prop.id === blast.sourceProp) continue;
@@ -1379,7 +1376,6 @@ export class Game {
           }
           if (j.missionId) this.persist();
           this.sounds.emit('pickup', this.time);
-          this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`);
           this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55');
         }
         else {
@@ -1390,7 +1386,13 @@ export class Game {
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
           this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.save.shiftStats.earnings += payout; this.jobsDone++; this.save.shiftStats.jobs++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
-          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). ${this.campaignEnabled ? 'Answer Dispatch for the next call.' : 'Next pickup marked.'}`, 'success', { category: 'dispatch', duration: null });
+          const speedScore = j.time > 0 ? Math.round(clamp((j.time - j.elapsed) / j.time, 0, 1) * 100) : 0;
+          const comfortScore = Math.round(clamp(j.comfort, 0, 100));
+          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd');
+          this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Speed ${speedScore}/100 · Comfort ${comfortScore}/100.`, 'success', {
+            category: 'dispatch', duration: null,
+            receipt: { type: j.type, baseFare: j.fare, payout, tips: timeBonus + comfortBonus, speedScore, comfortScore, speedBonus: timeBonus, comfortBonus },
+          });
           this.sounds.emit('payment', this.time);
           const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel', this.campaignContent) : null, completedId = j.missionId;
           this.newJob();
