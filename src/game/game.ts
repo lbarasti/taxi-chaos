@@ -429,7 +429,7 @@ export class Game {
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
       if (next.model === 'motorcycle') next.body.mass = next.definition.chassis.mass;
-      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!', '', { category: 'movement' }); return true;
+      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); return true;
     }
     const point = this.exitLocation(this.player, this.exitSide);
     if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger', { category: 'movement' }); return false; }
