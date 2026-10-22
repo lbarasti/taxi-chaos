@@ -35,7 +35,8 @@ export function splashMarkup(game: Game, saved: boolean): string {
       <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
     </section>
     <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
-      ${menuItem(paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift', { id: 'start' })}
+      ${paused || saved ? menuItem(paused ? 'Resume your shift' : 'Continue', { id: 'start' }) : ''}
+      ${!paused ? menuItem('New game', { id: 'new-game' }) : ''}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
       ${menuItem('Credits', { id: 'menu-credits', page: 'credits' })}
       ${paused && game.campaignEnabled && game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}

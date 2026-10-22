@@ -9,7 +9,7 @@ import { Game, upgradeInfo, type Upgrade } from './game/game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './vehicles/motorcycle';
 import { Renderer } from './rendering/renderer';
 import { artworkImages } from './artwork/images';
-import { dist } from './physics/physics';
+import { add, dist, sub } from './physics/physics';
 import { PORT_FEE } from './world/harbour';
 import { setupLab, type LabAPI } from './debug/lab';
 import { AudioFX } from './audio/audio';
@@ -61,7 +61,7 @@ const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), ()
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, shift: () => drawer.openShift(), newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
-const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu });
+const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu, newGame });
 drawer.setInputDevice(inputDevice);
 const refreshCampaignNotice = bindCampaignNotice($('app'), () => game, { editions: () => drawer.openPublications(), finale: () => drawer.openFinale() });
 function detectInput(device: InputDevice) { inputDevice = device; drawer.setInputDevice(device); }
@@ -119,6 +119,18 @@ function playFromMenu() {
     if (splashExiting) window.setTimeout(() => { if (splashExiting) { splashExiting = false; modal(); } }, 550);
   } else if (game.mode !== 'playing') game.setMode('playing');
   $('city').focus();
+}
+function newGame() {
+  if (drafting() || game.mode !== 'intro') return;
+  const previous = game, next = previous.freshGame();
+  const titleOffset = sub(renderer.camera, previous.actor.position);
+  resetTouch(); previous.keys.clear(); padKeys.clear(); audio.silence(previous);
+  previous.onModeChange = previous.onChange = () => {};
+  game = next; renderer.game = next; renderer.camera = add(next.actor.position, titleOffset);
+  if (normalGame === previous) normalGame = next;
+  accumulator = 0; timeScale = 1;
+  drawer.reset(); $('mission-inbox').hidden = true;
+  bindGame(); playFromMenu();
 }
 function bindGame() { game.onModeChange = () => { resetTouch(); game.keys.clear(); modal(); hud(); }; game.onChange = () => { modal(); hud(); }; }
 bindGame();

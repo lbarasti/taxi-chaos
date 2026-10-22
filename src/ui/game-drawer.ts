@@ -23,7 +23,7 @@ export class GameDrawer {
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
   private device: InputDevice = 'keyboard';
-  constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void }) {
+  constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void; newGame: () => void }) {
     this.settings = createSettings(options.game, options.audio);
     this.menu = new DrawerMenu(root, () => this.active && !this.transition && !root.closest('[inert]'));
     root.addEventListener('click', event => {
@@ -57,6 +57,12 @@ export class GameDrawer {
         case 'publication-front': this.frontPage(); break;
         case 'arcade-continue': if (game.continueArcade()) options.play(); break;
         case 'start': options.play(); break;
+        case 'new-game':
+          if (game.mode !== 'intro') break;
+          if (options.saved) { this.selections.delete('new-game'); void this.open('new-game'); }
+          else options.newGame();
+          break;
+        case 'confirm-new-game': if (this.page === 'new-game' && game.mode === 'intro') options.newGame(); break;
         case 'sleep': if (game.sleep()) options.play(); break;
         case 'sleep-route': options.play(); game.garage(); break;
         case 'ordinary-fare': game.newJob(false, 'replaced', true); options.play(); game.answerDispatch(); break;

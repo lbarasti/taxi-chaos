@@ -17,14 +17,15 @@ try {
 async function checkDesktop() {
   const page = await openGame(browser, html, { viewport: { width: 1440, height: 900 } });
   await page.waitForTimeout(400);
-  assert.match(await page.locator('#start').innerText(),/Start your shift/);
-  await checkHomeMenu(page);
+  assert.match(await page.locator('#new-game').innerText(),/New game/);
+  assert.equal(await page.locator('#start').count(), 0);
+  await checkHomeMenu(page, false);
   const first = await page.locator('#city').screenshot(); await page.waitForTimeout(600); const second=await page.locator('#city').screenshot(); assert(!first.equals(second),'ambient camera moves');
   await page.screenshot({path:`${output}/start-desktop.png`});
   await page.locator('#overlay').evaluate(element => element.addEventListener('click', () => {
     window.exitTransition = { visible: !element.hidden, duration: getComputedStyle(element).transitionDuration };
   }, { once: true }));
-  await page.locator('#start').click();
+  await page.locator('#new-game').click();
   assert.deepEqual(await page.evaluate(() => window.exitTransition), { visible: true, duration: '0.55s' }, 'drawer fades out');
   await page.locator('#overlay').waitFor({state:'hidden'});
   await page.mouse.move(1300, 800);
@@ -235,15 +236,15 @@ async function checkTouchLayouts() {
     await mobile.locator('.credits-section:last-of-type').scrollIntoViewIfNeeded();
     await mobile.screenshot({ path: `${output}/credits-touch-${name}.png` });
     await tapToConfirm(mobile, '#drawer-back'); await waitForDrawer(mobile, 'home');
-    await mobile.locator('#start').tap(); assert(await mobile.locator('#overlay').isVisible());
-    await mobile.locator('#start').tap(); await mobile.locator('#overlay').waitFor({ state: 'hidden' });
+    await mobile.locator('#new-game').tap(); assert(await mobile.locator('#overlay').isVisible());
+    await mobile.locator('#new-game').tap(); await mobile.locator('#overlay').waitFor({ state: 'hidden' });
     await mobile.locator('#shift').tap(); await waitForDrawer(mobile, 'shift');
     await mobile.screenshot({ path: `${output}/shift-touch-${name}.png` });
     await mobile.context().close();
   }
 }
 
-async function checkHomeMenu(page) {
+async function checkHomeMenu(page, paused = true) {
   assert.deepEqual(await page.locator('#modal .game-menu button').evaluateAll(buttons => buttons.map(button => button.id)),
-    ['start', 'menu-settings', 'menu-credits']);
+    [paused ? 'start' : 'new-game', 'menu-settings', 'menu-credits']);
 }
