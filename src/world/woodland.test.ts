@@ -112,6 +112,7 @@ describe('southern woodland estates and golf club', () => {
     expect(g.job.fare).toBe(Math.round(55 + distance * 0.7));
     expect(g.job.time).toBeCloseTo(28 + distance / 3);
     const fare = g.job.fare, cash = g.save.cash;
+    g.answerDispatch();
     g.world.people = []; g.player.body.position = { ...g.job.pickup };
     for (let i = 0; i < 100; i++) g.update(1 / 120);
     expect(g.job.stage).toBe('dropoff');

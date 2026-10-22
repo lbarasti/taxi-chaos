@@ -100,6 +100,10 @@ right of the map, clear of the right-hand conversation; on a portrait
 phone they stack on the left above BOOST and DRIFT; on a landscape phone they
 form a row across the top centre with the shift clipboard below Texts, shrinking the map so the controls stay clear. Shallow desktop windows use two columns below the personal status display.
 
+After delivery, a bell on Dispatch signals a waiting call. Select Dispatch to hear
+Bea's request and mark the pickup. You remain vacant until you answer; the next
+customer cannot board before then. Selecting a text booking takes that ride instead.
+
 Press the dispatcher button before pickup to hide fare guidance (and its route
 and destination symbol) while you browse your texts and the newsroom; press it
 again to route the fare. Hiding guidance does not cancel a booking or prevent a

@@ -85,6 +85,19 @@ describe('radar-first navigation HUD', () => {
     expect(navigationHudState(game)).not.toHaveProperty('distance');
   });
 
+  it('keeps an unanswered call vacant regardless of cached fare guidance', () => {
+    const game = new Game(undefined, false); game.start();
+    game.newJob(false, 'replaced', true);
+    expect(game.dispatchWaiting).toBe(true);
+    expect(navigationHudState(game)).toMatchObject({ status: 'VACANT', routeVisible: false, load: null });
+    expect(game.answerDispatch()).toBe(true);
+    expect(navigationHudState(game)).toMatchObject({ status: 'ENGAGED', routeVisible: true, load: null });
+    const request = game.dialogue.active;
+    expect(navigationHudState(game, false)).toMatchObject({ status: 'VACANT', routeVisible: false });
+    expect(game.answerDispatch()).toBe(false);
+    expect(game.dialogue.active).toBe(request);
+  });
+
   it('draws no metres counter and no bottom caption on the map', () => {
     const game = new Game(undefined, false);
     expect(navigationHudMarkup).not.toContain('map-caption');

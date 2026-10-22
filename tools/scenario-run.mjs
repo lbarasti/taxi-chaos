@@ -43,6 +43,7 @@ Commands and fields (each object starts with "op"):
   pickup    Fixture placement at the routed pickup, then real acceptance updates.
   deliver   Fixture placement at the aboard destination, then real delivery updates.
   read      Reveal and retain active dialogue; no invented travel beats.
+  dispatch  Answer the waiting Dispatch call and enable its pickup.
   ordinary  Ask for an ordinary fare; abandon an aboard ride explicitly first.
   abandon   Abandon the ride through its normal lifecycle.
   reload    Serialize and validate the save, then reconstruct the isolated game.
