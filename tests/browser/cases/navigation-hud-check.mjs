@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
+import { openGame, launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
 
 const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/navigation-hud');
 await mkdir(output, { recursive: true });
@@ -44,7 +44,7 @@ try {
     const landscape = touch && width > height, desktop = !touch;
     const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
+    await openGame(page, `${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     // The intro splash hides the whole HUD, including the new shortcut menu.
     assert.equal(await page.locator('body').evaluate(b => b.classList.contains('splash-active')), true, `${name}: the intro splash must be active`);
@@ -244,7 +244,11 @@ try {
     for (const selector of ['.navigation-actions', '#dispatch', '#texts', '#shift', '#newsroom']) {
       assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'hidden', `${name}: ${selector} must be hidden, not merely disabled, while paused`);
     }
-    await page.locator('#open-notebook').click();
+    await command({ op: 'mode', mode: 'playing' });
+    await page.locator('#shift').click();
+    await waitForDrawer(page, 'shift');
+    await page.locator('#open-notebook').focus();
+    await page.keyboard.press('Enter');
     await waitForDrawer(page, 'notebook');
     assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
@@ -309,7 +313,7 @@ try {
   {
     const context = await newContext(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?debug=1`);
+    await openGame(page, `${pathToFileURL(resolve('dist/index.html'))}?debug=1`);
     await page.waitForFunction(() => !!window.__taxi);
     const step = (seconds, keys = []) => page.evaluate(({ seconds, keys }) => window.__taxi.step(seconds, keys), { seconds, keys });
     await page.evaluate(() => window.__taxi.scenario('motorcycle'));

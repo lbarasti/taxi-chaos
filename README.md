@@ -23,6 +23,12 @@ npm run tools:test
 npm run browser:test -- --require-browser
 ```
 
+If managed Chromium blocks `file://`, serve `dist/` at `http://localhost:4173`
+and set `GAME_URL=http://localhost:4173/index.html` for the notification, HUD,
+observation and edition browser checks. They load the standalone artifact from
+localhost and switch offline before interacting. Use `CHROMIUM_PATH` to select
+an already installed browser.
+
 `npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run tools:test` runs the artwork, scenario and authoring CLI suites. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs. The optional GPU benchmark is `npm run performance:bench -- --frames 180`; it writes results under `scenario-runs/artwork-performance/`.
 
 For simulation and main-thread profiling, `npm run perf:bench` times fixed 120 Hz updates across four city workloads, starting each warmup and measured run from a fresh, persistence-disabled game. Setup, snapshots, UI and drawing are excluded from simulation timing; world render submission is timed separately. JSON includes raw samples, step counts, per-run/per-simulated-second/per-step timings, and browser/Canvas metadata. `npm run perf:profile -- --scenario cruise --traffic 23` records a Chrome CPU profile and real frame intervals while driving. Both write JSON and captures under `scenario-runs/perf/`; `--cpu 4` throttles either harness, and `--headless` supports cached Chromium on servers. Compare runs with the same browser, viewport, CPU setting and Canvas acceleration; render submission timing alone does not measure displayed FPS. Page errors make either command fail.

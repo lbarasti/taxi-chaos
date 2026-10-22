@@ -4,7 +4,7 @@
 .campaign-notice small{font-size:10px;color:var(--gold);letter-spacing:.6px;text-transform:uppercase}
 .campaign-notice strong{font-size:13px;line-height:1.4;font-weight:500;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .campaign-notice>span{font-size:11px;line-height:1.4;color:#b8c7bd}
-.splash-active .campaign-notice,body:has(.toast.visible) .campaign-notice{visibility:hidden}
+.splash-active .campaign-notice,body:has(.notification-stack:not([hidden])) .campaign-notice{visibility:hidden}
 .player-hud #player-day{font-size:11px;letter-spacing:1px;color:#e8e7cf;text-transform:uppercase;text-shadow:0 1px 3px #101b20}
 .splash-modal[data-page="publications"]{width:min(1120px,100vw);background:linear-gradient(105deg,#14242cf8,#203039f5);user-select:text}
 [data-page="publications"]>.drawer-page{margin-block:0}

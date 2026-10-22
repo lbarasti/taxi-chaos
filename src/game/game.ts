@@ -40,6 +40,7 @@ import { defaultCompiledMap, type CompiledMap } from '../map/compile';
 import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from '../vehicles/vehicle-upgrades';
 import { saveCar, type SavedCar } from '../vehicles/garage-save';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from '../world/harbour';
+import { NotificationStack, type NotificationKind, type NotificationOptions } from './notifications';
 
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -85,7 +86,15 @@ export class Game {
   private lastRidePosition = vec();
   private campaignVehiclesSpawned = new Set<string>();
   job!: Job; jobsDone = 0; crashCooldown = 0; speedingTime = 0; driftMeter = 0; lastDrift = 0; nearMiss = new Map<number, number>();
-  toast = 'Your city. Your shortcuts.'; toastTime = 5; toastKind = ''; eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
+  readonly notifications = new NotificationStack();
+  notificationsVisible = true;
+  // Legacy scenario tools can still inspect the exposed status or clear transient cards.
+  get toast() { return this.notifications.current?.message ?? ''; }
+  set toast(message: string) { if (!message) this.notifications.clear(); else if (this.notifications.current) this.notifications.current.message = message; else this.notifications.push(message); }
+  get toastTime() { return this.notifications.current?.remaining ?? (this.notifications.current ? Infinity : 0); }
+  set toastTime(seconds: number) { if (seconds <= 0) this.notifications.clear(); else if (this.notifications.current) this.notifications.current.remaining = seconds; }
+  get toastKind() { return this.notifications.current?.kind ?? ''; }
+  eventLog: string[] = []; onModeChange = () => {}; onChange = () => {}; navToGarage = false;
   touchMove: Vec | null = null;
   controls: Controls = { throttle: 0, turn: 0, handbrake: false }; previousTyres: Vec[] = [];
   private sandRuts: { anchor: Vec; segment?: Skid }[] = [];
@@ -163,10 +172,11 @@ export class Game {
     this.dayNight.reset();
     this.campaignVehiclesSpawned.clear(); this.syncCampaignWorld();
     if (this.campaignEnabled) this.dayNight.followCampaign(this.save.campaign.minute);
-    this.eventLog = []; this.newJob(true, 'reset'); this.applyUpgrades(); this.setMode('playing');
+    this.notifications.clear(); this.eventLog = []; this.newJob(true, 'reset'); this.applyUpgrades(); this.setMode('playing');
   }
   /** New campaign is separate from recovery and laboratory run resets. */
   resetStory() {
+    this.notifications.clear();
     for (const v of this.vehicles) if (this.isCampaignVehicle(v.sourceId)) v.alive = false;
     this.vehicles = this.vehicles.filter(v => !this.isCampaignVehicle(v.sourceId));
     this.campaignVehiclesSpawned.clear();
@@ -273,7 +283,7 @@ export class Game {
   }
   get newsroom() { return this.missions.catalogue.stops.byId[this.campaignContent.newsroom.stop]?.position ?? vec(4, 32); }
   get newsroomNear() { return this.campaignEnabled && (this.mode === 'playing' || this.mode === 'paused') && dist(this.actor.position, this.newsroom) < 9 && this.speed < 2.8; }
-  navigateNewsroom() { if (this.mode !== 'playing' || !this.campaignEnabled) return; this.navToNewsroom = !this.navToNewsroom; this.navToGarage = this.navToHarbour = false; this.notify(this.navToNewsroom ? `Newsroom at ${this.campaignContent.newsroom.name}. Stop nearby to leave selected material from your Notebook.` : 'Back to your driving route.'); }
+  navigateNewsroom() { if (this.mode !== 'playing' || !this.campaignEnabled) return; this.navToNewsroom = !this.navToNewsroom; this.navToGarage = this.navToHarbour = false; this.notify(this.navToNewsroom ? `Newsroom at ${this.campaignContent.newsroom.name}. Stop nearby to leave selected material from your Notebook.` : 'Back to your driving route.', '', { category: 'newsroom', duration: this.navToNewsroom ? null : 4 }); }
   private note(entry: Omit<NotebookEntry, 'shift' | 'at'>) {
     recordNote(this.campaignContext, entry);
   }
@@ -297,16 +307,16 @@ export class Game {
     if (status.recorded) return true;
     const { observation } = status;
     if (!dispatchCampaignEvent(this.campaignContext, { type: 'observation', id: observation.id })) return false;
-    this.persist(); this.notify(observation.success); return true;
+    this.persist(); this.notify(observation.success, 'success', { category: 'newsroom', duration: null }); return true;
   }
   submitMaterial(id: string): boolean {
     if (!this.newsroomNear || this.save.campaign.finished || !Object.hasOwn(this.campaignContent.materials, id) || !this.save.playerRecords.notebook.some(e => e.id === id) || Object.hasOwn(this.save.campaign.newsroom.received, id)) return false;
     if (!receiveMaterial(this.save.campaign, id, this.campaignContext, this.campaignContent)) return false; this.syncCampaignWorld(); this.persist();
-    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Return to the editor to request a ready story’s publication.'); return true;
+    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Return to the editor to request a ready story’s publication.', '', { category: 'newsroom', duration: null }); return true;
   }
   requestPublication(allegation: Allegation): boolean {
     if (!this.newsroomNear || !approvePublication(this.save.campaign, allegation, this.campaignContext, this.campaignContent)) return false;
-    this.syncCampaignWorld(); this.persist(); this.notify(`Editor accepted the story for the next ${String(this.campaignContent.timing.editionHour).padStart(2, '0')}:00 edition. Any response will follow later.`); return true;
+    this.syncCampaignWorld(); this.persist(); this.notify(`Editor accepted the story for the next ${String(this.campaignContent.timing.editionHour).padStart(2, '0')}:00 edition. Any response will follow later.`, '', { category: 'newsroom', duration: null }); return true;
   }
   recordDialogue() {
     const active = this.dialogue.active;
@@ -405,24 +415,24 @@ export class Game {
           !motorcycleEngineWorks(v.damage) && dist(v.body.position, this.driver.position) < 4);
         this.notify(this.tumble ? 'Get back on your feet before taking another ride.'
           : disabled ? 'That motorbike is too damaged to start. Find another ride or tow your bike to repair it.'
-          : 'Walk up to a parked car or motorbike, then press E to take it.');
+          : 'Walk up to a parked car or motorbike, then press E to take it.', '', { category: 'movement' });
         return false;
       }
       if (next.model === 'motorcycle' && (next.dynamics as MotorcycleDynamics).fallen) {
         const dynamics = next.dynamics as MotorcycleDynamics;
         dynamics.resetLean(); next.body.velocity = vec(); next.body.angularVelocity = 0;
         next.exitSteer = undefined; next.coastUntil = undefined;
-        this.notify('Motorbike back on its wheels. Press E again to ride.');
+        this.notify('Motorbike back on its wheels. Press E again to ride.', '', { category: 'movement' });
         return true;
       }
       if (next !== this.player) { this.player.kind = 'traffic'; this.player.parked = true; this.player.driverExited = true; next.kind = 'taxi'; this.player = next; this.boost = 100; this.applyUpgrades(); }
       this.setJobType();
       next.parked = false; next.driverExited = false; next.path = []; next.coastUntil = undefined; next.exitSteer = undefined; next.door = undefined;
       if (next.model === 'motorcycle') next.body.mass = next.definition.chassis.mass;
-      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!'); return true;
+      this.onFoot = false; this.tumble = null; this.driver.angularVelocity = 0; this.previousTyres = []; this.roadMarkVehicleId = -1; this.controls = { throttle: 0, turn: 0, handbrake: false }; this.keys.clear(); this.setMode('playing'); this.persist(); this.notify(next.definition.graphics.sprite === 'motorcycle' ? 'Courier bike ready. Pick up parcels in yellow; deliver to green!' : 'Replacement cab ready. Back to the fares!', '', { category: 'movement' }); return true;
     }
     const point = this.exitLocation(this.player, this.exitSide);
-    if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger'); return false; }
+    if (!point) { this.notify('Exit blocked. Move your ride to make room.', 'danger', { category: 'movement' }); return false; }
     const moving = this.speed > MOVING_EXIT_SPEED, b = this.player.body;
     if (this.player.definition.physics.dynamics === 'car') this.player.door = { side: point.side, at: this.time - (moving ? 0 : 0.17) };
     if (moving) {
@@ -430,7 +440,7 @@ export class Game {
       const delay = Math.min(DOOR_OPEN_TIME, Math.max(0, fuse - 0.05));
       if (delay > 0.02) {
         this.pendingExit = { vehicle: this.player, side: point.side, at: this.time, delay };
-        this.notify(this.player.model === 'motorcycle' ? 'JUMPING OFF · Hold on for the landing!' : 'DOOR OPENING · Brace for the landing!', 'danger');
+        this.notify(this.player.model === 'motorcycle' ? 'JUMPING OFF · Hold on for the landing!' : 'DOOR OPENING · Brace for the landing!', 'danger', { category: 'movement' });
         return true;
       }
     }
@@ -443,7 +453,7 @@ export class Game {
     this.pendingExit = null;
     if (this.mode !== 'playing' || this.onFoot || this.player !== pending.vehicle || this.player.sinking) return;
     const point = this.exitLocation(pending.vehicle, pending.side);
-    if (!point) { this.notify('Exit blocked! Try the other side.', 'danger'); return; }
+    if (!point) { this.notify('Exit blocked! Try the other side.', 'danger', { category: 'movement' }); return; }
     if (pending.vehicle.door) pending.vehicle.door.side = point.side;
     this.finishExit(point.point, point.side);
   }
@@ -475,7 +485,7 @@ export class Game {
       this.newJob(false, 'left-vehicle');
     }
     this.controls = { throttle: 0, turn: 0, handbrake: false }; this.setMode('playing'); this.persist();
-    this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.');
+    this.notify(moving ? 'ROLL WITH THE LANDING! Speed costs health. Find another ride.' : 'Follow the blue route to a parked car or motorbike.', '', { category: 'movement' });
   }
   walk(dt: number) {
     const { inOcean } = this.map.land, { leavesTracks: inSand } = this.map.terrain;
@@ -562,13 +572,13 @@ export class Game {
     if (this.harbour.vehicleId === this.player.id && !this.harbour.exchanged && this.insideSwap) return this.policeVisible ? 'Police have eyes on you. Exchange paused.' : this.harbour.progress > 0 ? `NEW IDENTITY · ${Math.ceil((SWAP_SECONDS - this.harbour.progress) * 10) / 10}s` : 'Stop fully inside the container to exchange.';
     return null;
   }
-  navigateHarbour() { if (this.mode !== 'playing' || this.onFoot) return; this.navToNewsroom = false; this.navToHarbour = !this.navToHarbour; this.navToGarage = false; this.notify(this.navToHarbour ? `Northstar Harbour: $${PORT_FEE} buys entry and a car exchange. H cancels the route.` : 'Back to the fare route.'); }
+  navigateHarbour() { if (this.mode !== 'playing' || this.onFoot) return; this.navToNewsroom = false; this.navToHarbour = !this.navToHarbour; this.navToGarage = false; this.notify(this.navToHarbour ? `Northstar Harbour: $${PORT_FEE} buys entry and a car exchange. H cancels the route.` : 'Back to the fare route.', '', { category: 'services', duration: this.navToHarbour ? null : 4 }); }
   enterHarbour() {
-    if (this.mode !== 'playing' || this.player.sinking || !this.portGateNear || !this.exchangeCar || this.speed > 2 || this.policeVisible || this.save.cash < PORT_FEE || this.player.damage.status === 'burning' || this.player.damage.status === 'wreck') { this.notify(this.harbourPrompt ?? 'Stop in a car at the harbour entry gate.', 'danger'); return false; }
+    if (this.mode !== 'playing' || this.player.sinking || !this.portGateNear || !this.exchangeCar || this.speed > 2 || this.policeVisible || this.save.cash < PORT_FEE || this.player.damage.status === 'burning' || this.player.damage.status === 'wreck') { this.notify(this.harbourPrompt ?? 'Stop in a car at the harbour entry gate.', 'danger', { category: 'services' }); return false; }
     this.save.cash -= PORT_FEE; this.persist();
     this.harbour = { vehicleId: this.player.id, entered: false, exchanged: false, progress: 0 };
     this.navToHarbour = true; this.navToGarage = false; this.sounds.emit('purchase', this.time);
-    this.notify('SECURITY PAID. Follow cyan to container C-76. Drive fully inside and stop.'); return true;
+    this.notify('SECURITY PAID. Follow cyan to container C-76. Drive fully inside and stop.', '', { category: 'services', duration: null }); return true;
   }
   updateHarbour(dt: number) {
     const h = this.harbour;
@@ -593,7 +603,7 @@ export class Game {
     this.heat = 0; this.escape = 0; this.arrest = 0; this.speedingTime = 0; this.driftMeter = 0;
     this.policeIntel = { position: vec(), velocity: vec(), seenAt: -100 };
     for (const v of this.police) v.alive = false;
-    this.persist(); this.sounds.emit('escape', this.time); this.notify('FRESH STOCK CAR. Upgrades stayed with the old car. Police warnings cleared. Follow cyan to the exit.', 'success'); this.onChange();
+    this.persist(); this.sounds.emit('escape', this.time); this.notify('FRESH STOCK CAR. Upgrades stayed with the old car. Police warnings cleared. Follow cyan to the exit.', 'success', { category: 'services', duration: null }); this.onChange();
   }
   private restoreGarage() {
     const garage = this.save.garage;
@@ -678,7 +688,7 @@ export class Game {
     this.notify(this.save.campaign.finished ? 'Arcade mode · Dispatcher work continues.' : 'First fare is just ahead. Stop inside the yellow ring.');
     if (this.initialMorningPending) { this.initialMorningPending = false; this.captureMorning(); }
   }
-  notify(message: string, kind = '') { this.toast = message; this.toastKind = kind; this.toastTime = 4; this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
+  notify(message: string, kind: NotificationKind = '', options: NotificationOptions = {}) { this.notifications.push(message, kind, options); this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   private missionContext(): DirectorContext {
     return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds, minute: this.save.campaign.minute, shift: this.save.campaign.finished ? campaignDays(this.campaignContent.timing) + 1 : this.save.campaign.shift };
   }
@@ -849,7 +859,7 @@ export class Game {
   price(key: Upgrade) { return upgradeInfo[key].price * (this.player.upgrades[key] + 1); }
   buy(key: Upgrade) { if (this.mode !== 'garage' || this.onFoot || this.player.sinking || !this.player.alive || this.player.damage.status === 'wreck') return false; const price = this.price(key); if (this.save.cash < price || this.player.upgrades[key] >= 3) return false; this.save.cash -= price; this.player.upgrades[key]++; this.applyUpgrades(); this.persist(); this.sounds.emit('purchase', this.time); this.onChange(); return true; }
   repair() { const price = this.repairPrice; if (this.save.cash < price || price === 0) return; this.save.cash -= price; this.player.damage = createVehicleDamage(); this.persist(); this.sounds.emit('repair', this.time); this.onChange(); }
-  garage() { if (this.mode === 'garage') { this.setMode('playing'); return; } if (this.mode !== 'playing' || this.player.sinking) return; if (this.onFoot) { this.notify('Get into a car before visiting Pit Stop.'); return; } if (this.stars) { this.notify('Lose the cops before visiting the garage.', 'danger'); return; } this.navToNewsroom = false; if (!this.garageNear) { this.navToHarbour = false; this.navToGarage = !this.navToGarage; this.notify(this.navToGarage ? 'Route to Pit Stop set. Follow the blue line.' : 'Back to your fare. Follow the marked route.'); return; } if (this.speed > 3) { this.notify('Stop the cab to enter Pit Stop.'); return; } this.navToGarage = false; this.setMode('garage'); }
+  garage() { if (this.mode === 'garage') { this.setMode('playing'); return; } if (this.mode !== 'playing' || this.player.sinking) return; if (this.onFoot) { this.notify('Get into a car before visiting Pit Stop.', '', { category: 'services' }); return; } if (this.stars) { this.notify('Lose the cops before visiting the garage.', 'danger', { category: 'services' }); return; } this.navToNewsroom = false; if (!this.garageNear) { this.navToHarbour = false; this.navToGarage = !this.navToGarage; this.notify(this.navToGarage ? 'Route to Pit Stop set. Follow the blue line.' : 'Back to your fare. Follow the marked route.', '', { category: 'services' }); return; } if (this.speed > 3) { this.notify('Stop the cab to enter Pit Stop.', '', { category: 'services' }); return; } this.navToGarage = false; this.setMode('garage'); }
   recover() {
     if (this.mode === 'wasted') {
       this.harbour = { vehicleId: null, entered: false, exchanged: false, progress: 0 }; this.navToHarbour = false;
@@ -868,7 +878,7 @@ export class Game {
       this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.previousTyres = []; this.roadMarkVehicleId = -1;
       this.wreckedAt = -1; this.boost = 100; this.heat = 0; this.arrest = 0; this.escape = 0; this.combo = 0; this.comboTimer = 0; this.driftMeter = 0; this.navToGarage = false;
       for (const v of this.police) v.alive = false;
-      this.newJob(false, 'hospital'); this.setMode('playing'); this.persist(); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`);
+      this.newJob(false, 'hospital'); this.setMode('playing'); this.persist(); this.notify(`Hospital bill paid: $${bill.total}. Find a parked ride.`, '', { category: 'services', duration: null });
       return;
     }
     if (this.mode !== 'arrested' && !(this.mode === 'playing' && this.onFoot && !this.player.sinking &&
@@ -887,7 +897,7 @@ export class Game {
     this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear(); this.player.sinking = undefined;
     if (this.player.dynamics instanceof MotorcycleDynamics) this.player.dynamics.resetLean();
     for (const v of this.police) v.alive = false;
-    this.newJob(true, 'arrested'); this.setMode('playing'); this.persist(); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`);
+    this.newJob(true, 'arrested'); this.setMode('playing'); this.persist(); this.notify(`Back on the road. $${fee} paid. Make it back in fares.`, '', { category: 'services', duration: null });
     this.sounds.emit('repair', this.time);
   }
   crime(amount: number) { if (this.settings.noPolice) return; this.heat = clamp(this.heat + amount, 0, 100); this.escape = 0; }
@@ -904,7 +914,7 @@ export class Game {
       this.crime(structural ? 25 : prop.kind === 'kiosk' ? 15 : prop.kind === 'tree' ? 12 : 7);
       this.floating(prop.body.position, this.combo > 1 ? `${this.combo}× SMASH` : 'SMASH!', '#f9ce60');
       if (!this.settings.invincible) v.damage.health = Math.max(0, v.damage.health - Math.min(3, impact * 0.07) * (1 - v.upgrades.armor * 0.25));
-      if (this.smashed === 1) this.notify('Shortcut unlocked. Property damage attracts the police.', 'danger');
+      if (this.smashed === 1) this.notify('Shortcut unlocked. Property damage attracts the police.', 'danger', { category: 'services' });
     }
   }
   propSound(prop: Prop, impact: number) {
@@ -1159,7 +1169,7 @@ export class Game {
     }
     if (!this.campaignEnabled || this.dayNight.previewing || this.save.campaign.finished) this.dayNight.update(dt);
     if (Math.floor(this.save.story.campaignSeconds / 5) !== campaignBucket) this.persist();
-    this.toastTime -= dt; this.crashCooldown -= dt; this.comboTimer -= dt;
+    this.notifications.tick(dt, this.notificationsVisible); this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;
     const has = (...keys: string[]) => keys.some(k => this.keys.has(k));
     const throttle = this.touchMove ? -this.touchMove.y : Number(has('KeyW', 'ArrowUp', 'up')) - Number(has('KeyS', 'ArrowDown', 'down'));
@@ -1380,7 +1390,7 @@ export class Game {
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
           this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.save.shiftStats.earnings += payout; this.jobsDone++; this.save.shiftStats.jobs++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
-          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). ${this.campaignEnabled ? 'Answer Dispatch for the next call.' : 'Next pickup marked.'}`, 'success');
+          this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). ${this.campaignEnabled ? 'Answer Dispatch for the next call.' : 'Next pickup marked.'}`, 'success', { category: 'dispatch', duration: null });
           this.sounds.emit('payment', this.time);
           const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel', this.campaignContent) : null, completedId = j.missionId;
           this.newJob();
@@ -1410,7 +1420,7 @@ export class Game {
         const spawn = candidates[Math.floor(this.world.random() * candidates.length)] ?? vec(240, 240);
         const firstPatrol = this.police.length === 0;
         if (firstPatrol) this.policeIntel = { position: { ...p }, velocity: { ...this.actor.velocity }, seenAt: this.time };
-        this.vehicle('police', spawn.x + 3, spawn.y - 3, Math.atan2(p.y - spawn.y, p.x - spawn.x), '#cfdfdf'); if (firstPatrol) this.notify('DISPATCH: Reckless cab reported. Lose their line of sight.', 'danger');
+        this.vehicle('police', spawn.x + 3, spawn.y - 3, Math.atan2(p.y - spawn.y, p.x - spawn.x), '#cfdfdf'); if (firstPatrol) this.notify('DISPATCH: Reckless cab reported. Lose their line of sight.', 'danger', { category: 'dispatch' });
       }
       const seen = this.policeVisible;
       if (seen) this.policeIntel = { position: { ...this.actor.position }, velocity: { ...this.actor.velocity }, seenAt: this.time };

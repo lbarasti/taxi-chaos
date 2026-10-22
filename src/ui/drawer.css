@@ -1,5 +1,5 @@
 /* Start and pause share the same splash drawer. */
-.splash-active #app>.controls,.splash-active .touch-controls,.splash-active .navigation-hud,.splash-active .navigation-actions,.splash-active .player-hud,.splash-active .toast{visibility:hidden}
+.splash-active #app>.controls,.splash-active .touch-controls,.splash-active .navigation-hud,.splash-active .navigation-actions,.splash-active .player-hud,.splash-active .notification-stack{visibility:hidden}
 .splash-backdrop{display:flex;justify-content:flex-start;align-items:stretch;padding:0;background:transparent;backdrop-filter:none}
 .splash-backdrop.splash-exiting{opacity:0;pointer-events:none;transition:opacity .55s ease-in-out}
 .splash-modal{display:flex;flex-direction:column;width:min(540px,100vw);height:100dvh;max-height:none;padding:max(32px,env(safe-area-inset-top)) max(38px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(38px,env(safe-area-inset-left));background:linear-gradient(105deg,#14242c9e 0%,#17262d85 55%,#20303970 100%);border:0;border-right:1px solid #a3ddc235;border-radius:0;box-shadow:18px 0 64px #06121b80;backdrop-filter:none;overscroll-behavior:contain}

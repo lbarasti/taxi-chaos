@@ -114,7 +114,10 @@ describe('automatic campaign morning checkpoints', () => {
     game.save.cash = 8000; game.advanceNarrativeTo(dayMinute(8)); game.persist();
     game.configure({ gore: true, difficulty: 'cruise', invincible: true });
     values.set(storageKeys.audio, '{"muted":true}');
+    game.notify('Old session notification', '', { category: 'services', duration: null });
     const archive = values.get(key), loaded = game.loadMorning(3)!;
+    expect(loaded.notifications.items).toEqual([]);
+    expect(game.notifications.current?.message).toBe('Old session notification');
     expect(loaded).not.toBe(game); expect(loaded.world).not.toBe(game.world); expect(loaded.player).not.toBe(game.player);
     expect(loaded.settings).toMatchObject({ gore: true, difficulty: 'cruise', invincible: false });
     expect(values.get(storageKeys.audio)).toBe('{"muted":true}');

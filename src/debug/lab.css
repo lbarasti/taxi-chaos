@@ -102,7 +102,6 @@
 /* Day/night presets: equal-width grid so all four fit without wrapping oddly. */
 .debug-panel.lab .lab-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
 .debug-panel.lab .lab-presets button{padding:4px 5px;font-size:9px;width:100%}
-@media(min-width:701px) and (min-height:501px) and (pointer:fine){body:has(.debug-panel.lab.lab-closed) .toast{bottom:125px}}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){.debug-panel.lab.lab-closed{display:none}}
 
 @media (max-width:700px){

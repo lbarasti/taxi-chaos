@@ -65,6 +65,18 @@ export async function newPage(browser, options = {}) {
   return context.newPage();
 }
 
+// Managed Chromium may disallow file://. Load the same standalone artifact from
+// localhost, then restore offline mode before interacting with the game.
+export async function openGame(page, fileURL) {
+  if (!process.env.GAME_URL) return page.goto(fileURL);
+  const url = new URL(process.env.GAME_URL);
+  assert.equal(url.origin, 'http://localhost:4173', 'GAME_URL must use the local preview server');
+  url.search = new URL(fileURL).search;
+  await page.context().setOffline(false);
+  try { await page.goto(url.href); }
+  finally { await page.context().setOffline(true); }
+}
+
 export async function closeBrowser(browser) {
   const session = sessions.get(browser);
   if (session.errors.length || session.requests.length) await captureFailure();
