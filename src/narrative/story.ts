@@ -9,7 +9,7 @@ export type StoryCategory = 'plot' | 'side-quest' | 'lore';
 export type StoryMessage = Readonly<{
   /** Stable character identity; the display name and portrait resolve from the catalogue. */
   speaker: CharacterId; category: StoryCategory;
-  channel: 'passenger' | 'sender'; text: string;
+  channel: 'passenger' | 'sender' | 'dispatch'; text: string;
 }>;
 export const STORY_LETTERS_PER_SECOND = 32;
 export type DialogueState = { beatId: BeatId; message: StoryMessage; elapsed: number; expanded: boolean };

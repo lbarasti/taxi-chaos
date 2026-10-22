@@ -3,6 +3,7 @@ vi.mock('../audio/audio-assets', () => ({ audioAssets: {} }));
 import { AudioFX } from '../audio/audio';
 import { Game, defaultSave } from './game';
 import { readStorage, removeStorage, storageKeys } from './storage';
+import { campaignDefinition } from '../campaign/content';
 
 function mockStorage(entries: [string, string][] = []) {
   const values = new Map(entries);
@@ -17,6 +18,71 @@ function mockStorage(entries: [string, string][] = []) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Taxi Chaos current-format storage', () => {
+  it('replaces progressed saves and runtime bodies with a fully initialized fresh game, keeping preferences', () => {
+    const { values } = mockStorage();
+    const previous = new Game();
+    previous.configure({ gore: true, difficulty: 'chaos', invincible: true, noPolice: true, infiniteBoost: true });
+    const audio = new AudioFX();
+    audio.configure({ muted: true, volume: 0.31, playerEngine: 0.23, ambient: 0.44, sirens: 0.08 });
+    previous.save.cash = 9876; previous.save.deliveries = 42; previous.save.best = 2100;
+    previous.save.shiftStats = { earnings: 400, jobs: 9, smashed: 17, kills: 3 };
+    Object.assign(previous.save.story, { chapter: 4, completed: ['old-mission'], failed: ['failed-mission'], flags: ['old-flag'], choices: { old: 'choice' }, relationships: { old: 12 }, retryAt: { old: 100 }, campaignSeconds: 1234, deliveries: 42 });
+    previous.save.playerRecords.texts.push({ messageId: 'old-text', missionId: 'old-mission', character: 'dispatcher', sender: 'Dispatch', title: 'Old text', text: 'Old progress', pickup: 'Old stop', receivedAt: 10, readAt: 12 });
+    previous.save.playerRecords.notebook.push({ id: 'old-record', title: 'Old note', text: 'Old progress', kind: 'receipt', shift: 2, at: 10 });
+    previous.save.campaign.minute += 6000; previous.save.campaign.shift = 5;
+    previous.save.campaign.finished = previous.save.campaign.endingSeen = true;
+    previous.save.campaign.world.old = true;
+    previous.save.campaign.newsroom = { received: { old: { at: 500, verifiedAt: 680 } }, cases: { old: { verifiedAt: 680, approvedAt: 700, editionAt: 900 } } };
+    previous.save.campaign.publications.push({ allegation: 'old', submittedShift: 1, publishedShift: 2, at: 900 });
+    previous.save.campaign.editions.push({ day: 5, at: 6000, articles: ['old'], briefs: [], read: true });
+    previous.save.campaign.reactions.old = { at: 1000 };
+    previous.save.campaign.regularRides.old = 4;
+    previous.player = previous.vehicle('taxi', 90, 80, 0, '#f7ce55', 'pickup');
+    previous.player.upgrades.engine = 3;
+    previous.vehicle('traffic', 84, 80, 0, '#ffffff').upgrades.grip = 2;
+    previous.player.damage.health = 14; previous.onFoot = true; previous.driverHealth = 40;
+    previous.job.stage = 'dropoff'; previous.job.elapsed = 50;
+    previous.time = 123; previous.heat = 60; previous.boost = 20; previous.smashed = 10;
+    previous.world.props[0].alive = false; previous.keys.add('KeyW');
+    previous.persist();
+    const settings = values.get(storageKeys.settings), sound = values.get(storageKeys.audio);
+    const oldSave = structuredClone(previous.save);
+    const expected = new Game(previous.map, false, true, defaultSave(previous.campaignContent), previous.campaignContent);
+    expected.persist();
+    const fresh = previous.freshGame();
+    expect(fresh).not.toBe(previous); expect(fresh.world).not.toBe(previous.world); expect(fresh.player).not.toBe(previous.player);
+    expect(fresh.map).toBe(previous.map); expect(fresh.campaignContent).toBe(previous.campaignContent);
+    expect(fresh.save).toEqual(expected.save);
+    expect(fresh.snapshot()).toEqual({ ...expected.snapshot(), settings: fresh.settings });
+    expect(fresh.keys.size).toBe(0); expect(fresh.mode).toBe('intro');
+    expect(previous.save).toEqual(oldSave); expect(previous.onFoot).toBe(true); expect(previous.heat).toBe(60);
+    expect(fresh.settings).toMatchObject({ gore: true, difficulty: 'chaos', invincible: false, noPolice: false, infiniteBoost: false });
+    expect(values.get(storageKeys.settings)).toBe(settings); expect(values.get(storageKeys.audio)).toBe(sound);
+    expect(new AudioFX().preferences).toEqual(audio.preferences);
+    expect(JSON.parse(values.get(storageKeys.save)!)).toEqual(JSON.parse(JSON.stringify(fresh.save)));
+    const reloaded = new Game();
+    expect(reloaded.save).toEqual(fresh.save); expect(reloaded.player.upgrades).toEqual(fresh.player.upgrades);
+    expect(reloaded.actor.position).toEqual(fresh.actor.position); expect(reloaded.onFoot).toBe(false);
+    fresh.start(); reloaded.start();
+    expect(reloaded.save.playerRecords).toEqual(fresh.save.playerRecords);
+    expect(reloaded.job).toEqual(fresh.job); expect(reloaded.missionOffers).toEqual(fresh.missionOffers);
+    expect(fresh.save.playerRecords.texts.length).toBeGreaterThan(0);
+    expect(fresh.save.campaign.editions.length).toBeGreaterThan(0);
+  });
+  it('uses current campaign initialization and keeps isolated games from reading or writing normal storage', () => {
+    const { storage } = mockStorage([[storageKeys.save, JSON.stringify({ ...defaultSave(), cash: 900 })]]);
+    const definition = { ...campaignDefinition, initialWorld: { ...campaignDefinition.initialWorld, 'fresh-marker': 'opening' } };
+    const isolated = new Game(undefined, false, true, undefined, definition);
+    isolated.configure({ gore: true, difficulty: 'cruise' }); isolated.save.cash = 400;
+    const fresh = isolated.freshGame();
+    expect(fresh.persistenceEnabled).toBe(false); expect(fresh.campaignContent).toBe(definition);
+    expect(fresh.save.campaign.world['fresh-marker']).toBe('opening');
+    const expected = new Game(isolated.map, false, true, defaultSave(definition), definition); expected.persist();
+    expect(fresh.save).toEqual(expected.save);
+    expect(fresh.settings).toMatchObject({ gore: true, difficulty: 'cruise' });
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(new Game().save.cash).toBe(900);
+  });
   it('loads and updates current progress, settings and preferences', () => {
     const save = { ...defaultSave(), cash: 975, deliveries: 12, best: 600 };
     const settings = { gore: true, difficulty: 'chaos' }, preferences = { muted: true, volume: 0.4, playerEngine: 0.3, ambient: 0.6, sirens: 0.1 };

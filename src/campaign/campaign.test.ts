@@ -7,7 +7,7 @@ import { contact, vec } from '../physics/physics';
 import { GARAGE } from '../world/world';
 import { storageKeys } from '../game/storage';
 import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../narrative/player-records';
-import { campaignCast, corroboration, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
+import { campaignCast, corroboration, everydayJobs, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
 import { defaultCampaign, parseCampaign } from './state';
 import { dayMinute } from './clock';
 import { CAMPAIGN_END, LAST_EDITION } from './content';
@@ -19,7 +19,7 @@ const make = () => { const g = new Game(defaultCompiledMap, false); g.vehicles =
 const step = (g: Game, seconds = 0.9) => { for (let i = 0; i < Math.round(seconds * 120); i++) g.update(1 / 120); };
 const arrive = (g: Game, point: { x: number; y: number }) => { g.player.body.position = { ...point }; g.player.body.velocity = vec(); step(g); };
 const advance = (g: Game, day: number) => { g.advanceNarrativeTo(dayMinute(day)); g.syncMissionOffers(); };
-const finish = (g: Game) => { arrive(g, g.job.pickup); g.dialogue.readAll(); step(g, 0.01); arrive(g, g.job.dropoff); };
+const finish = (g: Game) => { g.answerDispatch(); arrive(g, g.job.pickup); g.dialogue.readAll(); step(g, 0.01); arrive(g, g.job.dropoff); };
 const deliver = (g: Game, id: string) => { expect(g.routeMissionOffer(id)).toBe(true); finish(g); expect(g.save.story.completed).toContain(id); };
 afterEach(() => vi.unstubAllGlobals());
 
@@ -55,6 +55,87 @@ describe('Open Shore world-driven campaign', () => {
     const g = make(); g.newJob(false, 'replaced', true);
     expect(g.job.missionId).toBeUndefined(); expect(g.job.everyday).toBeDefined();
     expect(g.save.story.completed).toEqual([]); expect(g.save.story.choices).toEqual({});
+  });
+
+  it.each(everydayJobs)('separates dispatch from $name at pickup and during the ride', regular => {
+    const g = make();
+    g.offer = everydayJobs.indexOf(regular) - 1;
+    g.newJob(false, 'replaced', true);
+    expect(g.answerDispatch()).toBe(true);
+    step(g, 0.01);
+    expect(g.job.name).toBe(regular.name);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: 'bea', channel: 'dispatch' });
+    expect(g.dialogue.active?.message.text).toContain(regular.name);
+    expect(g.dialogue.active?.message.text).not.toContain(regular.lines[0]);
+    arrive(g, g.job.pickup);
+    expect(g.job.stage).toBe('dropoff');
+    expect(g.dialogue.active?.message).toEqual({ speaker: regular.character, category: 'lore', channel: 'passenger', text: regular.lines[0] });
+    g.dialogue.readAll(); step(g, 8);
+    expect(g.dialogue.active?.beatId).toMatch(/-pickup$/);
+    g.player.body.position.y -= 12; step(g, 0.1);
+    expect(g.dialogue.active?.beatId).toMatch(/-during$/);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: regular.character, channel: 'passenger', text: regular.during });
+  });
+
+  it('keeps ordinary parcel messages on the sender channel', () => {
+    const g = make();
+    g.player = g.spawnVehicle({ kind: 'taxi', model: 'motorcycle', position: { ...g.player.body.position } });
+    g.newJob(false, 'replaced', true); g.answerDispatch(); step(g, 0.01);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: 'bea', channel: 'dispatch' });
+    const sender = g.job.everyday!.character;
+    arrive(g, g.job.pickup);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: sender, channel: 'sender' });
+    g.dialogue.readAll(); step(g, 8); g.player.body.position.y -= 12; step(g, 0.1);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: sender, channel: 'sender' });
+  });
+
+  it('keeps the goodbye and next pickup waiting until Dispatch is answered', () => {
+    const g = make(); finish(g);
+    expect(g.job.everyday).toBeDefined();
+    const goodbye = g.dialogue.active;
+    step(g, 0.1); expect(g.dialogue.active).toBe(goodbye);
+    g.dialogue.readAll(); step(g, 8);
+    expect(g.dialogue.active).toBe(goodbye);
+    g.dialogue.collapse(); step(g, 8);
+    expect(g.dialogue.active).toBe(goodbye);
+    expect(g.dispatchWaiting).toBe(true);
+    // Even reaching the unaccepted pickup cannot board or pay out another ride.
+    arrive(g, g.job.pickup);
+    expect(g.job.stage).toBe('pickup'); expect(g.job.wait).toBe(0);
+    expect(g.jobsDone).toBe(1);
+    expect(g.answerDispatch()).toBe(true);
+    expect(g.dispatchWaiting).toBe(false);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: 'bea', channel: 'dispatch' });
+    expect(g.dialogue.active?.message.text).toContain(g.job.name);
+    expect(g.dialogue.active?.message.text).toContain(g.job.destination);
+    const request = g.dialogue.active;
+    expect(g.answerDispatch()).toBe(false);
+    expect(g.dialogue.active).toBe(request);
+    step(g); expect(g.job.stage).toBe('dropoff');
+  });
+
+  it('waits for Dispatch before routing a suggested story ride after an ordinary fare', () => {
+    const g = make(); finish(g); finish(g);
+    expect(g.job.missionId).toBe('celia-barriers');
+    expect(g.dispatchWaiting).toBe(true);
+    arrive(g, g.job.pickup); expect(g.job.stage).toBe('pickup');
+    expect(g.answerDispatch()).toBe(true);
+    expect(g.dialogue.active?.message).toMatchObject({ speaker: 'bea', channel: 'dispatch' });
+    step(g); expect(g.job.stage).toBe('dropoff');
+  });
+
+  it('cancels a pending dispatch when a different booking is routed or picked up', () => {
+    const g = make(); finish(g);
+    expect(g.routeMissionOffer('celia-barriers')).toBe(true);
+    expect(g.dispatchWaiting).toBe(false);
+    step(g, 0.01); expect(g.dialogue.active).toBeNull();
+    g.newJob(false, 'replaced', true);
+    g.answerDispatch();
+    g.dialogue.start('previous-goodbye', { speaker: 'bea', category: 'lore', channel: 'passenger', text: 'Thank you.' });
+    arrive(g, g.job.pickup);
+    g.dialogue.readAll(); step(g, 8);
+    expect(g.dialogue.active?.beatId).toMatch(/-pickup$/);
+    expect(g.dialogue.active?.message.channel).toBe('passenger');
   });
 
   it('keeps acquired materials when a full notebook receives authored rides and later ordinary entries', () => {
@@ -253,7 +334,7 @@ describe('Open Shore world-driven campaign', () => {
   });
 
   it('keeps newsroom navigation separate from a co-located fare', () => {
-    const g = make(); advance(g, 4); g.job.pickup = { ...g.newsroom }; g.navigateNewsroom(); arrive(g, g.newsroom);
+    const g = make(); advance(g, 4); g.answerDispatch(); g.job.pickup = { ...g.newsroom }; g.navigateNewsroom(); arrive(g, g.newsroom);
     expect(g.job.stage).toBe('pickup'); expect(g.snapshot().navigation).toBe('newsroom');
     g.navigateNewsroom(); step(g); expect(g.job.stage).toBe('dropoff');
   });

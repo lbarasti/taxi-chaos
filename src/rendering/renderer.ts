@@ -222,12 +222,14 @@ export class Renderer {
     if (this.visible(PORT_ENTRY, 10)) this.label('HARBOUR / $75', PORT_ENTRY.x, PORT_ENTRY.y + 3, 0.9, '#a3ddc2', '700');
     this.marker(GARAGE, navigationTargetColours.garage, 'PIT STOP', true);
     if (g.campaignEnabled) this.marker(g.newsroom, '#d5b6e4', 'NEWSROOM', true);
-    const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
+    if (!g.dispatchWaiting) {
+      const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
+    }
     if (g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
       this.marker(offer.pickup, '#8edbe8', `TEXT / ${offer.name.toUpperCase()}`, true);
     }
     for (const person of g.world.people) if (person.alive && !person.aboard && person.panic > 0 && this.visible(person.position, 2)) this.label('!', person.position.x, person.position.y - 1, 1.1, GOLD, '700');
-    if (g.job.stage === 'pickup') {
+    if (g.job.stage === 'pickup' && !g.dispatchWaiting) {
       const person = g.world.people.find(p => p.id === g.job.customerId), waiting = person?.position ?? add(g.job.pickup, vec(3.4, 0));
       if (g.job.type === 'parcel') {
         this.rect(waiting.x - 0.45, waiting.y - 0.35, 0.9, 0.7, '#dca668', '#fff0ba');

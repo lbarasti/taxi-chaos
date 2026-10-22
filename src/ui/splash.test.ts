@@ -13,7 +13,11 @@ describe('startup splash', () => {
     const game = new Game(undefined, false); game.save.cash = 320; game.save.deliveries = 8;
     game.job.stage = 'dropoff'; game.job.destination = '<Market>';
     const html = splashMarkup(game, true); expect(html).toContain('Continue'); expect(html).toContain('$320'); expect(html).toContain('RIDE IN PROGRESS'); expect(html).toContain('&lt;Market&gt;');
-    expect(splashMarkup(game, false)).toContain('Start your shift');
+    expect(splashMarkup(game, false)).toContain('New game');
+    expect(splashMarkup(game, false)).not.toContain('id="start"');
+    expect(splashMarkup(game, false)).not.toContain('Start your shift');
+    expect([...html.matchAll(/class="menu-item" id="([^"]+)"/g)].map(match => match[1]))
+      .toEqual(['start', 'new-game', 'menu-settings', 'menu-credits']);
   });
   it('reuses the start drawer with live progress and resume for a paused shift', () => {
     const game = new Game(undefined, false); game.start(); game.setMode('paused');
@@ -21,7 +25,7 @@ describe('startup splash', () => {
     const html = splashMarkup(game, false);
     expect(html).toContain('A little cab.'); expect(html).toContain('Resume your shift');
     expect(html).toContain('YOUR CURRENT SHIFT · PAUSED'); expect(html).not.toContain('Start your shift');
-    expect(html).not.toContain('menu-shift'); expect(html).toContain('Since you last woke up.'); expect(html).toContain('$175');
+    expect(html).not.toContain('new-game'); expect(html).not.toContain('menu-shift'); expect(html).toContain('Since you last woke up.'); expect(html).toContain('$175');
     const shift = shiftMarkup(game, '<button>Sleep</button>');
     expect(shift).toContain('$175'); expect(shift).toContain('PEDESTRIAN FATALITIES'); expect(shift).toContain('Sleep');
     game.mode = 'intro';
@@ -48,7 +52,7 @@ describe('startup splash', () => {
     game.mode = mode; game.save.campaign.finished = finished;
     const html = splashMarkup(game, true);
     expect([...html.matchAll(/class="menu-item" id="([^"]+)"/g)].map(match => match[1]))
-      .toEqual(['start', 'menu-settings', 'menu-credits', ...(recap ? ['menu-finale'] : [])]);
+      .toEqual(['start', ...(mode === 'intro' ? ['new-game'] : []), 'menu-settings', 'menu-credits', ...(recap ? ['menu-finale'] : [])]);
   });
   it('maps prompts to the most recent device', () => {
     expect(splashPrompts('keyboard')).toContain('WASD'); expect(splashPrompts('touch')).toContain('DRAG'); expect(splashPrompts('xbox')).toContain('X'); expect(splashPrompts('playstation')).toContain('□');

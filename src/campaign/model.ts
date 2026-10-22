@@ -74,6 +74,6 @@ export type CampaignDefinition = Readonly<{
   vehicles: readonly Readonly<{ id: string; model: VehicleModel; stop: string; offsets: readonly Readonly<{ x: number; y: number }>[]; angle: number; color: string; present: Condition; departTo: string }>[];
   scenes: readonly SceneLayer[]; bulletins: readonly ConditionalText[];
   rides: Readonly<Record<string, Readonly<{ during: string; arrival: string; channel?: 'passenger' | 'sender' }>>>;
-  everydayJobs: readonly Readonly<{ name: string; family: string; lines: readonly string[]; during: string }>[];
+  everydayJobs: readonly Readonly<{ character: CharacterId; name: string; family: string; lines: readonly string[]; during: string }>[];
   ordinaryResponses: readonly ConditionalText[]; dispatcher: CharacterId;
 }>;

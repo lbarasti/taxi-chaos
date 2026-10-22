@@ -12,6 +12,15 @@ cast (Mara, Eli, Victor, Celia, Adrian Vale, Leila, Harker, Lena, Iris, Tom, Rut
 and Bea) plus the bundled `officer.png`. They are raster art supplied for Taxi
 Chaos and are bundled inline as data URLs with no external image service.
 
+`characters/{sam,june,ravi,cleo,oscar}.png` are original passenger portraits
+generated with OpenAI's built-in image-generation tool on 2026-10-22, using the
+supplied Bea portrait as a style reference. They were cropped from a contact
+sheet and packaged as indexed PNGs. The prompt requested five distinct fictional
+adults in the same painterly style, seated in a dark teal taxi's rear cabin with
+charcoal leather headrests, a softly blurred coastal city through the windows and
+warm afternoon light. These portraits belong to the ordinary customers; Bea's
+existing headset portrait remains the dispatch identity. All are bundled inline.
+
 The legacy ids `mia` and `frankie` stay in `src/narrative/characters.json` because the
 authored legacy mission catalogue and the dialogue preview reference them. Their
 supplied rasters are no longer shipped, so each resolves to its own neutral

@@ -94,11 +94,11 @@ export const corroboration = freezeFacts({
 export type Allegation = keyof typeof corroboration;
 
 const everydaySpecs = [
-  { name: 'Sam', family: 'Staff transport', lines: ['Late shift, early alarm. Home, please.', 'Same shift, same bus I just missed.', 'First proper evening off. A lift to meet a friend?'] },
-  { name: 'June', family: 'Small deliveries', lines: ['Birthday cake. Yes, it really is just a birthday cake.', 'Laundry collection; the blue bag is mine.', 'Groceries for my dad. He’ll try to tip you in tomatoes.'] },
-  { name: 'Ravi', family: 'Personal journeys', lines: ['Interview today. I’ve checked the address four times.', 'I got the job! Could you take me in?', 'First payday. We’re celebrating at the arcade.'] },
-  { name: 'Cleo', family: 'Vehicle assistance', lines: ['My car won’t start. Mechanic’s meeting me there.', 'New battery, same car. Much cheaper than my last idea.', 'Dropping off the borrowed jump leads.'] },
-  { name: 'Oscar', family: 'Event logistics', lines: ['Community hall setup. Please mind the flowers.', 'The reunion went well. Nobody recognised my haircut.', 'Taking the leftover tablecloths back.'] },
+  { character: 'sam' as const, name: 'Sam', family: 'Staff transport', lines: ['Late shift, early alarm. Home, please.', 'Same shift, same bus I just missed.', 'First proper evening off. A lift to meet a friend?'] },
+  { character: 'june' as const, name: 'June', family: 'Small deliveries', lines: ['Birthday cake. Yes, it really is just a birthday cake.', 'Laundry collection; the blue bag is mine.', 'Groceries for my dad. He’ll try to tip you in tomatoes.'] },
+  { character: 'ravi' as const, name: 'Ravi', family: 'Personal journeys', lines: ['Interview today. I’ve checked the address four times.', 'I got the job! Could you take me in?', 'First payday. We’re celebrating at the arcade.'] },
+  { character: 'cleo' as const, name: 'Cleo', family: 'Vehicle assistance', lines: ['My car won’t start. Mechanic’s meeting me there.', 'New battery, same car. Much cheaper than my last idea.', 'Dropping off the borrowed jump leads.'] },
+  { character: 'oscar' as const, name: 'Oscar', family: 'Event logistics', lines: ['Community hall setup. Please mind the flowers.', 'The reunion went well. Nobody recognised my haircut.', 'Taking the leftover tablecloths back.'] },
 ];
 
 export const everydayJobs = freezeFacts(everydaySpecs.map((job, i) => ({ ...job, during: [

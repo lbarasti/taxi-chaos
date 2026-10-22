@@ -11,6 +11,7 @@ const paths = {
   news: '<path d="M4 5h13v15H4zM17 9h3v11H7M7 9h7M7 13h7M7 17h4"/>',
   camera: '<path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
+  bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M2 5l2-2M20 3l2 2"/>',
 };
 const icon = (name: keyof typeof paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 
@@ -22,7 +23,7 @@ export const navigationHudMarkup = `<aside class="navigation-hud" aria-label="Ta
   </div>
 </aside>
 <div class="navigation-actions" role="group" aria-label="Dispatch and campaign shortcuts">
-  <button id="dispatch" aria-pressed="true" aria-label="Dispatch: route the next fare" title="Dispatch: route the next fare">${icon('dispatch')}</button>
+  <button id="dispatch" aria-pressed="true" aria-label="Dispatch: route the next fare" title="Dispatch: route the next fare">${icon('dispatch')}<span id="dispatch-waiting" class="dispatch-waiting" aria-hidden="true" hidden>${icon('bell')}</span></button>
   <button id="texts" aria-label="Bookings: read text messages" title="Bookings · read text messages">${icon('message')}<span id="texts-unread" class="texts-unread" aria-hidden="true" hidden></span></button>
   <button id="shift" aria-label="This shift: stats since waking" title="This shift · Tab" aria-keyshortcuts="Tab" aria-haspopup="dialog" aria-controls="modal">${icon('shift')}</button>
   <button id="newsroom" aria-label="Newsroom: view records and story readiness" title="Newsroom · records and story readiness" aria-haspopup="dialog" aria-controls="modal">${icon('news')}</button>
@@ -50,7 +51,7 @@ export function navigationHudState(g: Game, fareRouted = true) {
   const admitted = g.harbour.vehicleId === g.player.id;
   const harbour = !g.onFoot && (g.navToHarbour || admitted);
   const detour = g.navToGarage || g.navToNewsroom || harbour;
-  const vacant = pickup && !fareRouted && !detour && !g.onFoot;
+  const vacant = pickup && (g.dispatchWaiting || !fareRouted) && !detour && !g.onFoot;
   let status: NavigationStatus = pickup ? 'ENGAGED' : 'ON BOARD';
   let label = pickup ? 'PICK UP' : 'DELIVER';
   let title = pickup ? parcel ? `${job.name}'s parcel.` : `Meet ${job.name}.` : `${job.destination}.`;
@@ -77,20 +78,22 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = root.querySelector<HTMLElement>('.navigation-hud')!;
   const dispatch = get('dispatch') as HTMLButtonElement;
+  const dispatchBadge = get('dispatch-waiting');
   const texts = get('texts') as HTMLButtonElement;
   const unreadBadge = get('texts-unread');
   const observe = get('observe') as HTMLButtonElement;
   const map = get('map');
-  const views = new WeakMap<Game, { job: Game['job']; routed: boolean }>();
+  const views = new WeakMap<Game, { job: Game['job']; routed: boolean; waiting: boolean }>();
   const view = () => {
     const game = currentGame();
     let state = views.get(game);
-    if (!state) { state = { job: game.job, routed: game.jobsDone === 0 }; views.set(game, state); }
+    if (!state) { state = { job: game.job, routed: !game.dispatchWaiting, waiting: game.dispatchWaiting }; views.set(game, state); }
     if (state.job !== game.job) {
-      // A selected text booking is engaged; automatically dispatched ordinary work
-      // returns to the vacant shortcuts after each completed ride.
-      state.job = game.job; state.routed = !!game.job.missionId;
+      // A selected booking is engaged; an unanswered call stays vacant.
+      state.job = game.job; state.routed = !game.dispatchWaiting && (game.campaignEnabled || !!game.job.missionId);
     }
+    if (state.waiting && !game.dispatchWaiting) state.routed = true;
+    state.waiting = game.dispatchWaiting;
     return state;
   };
   // Route the current pickup, dropping any garage, harbour or newsroom detour. Returns
@@ -98,6 +101,7 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
   const selectFare = () => {
     const g = currentGame();
     if (g.mode !== 'playing' || g.onFoot || g.job.stage !== 'pickup') return false;
+    g.answerDispatch();
     g.navToGarage = g.navToHarbour = g.navToNewsroom = false; view().routed = true; return true;
   };
   /** Inbox entry point: engage the chosen booking and refresh the HUD. */
@@ -107,7 +111,8 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
   dispatch.addEventListener('click', () => {
     const g = currentGame();
     if (g.mode !== 'playing') return;
-    if (g.navToNewsroom) { g.navigateNewsroom(); view().routed = false; }
+    if (g.dispatchWaiting) selectFare();
+    else if (g.navToNewsroom) { g.navigateNewsroom(); view().routed = false; }
     else if (view().routed) view().routed = false;
     else selectFare();
     refresh(); actions.focus();
@@ -141,10 +146,11 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     // The toggle only acts while a pickup can still be routed, matching the old status button.
     const canToggle = g.mode === 'playing' && g.job.stage === 'pickup' && !g.onFoot && !g.navToGarage && !g.navToHarbour && g.harbour.vehicleId !== g.player.id;
     dispatch.disabled = !canToggle;
+    dispatchBadge.hidden = !g.dispatchWaiting;
     dispatch.setAttribute('aria-pressed', String(!state.vacant));
     const action = !canToggle
       ? g.onFoot ? 'no fare while walking' : g.job.stage === 'dropoff' ? 'this ride is already routed' : 'finish the current detour first'
-      : g.navToNewsroom ? 'clear newsroom guidance' : state.vacant ? 'route the next fare' : 'hide fare guidance';
+      : g.dispatchWaiting ? 'new call waiting; answer and route the pickup' : g.navToNewsroom ? 'clear newsroom guidance' : state.vacant ? 'route the next fare' : 'hide fare guidance';
     const text = `Dispatch: ${action}`;
     if (text !== dispatchLabel) { dispatchLabel = text; dispatch.setAttribute('aria-label', text); dispatch.title = text; }
     for (const id of ['texts', 'newsroom']) (get(id) as HTMLButtonElement).disabled = !g.campaignEnabled || g.mode !== 'playing';

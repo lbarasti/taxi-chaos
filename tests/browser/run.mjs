@@ -6,11 +6,11 @@ import { probeBrowser } from './runtime.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const suites = new Map([
-  ['menus', ['splash']],
+  ['menus', ['splash', 'new-game']],
   ['audio', ['engine-audio']],
   ['input', ['mobile-controls', 'mobile-hud']],
   ['hud', ['navigation-hud', 'player-hud', 'notifications']],
-  ['campaign-ui', ['newsroom', 'observations', 'text-messages', 'editions']],
+  ['campaign-ui', ['newsroom', 'observations', 'text-messages', 'editions', 'dialogue']],
   ['world', ['artwork', 'condo', 'city-scale', 'beach']],
   ['map-inspection', ['layers']],
 ]);

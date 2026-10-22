@@ -20,6 +20,9 @@
 .observation-recorded svg{width:14px;height:14px}
 #observe[data-state="recorded"] .observation-recorded{display:block}
 .navigation-actions #dispatch[aria-pressed="true"]{color:var(--gold);border-color:#f7ce5566}
+.navigation-actions #dispatch{position:relative}
+.dispatch-waiting{position:absolute;top:-6px;right:-6px;display:grid;place-items:center;width:23px;height:23px;border:2px solid #10222d;border-radius:50%;background:var(--gold);color:#10222d;pointer-events:none}
+.dispatch-waiting svg{width:15px;height:15px;stroke-width:2}
 /* Desktop: a vertical shortcut column on the right edge, clear of the status corner. */
 .navigation-actions{right:max(28px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column}
 /* Narrow desktop shortcuts stay beside the map, clear of the conversation corner. */

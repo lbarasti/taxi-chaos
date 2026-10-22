@@ -46,6 +46,14 @@ describe('notification display time', () => {
 });
 
 describe('game notification lifecycle', () => {
+  it('starts a fresh game without carrying over another game’s notification cards', () => {
+    const game = new Game(undefined, false);
+    game.start(); game.notify('Newsroom copy submitted', '', { category: 'newsroom', duration: null });
+    const next = game.freshGame();
+    expect(next.notifications.items).toHaveLength(0);
+    expect(game.notifications.current?.message).toBe('Newsroom copy submitted');
+  });
+
   it('pauses display timers with the game and whenever the UI is obscured', () => {
     const game = new Game(undefined, false, false);
     game.start(); game.notifications.clear(); game.notify('Route');

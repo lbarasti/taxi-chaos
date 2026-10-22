@@ -25,7 +25,7 @@ await desktop.evaluate(name=>__taxi.scenario(name),scenario);assert.equal(await 
 await desktop.evaluate(()=>__taxi.scenario('harbour'));await desktop.keyboard.press('KeyE');assert.notEqual(await desktop.locator('#interact').textContent(),'Pay $75');
 await desktop.evaluate(()=>__taxi.realtime());await desktop.close();
 const page=await newPage(browser,{viewport:{width:390,height:844},hasTouch:true,isMobile:true});
-await page.goto('file://'+root+'/dist/index.html');await page.locator('#start').click();
+await page.goto('file://'+root+'/dist/index.html');await page.locator('#new-game').click();
 // Existing keyboard and pause-menu paths work.
 await page.locator('#overlay').waitFor({state:'hidden'});await page.keyboard.press('Escape');assert(await page.locator('.splash-modal').isVisible());await page.locator('#menu-settings').click();await page.locator('#modal[data-page="settings"]').waitFor();assert(await page.locator('.settings-group').first().isVisible());await page.locator('#drawer-back').click();await page.locator('#modal[data-page="home"]').waitFor();await page.locator('#start').click();
 await page.keyboard.press('F2');assert(await page.locator('#debug-panel').isVisible());await page.evaluate(()=>{__taxi.scenario('first-fare');__taxi.close()});assert(!(await page.locator('#debug-panel').isVisible()));
@@ -66,7 +66,7 @@ await page.keyboard.press('Escape');assert(!(await page.locator('#interact').isV
 }
 // Layout, safe-area and radar checks live in mobile-controls-check.mjs and
 // navigation-hud-check.mjs; keep the live personal-status checks here.
-assert.equal(await page.locator('.player-hud> *').count(),4);
+assert.equal(await page.locator('.player-hud> *').count(),5); // day, clock, cash, health, heat
 assert.equal(await page.locator('#player-heat svg').count(),3);
 assert.equal(await page.locator('#player-health').getAttribute('aria-valuenow'),String(await page.evaluate(()=>__taxi.state().driverHealth)));
 await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{__taxi.scenario('first-fare');__taxi.interact();__taxi.step(5);document.querySelector('#debug-panel').hidden=true});await page.screenshot({path:path.join(screenshotRoot,'on-foot.png')});

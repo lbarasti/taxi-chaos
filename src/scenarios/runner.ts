@@ -22,7 +22,7 @@ export type ScenarioCommand = (
   | { op: 'step'; seconds: number; keys?: string[] }
   | { op: 'mode'; mode: Mode }
   | { op: 'route'; mission: string; expected?: boolean }
-  | { op: 'pickup' | 'deliver' | 'read' | 'ordinary' | 'abandon' | 'reload' }
+  | { op: 'pickup' | 'deliver' | 'read' | 'dispatch' | 'ordinary' | 'abandon' | 'reload' }
   | { op: 'photo'; observation?: string; expected?: boolean }
   | { op: 'sleep'; expected?: boolean }
   | { op: 'submit'; material: string; expected?: boolean }
@@ -71,7 +71,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   const c = object(value), op = string(c.op, 'op');
   const allowed: Record<string, string[]> = {
     facts: ['facts'], advance: ['minutes', 'to', 'event'], place: ['at', 'angle'], step: ['seconds', 'keys'], mode: ['mode'],
-    route: ['mission', 'expected'], pickup: [], deliver: [], read: [], ordinary: [], abandon: [], reload: [],
+    route: ['mission', 'expected'], pickup: [], deliver: [], read: [], dispatch: [], ordinary: [], abandon: [], reload: [],
     photo: ['observation', 'expected'], sleep: ['expected'], submit: ['material', 'expected'], publish: ['allegation', 'expected'],
     expect: ['path', 'equals', 'includes', 'length', 'exists', 'gte', 'lte'], capture: ['name', 'view', 'panelOnly', 'focus', 'zoom'],
   };
@@ -153,7 +153,7 @@ export class ScenarioRunner {
     return { ...previewInputs(this.game.missions.catalogue), materials: Object.keys(this.game.campaignContent.materials), allegations: Object.keys(this.game.campaignContent.claims),
       events: this.game.campaignContent.operations.map(op => ({ id: op.id, at: op.at })), places: ['pickup', 'dropoff', 'garage', 'newsroom', ...this.game.missions.catalogue.stops.order],
       keys, options: this.options, limits: { commands: 500, secondsPerStep: 30, totalPhysicsSeconds: 120 },
-      commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'pickup', 'deliver', 'read', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'publish', 'expect', 'capture'] };
+      commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'pickup', 'deliver', 'read', 'dispatch', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'publish', 'expect', 'capture'] };
   }
   snapshot() {
     return { ...this.game.snapshot(), flags: [...this.game.save.story.flags], choices: { ...this.game.save.story.choices },
@@ -254,7 +254,8 @@ export class ScenarioRunner {
         return { mission: id, fixturePlacement: true };
       }
       case 'read': if (!g.dialogue.active) throw new Error('No active dialogue'); g.dialogue.readAll(); g.recordDialogue(); return g.dialogue.active.beatId;
-      case 'ordinary': if (g.job.stage === 'dropoff') throw new Error('Abandon the aboard ride explicitly first'); g.newJob(false, 'replaced', true); return g.job.name;
+      case 'dispatch': if (!g.answerDispatch()) throw new Error('No dispatch call can be answered'); return g.job.name;
+      case 'ordinary': if (g.job.stage === 'dropoff') throw new Error('Abandon the aboard ride explicitly first'); g.newJob(false, 'replaced', true); g.answerDispatch(); return g.job.name;
       case 'abandon': g.newJob(false, 'shift'); return true;
       case 'photo': return this.boolean(g.observeScene(c.observation), c.expected);
       case 'sleep': return this.boolean(g.sleep(), c.expected);
