@@ -6,11 +6,26 @@ one-shots). Playback further changes pitch, volume and filtering.
 
 ## CC0 / public domain
 
-- **domasx2 — racing car engine sound loops** (`loop_0.wav` → `engine.wav`).
-  https://opengameart.org/content/racing-car-engine-sound-loops
-  Source: https://opengameart.org/sites/default/files/loop_0.wav
-  The author remade the loops using a public-domain recording, as documented on
-  the source page. https://creativecommons.org/publicdomain/zero/1.0/
+- **GGBotNet — Car Sound Effects Pack (Low Quality)**
+  (`Car_Engine_Loop_2.ogg` → traffic `engine.wav`,
+  `Car_Horn.ogg` → short, quieter `horn.mp3`).
+  https://opengameart.org/content/car-sound-effects-pack-low-quality
+  Source: https://opengameart.org/sites/default/files/car_sound_effects_pack.zip
+  https://creativecommons.org/publicdomain/zero/1.0/
+- **Nox_Sound / Nox Sound Design — Peugeot 308 engine recordings**.
+  Interior idle (`522223` → `player-engine.wav`):
+  https://freesound.org/people/Nox_Sound/sounds/522223/
+  Exterior idle (`522225` → `engine-load.wav`):
+  https://freesound.org/people/Nox_Sound/sounds/522225/
+  Both are steady recordings of the same road car. The interior supplies the
+  occupied idle; the exterior supplies a stronger engine texture under throttle.
+  Each uses seconds 3–7 from Freesound's public high-quality MP3 preview, with
+  45 Hz high-pass / 2.8 kHz low-pass filtering, mono conversion, RMS matching and
+  loop seam blending. Native recording pitch is retained at player idle; both
+  layers follow the same gear/RPM envelope. Preview sources:
+  https://cdn.freesound.org/previews/522/522223_9250976-hq.mp3
+  https://cdn.freesound.org/previews/522/522225_9250976-hq.mp3
+  https://creativecommons.org/publicdomain/zero/1.0/
 - **Kenney — Impact Sounds** (two variants each of Generic light, Metal medium,
   Plate heavy, Wood heavy, Glass heavy, Tin medium and Punch heavy).
   https://kenney.nl/assets/impact-sounds
@@ -50,10 +65,15 @@ Web Audio tones created for Taxi Chaos. No music or voice recordings are include
 
 ## Reproducing the edits
 
-Download the above sources; extract Kenney archives to `impact/` and `scifi/`,
-and the boost archive to `boost/`. Rename the engine, tyre and siren downloads to
-`engine.wav`, `skid.wav`, `siren.mp3`; fire to `fire.ogg`. Then run:
+Download the above sources; extract the car archive to `car-pack/`, Kenney
+archives to `impact/` and `scifi/`, and the boost archive to `boost/`. Rename the
+tyre and siren downloads to `skid.wav`, `siren.mp3`; fire to `fire.ogg`.
+Save the two Nox preview downloads as `peugeot-308-interior.mp3` and
+`peugeot-308-exterior.mp3`. Then run:
 
 ```sh
 python3 tools/prepare-audio.py <download-directory> src/assets/audio
 ```
+
+Use `--car-only` for the traffic engine and horn from just the car archive.
+Use `--player-engine-only` for the player loops from just the two Nox downloads.

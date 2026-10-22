@@ -7,6 +7,7 @@ import { probeBrowser } from './runtime.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const suites = new Map([
   ['menus', ['splash']],
+  ['audio', ['engine-audio']],
   ['input', ['mobile-controls', 'mobile-hud']],
   ['hud', ['navigation-hud', 'player-hud']],
   ['campaign-ui', ['newsroom', 'observations', 'text-messages', 'editions']],

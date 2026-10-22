@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { audioCredits, audioCreditsMarkup, creditsMarkup } from './credits';
+import { audioCredits, creditsMarkup } from './credits';
 
 describe('credits page', () => {
   const html = creditsMarkup();
@@ -54,7 +54,7 @@ describe('credits page', () => {
   });
 
   it('splits the sound credits into one row per mix role', () => {
-    expect(html).toContain('<dt>Engine</dt>');
+    expect(html).toContain('<dt>Traffic engine &amp; horns</dt>');
     expect(html).toContain('<dt>Impacts &amp; explosions</dt>');
     expect(html).toContain('<dt>Sirens</dt>');
     expect(html).toContain('<dt>Tyres</dt>');
@@ -67,21 +67,5 @@ describe('credits page', () => {
     expect(html).toContain('Impacts &amp; explosions');
     expect(html).not.toContain('Impacts & explosions');
     expect(html).toContain('Pat Kerr&#39;s Motion Lab v0.8.2');
-  });
-});
-
-describe('inline audio credits', () => {
-  it('keeps the compact lab note and its source links unchanged', () => {
-    const html = audioCreditsMarkup();
-    expect(html).toContain('<div class="audio-credits">');
-    expect(html).toContain('Engine: <a href="https://opengameart.org/content/racing-car-engine-sound-loops" target="_blank" rel="noopener">domasx2</a>');
-    expect(html).toContain('Impacts/explosions: <a href="https://kenney.nl/assets" target="_blank" rel="noopener">Kenney</a>');
-    expect(html).toContain('Siren: <a href="https://opengameart.org/content/sirens-and-alarm-noise" target="_blank" rel="noopener">aquinn</a> (CC0).');
-    expect(html).toContain('Tyres: <a href="https://opengameart.org/content/car-tire-squeal-skid-loop" target="_blank" rel="noopener">audible-edge / Tom Haigh, loop by qubodup</a>');
-    expect(html).toContain('Boost: <a href="https://opengameart.org/content/racing-speed-boost-sound" target="_blank" rel="noopener">Iwan Gabovitch / qubodup</a>');
-    expect(html).toContain('Fire: <a href="https://opengameart.org/content/fire-loop" target="_blank" rel="noopener">qubodup</a>');
-    expect(html).toContain('<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>');
-    expect(html).toContain('Samples edited for mono, loudness, loop seams and size; pitch/filter changes in-game.');
-    for (const credit of audioCredits) expect(html).toContain(`href="${credit.href}"`);
   });
 });

@@ -945,6 +945,10 @@ export class Game {
     if (dynamic) this.damageImpact(other, impact * 2 * v.body.mass / totalMass, c.point, v.kind === 'taxi' || other.kind === 'taxi', impact);
     this.crashMotorcycle(v, impact, c.normal, incomingVelocity, c.point);
     if (dynamic) this.crashMotorcycle(other, impact, scale(c.normal, -1), otherVelocity, c.point);
+    if (dynamic && impact > 1.5 && !this.onFoot) {
+      if (v === this.player) this.honk(other, 0.8);
+      else if (other === this.player) this.honk(v, 0.8);
+    }
     const involvesPlayer = v.kind === 'taxi' || ('kind' in other && other.kind === 'taxi');
     if (involvesPlayer && impact > 3 && this.crashCooldown <= 0) {
       this.crashCooldown = 0.3;
@@ -1187,7 +1191,18 @@ export class Game {
     if (!this.onFoot && this.player.damage.status === 'wreck' && this.mode === 'playing') this.waste('explosion');
     if (this.mode !== 'playing') { this.effects(dt); return; }
     if (!this.onFoot && this.player.sinking) { this.controls = { throttle: 0, turn: 0, handbrake: false, boost: false }; this.job.wait = 0; this.effects(dt); return; }
-    this.updateHarbour(dt); this.jobs(dt); this.law(dt); this.effects(dt); this.maintenance(dt);
+    this.updateHarbour(dt); this.jobs(dt); this.trafficHorns(); this.law(dt); this.effects(dt); this.maintenance(dt);
+  }
+  private honk(v: Vehicle, strength: number) {
+    if (this.mode !== 'playing' || v === this.player || !v.alive || v.parked || v.driverExited || v.sinking || v.damage.status === 'burning' || v.damage.status === 'wreck') return;
+    this.sounds.emit('horn', this.time, { position: v.body.position, strength, key: `horn:${v.id}`, cooldown: 8 });
+  }
+  trafficHorns() {
+    if (this.mode !== 'playing') return;
+    const nearby = this.vehicles.filter(v => v !== this.player && v.kind === 'traffic' && v.alive && !v.parked && !v.driverExited && !v.sinking && v.damage.status !== 'burning' && v.damage.status !== 'wreck' && dist(v.body.position, this.actor.position) < 30);
+    if (nearby.length < 3) return;
+    const waiting = nearby.find(v => v.ai.blocked && v.ai.stalled >= 1 && length(v.body.velocity) < 2);
+    if (waiting) this.honk(waiting, 0.45);
   }
   private recordSandRuts() {
     const { leavesTracks: inSand } = this.map.terrain;
@@ -1322,7 +1337,7 @@ export class Game {
     for (const v of this.vehicles) if (v.alive && v.kind === 'traffic') {
       if (v.parked) continue;
       const distance = dist(v.body.position, this.player.body.position);
-      if (distance > 3.3 && distance < 5 && this.speed > 14 && (this.nearMiss.get(v.id) ?? 0) < this.time) { this.nearMiss.set(v.id, this.time + 8); this.save.cash += 5; this.shiftEarnings += 5; this.save.shiftStats.earnings += 5; this.floating(v.body.position, 'CLOSE CALL +$5', '#b5e5cf'); this.persist(); }
+      if (distance > 3.3 && distance < 5 && this.speed > 14 && (this.nearMiss.get(v.id) ?? 0) < this.time) { this.nearMiss.set(v.id, this.time + 8); this.save.cash += 5; this.shiftEarnings += 5; this.save.shiftStats.earnings += 5; this.floating(v.body.position, 'CLOSE CALL +$5', '#b5e5cf'); this.honk(v, 0.65); this.persist(); }
     }
   }
   law(dt: number) {

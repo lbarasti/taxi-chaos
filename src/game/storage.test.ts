@@ -19,7 +19,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('Taxi Chaos current-format storage', () => {
   it('loads and updates current progress, settings and preferences', () => {
     const save = { ...defaultSave(), cash: 975, deliveries: 12, best: 600 };
-    const settings = { gore: true, difficulty: 'chaos' }, preferences = { muted: true, volume: 0.4, sirens: 0.1 };
+    const settings = { gore: true, difficulty: 'chaos' }, preferences = { muted: true, volume: 0.4, playerEngine: 0.3, ambient: 0.6, sirens: 0.1 };
     const { values } = mockStorage([
       [storageKeys.save, JSON.stringify(save)], [storageKeys.settings, JSON.stringify(settings)], [storageKeys.audio, JSON.stringify(preferences)],
     ]);
@@ -74,6 +74,25 @@ describe('Taxi Chaos current-format storage', () => {
   it('keeps default progress and preferences when browser storage is unavailable', () => {
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('storage denied'); } });
     expect(new Game().save).toEqual(defaultSave());
-    expect(new AudioFX().preferences).toEqual({ muted: false, volume: 0.65, sirens: 0.25 });
+    expect(new AudioFX().preferences).toEqual({ muted: false, volume: 0.65, playerEngine: 0.7, ambient: 1, sirens: 0.25 });
+  });
+  it('adds the player engine default to saved audio preferences and persists its independent level', () => {
+    const { values } = mockStorage([[storageKeys.audio, JSON.stringify({ muted: true, volume: 0.4, sirens: 0.1 })]]);
+    const audio = new AudioFX();
+    expect(audio.preferences).toEqual({ muted: true, volume: 0.4, playerEngine: 0.7, ambient: 1, sirens: 0.1 });
+    audio.configure({ playerEngine: 0 });
+    expect(new AudioFX().preferences).toEqual({ muted: true, volume: 0.4, playerEngine: 0, ambient: 1, sirens: 0.1 });
+    expect(JSON.parse(values.get(storageKeys.audio)!)).toEqual(audio.preferences);
+  });
+  it('adds ambient volume to existing preferences and persists changes independently of progress', () => {
+    const previous = { muted: false, volume: 0.4, playerEngine: 0.2, sirens: 0.1 };
+    const { values } = mockStorage([[storageKeys.audio, JSON.stringify(previous)]]);
+    const audio = new AudioFX();
+    expect(audio.preferences).toEqual({ ...previous, ambient: 1 });
+    audio.configure({ ambient: 0.35 });
+    expect(new AudioFX().preferences).toEqual({ ...previous, ambient: 0.35 });
+    audio.configure({ ambient: 0 });
+    expect(new AudioFX().preferences.ambient).toBe(0);
+    expect(values.has(storageKeys.save)).toBe(false);
   });
 });

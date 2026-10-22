@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Body, vec } from '../physics/physics';
-import { drivingSound, SoundEvents, spatialSound } from './sound';
+import { drivingSound, soundPriority, SoundEvents, spatialSound, trafficEngineGain, isAmbientCue } from './sound';
 import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 
@@ -24,6 +24,17 @@ describe('sound event delivery', () => {
     const events = queue.drain(1);
     expect(events).toHaveLength(64); expect(events.filter(e => e.cue === 'explosion')).toHaveLength(1);
   });
+  it('limits horns across cars and per car, and resets both cooldowns with a new run', () => {
+    const queue = new SoundEvents();
+    const a = { key: 'horn:1', cooldown: 8 }, b = { key: 'horn:2', cooldown: 8 };
+    queue.emit('horn', 0, a); queue.emit('horn', 0.1, b);
+    expect(queue.drain(0.1)).toHaveLength(1);
+    queue.emit('horn', 3, a); queue.emit('horn', 3, b);
+    expect(queue.drain(3)).toHaveLength(1);
+    queue.emit('horn', 8, a); expect(queue.drain(8)).toHaveLength(1);
+    expect(soundPriority('horn')).toBeLessThan(soundPriority('bump'));
+    queue.reset(); queue.emit('horn', 0, a); expect(queue.drain(0)).toHaveLength(1);
+  });
 });
 
 describe('audio mix signals', () => {
@@ -38,7 +49,52 @@ describe('audio mix signals', () => {
     expect(drivingSound(20, 1, 0, false).skidGain).toBe(0);
     expect(drivingSound(2, 1, 12, false).skidGain).toBe(0);
     expect(drivingSound(20, 1, 8, false).skidGain).toBeGreaterThan(0);
-    expect(drivingSound(20, 1, 0, true).engineRate).toBeGreaterThan(drivingSound(20, 0, 0, false).engineRate);
+  });
+  it('blends from a low idle to a stronger loaded engine, then softens when lifting off', () => {
+    const idle = drivingSound(0, 0, 0, false), coast = drivingSound(20, 0, 0, false), accelerating = drivingSound(20, 1, 0, false);
+    expect(idle.engineLoadGain).toBe(0);
+    expect(accelerating.engineLoadGain).toBeGreaterThan(coast.engineLoadGain);
+    expect(accelerating.engineCutoff).toBeGreaterThan(coast.engineCutoff);
+    expect(accelerating.engineGain + accelerating.engineLoadGain).toBeGreaterThan(idle.engineGain);
+  });
+  it('keeps treble subdued at idle and under full load, including upgrades and boost', () => {
+    expect(drivingSound(0, 0, 0, false).engineCutoff).toBeLessThan(700);
+    for (let engine = 0; engine <= 3; engine++) {
+      expect(drivingSound(60, 1, 0, true, { engine, boost: 3 }).engineCutoff).toBeLessThan(1900);
+    }
+  });
+  it('routes surrounding FX to ambience while retaining independent driving and feedback', () => {
+    for (const cue of ['horn', 'fire', 'crash', 'body', 'pulp', 'explosion'] as const) expect(isAmbientCue(cue)).toBe(true);
+    for (const cue of ['engine', 'skid', 'boost-start', 'boost-loop', 'siren', 'payment', 'pickup'] as const) expect(isAmbientCue(cue)).toBe(false);
+  });
+  it('raises traffic noise above three nearby cars and caps the density boost', () => {
+    expect(trafficEngineGain(0)).toBe(0);
+    expect(trafficEngineGain(3)).toBe(trafficEngineGain(1));
+    expect(trafficEngineGain(4)).toBeGreaterThan(trafficEngineGain(3));
+    expect(trafficEngineGain(8)).toBeGreaterThan(trafficEngineGain(4));
+    expect(trafficEngineGain(100)).toBe(trafficEngineGain(8));
+  });
+  it('gives each engine level a deeper and fuller sound at the same speed and throttle', () => {
+    let previous = drivingSound(20, 1, 0, false);
+    for (let level = 1; level <= 3; level++) {
+      const next = drivingSound(20, 1, 0, false, { engine: level, boost: 0 });
+      expect(next.enginePitch).toBeLessThan(previous.enginePitch);
+      expect(next.engineLoadGain).toBeGreaterThan(previous.engineLoadGain);
+      expect(next.engineCutoff).toBeGreaterThan(previous.engineCutoff);
+      previous = next;
+    }
+  });
+  it('gives each boost level a stronger, brighter rush only while boosting', () => {
+    let previous = drivingSound(20, 1, 0, true);
+    for (let level = 1; level <= 3; level++) {
+      const next = drivingSound(20, 1, 0, true, { engine: 0, boost: level });
+      expect(next.boostRate).toBeGreaterThan(previous.boostRate);
+      expect(next.boostGain).toBeGreaterThan(previous.boostGain);
+      expect(next.boostCutoff).toBeGreaterThan(previous.boostCutoff);
+      expect(next.engineLoadGain).toBe(previous.engineLoadGain);
+      previous = next;
+    }
+    expect(drivingSound(20, 1, 0, false, { engine: 3, boost: 3 }).boostGain).toBe(0);
   });
 });
 
@@ -49,6 +105,48 @@ describe('gameplay FX hooks', () => {
     game.player.body = new Body(-2.1, 0); game.player.body.velocity = vec(20, 0);
     game.collision(game.player, wall, 1 / 120); game.collision(game.player, wall, 0);
     expect(game.sounds.drain(game.time).map(e => e.cue)).toEqual(['crash']); expect(game.health).toBe(100);
+  });
+  it('gets one horn reaction from an occupied car after a player bump, even with repeated contacts', () => {
+    const game = new Game(); game.start(); game.time = 1;
+    game.player.body = new Body(0, 0); game.player.body.velocity = vec(4, 0);
+    const car = game.vehicle('traffic', 3.8, 0, 0, '#fff');
+    game.collision(game.player, car, 1 / 120); game.collision(car, game.player, 1 / 120);
+    const events = game.sounds.drain(game.time);
+    expect(events.some(event => event.cue === 'bump')).toBe(true);
+    expect(events.filter(event => event.cue === 'horn')).toHaveLength(1);
+  });
+  it('gets a soft horn on an existing close-call event, without repeating it on the next step', () => {
+    const game = new Game(); game.start(); game.time = 1; game.vehicles = [game.player];
+    game.player.body.position = vec(0, 0); game.player.body.velocity = vec(15, 0);
+    const car = game.vehicle('traffic', 0, 4.2, 0, '#fff');
+    game.jobs(0); game.jobs(0);
+    const horns = game.sounds.drain(game.time).filter(event => event.cue === 'horn');
+    expect(horns).toHaveLength(1); expect(horns[0].position).toEqual(car.body.position);
+    expect(horns[0].strength).toBeLessThan(1);
+  });
+  it('only honks for congestion after cars have been blocked, including while the player walks', () => {
+    const game = new Game(); game.start(); game.onFoot = true; game.vehicles = [game.player];
+    game.driver.position = vec(0, 0); game.player.body.position = vec(200, 200);
+    const waiting = game.vehicle('traffic', 6, 0, 0, '#fff'); waiting.ai.blocked = true; waiting.ai.stalled = 1;
+    game.vehicle('traffic', 12, 0, 0, '#fff'); game.trafficHorns(); expect(game.sounds.drain(0)).toEqual([]);
+    game.vehicle('traffic', 18, 0, 0, '#fff');
+    waiting.ai.stalled = 0; game.trafficHorns(); expect(game.sounds.drain(0)).toEqual([]);
+    waiting.ai.stalled = 1; game.trafficHorns(); game.trafficHorns();
+    expect(game.sounds.drain(0).map(event => event.cue)).toEqual(['horn']);
+    game.time = 9; game.setMode('paused'); game.trafficHorns(); expect(game.sounds.drain(9)).toEqual([]);
+  });
+  it('keeps parked and abandoned cars silent when bumped, and excludes wrecks from congestion', () => {
+    const game = new Game(); game.start(); game.time = 1; game.vehicles = [game.player];
+    for (const state of ['parked', 'abandoned']) {
+      game.player.body = new Body(0, 0); game.player.body.velocity = vec(4, 0);
+      const car = game.vehicle('traffic', 3.8, 0, 0, '#fff'); car.parked = state === 'parked'; car.driverExited = state === 'abandoned';
+      game.collision(game.player, car, 1 / 120);
+      expect(game.sounds.drain(1).filter(event => event.cue === 'horn')).toEqual([]);
+    }
+    for (let i = 0; i < 4; i++) {
+      const car = game.vehicle('traffic', 6 + i * 4, 0, 0, '#fff'); car.damage.status = 'wreck'; car.ai.blocked = true; car.ai.stalled = 3;
+    }
+    game.trafficHorns(); expect(game.sounds.drain(1)).toEqual([]);
   });
   it('emits material destruction once and still preserves the normal smash count', () => {
     const game = new Game(), crate = game.world.props.find(p => p.kind === 'crate')!;

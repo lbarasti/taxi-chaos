@@ -13,7 +13,6 @@ import { dist } from './physics/physics';
 import { PORT_FEE } from './world/harbour';
 import { setupLab, type LabAPI } from './debug/lab';
 import { AudioFX } from './audio/audio';
-import { refreshAudioControls } from './audio/audio-controls';
 import { MapWorkspace } from './map/workspace';
 import { bindStoryView, storyMarkup } from './narrative/story-view';
 import { bindMissionInbox, inboxMarkup } from './narrative/mission-inbox';
@@ -176,7 +175,6 @@ function hud() {
   refreshStory(showStory);
   lab?.refreshUI();
   inspection.refresh();
-  refreshAudioControls(audio);
 }
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
 function realtime() { if (mapWorkspace?.previewing) mapWorkspace.api.live(); else if (!drafting()) lab?.realtime(); }
@@ -193,7 +191,7 @@ document.addEventListener('pointerdown', event => {
 // finger is down can shift a scrolled menu row away from the release position.
 document.addEventListener('click', () => detectInput(inputDevice), { capture: true });
 function pause() { if (drafting() || drawer.showingFinale) return; if (game.mode === 'playing') game.setMode('paused'); else if (game.mode === 'paused' || game.mode === 'garage') playFromMenu(); }
-document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .audio-credits a, .credits-section a')) event.preventDefault(); });
+document.addEventListener('contextmenu', event => { if (event.target instanceof Element && !event.target.closest('input, select, textarea, .credits-section a')) event.preventDefault(); });
 window.addEventListener('keydown', e => {
   detectInput('keyboard');
   // A draft owns the game and the LAB panel. Reject keyboard shortcuts before

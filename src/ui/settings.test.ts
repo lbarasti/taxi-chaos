@@ -6,7 +6,7 @@ import { settingRow } from './setting-controls';
 
 function audioStub() {
   const audio = {
-    preferences: { muted: false, volume: 0.65, sirens: 0.25 },
+    preferences: { muted: false, volume: 0.65, playerEngine: 0.7, ambient: 1, sirens: 0.25 },
     configure: vi.fn((patch: Parameters<AudioFX['configure']>[0]) => { Object.assign(audio.preferences, patch); }),
     unlock: vi.fn(async () => true),
   };
@@ -43,12 +43,18 @@ describe('typed setting controls', () => {
     const audio = audioStub();
     const controls = createSettings(() => new Game(undefined, false), audio);
     controls.volume.write(42);
-    expect(audio.preferences).toEqual({ muted: false, volume: 0.42, sirens: 0.25 });
+    expect(audio.preferences).toEqual({ muted: false, volume: 0.42, playerEngine: 0.7, ambient: 1, sirens: 0.25 });
+    controls.playerEngine.write(23);
+    expect(controls.playerEngine.read()).toBe(23);
+    expect(controls.playerEngine.format(controls.playerEngine.read())).toBe('23%');
+    controls.ambient.write(38);
+    expect(controls.ambient.read()).toBe(38);
+    expect(controls.ambient.format(controls.ambient.read())).toBe('38%');
     controls.sirens.write(0);
-    expect(audio.preferences).toEqual({ muted: false, volume: 0.42, sirens: 0 });
+    expect(audio.preferences).toEqual({ muted: false, volume: 0.42, playerEngine: 0.23, ambient: 0.38, sirens: 0 });
     controls.muted.write(true);
     expect(audio.preferences.muted).toBe(true);
-    expect(audio.unlock).toHaveBeenCalledTimes(3);
+    expect(audio.unlock).toHaveBeenCalledTimes(5);
     audio.preferences.volume = 0.81;
     expect(controls.volume.read()).toBe(81);
     expect(controls.volume.format(controls.volume.read())).toBe('81%');
