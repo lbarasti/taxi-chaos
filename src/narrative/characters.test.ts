@@ -48,6 +48,8 @@ describe('character catalogue', () => {
       if (legacy.has(id)) {
         expect(character.attribution).toContain('Neutral legacy placeholder card');
         expect(character.attribution).toContain('not shipped');
+      } else if (['sam', 'june', 'ravi', 'cleo', 'oscar'].includes(id)) {
+        expect(character.attribution).toContain('Portrait art generated for Taxi Chaos');
       } else {
         expect(character.attribution).toContain('Portrait art supplied for Taxi Chaos');
         expect(character.attribution).not.toMatch(/placeholder|identity card/i);
@@ -82,6 +84,13 @@ describe('character catalogue', () => {
     expect(mia.name).toBe('Mia');
     expect(frankie.name).toBe('Frankie');
     expect(resolvePortrait(mia).src).not.toBe(resolvePortrait(frankie).src);
+  });
+
+  it('gives each ordinary passenger a distinct portrait separate from dispatch', () => {
+    const regulars = ['sam', 'june', 'ravi', 'cleo', 'oscar'] as const;
+    const sources = regulars.map(id => resolvePortrait(characters[id]).src);
+    expect(new Set(sources).size).toBe(regulars.length);
+    expect(sources).not.toContain(resolvePortrait(characters.bea).src);
   });
 
   it('rejects invalid metadata instead of shipping it', () => {

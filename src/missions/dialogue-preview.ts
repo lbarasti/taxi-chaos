@@ -1,5 +1,6 @@
 import { calendarLabel, dayMinute } from '../campaign/clock';
 import { characters, type CharacterId } from '../narrative/characters';
+import type { StoryMessage } from '../narrative/story';
 import { vehicleDefinitions, type VehicleModel, type VehicleRole } from '../vehicles/vehicles';
 import type { CompiledMissions, CompiledMission } from './compile';
 import { MissionDirector, type DirectorContext } from './director';
@@ -15,7 +16,7 @@ export type PreviewState = {
 export type PreviewCheck = { label: string; passed: boolean; children?: PreviewCheck[] };
 export type PreviewMessage = {
   id: string; trigger: 'offer' | 'pickup' | 'parcel-pickup'; character: CharacterId;
-  channel: 'text' | 'passenger' | 'sender'; text: string; selected: boolean;
+  channel: 'text' | StoryMessage['channel']; text: string; selected: boolean;
 };
 export type PreviewJob = {
   id: string; title: string; category: string; chapter: number;
