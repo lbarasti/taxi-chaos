@@ -72,6 +72,13 @@ export class GameDrawer {
     });
   }
   get active() { const { mode } = this.options.game(); return mode === 'intro' || mode === 'paused'; }
+  openShift() {
+    const game = this.options.game();
+    if (game.mode !== 'playing') return;
+    this.page = 'shift'; this.entry = 'home';
+    game.setMode('paused');
+  }
+  get showingShift() { return this.active && this.page === 'shift'; }
   openNewsroom() {
     const game = this.options.game();
     if (game.mode !== 'playing' || !game.campaignEnabled) return;
@@ -133,6 +140,7 @@ export class GameDrawer {
     this.paint(animate ? backwards ? -1 : 1 : 0);
   }
   back() {
+    if (this.page === 'shift') { this.options.play(); return true; }
     if (this.page === 'finale') { if (this.options.game().save.campaign.endingSeen) void this.open('home'); return true; }
     if (this.page === 'publications') { if (this.articleId) this.frontPage(); else void this.open(this.publicationBack); return true; }
     if (this.page === 'newsroom') {

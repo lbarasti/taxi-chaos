@@ -46,7 +46,7 @@ async function checkDesktop() {
   await page.waitForTimeout(400);
   assert(pausedCanvas.equals(await page.locator('#city').screenshot()), 'paused backdrop stays frozen');
   await page.mouse.move(1300, 800);
-  await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'menu-shift', 'navigation wraps');
+  await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'open-notebook', 'navigation wraps');
   await page.keyboard.press('ArrowDown'); assert.equal(await selected(page).getAttribute('id'), 'start');
   await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'menu-rules');
   await page.keyboard.press('Enter'); await waitForDrawer(page, 'rules');
@@ -96,9 +96,20 @@ async function checkDesktop() {
   await page.screenshot({path:`${output}/credits-desktop.png`});
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
   assert.equal(await selected(page).getAttribute('id'), 'menu-credits');
-  await page.locator('#menu-shift').hover(); assert.equal(await selected(page).getAttribute('id'), 'menu-shift', 'mouse hover selects');
-  await page.keyboard.press('Enter'); await waitForDrawer(page, 'shift');
+  await page.locator('#open-notebook').hover(); assert.equal(await selected(page).getAttribute('id'), 'open-notebook', 'mouse hover selects');
+  await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
+  await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift');
   assert(await page.locator('.shift-stats').isVisible());
+  assert.equal(await page.locator('#menu-shift').count(), 0);
+  const shiftStats = await page.locator('.shift-stats').innerText();
+  await page.screenshot({path:`${output}/shift-desktop.png`});
+  await page.keyboard.press('Tab'); await page.locator('#overlay').waitFor({state:'hidden'});
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'city');
+  await page.keyboard.press('p'); await waitForDrawer(page, 'home');
+  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'pause and shift show the same wake-to-sleep totals');
+  assert.equal(await page.locator('#menu-shift').count(), 0, 'pause has no shift entry');
+  await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
+  await page.locator('#shift').click(); await waitForDrawer(page, 'shift');
   // Exercise skip behavior independently of where this saved cab is parked.
   await page.locator('#sleep').evaluate(button => { button.disabled = true; });
   await page.locator('#open-notebook').focus(); await page.keyboard.press('ArrowDown');
@@ -144,7 +155,7 @@ async function checkDesktop() {
    await page.keyboard.press('Escape'); assert.match(await page.locator('#start').innerText(),/Resume/);
    assert(await page.evaluate(()=>document.querySelector('#modal').scrollWidth<=document.querySelector('#modal').clientWidth),'drawer has no horizontal overflow');
    await page.screenshot({path:`${output}/pause-${name}.png`});
-   await page.locator('#menu-shift').click(); await waitForDrawer(page, 'shift'); await page.locator('#open-notebook').click(); await waitForDrawer(page, 'notebook');
+   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'}); await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift'); await page.locator('#open-notebook').click(); await waitForDrawer(page, 'notebook');
    await page.locator('#notebook-back').click(); await waitForDrawer(page, 'home'); await page.locator('#start').click(); await page.reload();
   }
   await page.emulateMedia({reducedMotion:'reduce'}); await page.locator('#start').click();
@@ -220,8 +231,7 @@ async function checkTouchLayouts() {
     await tapToConfirm(mobile, '#drawer-back'); await waitForDrawer(mobile, 'home');
     await mobile.locator('#start').tap(); assert(await mobile.locator('#overlay').isVisible());
     await mobile.locator('#start').tap(); await mobile.locator('#overlay').waitFor({ state: 'hidden' });
-    await mobile.keyboard.press('p');
-    await tapToConfirm(mobile, '#menu-shift'); await waitForDrawer(mobile, 'shift');
+    await mobile.locator('#shift').tap(); await waitForDrawer(mobile, 'shift');
     await mobile.screenshot({ path: `${output}/shift-touch-${name}.png` });
     await mobile.context().close();
   }

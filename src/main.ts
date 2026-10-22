@@ -39,7 +39,7 @@ document.querySelector('#app')!.innerHTML = `
   <div class="context-actions" role="group" aria-label="Vehicle actions"><button id="garage-action" class="context-action" hidden>Garage</button><button id="interact" class="context-action" hidden>Get in</button></div>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   <div class="toast" id="toast" role="status"></div>
-  <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER · HOLD <kbd>A/D</kbd> FOR SIDE</span><span><kbd>G</kbd> GARAGE</span><span><kbd>H</kbd> HARBOUR</span><span><kbd>P</kbd> PAUSE</span></footer>
+  <footer class="controls"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> DRIVE / WALK</span><span><kbd>SPACE</kbd> DRIFT</span><span><kbd>SHIFT</kbd> BOOST</span><span><kbd>E</kbd> EXIT / ENTER · HOLD <kbd>A/D</kbd> FOR SIDE</span><span><kbd>G</kbd> GARAGE</span><span><kbd>H</kbd> HARBOUR</span><span><kbd>TAB</kbd> THIS SHIFT</span><span><kbd>P</kbd> PAUSE</span></footer>
   <div class="touch-controls" aria-label="Touch driving controls"><div class="thumb-actions"><button data-key="boost" aria-label="Hold to boost"><span>BOOST</span></button><button data-key="handbrake" aria-label="Hold handbrake">DRIFT</button></div><div id="joystick" class="joystick" role="group" aria-label="Drag to move: up accelerates, down brakes or reverses, left and right steer. On foot, drag in the direction to walk."><span class="joystick-guides" aria-hidden="true">＋</span><span class="joystick-knob" aria-hidden="true"></span></div></div>
   <div class="modal-backdrop" id="overlay"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
   <div class="debug-panel" id="debug-panel" hidden></div>
@@ -60,7 +60,7 @@ const renderer = new Renderer($('city') as HTMLCanvasElement, $('map') as HTMLCa
 const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city').focus(), () => game.recordDialogue());
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
-const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
+const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, shift: () => drawer.openShift(), newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
 const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu });
 drawer.setInputDevice(inputDevice);
@@ -203,6 +203,11 @@ window.addEventListener('keydown', e => {
   if (inspection.keydown(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
+  if (e.code === 'Tab' && !e.shiftKey && !target?.closest('input, select, textarea, #debug-panel') && (game.mode === 'playing' || drawer.showingShift)) {
+    e.preventDefault();
+    if (!e.repeat) { if (drawer.showingShift) playFromMenu(); else drawer.openShift(); }
+    return;
+  }
   if (!$('overlay').inert && !target?.closest('#debug-panel') && drawer.handleKey(e)) return;
   if (e.code === 'F2') { e.preventDefault(); if (!e.repeat) { if (game.mode === 'intro') game.start(); else if (game.mode === 'paused') game.setMode('playing'); ensureLab().toggle(); } return; }
   if (e.code === 'Space' && (game.mode === 'wasted' || game.mode === 'arrested') && !target?.closest('input, select, textarea')) {

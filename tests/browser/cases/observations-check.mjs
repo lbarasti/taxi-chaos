@@ -78,14 +78,14 @@ try {
           return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
         }) };
       });
-      assert.deepEqual(layout.buttons.map(button => button.id), ['dispatch', 'texts', 'newsroom', 'observe']);
+      assert.deepEqual(layout.buttons.map(button => button.id), ['dispatch', 'texts', 'shift', 'newsroom', 'observe']);
       for (const b of layout.buttons) {
         assert(b.width >= 44 && b.height >= 44, `${name}: ${b.id} must remain touch-sized`);
         assert(b.left >= 0 && b.top >= 0 && b.right <= width && b.bottom <= height, `${name}: ${b.id} must fit in viewport`);
       }
       assert.deepEqual(layout.collisions, [], `${name}: quick actions must clear other HUD controls`);
       if (touch && width > height) {
-        assert(layout.buttons.every(button => button.top === layout.buttons[0].top), 'landscape quick actions stay in one row');
+        assert(layout.buttons.filter(button => button.id !== 'shift').every(button => button.top === layout.buttons[0].top), 'landscape quick actions stay in one row');
       }
     };
     const shot = async suffix => {

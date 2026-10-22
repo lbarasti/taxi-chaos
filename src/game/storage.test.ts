@@ -30,6 +30,19 @@ describe('Taxi Chaos current-format storage', () => {
     expect(JSON.parse(values.get(storageKeys.settings)!)).toEqual({ gore: true, difficulty: 'cruise' });
     expect(JSON.parse(values.get(storageKeys.audio)!)).toEqual({ ...preferences, muted: false });
   });
+  it('restores shift totals and accepts saves from before shift tracking', () => {
+    const save = { ...defaultSave(), cash: 975, deliveries: 12, shiftStats: { earnings: 185, jobs: 2, smashed: 9, kills: 1 } };
+    mockStorage([[storageKeys.save, JSON.stringify(save)]]);
+    const game = new Game();
+    expect(game.save.shiftStats).toEqual(save.shiftStats);
+    game.save.shiftStats.earnings += 5; game.save.shiftStats.jobs++; game.save.shiftStats.smashed++; game.save.shiftStats.kills++; game.persist();
+    expect(new Game().save.shiftStats).toEqual({ earnings: 190, jobs: 3, smashed: 10, kills: 2 });
+    const { shiftStats, ...oldSave } = save;
+    mockStorage([[storageKeys.save, JSON.stringify(oldSave)]]);
+    expect(new Game().save).toEqual({ ...save, shiftStats: defaultSave().shiftStats });
+    mockStorage([[storageKeys.save, JSON.stringify({ ...save, shiftStats: { earnings: -1, jobs: '12', smashed: 4.9, kills: null } })]]);
+    expect(new Game().save.shiftStats).toEqual({ earnings: 0, jobs: 0, smashed: 4, kills: 0 });
+  });
   it('ignores prior project names and reads only the current keys', () => {
     const { values, storage } = mockStorage([['fare-city-v1', JSON.stringify({ ...defaultSave(), cash: 420 })]]);
     expect(readStorage(storageKeys.save)).toBeNull();

@@ -43,15 +43,26 @@ export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
 export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; everyday?: { family: string; line: string } };
-export type Save = { cash: number; deliveries: number; garage: GarageSave | null; best: number; story: MissionProgress; playerRecords: PlayerRecords; campaign: Campaign };
+// One saved shift lasts until the next successful sleep, including reloads and recovery.
+export type ShiftStats = { earnings: number; jobs: number; smashed: number; kills: number };
+const emptyShiftStats = (): ShiftStats => ({ earnings: 0, jobs: 0, smashed: 0, kills: 0 });
+export type Save = { shiftStats: ShiftStats; cash: number; deliveries: number; garage: GarageSave | null; best: number; story: MissionProgress; playerRecords: PlayerRecords; campaign: Campaign };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
 export { upgradeInfo, type Upgrade } from '../vehicles/vehicle-upgrades';
 export function defaultSave(definition = campaignDefinition): Save {
   const story = defaultMissionProgress(), playerRecords = defaultPlayerRecords();
-  return { cash: 80, deliveries: 0, garage: null, best: 0, story, playerRecords, campaign: defaultCampaign(definition, { progress: story, records: playerRecords }) };
+  return { shiftStats: emptyShiftStats(), cash: 80, deliveries: 0, garage: null, best: 0, story, playerRecords, campaign: defaultCampaign(definition, { progress: story, records: playerRecords }) };
 }
-function loadSave(definition = campaignDefinition): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(definition); const d = defaultSave(definition); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign, definition, { progress: d.story, records: d.playerRecords }); d.garage = s.garage ? parseGarage(s.garage) : s.upgrades ? legacyGarage(s.upgrades) : null; return d; } catch { return defaultSave(definition); } }
+function parseShiftStats(value: unknown): ShiftStats {
+  const stats = emptyShiftStats();
+  for (const key of Object.keys(stats) as (keyof ShiftStats)[]) {
+    const count = (value as Partial<ShiftStats> | null)?.[key];
+    stats[key] = typeof count === 'number' && Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+  }
+  return stats;
+}
+function loadSave(definition = campaignDefinition): Save { try { const s = JSON.parse(readStorage(storageKeys.save) ?? 'null'); if (!s || s.story?.version !== 1 || s.playerRecords?.version !== 1 || s.campaign?.version !== 2) return defaultSave(definition); const d = defaultSave(definition); d.shiftStats = parseShiftStats(s.shiftStats); d.cash = clamp(Number(s.cash) || 0, 0, 1e7); d.deliveries = clamp(Number(s.deliveries) || 0, 0, 1e5); d.best = Number(s.best) || 0; d.story = parseMissionProgress(s.story); d.playerRecords = parsePlayerRecords(s.playerRecords); d.campaign = parseCampaign(s.campaign, definition, { progress: d.story, records: d.playerRecords }); d.garage = s.garage ? parseGarage(s.garage) : s.upgrades ? legacyGarage(s.upgrades) : null; return d; } catch { return defaultSave(definition); } }
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
 const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
@@ -172,7 +183,7 @@ export class Game {
     for (const v of this.vehicles) if (this.isCampaignVehicle(v.sourceId)) v.alive = false;
     this.vehicles = this.vehicles.filter(v => !this.isCampaignVehicle(v.sourceId));
     this.campaignVehiclesSpawned.clear();
-    this.missions.reset(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(this.campaignContent, { progress: this.save.story, records: this.save.playerRecords }); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist();
+    this.missions.reset(); this.save.shiftStats = emptyShiftStats(); this.save.playerRecords = defaultPlayerRecords(); this.save.campaign = defaultCampaign(this.campaignContent, { progress: this.save.story, records: this.save.playerRecords }); this.navToNewsroom = false; this.dayNight.followCampaign(this.save.campaign.minute); this.syncCampaignWorld(); this.newJob(true, 'reset'); this.persist();
   }
   get campaignFinaleReady() {
     return this.campaignEnabled && this.save.campaign.finished && !this.save.campaign.endingSeen
@@ -211,7 +222,7 @@ export class Game {
   sleep(): boolean {
     if ((this.mode !== 'paused' && this.mode !== 'garage') || this.sleepReason) return false;
     this.releaseMission('shift'); this.dialogue.clear();
-    this.advanceNarrativeTo(this.sleepPreview.until); this.newJob(false, 'shift'); this.persist();
+    this.advanceNarrativeTo(this.sleepPreview.until); this.save.shiftStats = emptyShiftStats(); this.newJob(false, 'shift'); this.persist();
     this.setMode('playing'); this.notify(`Morning · ${this.campaignBulletin}`); return true;
   }
   get campaignContext(): CampaignContext { return { state: this.save.campaign, definition: this.campaignContent, progress: this.save.story, records: this.save.playerRecords }; }
@@ -837,7 +848,7 @@ export class Game {
     this.propSound(prop, impact);
     if (prop.kind === 'pump' || prop.kind === 'station') this.igniteProp(prop, v.kind === 'taxi' || prop.blamed, 0.6);
     if (v.kind === 'taxi') {
-      this.smashed++; this.combo = this.comboTimer > 0 ? this.combo + 1 : 1; this.comboTimer = 3;
+      this.smashed++; this.save.shiftStats.smashed++; this.combo = this.comboTimer > 0 ? this.combo + 1 : 1; this.comboTimer = 3;
       if (structural) this.buildingsSmashed++;
       this.crime(structural ? 25 : prop.kind === 'kiosk' ? 15 : prop.kind === 'tree' ? 12 : 7);
       this.floating(prop.body.position, this.combo > 1 ? `${this.combo}× SMASH` : 'SMASH!', '#f9ce60');
@@ -964,7 +975,7 @@ export class Game {
     prop.fire = prop.fire > 0 ? Math.min(prop.fire, fuse) : fuse; prop.blamed ||= blamed;
   }
   death(person: Person, force: Vec, severity: number, blamed: boolean) {
-    this.kills++; this.fx.bloodHit(person.position, force, severity, person.color);
+    this.kills++; this.save.shiftStats.kills++; this.fx.bloodHit(person.position, force, severity, person.color);
     this.sounds.emit('pulp', this.time, { position: person.position, strength: clamp(severity, 0.5, 1.2) });
     if (blamed) this.crime(person.role === 'officer' ? 35 : 28);
     const lostOffer = [...this.missionOffers.values()].find(j => j.customerId === person.id);
@@ -1000,7 +1011,7 @@ export class Game {
       const effect = radialEffect(blast.position, prop.body.position, blast.radius, blast.power); if (effect.damage < 3) continue;
       prop.hp -= effect.damage * (isStructural(prop.kind) ? 1.3 : 1.8); prop.blamed ||= blast.blamed;
       if (effect.damage > 22) this.igniteProp(prop, blast.blamed, prop.kind === 'pump' ? 0.7 : 3);
-      if (prop.hp <= 0) { prop.alive = false; prop.brokenAt = this.time; this.propSound(prop, effect.damage); if (blast.blamed) { this.smashed++; if (isStructural(prop.kind)) this.buildingsSmashed++; } this.igniteProp(prop, blast.blamed, 0.6); }
+      if (prop.hp <= 0) { prop.alive = false; prop.brokenAt = this.time; this.propSound(prop, effect.damage); if (blast.blamed) { this.smashed++; this.save.shiftStats.smashed++; if (isStructural(prop.kind)) this.buildingsSmashed++; } this.igniteProp(prop, blast.blamed, 0.6); }
     }
     for (const person of this.world.people) {
       if (!person.alive || person.aboard) continue;
@@ -1038,7 +1049,7 @@ export class Game {
     }
     for (const prop of this.world.props) if (prop.fire > 0 && !prop.fuelSpent) {
       prop.fire = Math.max(0, prop.fire - dt); prop.hp = Math.max(0, prop.hp - dt * 6);
-      if (prop.fire <= 0) { const intact = prop.alive; prop.fuelSpent = true; prop.alive = false; prop.brokenAt = this.time; this.queueBlast(prop.body.position, prop.kind === 'station' ? 30 : 22, prop.kind === 'station' ? 180 : 120, prop.blamed, undefined, prop.id); if (intact && prop.blamed) { this.smashed++; if (prop.kind === 'station') this.buildingsSmashed++; } }
+      if (prop.fire <= 0) { const intact = prop.alive; prop.fuelSpent = true; prop.alive = false; prop.brokenAt = this.time; this.queueBlast(prop.body.position, prop.kind === 'station' ? 30 : 22, prop.kind === 'station' ? 180 : 120, prop.blamed, undefined, prop.id); if (intact && prop.blamed) { this.smashed++; this.save.shiftStats.smashed++; if (prop.kind === 'station') this.buildingsSmashed++; } }
     }
     const pending = this.blasts; this.blasts = [];
     for (const blast of pending.slice(0, 32)) this.explosion(blast);
@@ -1162,7 +1173,7 @@ export class Game {
     if (!this.onFoot && !this.player.sinking && this.player.dynamics.skidding) {
       if (this.speed > 8) this.driftMeter += this.speed * dt;
     } else if (this.driftMeter > 7) {
-      if (this.time - this.lastDrift > 1) { const tip = Math.min(20, Math.round(this.driftMeter * 0.35)); this.save.cash += tip; this.shiftEarnings += tip; this.floating(this.player.body.position, `DRIFT +$${tip}`, '#a6dac0'); this.lastDrift = this.time; this.persist(); }
+      if (this.time - this.lastDrift > 1) { const tip = Math.min(20, Math.round(this.driftMeter * 0.35)); this.save.cash += tip; this.shiftEarnings += tip; this.save.shiftStats.earnings += tip; this.floating(this.player.body.position, `DRIFT +$${tip}`, '#a6dac0'); this.lastDrift = this.time; this.persist(); }
       this.driftMeter = 0;
     } else this.driftMeter = 0;
     if (!this.onFoot && this.settings.gore && this.player.damage.bloodTime > 0 && this.speed > 1) this.player.dynamics.tyres.forEach((t, i) => { if (!t.steered) this.skids.push({ a: this.previousTyres[i], b: this.player.body.toWorld(t.position), life: 30, blood: true }); });
@@ -1297,7 +1308,7 @@ export class Game {
           if (j.missionId) this.missions.complete(this.missionContext(), this.campaignEnabled ? completion : undefined);
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
-          this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.jobsDone++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
+          this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.save.shiftStats.earnings += payout; this.jobsDone++; this.save.shiftStats.jobs++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
           this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd'); this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Next pickup marked.`, 'success');
           this.sounds.emit('payment', this.time);
           const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel', this.campaignContent) : null, completedId = j.missionId;
@@ -1311,7 +1322,7 @@ export class Game {
     for (const v of this.vehicles) if (v.alive && v.kind === 'traffic') {
       if (v.parked) continue;
       const distance = dist(v.body.position, this.player.body.position);
-      if (distance > 3.3 && distance < 5 && this.speed > 14 && (this.nearMiss.get(v.id) ?? 0) < this.time) { this.nearMiss.set(v.id, this.time + 8); this.save.cash += 5; this.shiftEarnings += 5; this.floating(v.body.position, 'CLOSE CALL +$5', '#b5e5cf'); this.persist(); }
+      if (distance > 3.3 && distance < 5 && this.speed > 14 && (this.nearMiss.get(v.id) ?? 0) < this.time) { this.nearMiss.set(v.id, this.time + 8); this.save.cash += 5; this.shiftEarnings += 5; this.save.shiftStats.earnings += 5; this.floating(v.body.position, 'CLOSE CALL +$5', '#b5e5cf'); this.persist(); }
     }
   }
   law(dt: number) {
@@ -1332,7 +1343,7 @@ export class Game {
       const seen = this.policeVisible;
       if (seen) this.policeIntel = { position: { ...this.actor.position }, velocity: { ...this.actor.velocity }, seenAt: this.time };
       this.escape = seen ? 0 : this.escape + dt;
-      if (this.escape > rules.escapeTime) { this.heat = 0; this.escape = 0; for (const v of this.police) v.alive = false; this.sounds.emit('escape', this.time); this.notify('LOST THEM. Back to honest-ish work.', 'success'); this.save.cash += 25; this.shiftEarnings += 25; this.persist(); this.floating(this.player.body.position, 'ESCAPED +$25', '#a8e2bd'); }
+      if (this.escape > rules.escapeTime) { this.heat = 0; this.escape = 0; for (const v of this.police) v.alive = false; this.sounds.emit('escape', this.time); this.notify('LOST THEM. Back to honest-ish work.', 'success'); this.save.cash += 25; this.shiftEarnings += 25; this.save.shiftStats.earnings += 25; this.persist(); this.floating(this.player.body.position, 'ESCAPED +$25', '#a8e2bd'); }
       const pinned = this.police.some(v => dist(v.body.position, this.actor.position) < (this.onFoot ? 4 : 7.5)) && (this.onFoot ? this.speed < 2 : this.speed < 4 || (!this.controls.throttle && this.speed < 9));
       this.arrest = clamp(this.arrest + dt * (pinned ? 1 : -1.7), 0, rules.arrestTime);
       if (this.arrest >= rules.arrestTime) this.setMode('arrested');
