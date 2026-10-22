@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
+import { openGame, launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
 import { tapToConfirm, waitForDrawer } from '../helpers/drawer.mjs';
 
 const output = resolve(process.env.SCREENSHOT_DIR ?? 'scenario-runs/editions');
@@ -36,7 +36,7 @@ try {
       assert(source.startsWith('data:image/webp;base64,'), `${name}: embedded WebP picture`);
       return source;
     };
-    await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
+    await openGame(page, `${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     await page.evaluate(() => {
       window.__scenario.start({ traffic: 'quiet', noPolice: true });
@@ -71,7 +71,7 @@ try {
     // The normal live path opens its pending finale automatically at a safe stop.
     const endingContext = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
     const endingPage = await endingContext.newPage();
-    await endingPage.goto(`${pathToFileURL(resolve('dist/index.html'))}?debug=1`);
+    await openGame(endingPage, `${pathToFileURL(resolve('dist/index.html'))}?debug=1`);
     await endingPage.waitForFunction(() => !!window.__taxi);
     await endingPage.evaluate(() => { window.__taxi.toggle(false); window.__taxi.campaign(14 * 1440 + 7 * 60); });
     await waitForDrawer(endingPage, 'finale');

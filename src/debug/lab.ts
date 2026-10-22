@@ -11,6 +11,7 @@ import { campaignDays } from '../campaign/clock';
 // so fixtures can be unit-tested outside a browser.
 import './lab.css';
 import { Game, upgradeInfo, type Upgrade, type Vehicle } from '../game/game';
+import type { Notification, NotificationKind, NotificationOptions } from '../game/notifications';
 import type { Renderer } from '../rendering/renderer';
 import type { OnBoardCue } from '../rendering/onboard-cue';
 import type { Settings } from '../game/rules';
@@ -152,6 +153,7 @@ export type LabHooks = {
   setExternalClock: (frozen: boolean) => void;
   setTimeScale: (scale: number) => void;
   refresh: () => void;
+  notificationVisible?: () => boolean;
   focus: () => void;
   audio?: AudioFX;
 };
@@ -165,6 +167,8 @@ export type LabAPI = {
   isOpen(): boolean;
   scenarios: ScenarioInfo[];
   state(): LabSnapshot;
+  notifications(): Notification[];
+  notify(message: string, kind?: NotificationKind, options?: NotificationOptions): void;
   vehicles(): VehicleSummary[];
   vehicleModels(): { model: VehicleModel; definition: VehicleDefinition }[];
   spawnVehicle(options: VehicleSpawn): number;
@@ -752,6 +756,8 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
   const findVehicle = (id: number) => game.vehicles.find(v => v.id === id);
 
   const api: LabAPI = {
+    notifications: () => structuredClone([...game.notifications.items]),
+    notify: (message, kind, options) => { game.notify(message, kind, options); hooks.refresh(); },
     layers: hooks.layers,
     map: hooks.map,
     toggle: (force?: boolean) => {
@@ -788,7 +794,10 @@ export function setupLab(game: Game, renderer: Renderer, hooks: LabHooks): LabAP
       lastKeys = keys.slice();
       const duration = clamp(Number.isFinite(seconds) ? seconds : 0, 0, 120);
       game.keys = new Set(keys);
-      for (let i = 0; i < Math.round(duration / STEP); i++) game.update(STEP);
+      for (let i = 0; i < Math.round(duration / STEP); i++) {
+        if (hooks.notificationVisible) game.notificationsVisible = hooks.notificationVisible();
+        game.update(STEP);
+      }
       game.keys.clear();
       hooks.refresh(); refreshUI();
       return snapshot();

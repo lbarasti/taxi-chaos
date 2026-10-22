@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { launchBrowser, newContext, closeBrowser, captureFailure, viewportTuples } from '../runtime.mjs';
+import { openGame, launchBrowser, newContext, closeBrowser, captureFailure, viewportTuples } from '../runtime.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const output = process.env.SCREENSHOT_DIR ?? path.join(root, 'scenario-runs/minimal-player-hud');
@@ -49,7 +49,7 @@ try {
     const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, offline: true });
     const page = await context.newPage();
     // Disable persistence before entering the Lab; never read normal settings/saves.
-    await page.goto(`file://${path.join(root, 'dist/index.html')}?dialogue-preview=1&debug=1`);
+    await openGame(page, `file://${path.join(root, 'dist/index.html')}?dialogue-preview=1&debug=1`);
     await page.evaluate(() => {
       __taxi.scenario('first-fare');
       document.querySelector('#debug-panel').hidden = true;
@@ -129,7 +129,7 @@ try {
     // Scenario facts exercise fractional heat through the actual HUD, without
     // adding gameplay cheats or coupling screenshots to elapsed wall time.
     const heatPage = await context.newPage();
-    await heatPage.goto(`file://${path.join(root, 'dist/index.html')}?scenario-preview=1`);
+    await openGame(heatPage, `file://${path.join(root, 'dist/index.html')}?scenario-preview=1`);
     await heatPage.evaluate(() => window.__scenario.start({ noPolice: false }));
     for (const [heat, fills, stars] of (name === 'desktop' ? [
       [0, [0, 0, 0], 0], [10, [0.5, 0, 0], 0], [20, [1, 0, 0], 1],
