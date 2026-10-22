@@ -163,3 +163,14 @@ operation outcomes retain their chosen branch without reevaluating old prerequis
 Initialize new campaigns through the chronological scheduler so opening operations
 settle before the first edition. Loading reconstructs history without replaying
 gameplay effects.
+
+## 12. Stack notifications by visible display time
+
+Use the edition invitation's corner beneath the radar for transient notification
+cards. New arrivals appear immediately above older cards; only the exposed card
+spends its automatic dismissal time. Menus, hidden tabs and portrait conversations
+that cover this corner pause that time. Keep longer newsroom instructions, service
+and recovery summaries, and fare/delivery receipts until explicit dismissal; driving
+and danger alerts retain their four-second lifetime. Label categories independently
+of success/danger accents. The unread-edition invitation returns when cards clear.
+Notification state is transient and belongs to each game instance, never its save.

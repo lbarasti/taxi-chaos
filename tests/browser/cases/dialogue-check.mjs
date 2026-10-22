@@ -127,7 +127,12 @@ try {
     await run(page, { op: 'deliver' });
     await run(page, { op: 'route', mission: 'celia-barriers' });
     assert.equal(await waiting.isVisible(), false);
-    assert.equal((await run(page, { op: 'step', seconds: 12 })).dialogue, null);
+    const routed = await run(page, { op: 'step', seconds: 12 });
+    // This delivery leaves the cab at Celia's pickup: waiting can legitimately
+    // board her. The cancelled Dispatch call must never replace her dialogue.
+    assert.equal(routed.job.missionId, 'celia-barriers');
+    assert.notEqual(routed.dialogue?.message.channel, 'dispatch');
+    assert.equal(await waiting.isVisible(), false);
     assert.deepEqual(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })), { local: 0, session: 0 });
     await context.close();
     console.log(`PASS ${viewport}: dispatch, passenger identity, cabin portraits, physical during-ride transition and replay`);

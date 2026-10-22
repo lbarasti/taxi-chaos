@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
-import { waitForDrawer } from '../helpers/drawer.mjs';
+import { openGame, launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
+import { waitForDrawer, tapToConfirm } from '../helpers/drawer.mjs';
 
 const output = resolve(process.env.SCREENSHOT_DIR ?? process.argv[2] ?? 'scenario-runs/observations');
 await mkdir(output, { recursive: true });
@@ -22,7 +22,7 @@ try {
   ]) {
     const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto(`${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
+    await openGame(page, `${pathToFileURL(resolve('dist/index.html'))}?scenario-preview=1`);
     await page.waitForFunction(() => !!window.__scenario);
     const command = async command => {
       const result = await page.evaluate(command => window.__scenario.execute(command), command);
@@ -130,9 +130,10 @@ try {
     assert.equal(await camera.getAttribute('data-state'), 'recorded', 'recorded state survives save reconstruction');
     assert.equal(await page.evaluate(() => localStorage.getItem('taxi-chaos-v1')), null, 'scenario never writes a normal save');
     await page.locator('#city').focus();
-    await page.keyboard.press('KeyP');
-    await page.locator('#open-notebook').click();
-    await waitForDrawer(page, 'notebook');
+    await page.locator('#newsroom').click();
+    await waitForDrawer(page, 'newsroom');
+    if (touch) await tapToConfirm(page, '#newsroom-open-sources');
+    else { await page.locator('#newsroom-open-sources').focus(); await page.keyboard.press('Enter'); }
     assert.equal(await page.locator('[data-record="cafe-photo"]').count(), 1);
     assert.match(await page.locator('[data-record="cafe-photo"]').textContent(), /Garden Café frontage/);
     await command({ op: 'mode', mode: 'playing' });
