@@ -1379,7 +1379,6 @@ export class Game {
           }
           if (j.missionId) this.persist();
           this.sounds.emit('pickup', this.time);
-          this.notify(j.type === 'parcel' ? `Parcel secured! Deliver to ${j.destination}.` : `${j.name} is in! Head to ${j.destination}.`);
           this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55');
         }
         else {

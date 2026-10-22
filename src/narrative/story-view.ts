@@ -29,7 +29,7 @@ export function showCharacterPortrait(portrait: HTMLImageElement, character: Cha
   });
 }
 
-export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focusGame: () => void, presented: () => void = () => {}) {
+export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focusGame: () => void, presented: () => void = () => {}, destination: () => string | null = () => null) {
   const get = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
   const panel = get('story'), text = get('story-text'), read = get('story-read');
   const portrait = get('story-portrait') as HTMLImageElement;
@@ -47,13 +47,15 @@ export function bindStoryView(root: HTMLElement, dialogue: () => Dialogue, focus
     panel.hidden = !visible || !active;
     if (!active) { shown = recorded = null; get('story-accessible').textContent = ''; return; }
     const speaker = messageCharacter(active.message);
+    const target = active.message.channel !== 'dispatch' ? destination() : null;
+    const heading = target ? `Head to ${target}` : null;
+    get('story-label').textContent = heading ?? `${categoryLabels[active.message.category]} / ${channelLabels[active.message.channel]}`;
     if (shown !== active) {
       shown = active;
       showCharacterPortrait(portrait, speaker);
       get('story-name').textContent = speaker.name.toUpperCase();
-      get('story-label').textContent = `${categoryLabels[active.message.category]} / ${channelLabels[active.message.channel]}`;
       // Announce a whole message once, never each typewriter letter.
-      get('story-accessible').textContent = `${speaker.name}: ${active.message.text}`;
+      get('story-accessible').textContent = `${heading ? `${heading}. ` : ''}${speaker.name}: ${active.message.text}`;
     }
     if (visible && recorded !== active) { recorded = active; presented(); }
     const complete = d.complete || reducedMotion.matches;

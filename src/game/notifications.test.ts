@@ -46,6 +46,23 @@ describe('notification display time', () => {
 });
 
 describe('game notification lifecycle', () => {
+  it.each(['fare', 'parcel'] as const)('starts %s pickup dialogue without adding or replacing notification cards', type => {
+    const game = new Game(undefined, false, 'legacy');
+    if (type === 'parcel') {
+      game.player = game.spawnVehicle({ kind: 'taxi', model: 'motorcycle', position: { x: 4, y: 32 } });
+      game.setJobType();
+    }
+    game.vehicles = [game.player]; game.trafficTarget = 0; game.settings.noPolice = true;
+    game.start(); game.notifications.clear();
+    game.notify('Keep this newsroom receipt', '', { category: 'newsroom', duration: null });
+    const cards = structuredClone(game.notifications.items);
+    game.player.body.position = { ...game.job.pickup }; game.player.body.velocity = { x: 0, y: 0 };
+    for (let tick = 0; tick < 108; tick++) game.update(1 / 120);
+    expect(game.job).toMatchObject({ type, stage: 'dropoff' });
+    expect(game.dialogue.active?.message.channel).toBe(type === 'parcel' ? 'sender' : 'passenger');
+    expect(game.notifications.items).toEqual(cards);
+  });
+
   it('starts a fresh game without carrying over another game’s notification cards', () => {
     const game = new Game(undefined, false);
     game.start(); game.notify('Newsroom copy submitted', '', { category: 'newsroom', duration: null });
