@@ -43,6 +43,8 @@ describe('audio lifecycle and bounded mixer', () => {
     const ctx = fakeContext(), audio = new AudioFX(() => ctx as unknown as AudioContext), game = new Game();
     await audio.unlock(); game.start(); audio.update(game, true, true); expect(audio.state().loops).toContain('engine');
     game.setMode('paused'); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+    game.returnToTitle(); audio.update(game, true, true); expect(audio.state().loops).toEqual([]);
+    expect(audio.state().audible).toBe(false);
     game.setMode('playing'); audio.update(game, false, true); expect(audio.state().loops).toEqual([]);
     audio.update(game, true, false); expect(audio.state().loops).toEqual([]);
     audio.update(game, true, true); audio.configure({ muted: true }); expect(audio.state().loops).toEqual([]);

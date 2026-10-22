@@ -144,7 +144,7 @@ export class AudioFX {
     if (!enabled) { this.stopAll(); this.audible = false; this.framePeak = 0; return; }
     if (this.previewUntil > ctx.currentTime) { game.sounds.clear(); this.audible = true; this.measure(); return; }
     if (this.previewUntil) this.stopPreview();
-    const ambient = live && game.mode === 'intro';
+    const ambient = live && game.mode === 'intro' && !game.sessionStarted;
     const running = live && (game.mode === 'playing' || game.mode === 'wasted');
     this.smooth(this.world!.gain, running ? 1 : ambient ? 0.35 : 0, ambient ? 0.6 : 0.25);
     this.audible = running || ambient;

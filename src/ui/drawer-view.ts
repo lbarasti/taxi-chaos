@@ -70,7 +70,7 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;
-    case 'shift': return `<div class="intro-eyebrow">TAXI CHAOS / SHIFT</div><h2 id="modal-title">This shift.</h2>${menuItem('Resume your shift', { id: 'start' })}${shiftMarkup(game, campaignMarkup(game))}`;
+    case 'shift': return `<div class="intro-eyebrow">TAXI CHAOS / SHIFT</div><h2 id="modal-title">This shift.</h2>${menuItem('Resume your shift', { id: 'start' })}${shiftMarkup(game, campaignMarkup(game))}${game.canReturnToTitle ? menuItem('Return to title', { id: 'return-to-title' }) : ''}`;
     case 'credits': body = creditsMarkup(); break;
     case 'notebook-guide': body = notebookGuideMarkup(game); break;
   }

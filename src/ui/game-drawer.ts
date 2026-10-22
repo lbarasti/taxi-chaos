@@ -24,7 +24,7 @@ export class GameDrawer {
   private selections = new Map<DrawerPage, string>();
   private menu: DrawerMenu;
   private device: InputDevice = 'keyboard';
-  constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: boolean; play: () => void; newGame: () => void; loadGame: (day: number) => boolean }) {
+  constructor(private root: HTMLElement, private options: { game: () => Game; audio: AudioFX; saved: () => boolean; play: () => void; returnToTitle: () => void; newGame: () => void; loadGame: (day: number) => boolean }) {
     this.settings = createSettings(options.game, options.audio);
     this.menu = new DrawerMenu(root, () => this.active && !this.transition && !root.closest('[inert]'));
     root.addEventListener('click', event => {
@@ -62,9 +62,10 @@ export class GameDrawer {
         case 'publication-front': this.frontPage(); break;
         case 'arcade-continue': if (game.continueArcade()) options.play(); break;
         case 'start': options.play(); break;
+        case 'return-to-title': options.returnToTitle(); break;
         case 'new-game':
           if (game.mode !== 'intro') break;
-          if (options.saved) { this.selections.delete('new-game'); void this.open('new-game'); }
+          if (options.saved()) { this.selections.delete('new-game'); void this.open('new-game'); }
           else options.newGame();
           break;
         case 'confirm-new-game': if (this.page === 'new-game' && game.mode === 'intro') options.newGame(); break;
@@ -199,7 +200,7 @@ export class GameDrawer {
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
     this.root.classList.toggle('notebook-modal', this.page === 'notebook');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved, entry: this.entry, newsroomSection: this.newsroomSection, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId, loadFailed: this.loadFailed })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved(), entry: this.entry, newsroomSection: this.newsroomSection, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId, loadFailed: this.loadFailed })}</div>`;
     if (search) { this.root.querySelector<HTMLInputElement>('#notebook-search')!.value = search; this.filterNotebook(); }
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);

@@ -6,7 +6,7 @@ import { probeBrowser } from './runtime.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const suites = new Map([
-  ['menus', ['splash', 'new-game', 'load-game']],
+  ['menus', ['splash', 'new-game', 'load-game', 'return-to-title']],
   ['audio', ['engine-audio']],
   ['input', ['mobile-controls', 'mobile-hud']],
   ['hud', ['navigation-hud', 'player-hud', 'notifications']],

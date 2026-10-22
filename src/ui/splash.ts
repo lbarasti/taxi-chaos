@@ -24,18 +24,20 @@ export function shiftMarkup(game: Game, actions: string) {
   return shiftStatsMarkup(game) + actions;
 }
 export function splashMarkup(game: Game, saved: boolean): string {
-  const paused = game.mode === 'paused';
+  const paused = game.mode === 'paused', suspended = !paused && game.sessionStarted;
   const job = game.job;
   return `<div class="intro-eyebrow"><span class="live-dot"></span> WELCOME TO TAXI CHAOS</div>
     <h2 id="modal-title">A little cab.<br><em>A lot of trouble.</em></h2>
     <p class="intro-copy">Pick up. Drop off. Get paid.<br>How you get there is entirely your business.</p>
-    <section class="splash-save" aria-label="${paused ? 'Current shift' : saved ? 'Saved campaign' : 'Your first shift'}">
-      <div class="splash-save-heading"><span class="live-dot"></span><span>${paused ? 'YOUR CURRENT SHIFT · PAUSED' : saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(game.save.campaign.finished ? `Arcade · ${game.dayNight.snapshot().time}` : calendarLabel(game.save.campaign.minute))}</small></div>
+    <section class="splash-save" aria-label="${paused || suspended ? 'Current shift' : saved ? 'Saved campaign' : 'Your first shift'}">
+      <div class="splash-save-heading"><span class="live-dot"></span><span>${paused ? 'YOUR CURRENT SHIFT · PAUSED' : suspended ? 'YOUR CURRENT SHIFT · SUSPENDED' : saved ? 'YOUR SAVED SHIFT' : 'THE CITY IS YOURS'}</span><small>${escape(game.save.campaign.finished ? `Arcade · ${game.dayNight.snapshot().time}` : calendarLabel(game.save.campaign.minute))}</small></div>
       ${paused ? shiftStatsMarkup(game) : `<div class="splash-snapshot"><div><small>WALLET</small><strong>$${game.save.cash.toLocaleString()}</strong></div><div><small>TOTAL DELIVERIES</small><strong>${game.save.deliveries}</strong></div><div><small>CAMPAIGN</small><strong>${game.save.campaign.finished ? 'Complete' : `Day ${displayDay(game.save.campaign.minute, game.campaignContent.timing)}<span> / ${campaignDays(game.campaignContent.timing)}</span>`}</strong></div></div>`}
       <div class="splash-mission"><small>${job.stage === 'dropoff' ? 'RIDE IN PROGRESS · NEXT STOP' : 'NEXT FARE · PICKUP'}</small><strong>${escape(job.stage === 'dropoff' ? job.destination : job.name)}</strong><p>${job.stage === 'dropoff' ? 'Your passenger is aboard. Finish the delivery.' : `Heading to ${escape(job.destination)}. Stop inside the yellow ring.`} <span>$${job.fare} base fare</span></p></div>
     </section>
+    ${!paused && game.titleSaveFailed ? '<p class="campaign-hint" role="alert">Progress could not be saved to the browser. Continue is still available while this page stays open.</p>' : ''}
     <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
       ${paused || saved ? menuItem(paused ? 'Resume your shift' : 'Continue', { id: 'start' }) : ''}
+      ${game.canReturnToTitle ? menuItem('Return to title', { id: 'return-to-title' }) : ''}
       ${!paused ? menuItem('New game', { id: 'new-game' }) : ''}
       ${!paused ? menuItem('Load game', { id: 'menu-load-game', page: 'load-game' }) : ''}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}

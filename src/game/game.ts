@@ -78,6 +78,16 @@ export class Game {
   /** Unaccepted physical pickups, keyed by stable mission identity. */
   missionOffers = new Map<MissionId, Job>();
   private initialMorningPending = false;
+  private started = false;
+  get sessionStarted() { return this.started; }
+  titleSaveFailed = false;
+  get canReturnToTitle() { return this.persistence && this.started && this.mode === 'paused'; }
+  /** Suspend this exact session; rolling saves deliberately omit some live state. */
+  returnToTitle() {
+    if (!this.canReturnToTitle) return;
+    this.titleSaveFailed = !this.persist();
+    this.setMode('intro');
+  }
   private offerCheckpoint = 0;
   private rideBeat = 0;
   private dialogueStartedAt = 0;
@@ -682,7 +692,9 @@ export class Game {
   }
   setMode(mode: Mode) { if (this.mode === 'playing' && mode !== 'playing') this.persist(); if (mode === 'arrested' && this.mode !== mode) this.sounds.emit('arrest', this.time); this.mode = mode; this.keys.clear(); this.touchMove = null; this.onModeChange(); }
   start() {
+    if (this.started) { this.setMode('playing'); return; }
     if (!this.onFoot && (!this.player.alive || this.player.damage.status === 'wreck') || this.driverHealth <= 0) { this.setMode('wasted'); return; }
+    this.started = true;
     this.setMode('playing'); this.syncMissionOffers();
     this.notify(this.save.campaign.finished ? 'Arcade mode · Dispatcher work continues.' : 'First fare is just ahead. Stop inside the yellow ring.');
     if (this.initialMorningPending) { this.initialMorningPending = false; this.captureMorning(); }
