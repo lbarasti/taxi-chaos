@@ -63,12 +63,13 @@ const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), ()
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, shift: () => drawer.openShift(), newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
-const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu, newGame, loadGame });
+const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: () => game.sessionStarted || game.persistenceEnabled && hasSavedCampaign, play: playFromMenu, returnToTitle, newGame, loadGame });
 drawer.setInputDevice(inputDevice);
 const refreshCampaignNotice = bindCampaignNotice($('app'), () => game, { editions: () => drawer.openPublications(), finale: () => drawer.openFinale() });
 const notifications = bindNotifications($('app'), () => game, () => $('city').focus());
 function detectInput(device: InputDevice) { inputDevice = device; drawer.setInputDevice(device); }
 let splashExiting = false;
+let splashExitTimer: number | undefined;
 let lab: LabAPI | undefined;
 let mapWorkspace: MapWorkspace | undefined;
 let normalGame: Game | undefined;
@@ -83,6 +84,7 @@ function gameOverMarkup(title: 'WASTED' | 'BUSTED', charges: { label: string; am
 function modal() {
   const overlay = $('overlay'), card = $('modal');
   if (splashExiting && game.mode === 'playing') return;
+  window.clearTimeout(splashExitTimer); splashExitTimer = undefined;
   splashExiting = false; overlay.classList.remove('splash-exiting'); overlay.inert = false;
   overlay.hidden = game.mode === 'playing';
   overlay.classList.toggle('game-over', game.mode === 'wasted' || game.mode === 'arrested');
@@ -113,15 +115,30 @@ function modal() {
 }
 function playFromMenu() {
   if (drafting()) return;
+  clearInput();
   const overlay = $('overlay');
   realtime(); externalClock = false;
   if (game.mode === 'intro') {
     splashExiting = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (splashExiting) { overlay.classList.add('splash-exiting'); overlay.inert = true; }
-    game.start(); renderer.startIntroTransition();
-    if (splashExiting) window.setTimeout(() => { if (splashExiting) { splashExiting = false; modal(); } }, 550);
+    if (game.sessionStarted) game.setMode('playing'); else game.start();
+    renderer.startIntroTransition();
+    if (splashExiting) splashExitTimer = window.setTimeout(() => { if (splashExiting) { splashExiting = false; modal(); } }, 550);
   } else if (game.mode !== 'playing') game.setMode('playing');
   $('city').focus();
+}
+function clearInput() {
+  resetTouch(); game.keys.clear(); game.touchMove = null; padKeys.clear();
+  game.controls = { throttle: 0, turn: 0, handbrake: false, boost: false };
+  // Require held controller buttons/axes to be released before they can drive.
+  controllerBlocked = true;
+}
+function returnToTitle() {
+  if (drafting() || !game.canReturnToTitle) return;
+  clearInput(); accumulator = 0;
+  audio.silence(game); drawer.reset();
+  $('mission-inbox').hidden = true;
+  game.returnToTitle();
 }
 function newGame() {
   if (drafting() || game.mode !== 'intro') return;
@@ -136,7 +153,7 @@ function loadGame(day: number): boolean {
 function replaceTitleGame(next: Game) {
   const previous = game;
   const titleOffset = sub(renderer.camera, previous.actor.position);
-  resetTouch(); previous.keys.clear(); padKeys.clear(); audio.silence(previous);
+  clearInput(); audio.silence(previous);
   previous.onModeChange = previous.onChange = () => {};
   game = next; renderer.game = next; renderer.camera = add(next.actor.position, titleOffset);
   if (normalGame === previous) normalGame = next;
@@ -244,7 +261,7 @@ window.addEventListener('keydown', e => {
    if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
     if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) realtime(); externalClock = false; }
-  if (game.mode === 'playing') game.keys.add(e.code);
+  if (game.mode === 'playing' && !e.repeat) game.keys.add(e.code);
 });
 window.addEventListener('keyup', e => game.keys.delete(e.code));
 window.addEventListener('blur', () => { audio.silence(game); resetTouch(); game.keys.clear(); if (!mapWorkspace?.editing && game.mode === 'playing') game.setMode('paused'); });
@@ -260,11 +277,13 @@ window.addEventListener('resize', resetTouch);
 let previousPadButtons: boolean[] = [];
 let previousPadAxes: number[] = [];
 const padKeys = new Set<string>();
+let controllerBlocked = false;
 function pollController() {
   const pad = Array.from(navigator.getGamepads?.() ?? []).find(p => p?.connected && p.mapping === 'standard');
   const pressed = pad?.buttons.map(b => b.pressed) ?? [];
   const activity = pressed.some((value, index) => value && !previousPadButtons[index]) || !!pad?.axes.some((a, index) => Math.abs(a) > 0.25 && Math.abs(a - (previousPadAxes[index] ?? 0)) > 0.1);
   if (activity && pad) { detectInput(/sony|playstation|dualsense|dualshock|054c/i.test(pad.id) ? 'playstation' : 'xbox'); void audio.unlock(); }
+  if (!pressed.some(Boolean) && !pad?.axes.some(a => Math.abs(a) > 0.2)) controllerBlocked = false;
   const locked = drafting() || renderer.inspection.freeCamera || renderer.inspection.paused;
   if (!locked && pad && drawer.active && !$('overlay').inert) {
     if (pressed[12] && !previousPadButtons[12]) drawer.move(-1);
@@ -277,7 +296,7 @@ function pollController() {
   if (!locked && pad && pressed[9] && !previousPadButtons[9]) pause();
   for (const key of padKeys) game.keys.delete(key);
   padKeys.clear();
-  if (!locked && pad && game.mode === 'playing' && (inputDevice === 'xbox' || inputDevice === 'playstation')) {
+  if (!locked && !controllerBlocked && pad && game.mode === 'playing' && (inputDevice === 'xbox' || inputDevice === 'playstation')) {
     const add = (key: string, active: boolean) => { if (active) { padKeys.add(key); game.keys.add(key); } };
     add('KeyA', pad.axes[0] < -0.2); add('KeyD', pad.axes[0] > 0.2);
     add('KeyW', pressed[7] || pad.axes[1] < -0.2); add('KeyS', pressed[6] || pad.axes[1] > 0.2);

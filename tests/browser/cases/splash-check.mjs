@@ -51,6 +51,7 @@ async function checkDesktop() {
   await page.mouse.move(1300, 800);
   await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'menu-credits', 'navigation wraps');
   await page.keyboard.press('ArrowDown'); assert.equal(await selected(page).getAttribute('id'), 'start');
+  await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'return-to-title');
   await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'menu-settings');
   await page.keyboard.press('Enter'); await waitForDrawer(page, 'settings');
   assert.equal(await page.locator('#start').count(), 0, 'page replaces the entire drawer');
@@ -246,5 +247,5 @@ async function checkTouchLayouts() {
 
 async function checkHomeMenu(page, paused = true) {
   assert.deepEqual(await page.locator('#modal .game-menu button').evaluateAll(buttons => buttons.map(button => button.id)),
-    [paused ? 'start' : 'new-game', ...(!paused ? ['menu-load-game'] : []), 'menu-settings', 'menu-credits']);
+    [paused ? 'start' : 'new-game', ...(paused ? ['return-to-title'] : ['menu-load-game']), 'menu-settings', 'menu-credits']);
 }

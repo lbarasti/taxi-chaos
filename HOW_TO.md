@@ -19,11 +19,11 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 | M | Mute or unmute sound effects |
 | F2 | Open scenarios and the inspector |
 
-On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/reverse. Small sideways movements around the centre keep you driving straight; push further left or right to turn, with steering growing smoothly to full lock. It also moves you while on foot. Hold **BOOST** or **DRIFT** at the bottom left with your left thumb: BOOST is above DRIFT. Vehicle actions appear when available; tilt the joystick left or right before tapping **Jump** to choose a side when leaving a moving vehicle. The top bar and taxi menu have been removed. Pause and Test Lab currently require a keyboard; sound settings remain on the welcome/pause screens. There is no in-game fullscreen button.
+On touch screens, drag the bottom-right joystick to steer, accelerate, or brake/reverse. Small sideways movements around the centre keep you driving straight; push further left or right to turn, with steering growing smoothly to full lock. It also moves you while on foot. Hold **BOOST** or **DRIFT** at the bottom left with your left thumb: BOOST is above DRIFT. Vehicle actions appear when available; tilt the joystick left or right before tapping **Jump** to choose a side when leaving a moving vehicle. The top bar and taxi menu have been removed. The HUD clipboard opens This shift, including Return to title. The main pause menu and Test Lab require a keyboard; sound settings remain on the welcome/pause screens. There is no in-game fullscreen button.
 
 ## Saving and returning
 
-**Continue** resumes your latest autosave. **Load game** on the title screen lists
+**Return to title**, in the pause menu or **This shift**, freezes your current session and attempts an autosave. **Continue** resumes that same session while the page stays open, including passengers and world damage; after reloading the page it resumes your latest autosave. **Load game** on the title screen lists
 saved campaign mornings in day order, each starting at **07:00**. Starting a
 **New game** saves Day 1; later mornings save automatically whether you sleep or
 keep driving. Loading a morning also makes it your current autosave for Continue.
