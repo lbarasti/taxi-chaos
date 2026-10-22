@@ -11,6 +11,7 @@ import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
 
 const pages = {
   home: { title: '', parent: null },
+  'load-game': { title: 'Load game.', parent: 'home' },
   'new-game': { title: '', parent: 'home' },
   settings: { title: 'Settings.', parent: 'home' },
   shift: { title: 'This shift.', parent: 'home' },
@@ -46,12 +47,20 @@ function campaignMarkup(game: Game) {
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
 }
-export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom', articleId }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage; articleId?: string }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
+    case 'load-game': {
+      const checkpoints = game.mode === 'intro' ? game.morningCheckpoints : [];
+      return drawerHeading('Load game.', 'home') + `<p class="intro-copy">${checkpoints.length ? 'Choose a morning to return to. Other saved days stay available; reaching a morning again replaces that day.' : 'No mornings saved yet. Mornings are saved automatically at 07:00, starting when you begin a New game.'}</p>
+        ${loadFailed ? '<p class="campaign-hint" role="alert">This morning could not be loaded. The checkpoint may be unavailable or browser storage may be full.</p>' : ''}
+        <nav class="game-menu" aria-label="Saved mornings">${checkpoints.map(({ day }) => menuItem(`Day ${day} · 07:00`, { id: `load-day-${day}` })).join('')}</nav>
+        <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p>`;
+    }
     case 'new-game': return `<div class="intro-eyebrow">TAXI CHAOS / NEW GAME</div><h2 id="modal-title">Start a new game?</h2>
       <p class="intro-copy">Your current progress will be replaced. Your settings will be kept.</p>
+      <p class="campaign-hint">Day 1’s morning will be replaced. Later saved mornings stay available until you reach them again.</p>
       <nav class="game-menu" aria-label="New game confirmation">
         ${menuItem('Cancel', { id: 'cancel-new-game', page: 'home' })}
         ${menuItem('New game', { id: 'confirm-new-game' })}

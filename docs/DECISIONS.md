@@ -174,3 +174,13 @@ and recovery summaries, and fare/delivery receipts until explicit dismissal; dri
 and danger alerts retain their four-second lifetime. Label categories independently
 of success/danger accents. The unread-edition invitation returns when cards clear.
 Notification state is transient and belongs to each game instance, never its save.
+
+## 13. Keep morning checkpoints separate from Continue
+
+Continue follows the latest rolling autosave. Archive one detached Save snapshot per
+playable campaign morning at 07:00 in a separate, versioned localStorage collection
+scoped to the campaign. New game replaces Day 1 after opening initialization; loading
+a morning replaces the rolling session through a fresh Game instance. Both retain
+other archived days, which are replaced individually when their mornings are reached
+again. Sleep captures only after wake-up reconciliation; live crossings preserve
+the current ride and shift totals. The campaign endpoint is not a playable morning.

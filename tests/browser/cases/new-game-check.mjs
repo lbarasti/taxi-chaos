@@ -82,7 +82,7 @@ async function checkGlide(page, before, previousSpawn, freshSpawn) {
 try {
   const page = await openGame(browser, html, { viewport: { width: 1440, height: 900 } });
   await waitForDrawer(page, 'home');
-  assert.deepEqual(await menu(page), ['new-game', 'menu-settings', 'menu-credits']);
+  assert.deepEqual(await menu(page), ['new-game', 'menu-load-game', 'menu-settings', 'menu-credits']);
   assert.equal(await selected(page), 'new-game');
   assert.equal(await readSave(page), null);
   await page.screenshot({ path: `${output}/title-fresh-desktop.png` });
@@ -97,7 +97,7 @@ try {
   await checkGlide(page, firstTitleCamera, initial.garage.current.position, initial.garage.current.position);
   await page.reload(); await waitForDrawer(page, 'home');
   assertFreshSave(await readSave(page), initial, 'immediate reload keeps new progress');
-  assert.deepEqual(await menu(page), ['start', 'new-game', 'menu-settings', 'menu-credits']);
+  assert.deepEqual(await menu(page), ['start', 'new-game', 'menu-load-game', 'menu-settings', 'menu-credits']);
   assert.equal(await selected(page), 'start');
 
   const progressed = structuredClone(initial);

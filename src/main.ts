@@ -63,7 +63,7 @@ const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), ()
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, shift: () => drawer.openShift(), newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
-const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu, newGame });
+const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: hasSavedCampaign, play: playFromMenu, newGame, loadGame });
 drawer.setInputDevice(inputDevice);
 const refreshCampaignNotice = bindCampaignNotice($('app'), () => game, { editions: () => drawer.openPublications(), finale: () => drawer.openFinale() });
 const notifications = bindNotifications($('app'), () => game, () => $('city').focus());
@@ -125,7 +125,16 @@ function playFromMenu() {
 }
 function newGame() {
   if (drafting() || game.mode !== 'intro') return;
-  const previous = game, next = previous.freshGame();
+  replaceTitleGame(game.freshGame());
+}
+function loadGame(day: number): boolean {
+  if (drafting() || game.mode !== 'intro') return false;
+  const next = game.loadMorning(day);
+  if (!next) return false;
+  replaceTitleGame(next); return true;
+}
+function replaceTitleGame(next: Game) {
+  const previous = game;
   const titleOffset = sub(renderer.camera, previous.actor.position);
   resetTouch(); previous.keys.clear(); padKeys.clear(); audio.silence(previous);
   previous.onModeChange = previous.onChange = () => {};

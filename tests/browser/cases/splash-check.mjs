@@ -246,5 +246,5 @@ async function checkTouchLayouts() {
 
 async function checkHomeMenu(page, paused = true) {
   assert.deepEqual(await page.locator('#modal .game-menu button').evaluateAll(buttons => buttons.map(button => button.id)),
-    [paused ? 'start' : 'new-game', 'menu-settings', 'menu-credits']);
+    [paused ? 'start' : 'new-game', ...(!paused ? ['menu-load-game'] : []), 'menu-settings', 'menu-credits']);
 }

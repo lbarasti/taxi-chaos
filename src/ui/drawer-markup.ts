@@ -1,5 +1,5 @@
 // These are the actual pages in the title/pause drawer, not an extensible router.
-export type DrawerPage = 'home' | 'new-game' | 'settings' | 'shift' | 'credits' | 'newsroom' | 'notebook' | 'notebook-guide' | 'publications' | 'finale';
+export type DrawerPage = 'home' | 'load-game' | 'new-game' | 'settings' | 'shift' | 'credits' | 'newsroom' | 'notebook' | 'notebook-guide' | 'publications' | 'finale';
 const escape = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 export function menuItem(label: string, { id, page, disabled = false }: { id: string; page?: DrawerPage; disabled?: boolean }) {
   return `<button class="menu-item" id="${escape(id)}"${page ? ` data-page="${page}"` : ''}${disabled ? ' disabled' : ''}><span>${escape(label)}</span></button>`;
