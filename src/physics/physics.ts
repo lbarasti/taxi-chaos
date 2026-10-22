@@ -37,7 +37,15 @@ export class Body {
   /** Optional convex footprint in normalized body coordinates (±0.5). */
   collisionPolygon?: readonly Vec[];
   position: Vec; velocity = vec(); angle = 0; angularVelocity = 0; force = vec(); torque = 0;
+  private radiusW = NaN; private radiusH = NaN; private radiusCache = 0;
   constructor(x: number, y: number, public mass = 1000, public w = 4.2, public h = 2.1) { this.position = vec(x, y); }
+  /** Circumradius, cached until the envelope changes: broad phases call it per pair. */
+  get radius() {
+    if (this.radiusW !== this.w || this.radiusH !== this.h) {
+      this.radiusW = this.w; this.radiusH = this.h; this.radiusCache = Math.hypot(this.w, this.h) / 2;
+    }
+    return this.radiusCache;
+  }
   get inertia() { return this.mass * (this.w ** 2 + this.h ** 2) / 12; }
   get invMass() { return Number.isFinite(this.mass) ? 1 / this.mass : 0; }
   get invInertia() { return Number.isFinite(this.mass) ? 1 / this.inertia : 0; }
@@ -50,9 +58,8 @@ export class Body {
     ? this.collisionPolygon.map(p => vec(p.x * this.w, p.y * this.h))
     : [vec(-this.w / 2, -this.h / 2), vec(this.w / 2, -this.h / 2), vec(this.w / 2, this.h / 2), vec(-this.w / 2, this.h / 2)]; }
   corners() {
-    if (this.collisionPolygon) return this.collisionPolygon.map(p => this.toWorld(vec(p.x * this.w, p.y * this.h)));
-    const x = this.w / 2, y = this.h / 2;
-    return [this.toWorld(vec(-x, -y)), this.toWorld(vec(x, -y)), this.toWorld(vec(x, y)), this.toWorld(vec(-x, y))];
+    // One trig pair for all corners instead of one per `toWorld` call.
+    return cornersWith(this, Math.cos(this.angle), Math.sin(this.angle));
   }
 }
 
@@ -97,7 +104,9 @@ export class CarDynamics {
   }
   apply(body: Body, controls: Controls, dt: number) {
     this.rearGripLoss = controls.handbrake ? 1 : Math.max(0, this.rearGripLoss - dt / 0.2);
-    const forward = rotate(vec(1, 0), body.angle);
+    // One trig pair covers the chassis frame and every tyre's contact point.
+    const cos = Math.cos(body.angle), sin = Math.sin(body.angle);
+    const forward = vec(cos, sin);
     const speed = dot(body.velocity, forward);
     // Braking is stronger than reverse; aerodynamic drag gives a finite top speed.
     const force = controls.throttle < 0 ? (speed > 0.5 ? body.mass * this.tuning.brakeDeceleration : this.engineForce * this.tuning.reverseRatio) : this.engineForce;
@@ -108,7 +117,12 @@ export class CarDynamics {
     this.skidding = false;
     for (const tyre of this.tyres) {
       tyre.angle = tyre.steered ? controls.turn * (this.tuning.steeringLock / (1 + Math.abs(speed) * this.tuning.steeringSpeedFalloff)) : 0;
-      const p = body.toWorld(tyre.position), v = body.velocityAt(p), rolling = rotate(vec(1, 0), body.angle + tyre.angle), lateral = vec(-rolling.y, rolling.x);
+      const local = tyre.position;
+      const p = vec(body.position.x + (cos * local.x - sin * local.y), body.position.y + (sin * local.x + cos * local.y));
+      // Inline `body.velocityAt(p)` to keep the four tyre loops allocation-free.
+      const rx = p.x - body.position.x, ry = p.y - body.position.y;
+      const v = vec(body.velocity.x + -body.angularVelocity * ry, body.velocity.y + body.angularVelocity * rx);
+      const rollAngle = body.angle + tyre.angle, rolling = vec(Math.cos(rollAngle), Math.sin(rollAngle)), lateral = vec(-rolling.y, rolling.x);
       const side = dot(v, lateral), rear = !tyre.steered;
       tyre.skidding = rear && Math.abs(side) > (tyre.skidding ? 1.1 : 2);
       this.skidding ||= tyre.skidding;
@@ -123,9 +137,13 @@ export class CarDynamics {
   }
 }
 
-export const bodyRadius = (body: Body) => Math.hypot(body.w, body.h) / 2;
-/** Conservative broad phase for every vehicle size and orientation. */
-export const bodiesNear = (a: Body, b: Body, margin = 0) => dist(a.position, b.position) < bodyRadius(a) + bodyRadius(b) + margin;
+export const bodyRadius = (body: Body) => body.radius;
+/** Conservative broad phase for every vehicle size and orientation. Squared comparison
+ *  keeps the O(n²) vehicle pair loop free of vector allocation and square roots. */
+export const bodiesNear = (a: Body, b: Body, margin = 0) => {
+  const dx = a.position.x - b.position.x, dy = a.position.y - b.position.y, r = a.radius + b.radius + margin;
+  return dx * dx + dy * dy < r * r;
+};
 
 export type Contact = { normal: Vec; depth: number; point: Vec };
 // SAT for rotated rectangles and convex footprints, with stable face contacts.
@@ -139,15 +157,17 @@ export function contact(a: Body, b: Body): Contact | null {
   }
   return deepest;
 }
-function axesFor(body: Body, points: Vec[]) {
+function axesFor(body: Body, points: Vec[], cos = Math.cos(body.angle), sin = Math.sin(body.angle)): Vec[] {
   return body.collisionPolygon
     ? points.map((p, i) => { const edge = sub(points[(i + 1) % points.length], p); return normalize(vec(-edge.y, edge.x)); })
-    : [rotate(vec(1, 0), body.angle), rotate(vec(0, 1), body.angle)];
+    : [vec(cos, sin), vec(-sin, cos)];
 }
 function rectangleContact(a: Body, b: Body): Contact | null {
-  const ac = a.corners(), bc = b.corners(); let depth = Infinity, normal = vec();
-  const axes = axesFor(a, ac);
-  for (const axis of axesFor(b, bc)) axes.push(axis);
+  const cosA = Math.cos(a.angle), sinA = Math.sin(a.angle), cosB = Math.cos(b.angle), sinB = Math.sin(b.angle);
+  const ac = cornersWith(a, cosA, sinA), bc = cornersWith(b, cosB, sinB);
+  let depth = Infinity, normal = vec();
+  const axes = axesFor(a, ac, cosA, sinA);
+  for (const axis of axesFor(b, bc, cosB, sinB)) axes.push(axis);
   for (let axis of axes) {
     let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
     for (const p of ac) { const value = p.x * axis.x + p.y * axis.y; if (value < amin) amin = value; if (value > amax) amax = value; }
@@ -164,17 +184,37 @@ function rectangleContact(a: Body, b: Body): Contact | null {
     }
   }
   const support = (points: Vec[], sign: number) => {
-    const projections = points.map(p => dot(p, normal) * sign), min = Math.min(...projections);
-    const face = points.filter((_, i) => projections[i] < min + 0.03);
-    return scale(face.reduce((s, p) => add(s, p), vec()), 1 / face.length);
+    let min = Infinity, sumX = 0, sumY = 0, count = 0;
+    const projections: number[] = [];
+    for (const p of points) { const value = dot(p, normal) * sign; projections.push(value); if (value < min) min = value; }
+    for (let i = 0; i < points.length; i++) if (projections[i] < min + 0.03) { sumX += points[i].x; sumY += points[i].y; count++; }
+    return vec(sumX / count, sumY / count);
   };
   const pa = support(ac, 1), pb = support(bc, -1);
   // Clamp face contacts to the overlapping tangential interval to avoid remote lever arms.
   const tangent = vec(-normal.y, normal.x);
-  const lo = Math.max(Math.min(...ac.map(p => dot(p, tangent))), Math.min(...bc.map(p => dot(p, tangent))));
-  const hi = Math.min(Math.max(...ac.map(p => dot(p, tangent))), Math.max(...bc.map(p => dot(p, tangent))));
+  let acMin = Infinity, bcMin = Infinity, acMax = -Infinity, bcMax = -Infinity;
+  for (const p of ac) { const value = dot(p, tangent); if (value < acMin) acMin = value; if (value > acMax) acMax = value; }
+  for (const p of bc) { const value = dot(p, tangent); if (value < bcMin) bcMin = value; if (value > bcMax) bcMax = value; }
+  const lo = Math.max(acMin, bcMin), hi = Math.min(acMax, bcMax);
   const middle = scale(add(pa, pb), 0.5);
   return { normal, depth, point: add(scale(normal, dot(middle, normal)), scale(tangent, clamp(dot(middle, tangent), lo, hi))) };
+}
+/** `Body.corners` with a caller-supplied frame, so one SAT test does four trig calls
+ *  in total instead of eight. Kept private: the body API stays the single owner. */
+function cornersWith(body: Body, cos: number, sin: number): Vec[] {
+  const px = body.position.x, py = body.position.y;
+  if (body.collisionPolygon) return body.collisionPolygon.map(p => {
+    const x = p.x * body.w, y = p.y * body.h;
+    return vec(px + (cos * x - sin * y), py + (sin * x + cos * y));
+  });
+  const x = body.w / 2, y = body.h / 2;
+  return [
+    vec(px + (cos * -x - sin * -y), py + (sin * -x + cos * -y)),
+    vec(px + (cos * x - sin * -y), py + (sin * x + cos * -y)),
+    vec(px + (cos * x - sin * y), py + (sin * x + cos * y)),
+    vec(px + (cos * -x - sin * y), py + (sin * -x + cos * y)),
+  ];
 }
 
 export function resolveCollision(a: Body, b: Body, c: Contact, restitution = 0.22): number {
@@ -197,11 +237,44 @@ export function resolveCollision(a: Body, b: Body, c: Contact, restitution = 0.2
 }
 
 export class SpatialHash<T extends { body: Body; alive: boolean }> {
-  cells = new Map<string, T[]>();
+  // Numeric cell keys avoid building template strings on every query; the hash is
+  // queried per vehicle per collision pass and per pedestrian move.
+  cells = new Map<number, T[]>();
+  private empty = new Set<T>();
   constructor(public size = 12) {}
-  keys(body: Body) { const p = body.position, r = Math.hypot(body.w, body.h) / 2; const result: string[] = []; for (let x = Math.floor((p.x - r) / this.size); x <= Math.floor((p.x + r) / this.size); x++) for (let y = Math.floor((p.y - r) / this.size); y <= Math.floor((p.y + r) / this.size); y++) result.push(`${x},${y}`); return result; }
+  private key(x: number, y: number) { return (x + 4096) * 8192 + (y + 4096); }
+  private cellRange(body: Body) {
+    const p = body.position, r = body.radius;
+    return {
+      x0: Math.floor((p.x - r) / this.size), x1: Math.floor((p.x + r) / this.size),
+      y0: Math.floor((p.y - r) / this.size), y1: Math.floor((p.y + r) / this.size),
+    };
+  }
+  keys(body: Body) {
+    const { x0, x1, y0, y1 } = this.cellRange(body), result: number[] = [];
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) result.push(this.key(x, y));
+    return result;
+  }
   insert(item: T) { for (const key of this.keys(item.body)) { const cell = this.cells.get(key) ?? []; cell.push(item); this.cells.set(key, cell); } }
-  query(body: Body) { const found = new Set<T>(); for (const key of this.keys(body)) for (const item of this.cells.get(key) ?? []) if (item.alive) found.add(item); return found; }
+  /** Candidates whose cells overlap `body`. The result is read-only: an empty query
+   *  shares one set so per-frame probes allocate nothing. */
+  query(body: Body) {
+    const { x0, x1, y0, y1 } = this.cellRange(body);
+    if (x0 === x1 && y0 === y1) {
+      const cell = this.cells.get(this.key(x0, y0));
+      if (!cell) return this.empty;
+      const found = new Set<T>();
+      for (const item of cell) if (item.alive) found.add(item);
+      return found;
+    }
+    const found = new Set<T>();
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      const cell = this.cells.get(this.key(x, y));
+      if (!cell) continue;
+      for (const item of cell) if (item.alive) found.add(item);
+    }
+    return found;
+  }
 }
 
 /** Exact segment test for rectangles, convex polygons and compound sections. */

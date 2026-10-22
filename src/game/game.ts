@@ -1152,8 +1152,12 @@ export class Game {
       for (let pass = 0; pass < 2; pass++) for (const prop of this.world.hash.query(v.body)) this.collision(v, prop, pass ? 0 : dt);
       if (inOcean(v.body.position)) this.enterWater(v);
     }
-    for (let i = 0; i < this.vehicles.length; i++) for (let j = i + 1; j < this.vehicles.length; j++) {
-      const a = this.vehicles[i], b = this.vehicles[j]; if (a.alive && b.alive && !a.sinking && !b.sinking && bodiesNear(a.body, b.body)) this.collision(a, b, dt);
+    for (let i = 0; i < this.vehicles.length; i++) {
+      const a = this.vehicles[i]; if (!a.alive || a.sinking) continue;
+      for (let j = i + 1; j < this.vehicles.length; j++) {
+        const b = this.vehicles[j]; if (!b.alive || b.sinking) continue;
+        if (bodiesNear(a.body, b.body)) this.collision(a, b, dt);
+      }
     }
     this.advanceExit();
     if (this.onFoot) this.walk(dt);

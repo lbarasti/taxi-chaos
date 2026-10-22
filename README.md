@@ -25,6 +25,8 @@ npm run browser:test -- --require-browser
 
 `npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run tools:test` runs the artwork, scenario and authoring CLI suites. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs. The optional GPU benchmark is `npm run performance:bench -- --frames 180`; it writes results under `scenario-runs/artwork-performance/`.
 
+For simulation and main-thread profiling, `npm run perf:bench` times fixed 120 Hz steps and world draws across four city workloads, and `npm run perf:profile -- --scenario cruise --traffic 23` records a Chrome CPU profile while driving. Both write JSON (and captures) under `scenario-runs/perf/`; `--cpu 4` throttles the CPU to expose frame-budget regressions on fast hardware.
+
 For interactive testing, open **http://localhost:5173/?debug=1** or press **F2**. The lab also works in the standalone HTML and includes deterministic 120 Hz stepping, scenario fixtures, debug views, traffic controls, and gameplay/audio cheats.
 
 The opt-in browser automation harness is exposed as `window.__taxi` after opening the lab:

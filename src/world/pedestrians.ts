@@ -46,34 +46,49 @@ export const CONTACT_BAND_MIN = 2.1 + PERSON_RADIUS * 2;
 
 type CircleHit = { normal: Vec; depth: number; point: Vec };
 
+/** Scratch probes: pedestrian queries are synchronous and never nested, so one body
+ *  per helper avoids an allocation per candidate without aliasing a live result. */
+const penetrationProbe = new Body(0, 0, 1, 0, 0);
+const separateProbe = new Body(0, 0, 1, 0, 0);
+
 /**
  * Circle-vs-OBB in the body's local frame (+x forward, matching CarDynamics).
  * `normal` always points from the body toward the circle centre. Person radius
  * is ~0.3 m, so a contact is resolved against the true rotated car footprint.
  */
 function circleBody(body: Body, center: Vec, radius: number): CircleHit | null {
-  const local = rotate(sub(center, body.position), -body.angle);
+  // One trig pair for the whole test: every call reuses it for the local transform
+  // and for mapping the normal and contact point back to world space.
+  const cos = Math.cos(body.angle), sin = Math.sin(body.angle);
+  const rx = center.x - body.position.x, ry = center.y - body.position.y;
+  const local = vec(cos * rx + sin * ry, -sin * rx + cos * ry);
   const hw = body.w / 2, hh = body.h / 2;
   const cx = clamp(local.x, -hw, hw), cy = clamp(local.y, -hh, hh);
   const dx = local.x - cx, dy = local.y - cy;
-  let normalLocal: Vec, depth: number;
+  let normalX: number, normalY: number, depth: number;
   if (dx === 0 && dy === 0) {
     // Centre is inside (or exactly on) the footprint: push out of the nearest face.
     const px = hw - Math.abs(local.x), py = hh - Math.abs(local.y);
-    if (px <= py) { normalLocal = vec(local.x < 0 ? -1 : 1, 0); depth = px + radius; }
-    else { normalLocal = vec(0, local.y < 0 ? -1 : 1); depth = py + radius; }
+    if (px <= py) { normalX = local.x < 0 ? -1 : 1; normalY = 0; depth = px + radius; }
+    else { normalX = 0; normalY = local.y < 0 ? -1 : 1; depth = py + radius; }
   } else {
     const d = Math.hypot(dx, dy);
     if (d > radius) return null;
-    normalLocal = d > 1e-6 ? vec(dx / d, dy / d) : vec(1, 0);
+    normalX = d > 1e-6 ? dx / d : 1; normalY = d > 1e-6 ? dy / d : 0;
     depth = radius - d;
   }
-  return { normal: rotate(normalLocal, body.angle), depth, point: body.toWorld(vec(cx, cy)) };
+  return {
+    normal: vec(cos * normalX - sin * normalY, sin * normalX + cos * normalY),
+    depth,
+    point: vec(body.position.x + (cos * cx - sin * cy), body.position.y + (sin * cx + cos * cy)),
+  };
 }
 
 /** Deepest penetration of a circle against any alive world prop, or 0. */
 function penetration(world: World, center: Vec, radius: number): number {
-  const probe = new Body(center.x, center.y, 1, radius * 2, radius * 2);
+  const probe = penetrationProbe;
+  probe.position.x = center.x; probe.position.y = center.y;
+  probe.w = radius * 2; probe.h = radius * 2;
   let worst = 0;
   for (const prop of world.hash.query(probe)) {
     if (!blocksWalking(prop.kind)) continue;
@@ -87,7 +102,9 @@ function penetration(world: World, center: Vec, radius: number): number {
 function separate(world: World, center: Vec, radius: number): Vec {
   let p = { ...center };
   for (let iter = 0; iter < 6; iter++) {
-    const probe = new Body(p.x, p.y, 1, radius * 2, radius * 2);
+    const probe = separateProbe;
+    probe.position.x = p.x; probe.position.y = p.y;
+    probe.w = radius * 2; probe.h = radius * 2;
     let worst = 0, normal = vec();
     for (const prop of world.hash.query(probe)) {
       if (!blocksWalking(prop.kind)) continue;
@@ -104,10 +121,15 @@ function separate(world: World, center: Vec, radius: number): Vec {
  * Move a person to `candidate`, but refuse any move that makes them penetrate
  * static geometry more than they already did. This is what keeps a cornered
  * pedestrian out of a building even when every escape direction is walled.
+ *
+ * The common case is open ground: when separation leaves the candidate untouched it
+ * cannot penetrate anything, so the two validation scans are unnecessary. That keeps
+ * ordinary walking at one spatial query instead of three.
  */
 function moveTo(world: World, person: Person, candidate: Vec, radius: number): void {
-  const before = penetration(world, person.position, radius);
   const next = separate(world, candidate, radius);
+  if (next.x === candidate.x && next.y === candidate.y) { person.position = next; return; }
+  const before = penetration(world, person.position, radius);
   const after = penetration(world, next, radius);
   person.position = after > Math.max(before, 0.03) + 1e-3 ? separate(world, person.position, radius) : next;
 }
@@ -119,8 +141,8 @@ function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: nu
   const dirs: Vec[] = [];
   let nearest: PedestrianVehicle | undefined, nearestD = Infinity;
   for (const v of threats) {
-    const d = dist(v.body.position, person.position);
-    if (d < nearestD) { nearestD = d; nearest = v; }
+    const dx = v.body.position.x - person.position.x, dy = v.body.position.y - person.position.y, d2 = dx * dx + dy * dy;
+    if (d2 < nearestD) { nearestD = d2; nearest = v; }
   }
   if (nearest) {
     const away = sub(person.position, nearest.body.position);
@@ -137,7 +159,10 @@ function flee(world: World, person: Person, threats: PedestrianVehicle[], dt: nu
     if (len < 1e-4) continue;
     const candidate = add(person.position, scale(dir, step / len));
     let score = -penetration(world, candidate, PERSON_RADIUS) * 120;
-    for (const v of threats) score += Math.min(dist(candidate, v.body.position), 16) * 0.35;
+    for (const v of threats) {
+      const dx = candidate.x - v.body.position.x, dy = candidate.y - v.body.position.y;
+      score += Math.min(Math.hypot(dx, dy), 16) * 0.35;
+    }
     score -= roadDistance(candidate) * 0.04;
     if (score > bestScore) { bestScore = score; best = candidate; }
   }
@@ -151,13 +176,12 @@ function wanderTarget(world: World, person: Person, time: number): Vec {
 }
 
 /** Integrate a corpse with drag, static separation and bounded speed. */
-function updateCorpse(world: World, person: Person, vehicles: PedestrianVehicle[], dt: number): void {
+function updateCorpse(world: World, person: Person, movers: PedestrianMover[], dt: number): void {
   person.velocity = scale(person.velocity, Math.exp(-CORPSE_DRAG * dt));
   let speed = length(person.velocity);
   if (speed > CORPSE_MAX_SPEED) { person.velocity = scale(person.velocity, CORPSE_MAX_SPEED / speed); speed = CORPSE_MAX_SPEED; }
-  if (speed < 0.04) {
-    person.velocity = vec();
-  } else {
+  if (speed < 0.04) person.velocity = vec();
+  else {
     const steps = Math.max(1, Math.ceil(speed * dt / MAX_STEP));
     const subDt = dt / steps;
     for (let i = 0; i < steps; i++) {
@@ -172,12 +196,33 @@ function updateCorpse(world: World, person: Person, vehicles: PedestrianVehicle[
   }
   // Always keep the corpse clear of statics, and never resting inside a vehicle.
   person.position = separate(world, person.position, PERSON_RADIUS);
-  for (const v of vehicles) {
-    const hit = circleBody(v.body, person.position, PERSON_RADIUS);
+  for (const mover of movers) {
+    const dx = mover.x - person.position.x, dy = mover.y - person.position.y;
+    if (dx * dx + dy * dy > mover.reach2) continue;
+    const hit = circleBody(mover.vehicle.body, person.position, PERSON_RADIUS);
     if (hit) person.position = separate(world, add(person.position, scale(hit.normal, hit.depth + 0.02)), PERSON_RADIUS);
   }
   // Shoreline props and bridge rails bound corpses just like living pedestrians.
   // Clamping to the original city rectangle teleports rural impacts across the river.
+}
+
+/** Vehicle facts that stay constant for one pedestrian tick: position, speed and the
+ *  circumradius used as a conservative contact broad phase. */
+type PedestrianMover = { vehicle: PedestrianVehicle; x: number; y: number; cos: number; sin: number; speed: number; moving: boolean; reach2: number };
+
+function moversFor(vehicles: PedestrianVehicle[]): PedestrianMover[] {
+  const movers: PedestrianMover[] = [];
+  for (const vehicle of vehicles) {
+    const body = vehicle.body;
+    const speed = Math.hypot(body.velocity.x, body.velocity.y);
+    const reach = Math.hypot(body.w, body.h) / 2 + PERSON_RADIUS;
+    movers.push({
+      vehicle, x: body.position.x, y: body.position.y,
+      cos: Math.cos(body.angle), sin: Math.sin(body.angle),
+      speed, moving: speed > MOVING_SPEED, reach2: reach * reach,
+    });
+  }
+  return movers;
 }
 
 /**
@@ -216,26 +261,34 @@ export function updatePedestrians(
 ): PedestrianEvent[] {
   const events: PedestrianEvent[] = [];
   const gore = settings?.gore ?? false;
+  const movers = moversFor(vehicles);
 
   for (const person of world.people) {
     if (person.aboard) continue;
-    if (!person.alive) { updateCorpse(world, person, vehicles, dt); continue; }
+    if (!person.alive) { updateCorpse(world, person, movers, dt); continue; }
 
     // Anticipate every kind of moving car, including ones heading for the person.
     const threats: PedestrianVehicle[] = [];
-    for (const vehicle of vehicles) {
-      const speed = length(vehicle.body.velocity);
-      if (speed <= MOVING_SPEED) continue;
-      const d = dist(vehicle.body.position, person.position);
-      if (d > ANTICIPATE_RANGE) continue;
-      threats.push(vehicle);
-      const toPerson = sub(person.position, vehicle.body.position);
-      const facing = rotate(vec(1, 0), vehicle.body.angle);
-      if (d < PANIC_RANGE || (length(toPerson) > 1e-4 && dot(facing, scale(toPerson, 1 / length(toPerson))) > 0.15)) person.panic = 1;
+    for (const mover of movers) {
+      if (!mover.moving) continue;
+      const tx = person.position.x - mover.x, ty = person.position.y - mover.y;
+      const distance = Math.hypot(tx, ty);
+      if (distance > ANTICIPATE_RANGE) continue;
+      threats.push(mover.vehicle);
+      if (distance < PANIC_RANGE) person.panic = 1;
+      else if (distance > 1e-4) {
+        const inv = 1 / distance;
+        if (mover.cos * (tx * inv) + mover.sin * (ty * inv) > 0.15) person.panic = 1;
+      }
     }
 
     // Contact against the real rotated car footprint, in car-local coordinates.
-    for (const vehicle of vehicles) {
+    // The circumradius test rejects the far majority of person/vehicle pairs without
+    // any trig or allocation; anything inside it still takes the exact circle test.
+    for (const mover of movers) {
+      const dx = mover.x - person.position.x, dy = mover.y - person.position.y;
+      if (dx * dx + dy * dy > mover.reach2) continue;
+      const vehicle = mover.vehicle;
       const hit = circleBody(vehicle.body, person.position, PERSON_RADIUS);
       if (!hit) continue;
       const incoming = vehicle.body.velocityAt(hit.point);
@@ -299,8 +352,10 @@ export function updatePedestrians(
         const intended = add(person.position, scale(person.velocity, dt / steps));
         moveTo(world, person, intended, PERSON_RADIUS);
         if (dist(person.position, intended) > 0.1) person.velocity = scale(person.velocity, 0.65);
-        for (const v of vehicles) {
-          const hit = circleBody(v.body, person.position, PERSON_RADIUS);
+        for (const mover of movers) {
+          const dx = mover.x - person.position.x, dy = mover.y - person.position.y;
+          if (dx * dx + dy * dy > mover.reach2) continue;
+          const hit = circleBody(mover.vehicle.body, person.position, PERSON_RADIUS);
           if (hit) person.position = separate(world, add(person.position, scale(hit.normal, hit.depth + 0.04)), PERSON_RADIUS);
         }
       }
