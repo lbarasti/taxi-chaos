@@ -67,9 +67,9 @@ At the end, a **Campaign complete** recap records both achieved and unresolved
 outcomes. It waits for an active fare and immediate danger to pass before opening
 automatically; a persistent notice also lets you open it yourself. Choose
 **Continue in arcade mode** to keep your cash, garage and vehicle upgrades while
-ordinary dispatcher work continues. The clock keeps running, and the recap and
-edition archive remain available from the pause menu. Completion and unread
-editions survive reloading.
+ordinary dispatcher work continues. The clock keeps running, and the recap
+remains available from the pause menu. The edition archive stays in the newsroom.
+Completion and unread editions survive reloading.
 
 ## Explore the city
 

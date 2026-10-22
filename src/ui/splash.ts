@@ -17,9 +17,6 @@ export function splashPrompts(device: InputDevice): string {
     : [['WASD / ↑↓←→', 'drive'], ['SPACE', 'handbrake'], ['SHIFT', 'boost']];
   return prompts.map(([key, action]) => `<span><kbd>${key}</kbd> ${action}</span>`).join('');
 }
-export function streetRulesMarkup() {
-  return `<div class="intro-grid"><div><span>01</span><strong>Chase the fare.</strong><p>Yellow ring to pick up. Green to deliver. Fast, smooth rides earn bigger tips.</p></div><div><span>02</span><strong>Make your own route.</strong><p>Drift corners. Smash crates, kiosks and hydrants. Buildings bite back. Hold W + Shift for a nitro burst.</p></div><div><span>03</span><strong>Stay one step ahead.</strong><p>Speeding and damage attract cops. Break line of sight to escape.</p><p><small>Physics foundation: Pat Kerr's Motion Lab v0.8.2.</small></p></div></div><div class="intro-controls" id="splash-prompts"></div>`;
-}
 export function shiftStatsMarkup(game: Game) {
   return `<p class="campaign-hint">Since you last woke up.</p><div class="shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.save.shiftStats.earnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.save.shiftStats.jobs}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.save.shiftStats.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.save.shiftStats.kills}</strong></div></div>`;
 }
@@ -39,10 +36,9 @@ export function splashMarkup(game: Game, saved: boolean): string {
     </section>
     <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
       ${menuItem(paused ? 'Resume your shift' : saved ? 'Continue' : 'Start your shift', { id: 'start' })}
-      ${menuItem('The street rules', { id: 'menu-rules', page: 'rules' })}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
       ${menuItem('Credits', { id: 'menu-credits', page: 'credits' })}
-      ${paused && game.campaignEnabled ? `${menuItem('Newsroom', { id: 'menu-newsroom', page: 'newsroom' })}${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}${game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}` : ''}
+      ${paused && game.campaignEnabled && game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}
     </nav>
     <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
 }

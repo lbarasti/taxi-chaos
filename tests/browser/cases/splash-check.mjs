@@ -18,6 +18,7 @@ async function checkDesktop() {
   const page = await openGame(browser, html, { viewport: { width: 1440, height: 900 } });
   await page.waitForTimeout(400);
   assert.match(await page.locator('#start').innerText(),/Start your shift/);
+  await checkHomeMenu(page);
   const first = await page.locator('#city').screenshot(); await page.waitForTimeout(600); const second=await page.locator('#city').screenshot(); assert(!first.equals(second),'ambient camera moves');
   await page.screenshot({path:`${output}/start-desktop.png`});
   await page.locator('#overlay').evaluate(element => element.addEventListener('click', () => {
@@ -30,6 +31,7 @@ async function checkDesktop() {
   await page.keyboard.press('p');
   assert.equal(await page.locator('.splash-modal').count(),1);
   assert.match(await page.locator('#start').innerText(),/Resume your shift/);
+  await checkHomeMenu(page);
   assert.match(await page.locator('.splash-save-heading').innerText(),/CURRENT SHIFT · PAUSED/);
   assert.equal(await page.locator('#start').evaluate(el=>el===document.activeElement),true);
   await page.screenshot({path:`${output}/pause-desktop.png`});
@@ -46,14 +48,11 @@ async function checkDesktop() {
   await page.waitForTimeout(400);
   assert(pausedCanvas.equals(await page.locator('#city').screenshot()), 'paused backdrop stays frozen');
   await page.mouse.move(1300, 800);
-  await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'open-notebook', 'navigation wraps');
+  await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'menu-credits', 'navigation wraps');
   await page.keyboard.press('ArrowDown'); assert.equal(await selected(page).getAttribute('id'), 'start');
-  await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'menu-rules');
-  await page.keyboard.press('Enter'); await waitForDrawer(page, 'rules');
-  assert(await page.locator('.intro-grid').isVisible()); await page.screenshot({path:`${output}/rules-desktop.png`}); assert.equal(await page.locator('#start').count(), 0, 'page replaces the entire drawer');
-  await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
-  assert.equal(await selected(page).getAttribute('id'), 'menu-rules', 'Back restores selection');
-  await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); await waitForDrawer(page, 'settings');
+  await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'menu-settings');
+  await page.keyboard.press('Enter'); await waitForDrawer(page, 'settings');
+  assert.equal(await page.locator('#start').count(), 0, 'page replaces the entire drawer');
   await page.screenshot({path:`${output}/settings-desktop.png`});
   await page.locator('#gore-option').evaluate(element => { window.originalSetting = element; });
   await page.locator('#gore-option').check();
@@ -96,7 +95,7 @@ async function checkDesktop() {
   await page.screenshot({path:`${output}/credits-desktop.png`});
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
   assert.equal(await selected(page).getAttribute('id'), 'menu-credits');
-  await page.locator('#open-notebook').hover(); assert.equal(await selected(page).getAttribute('id'), 'open-notebook', 'mouse hover selects');
+  await page.locator('#menu-settings').hover(); assert.equal(await selected(page).getAttribute('id'), 'menu-settings', 'mouse hover selects');
   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
   await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift');
   assert(await page.locator('.shift-stats').isVisible());
@@ -235,4 +234,9 @@ async function checkTouchLayouts() {
     await mobile.screenshot({ path: `${output}/shift-touch-${name}.png` });
     await mobile.context().close();
   }
+}
+
+async function checkHomeMenu(page) {
+  assert.deepEqual(await page.locator('#modal .game-menu button').evaluateAll(buttons => buttons.map(button => button.id)),
+    ['start', 'menu-settings', 'menu-credits']);
 }
