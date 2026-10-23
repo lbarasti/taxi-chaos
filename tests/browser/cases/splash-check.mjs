@@ -33,7 +33,7 @@ async function checkDesktop() {
   assert.equal(await page.locator('.splash-modal').count(),1);
   assert.match(await page.locator('#start').innerText(),/Resume your shift/);
   await checkHomeMenu(page);
-  assert.match(await page.locator('.splash-save-heading').innerText(),/CURRENT SHIFT · PAUSED/);
+  assert.equal(await page.locator('.splash-save').count(), 0);
   assert.equal(await page.locator('#start').evaluate(el=>el===document.activeElement),true);
   await page.screenshot({path:`${output}/pause-desktop.png`});
   // The last frame of the start transition can land just after the pause drawer opens.
@@ -111,10 +111,11 @@ async function checkDesktop() {
   await page.keyboard.press('Tab'); await page.locator('#overlay').waitFor({state:'hidden'});
   assert.equal(await page.evaluate(() => document.activeElement.id), 'city');
   await page.keyboard.press('p'); await waitForDrawer(page, 'home');
-  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'pause and shift show the same wake-to-sleep totals');
+  assert.equal(await page.locator('.shift-stats').count(), 0, 'pause keeps shift totals out of the branded menu');
   assert.equal(await page.locator('#menu-shift').count(), 0, 'pause has no shift entry');
   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
   await page.locator('#shift').click(); await waitForDrawer(page, 'shift');
+  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'shift view retains the wake-to-sleep totals');
   // Exercise skip behavior independently of where this saved cab is parked.
   await page.locator('#sleep').evaluate(button => { button.disabled = true; });
   await page.locator('#open-notebook').focus(); await page.keyboard.press('ArrowDown');
@@ -267,4 +268,6 @@ async function checkBrand(page) {
   assert(dimensions.decoded && dimensions.inside, 'badge decodes and fits the drawer');
   assert(Math.abs(dimensions.ratio - dimensions.naturalRatio) < 0.01, 'badge keeps its proportions');
   assert.equal(await page.locator('#modal .intro-eyebrow, #modal .intro-copy').count(), 0, 'old title copy is removed');
+  assert.equal(await page.locator('.splash-tagline').innerText(), 'A little cab. A lot of trouble.');
+  assert.equal(await page.locator('.splash-save, .splash-snapshot, .splash-mission').count(), 0, 'shift information is absent');
 }

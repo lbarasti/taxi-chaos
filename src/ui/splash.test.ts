@@ -9,23 +9,25 @@ describe('startup splash', () => {
     }
     vi.stubGlobal('localStorage', { getItem: () => { throw Error('denied'); } }); expect(savedCampaignAvailable()).toBe(false); vi.unstubAllGlobals();
   });
-  it('shows loaded progress, previews the actual next stop and escapes mission text', () => {
+  it('offers Continue for a save without showing shift or mission details', () => {
     const game = new Game(undefined, false); game.save.cash = 320; game.save.deliveries = 8;
     game.job.stage = 'dropoff'; game.job.destination = '<Market>';
-    const html = splashMarkup(game, true); expect(html).toContain('Continue'); expect(html).toContain('$320'); expect(html).toContain('RIDE IN PROGRESS'); expect(html).toContain('&lt;Market&gt;');
+    const html = splashMarkup(game, true); expect(html).toContain('Continue');
+    expect(html).toContain('A little cab.</span> <em>A lot of trouble.');
+    expect(html).not.toContain('splash-save'); expect(html).not.toContain('$320'); expect(html).not.toContain('Market');
     expect(splashMarkup(game, false)).toContain('New game');
     expect(splashMarkup(game, false)).not.toContain('id="start"');
     expect(splashMarkup(game, false)).not.toContain('Start your shift');
     expect([...html.matchAll(/class="menu-item" id="([^"]+)"/g)].map(match => match[1]))
       .toEqual(['start', 'new-game', 'menu-load-game', 'menu-settings', 'menu-credits']);
   });
-  it('reuses the start drawer with live progress and resume for a paused shift', () => {
+  it('reuses the branded start drawer for pause and keeps totals in the shift view', () => {
     const game = new Game(undefined, false); game.start(); game.setMode('paused');
     game.save.shiftStats = { earnings: 175, jobs: 3, smashed: 9, kills: 2 };
     const html = splashMarkup(game, false);
     expect(html).toContain('alt="Taxi Chaos"'); expect(html).toContain('Resume your shift');
-    expect(html).toContain('YOUR CURRENT SHIFT · PAUSED'); expect(html).not.toContain('Start your shift');
-    expect(html).not.toContain('new-game'); expect(html).not.toContain('menu-shift'); expect(html).toContain('Since you last woke up.'); expect(html).toContain('$175');
+    expect(html).not.toContain('splash-save'); expect(html).not.toContain('Start your shift');
+    expect(html).not.toContain('new-game'); expect(html).not.toContain('menu-shift'); expect(html).not.toContain('Since you last woke up.'); expect(html).not.toContain('$175');
     const shift = shiftMarkup(game, '<button>Sleep</button>');
     expect(shift).toContain('$175'); expect(shift).toContain('PEDESTRIAN FATALITIES'); expect(shift).toContain('Sleep');
     game.mode = 'intro';

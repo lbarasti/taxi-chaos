@@ -59,7 +59,7 @@ describe('suspended title sessions', () => {
     game.returnToTitle(); expect(game.titleSaveFailed).toBe(true);
     const html = splashMarkup(game, game.sessionStarted);
     expect(html).toContain('Continue'); expect(html).toContain('role="alert"');
-    expect(html).toContain('YOUR CURRENT SHIFT · SUSPENDED'); expect(html).not.toContain('YOUR SAVED SHIFT');
+    expect(html).not.toContain('splash-save');
     expect(html).toContain('Progress could not be saved to the browser. Continue is still available while this page stays open.');
     expect(html).not.toContain('id="return-to-title"');
     game.start(); expect(game.mode).toBe('playing');

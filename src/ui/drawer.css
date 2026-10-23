@@ -5,9 +5,10 @@
 .splash-modal{display:flex;flex-direction:column;width:min(540px,100vw);height:100dvh;max-height:none;padding:max(32px,env(safe-area-inset-top)) max(38px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(38px,env(safe-area-inset-left));background:linear-gradient(105deg,#14242c9e 0%,#17262d85 55%,#20303970 100%);border:0;border-right:1px solid #a3ddc235;border-radius:0;box-shadow:18px 0 64px #06121b80;backdrop-filter:none;overscroll-behavior:contain}
 .drawer-page{flex-shrink:0;min-width:0;margin-block:auto;text-align:left}.drawer-page>.intro-copy{font-size:14px;line-height:1.7;color:#aebcaf;margin-bottom:22px}
 .splash-modal h2{font-size:54px;margin:22px 0 14px;letter-spacing:-2.5px}
-.splash-modal .splash-brand{margin:0 0 22px;line-height:0;letter-spacing:0}
+.splash-modal .splash-brand{margin:0 0 14px;line-height:0;letter-spacing:0}
 .splash-brand img{display:block;width:auto;height:auto;max-width:100%;max-height:clamp(140px,26dvh,240px);margin-inline:auto;object-fit:contain}
-.splash-save{border:1px solid #a3ddc229;border-radius:12px;background:#0d1d244d;padding:18px;margin-bottom:18px}.splash-save-heading{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:1.3px;color:var(--mint)}.splash-save-heading small{margin-left:auto;color:#aebcaf;font-size:9px;letter-spacing:0}.splash-snapshot{display:flex;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--border)}.splash-snapshot small,.splash-mission small{display:block;font-size:8px;letter-spacing:1.4px;color:#a7b7ac}.splash-snapshot strong{display:block;font-size:25px;font-weight:500;margin-top:7px}.splash-snapshot strong span{font-size:12px;color:var(--muted)}.splash-mission{padding-top:16px}.splash-mission small{color:var(--gold)}.splash-mission strong{display:block;font-size:18px;margin-top:8px}.splash-mission p{font-size:11px;line-height:1.6;color:#aebcaf;margin:7px 0 0}.splash-mission p span{display:block;color:var(--mint)}
+.drawer-page>.splash-tagline{margin:0 0 28px;text-align:center;font-size:18px;line-height:1.5;color:#edeedf}
+.splash-tagline span,.splash-tagline em{display:inline-block}.splash-tagline em{font-style:normal;color:var(--gold)}
 /* Every action has the same weight; selection supplies the emphasis. */
 .game-menu{display:grid;gap:3px}
 .splash-modal .menu-item{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:48px;margin:0;padding:12px 15px;border:1px solid transparent;border-left:3px solid transparent;border-radius:3px;background:transparent;color:#d4ded4;text-align:left;font-size:16px;font-weight:500;line-height:1.4;touch-action:manipulation;transition:background .16s ease,color .16s ease,border-color .16s ease}
@@ -79,8 +80,8 @@
 .drawer-entering{animation:drawer-in .24s cubic-bezier(.2,.75,.25,1) both}
 @keyframes drawer-in{from{opacity:0;transform:translateX(calc(18px * var(--drawer-direction,1)))}to{opacity:1;transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.drawer-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field{transition:none}}
-@media(max-width:700px){.splash-modal{width:min(420px,calc(100vw - 24px));padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.splash-modal h2{font-size:clamp(34px,8vw,48px)}.splash-save{padding:14px}.splash-save-heading{flex-wrap:wrap}.splash-save-heading small{margin-left:0;width:100%}.splash-snapshot strong{font-size:22px}.splash-modal .intro-controls{gap:8px;font-size:9px}}
-@media(max-height:650px){.splash-modal{padding-top:max(20px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}.splash-modal h2{font-size:40px;margin-top:14px}.drawer-page>.intro-copy{margin-bottom:14px}.splash-snapshot{padding:12px 0}}
+@media(max-width:700px){.splash-modal{width:min(420px,calc(100vw - 24px));padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.splash-modal h2{font-size:clamp(34px,8vw,48px)}.splash-modal .intro-controls{gap:8px;font-size:9px}}
+@media(max-height:650px){.splash-modal{padding-top:max(20px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}.splash-modal h2{font-size:40px;margin-top:14px}.drawer-page>.intro-copy{margin-bottom:14px}}
 /* Settings share the drawer palette, with native controls and aligned values. */
 .setting-row{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px;border:1px solid transparent;border-left-width:3px;border-radius:4px;color:#d4ded4;cursor:pointer}
 .setting-row+.setting-row{border-top-color:#a3ddc215}
