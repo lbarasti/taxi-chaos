@@ -58,6 +58,21 @@ function isWholeSource(crop: PixelCrop | undefined, source?: ArtworkSource): boo
   return !!source && !!crop && crop.x === 0 && crop.y === 0 && crop.width === source.width && crop.height === source.height;
 }
 
+/** Translate a master-pixel crop into the bundled derivative's pixel space. Crops are
+ * expanded outward so no authored edge is sampled off-image after downscaling. */
+function imageCrop(crop: PixelCrop | undefined, source?: ArtworkSource, id = 'artwork'): PixelCrop | undefined {
+  if (!crop || !source?.image) return crop;
+  const { image } = source;
+  if (image.width === source.width && image.height === source.height) return crop;
+  const scaleX = image.width / source.width, scaleY = image.height / source.height;
+  const left = Math.max(0, Math.floor(crop.x * scaleX));
+  const top = Math.max(0, Math.floor(crop.y * scaleY));
+  const right = Math.min(image.width, Math.ceil((crop.x + crop.width) * scaleX));
+  const bottom = Math.min(image.height, Math.ceil((crop.y + crop.height) * scaleY));
+  if (right <= left || bottom <= top) throw new Error(`Artwork ${id}: crop collapsed while scaling to the bundled image`);
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
 /** Default geometry is centred; a width-only size keeps the cropped source aspect. */
 function resolveMetres(record: ArtworkRecord, crop?: PixelCrop): { width: number; height: number } {
   if (record.metres === undefined) throw new Error(`Artwork ${record.id}: structure artwork needs a metre size`);
@@ -138,13 +153,14 @@ export function compileStructureArtwork(record: ArtworkRecord, source?: ArtworkS
   validateRenderOrder(record.renderOrder, record.id);
   const crop = sourceCrop(record, source);
   const { width, height } = resolveMetres(record, crop);
+  const drawn = imageCrop(crop, source, record.id);
   const silhouette = resolveSilhouette(record.silhouette, width, height);
   return {
     image: record.id,
     layer: 'structure',
     bounds: { x: -width / 2, y: -height / 2, width, height },
     anchor: vec(0.5, 0.5),
-    ...(crop && !isWholeSource(crop, source) ? { source: crop } : {}),
+    ...(drawn && !isWholeSource(crop, source) ? { source: drawn } : {}),
     silhouette,
     ...(record.castsShadow === false ? { castsShadow: false } : {}),
     renderOrder: record.renderOrder ?? 'below-actors',
@@ -187,11 +203,12 @@ function validatePresentation(presentation: ArtworkPresentation, id: string): vo
 function artworkTemplate(id: string, image: string, crop: PixelCrop | undefined, source: ArtworkSource | undefined, presentation: ArtworkPresentation, outline: NormalizedOutline): ArtworkTemplate {
   validatePresentation(presentation, id);
   const aspect = crop ? crop.width / crop.height : undefined;
+  const drawn = imageCrop(crop, source, id);
   const fit = presentation.fit ?? 'contain';
   if (fit === 'contain' && !aspect) throw new Error(`Object ${id}: a centred aspect fit needs a measured source or explicit artwork width and height`);
   return deepFreeze({
     image,
-    ...(crop && !isWholeSource(crop, source) ? { source: crop } : {}),
+    ...(drawn && !isWholeSource(crop, source) ? { source: drawn } : {}),
     aspect: aspect ?? 1,
     fit,
     ...(presentation.width === undefined ? {} : { width: presentation.width }),

@@ -13,10 +13,9 @@ const read = (png: string) => {
   try { return readFileSync(path(`assets/${png}`)); }
   catch { return undefined; }
 };
-
 describe('inline artwork manifest', () => {
   it('measures every referenced PNG, so adding an image needs no registration', () => {
-    expect(artworkSources).toEqual(measureArtworkSources(inlineEntries(artworkRecords, objectRecords), read));
+    expect(artworkSources).toEqual(measureArtworkSources(inlineEntries(artworkRecords, objectRecords), read, read));
   });
 
   it('inlines exactly the referenced images, one per artwork ID', () => {

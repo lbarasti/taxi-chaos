@@ -163,7 +163,7 @@ describe('shared catalogue compiler', () => {
     const defaultArt = propArtwork.hospital;
     expect(defaultArt.bounds.width).toBeCloseTo(26.6);
     expect(defaultArt.bounds.height).toBeCloseTo(66.6);
-    expect(defaultArt.source).toEqual({ x: 33, y: 16, width: 726, height: 1951 });
+    expect(defaultArt.source).toEqual({ x: 26, y: 13, width: 595, height: 1595 });
     const resized = compilePlacement({ ...placement, type: 'hospital', width: 24, height: 64 }, buildingDefinitions);
     expect(resized.artwork?.bounds.width).toBeCloseTo(26.6 * 24 / 26);
     expect(resized.artwork?.bounds.height).toBeCloseTo(66.6 * 64 / 66);
@@ -241,14 +241,14 @@ describe('shared catalogue compiler', () => {
     expect(propArtwork['shop-tar'].occluder).toBe(propArtwork['shop-tar'].silhouette);
     expect(propArtwork.hospital.bounds.width).toBeCloseTo(26.6);
     expect(propArtwork.hospital.bounds.height).toBeCloseTo(66.6);
-    expect(propArtwork.hospital.source).toEqual({ x: 33, y: 16, width: 726, height: 1951 });
+    expect(propArtwork.hospital.source).toEqual({ x: 26, y: 13, width: 595, height: 1595 });
     const hospitalOutline = propArtwork.hospital.silhouette;
     expect(hospitalOutline).toHaveLength(4);
     [[-13.3, -33.3], [13.3, -33.3], [13.3, 33.3], [-13.3, 33.3]].forEach(([x, y], i) => {
       expect(hospitalOutline[i].x).toBeCloseTo(x);
       expect(hospitalOutline[i].y).toBeCloseTo(y);
     });
-    expect(propArtwork.condo.source).toEqual({ x: 89, y: 110, width: 1086, height: 1006 });
+    expect(propArtwork.condo.source).toEqual({ x: 24, y: 30, width: 301, height: 278 });
     expect(propArtwork.condo.castsShadow).toBe(false);
     expect(propArtwork.condo.bounds.x).toBeCloseTo(-7.15);
     expect(propArtwork.condo.bounds.y).toBeCloseTo(-6.65);

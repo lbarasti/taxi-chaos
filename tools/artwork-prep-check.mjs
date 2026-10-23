@@ -29,6 +29,7 @@ test('the checked-in manifest is current and reports padding for every reference
   const hospital = output.artworks.find(art => art.id === 'hospital');
   assert.deepEqual(hospital.padding, { left: 33, top: 16, right: 28, bottom: 30 });
   assert.deepEqual(hospital.crop, { x: 33, y: 16, width: 726, height: 1951 });
+  assert.deepEqual(hospital.image, { width: 643, height: 1632 }, 'bundle imports the display-resolution WebP derivative');
   assert.ok(Math.abs(hospital.bounds.x + 13.3) < 1e-9);
   assert.ok(Math.abs(hospital.bounds.y + 33.3) < 1e-9);
   assert.ok(Math.abs(hospital.bounds.width - 26.6) < 1e-9);

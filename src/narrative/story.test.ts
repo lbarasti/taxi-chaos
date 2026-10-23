@@ -34,7 +34,7 @@ describe('authored pickup conversations', () => {
     expect(speaker.name).toBe('Mia');
     // `mia` keeps its stable id and display name, but resolves its own neutral legacy
     // placeholder rather than borrowing another cast member's supplied portrait.
-    expect(resolvePortrait(speaker)).toMatchObject({ source: 'legacy-mia.png', format: 'png' });
+    expect(resolvePortrait(speaker)).toMatchObject({ source: 'legacy-mia.png', format: 'webp' });
     const active = g.dialogue.active;
     run(g, 1); expect(g.dialogue.active).toBe(active); expect(g.dialogue.letters).toBeGreaterThan(STORY_LETTERS_PER_SECOND);
   });

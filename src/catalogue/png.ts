@@ -1,4 +1,5 @@
 import { inflateSync } from 'node:zlib';
+import { bundledArtworkPath } from './assets';
 import type { ArtworkSource, CatalogueSources, PixelCrop } from './schema';
 
 /** Transparent export padding, in source pixels, on each side of the image. */
@@ -71,9 +72,41 @@ function alphaAt(colourType: number, pixels: Uint8Array, index: number, transpar
   }
 }
 
+const u16le = (bytes: Uint8Array, offset: number) => bytes[offset] | (bytes[offset + 1] << 8);
+const u24le = (bytes: Uint8Array, offset: number) => bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16);
+const u32le = (bytes: Uint8Array, offset: number) => (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+const tag = (bytes: Uint8Array, offset: number) => String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]);
+
+/** Decoded width and height from a WebP RIFF header, without decoding pixels. */
+export function readWebpSize(bytes: Uint8Array): Readonly<{ width: number; height: number }> | undefined {
+  if (bytes.length < 30 || tag(bytes, 0) !== 'RIFF' || tag(bytes, 8) !== 'WEBP') return undefined;
+  for (let offset = 12; offset + 8 <= bytes.length;) {
+    const type = tag(bytes, offset), length = u32le(bytes, offset + 4), data = offset + 8;
+    if (data + length > bytes.length) return undefined;
+    if (type === 'VP8X') {
+      if (length < 10) return undefined;
+      return { width: 1 + u24le(bytes, data + 4), height: 1 + u24le(bytes, data + 7) };
+    }
+    if (type === 'VP8 ') {
+      // Lossy frames: 3-byte frame tag, start code 0x9d 0x01 0x2a, then 14-bit dimensions.
+      if (length < 10 || bytes[data + 3] !== 0x9d || bytes[data + 4] !== 0x01 || bytes[data + 5] !== 0x2a) return undefined;
+      return { width: u16le(bytes, data + 6) & 0x3fff, height: u16le(bytes, data + 8) & 0x3fff };
+    }
+    if (type === 'VP8L') {
+      // Lossless frames pack (width-1) and (height-1) as two 14-bit fields after 0x2f.
+      if (length < 5 || bytes[data] !== 0x2f) return undefined;
+      return {
+        width: 1 + ((bytes[data + 1] | (bytes[data + 2] << 8)) & 0x3fff),
+        height: 1 + (((bytes[data + 2] >> 6) | (bytes[data + 3] << 2) | (bytes[data + 4] << 10)) & 0x3fff),
+      };
+    }
+    offset = data + length + (length & 1);
+  }
+  return undefined;
+}
+
 /** Source dimensions and transparent-padding crop for one PNG buffer, with no DOM. */
-export function readPng(bytes: Uint8Array): PngMeasurement | undefined {
-  if (bytes.length < 8 || !SIGNATURE.every((byte, index) => bytes[index] === byte)) return undefined;
+export function readPng(bytes: Uint8Array): PngMeasurement | undefined {  if (bytes.length < 8 || !SIGNATURE.every((byte, index) => bytes[index] === byte)) return undefined;
   const { header, pixels, transparent } = decode(bytes);
   let minX = header.width, minY = header.height, maxX = -1, maxY = -1;
   for (let y = 0; y < header.height; y++) for (let x = 0; x < header.width; x++) {
@@ -89,12 +122,18 @@ export function readPng(bytes: Uint8Array): PngMeasurement | undefined {
     padding: { left: crop.x, top: crop.y, right: header.width - crop.x - crop.width, bottom: header.height - crop.y - crop.height } };
 }
 
-/** Measure every referenced PNG through an injected reader, so browser-free tooling
- * and tests share one implementation. Non-PNG (SVG) references are skipped. A file
- * referenced by several IDs is decoded once, and every entry gets a detached crop. */
-export function measureArtworkSources(records: readonly Readonly<{ id: string; png: string }>[], read: (png: string) => Uint8Array | undefined): CatalogueSources {
+/** Measure every referenced PNG through injected readers, so browser-free tooling and
+ * tests share one implementation. Non-PNG (SVG) references are skipped. A file
+ * referenced by several IDs is decoded once, and every entry gets a detached crop.
+ * When `readBundled` is supplied, the build also records the derivative size that the
+ * inline manifest will actually decode. */
+export function measureArtworkSources(
+  records: readonly Readonly<{ id: string; png: string }>[],
+  read: (png: string) => Uint8Array | undefined,
+  readBundled?: (png: string) => Uint8Array | undefined,
+): CatalogueSources {
   const sources: Record<string, ArtworkSource> = {};
-  const byPng = new Map<string, Readonly<{ width: number; height: number; crop: PixelCrop }>>();
+  const byPng = new Map<string, Readonly<{ width: number; height: number; crop: PixelCrop; image?: Readonly<{ width: number; height: number }> }>>();
   for (const record of records) {
     if (!record.png.endsWith('.png')) continue;
     let measurement = byPng.get(record.png);
@@ -103,10 +142,21 @@ export function measureArtworkSources(records: readonly Readonly<{ id: string; p
       if (!bytes) throw new Error(`Artwork ${record.id}: missing source ${record.png}`);
       const decoded = readPng(bytes);
       if (!decoded) throw new Error(`Artwork ${record.id}: ${record.png} is not a PNG`);
-      measurement = { width: decoded.width, height: decoded.height, crop: decoded.crop };
+      let image: Readonly<{ width: number; height: number }> | undefined;
+      if (readBundled) {
+        const bundledPath = bundledArtworkPath(record.png);
+        const bundled = readBundled(bundledPath);
+        if (!bundled) throw new Error(`Artwork ${record.id}: missing bundled ${bundledPath}; run npm run artwork:optimize`);
+        image = readWebpSize(bundled);
+        if (!image) throw new Error(`Artwork ${record.id}: ${bundledPath} is not a readable WebP`);
+      }
+      measurement = { width: decoded.width, height: decoded.height, crop: decoded.crop, ...(image ? { image } : {}) };
       byPng.set(record.png, measurement);
     }
-    sources[record.id] = { width: measurement.width, height: measurement.height, crop: { ...measurement.crop } };
+    sources[record.id] = {
+      width: measurement.width, height: measurement.height, crop: { ...measurement.crop },
+      ...(measurement.image ? { image: { ...measurement.image } } : {}),
+    };
   }
   return sources;
 }

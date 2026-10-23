@@ -9,6 +9,7 @@ import { bindTouchControls } from './ui/touch-controls';
 import { Game, upgradeInfo, type Upgrade } from './game/game';
 import { MotorcycleDynamics, motorcycleEngineWorks } from './vehicles/motorcycle';
 import { Renderer } from './rendering/renderer';
+import { MAX_ZOOM, MIN_ZOOM } from './rendering/zoom';
 import { artworkImages } from './artwork/images';
 import { add, dist, sub } from './physics/physics';
 import { PORT_FEE } from './world/harbour';
@@ -392,7 +393,7 @@ if (scenarioPreviewMode) {
     const focus = frame.focus && frame.focus !== 'actor' ? game.campaignSites[frame.focus]?.body.position : game.actor.position;
     if (!focus) throw new Error(`Unavailable camera focus: ${frame.focus}`);
     renderer.camera = { ...focus };
-    renderer.zoom = frame.zoom ?? Math.max(5, Math.min(10.5, window.innerWidth / 125, window.innerHeight / 86));
+    renderer.zoom = frame.zoom ?? Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, window.innerWidth / 125, window.innerHeight / 86));
     bindGame(); drawer.reset();
     $('mission-inbox').hidden = true;
     const mode = game.mode;

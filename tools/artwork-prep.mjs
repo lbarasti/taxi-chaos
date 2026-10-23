@@ -51,7 +51,13 @@ try {
     if (!measured) throw new Error(`Artwork ${entry.id}: src/assets/${entry.png} is not a readable PNG`);
     measurements.set(entry.png, measured);
   }
-  const measuredSources = measureArtworkSources(entries, png => files.get(png));
+  const measuredSources = measureArtworkSources(entries, png => files.get(png), png => {
+    try { return readFileSync(resolve(assets, png)); }
+    catch (error) {
+      if (error.code === 'ENOENT') throw new Error(`Missing bundled derivative src/assets/${png}; run npm run artwork:optimize`);
+      throw error;
+    }
+  });
   // `--crop` inspects a candidate crop without touching the checked-in manifest.
   const sources = { ...measuredSources };
   if (override) {
@@ -77,6 +83,7 @@ try {
     return {
       id: entry.id, png: entry.png, layer: legacy?.layer ?? 'structure',
       source: measured ? { width: measured.width, height: measured.height } : null,
+      image: sources[entry.id]?.image ?? null,
       padding: measured?.padding ?? null,
       crop: override && entry.id === only ? sources[entry.id].crop : legacy?.crop ?? object?.crop ?? measuredSources[entry.id]?.crop ?? null,
       bounds: catalogue.structures[entry.id]?.bounds ?? defaultArtwork(entry.id)?.bounds ?? null,

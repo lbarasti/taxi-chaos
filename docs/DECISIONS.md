@@ -184,3 +184,13 @@ a morning replaces the rolling session through a fresh Game instance. Both retai
 other archived days, which are replaced individually when their mornings are reached
 again. Sleep captures only after wake-up reconciliation; live crossings preserve
 the current ride and shift totals. The campaign endpoint is not a playable morning.
+
+## 14. Bundle display-resolution artwork derivatives
+
+Keep full-resolution PNG masters for measurement, crops and future edits, but inline a
+WebP derivative sized for the closest gameplay camera (10.5 px/m at 2x DPR) and the
+largest portrait frame (100x116 CSS px at 2x DPR). `artwork:optimize` writes derivatives
+under `src/assets/optimized/`; `artwork:prep` measures masters and records both master
+crops and derivative sizes so runtime crops scale without changing authored geometry.
+Vector ground tiles stay as authored. The single-file offline build remains authoritative;
+no runtime external request or lazy chunking is introduced.

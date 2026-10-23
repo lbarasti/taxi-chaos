@@ -29,7 +29,7 @@ observation and edition browser checks. They load the standalone artifact from
 localhost and switch offline before interacting. Use `CHROMIUM_PATH` to select
 an already installed browser.
 
-`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run tools:test` runs the artwork, scenario and authoring CLI suites. `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs. The optional GPU benchmark is `npm run performance:bench -- --frames 180`; it writes results under `scenario-runs/artwork-performance/`.
+`npm run build` runs the strict TypeScript check and builds the standalone game. `npm test` runs the physics, collision, jobs, destruction, pursuit, economy, and map tests. The map check validates the authored default map. `npm run tools:test` runs the artwork, scenario and authoring CLI suites. `npm run artwork:optimize -- --check` verifies the committed display-resolution WebP derivatives, and `npm run artwork:prep -- --check` verifies the generated inline image manifest and reports measured PNG padding. `npm run authoring:preview -- --list --input tools/examples/map-authoring.json` lists stable catalogue IDs. The optional GPU benchmark is `npm run performance:bench -- --frames 180`; it writes results under `scenario-runs/artwork-performance/`.
 
 For simulation and main-thread profiling, `npm run perf:bench` times fixed 120 Hz updates across four city workloads, starting each warmup and measured run from a fresh, persistence-disabled game. Setup, snapshots, UI and drawing are excluded from simulation timing; world render submission is timed separately. JSON includes raw samples, step counts, per-run/per-simulated-second/per-step timings, and browser/Canvas metadata. `npm run perf:profile -- --scenario cruise --traffic 23` records a Chrome CPU profile and real frame intervals while driving. Both write JSON and captures under `scenario-runs/perf/`; `--cpu 4` throttles either harness, and `--headless` supports cached Chromium on servers. Compare runs with the same browser, viewport, CPU setting and Canvas acceleration; render submission timing alone does not measure displayed FPS. Page errors make either command fail.
 
@@ -214,6 +214,19 @@ hand. Artwork geometry is stored as fractions of the resolved footprint, so resi
 type default or a placement moves collision and drawing together; `artworkScale` changes
 the drawing alone. Keep provenance in asset attribution.
 
+PNG masters stay at full resolution for measurement and future edits. The standalone
+build imports a display-resolution WebP derivative from `src/assets/optimized/`, sized
+for two device pixels at the closest gameplay camera. After adding or changing any
+referenced PNG or portrait, regenerate the derivatives before the manifest:
+
+```sh
+npm run artwork:optimize
+npm run artwork:prep -- --write
+```
+
+`artwork:optimize` requires `cwebp`; `npm run artwork:optimize -- --check` fails when a
+committed derivative is missing or at the wrong resolution.
+
 ### Authoring previews
 
 ```sh
@@ -342,7 +355,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/world/world.ts`: seeded city generation, structures, and road routing.
 - `src/vehicles/ai.ts`: civilian traffic and police behavior.
 - `src/vehicles/damage.ts`, `src/rendering/effects.ts`: damage, fires, destruction, and effects.
-- `src/narrative/characters.json`, `src/narrative/characters.ts`, `src/narrative/portraits.ts`: authored character metadata and the build-time inlined portrait registry (SVG, PNG and JPEG); `src/narrative/portrait-manifest.ts` is the DOM-free declared file list.
+- `src/narrative/characters.json`, `src/narrative/characters.ts`, `src/narrative/portraits.ts`: authored character metadata and the build-time inlined portrait registry (WebP derivatives of the supplied PNG masters); `src/narrative/portrait-manifest.ts` is the DOM-free declared master list.
 - `src/catalogue/`: shared DOM-free building/prop catalogue records, compiler, browser-free PNG measurement and the generated inline image manifest.
 - `src/missions/`: versioned mission/dialogue/stop catalogue, DOM-free director, compiled stop registry and versioned story progress.
 - `src/campaign/`: Open Shore content, continuous calendar, world-event scheduler, editorial workflow and notebook.
@@ -354,7 +367,7 @@ The game is published at **https://lbarasti.com/taxi-chaos/**. The **Deploy GitH
 - `src/debug/`: layer inspector and panel, scenario loader, and test API.
 - `src/scenarios/`: persistent scenario runner and its fixtures.
 - `src/map/`: versioned authored map, compiler, validation, programmatic authoring workspace, and preview.
-- `src/assets/`: embedded font, character portraits, map artwork and sound samples with their attribution and credits.
+- `src/assets/`: embedded font, full-resolution character and map masters, their display-resolution WebP derivatives under `optimized/`, and sound samples with attribution and credits.
 - `src/test-fixtures/`: retained historical Sunset Beach assertions; not imported by the game.
 - `src/rendering/renderer.ts`: Canvas rendering and debug overlays.
 - `vite.config.ts`: standalone single-file build; fails if external assets remain.
