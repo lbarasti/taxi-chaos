@@ -98,7 +98,7 @@ describe('eastern bridges and highland roads', () => {
     g.offer = 2; g.newJob(); // Third dispatched trip includes Eagle Lookout as its destination.
     expect(g.job.pickup.x > 246 || g.job.dropoff.x > 246).toBe(true);
     const distance = pathLength(roadPath(g.job.pickup, g.job.dropoff));
-    expect(g.job.fare).toBe(Math.round(55 + distance * 0.7));
+    expect(g.job.fare).toBe(Math.round((55 + distance * 0.7) / 10));
     expect(g.job.time).toBeCloseTo(28 + distance / 3);
   });
   it('loads and pays rural parcel deliveries using the road-distance fare', () => {

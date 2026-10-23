@@ -29,18 +29,19 @@
 .receipt-money{min-width:0}
 .receipt-total{display:block;color:var(--mint);font-size:44px;font-weight:600;line-height:1.1;letter-spacing:-1.8px;font-variant-numeric:tabular-nums}
 .receipt-breakdown{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;color:#b8c7bd;font-size:11px;line-height:1.4;font-variant-numeric:tabular-nums}
-.receipt-breakdown>span{white-space:nowrap}
-.receipt-scores{display:grid;gap:13px;margin-top:14px;max-width:150px}
-.receipt-score{display:grid;grid-template-columns:24px minmax(0,1fr) max-content;align-items:center;gap:7px;min-width:0;color:#edcc7d}
-.receipt-comfort{color:#8fd3e0}
-.receipt-icon{width:24px;height:24px}
-.receipt-meter{height:5px;background:color-mix(in srgb,currentColor 20%,transparent);border-radius:2px;overflow:hidden}
-.receipt-meter i{display:block;width:100%;height:100%;border-radius:2px;background:currentColor;transform:scaleX(var(--score,0));transform-origin:left}
-.receipt-bonus{font-size:10px;line-height:1.4;font-variant-numeric:tabular-nums}
-@container(min-width:220px){
-  .receipt-money{float:left;width:52%;padding-right:10px}
-  .receipt-scores{margin:8px 0 5px 52%;max-width:140px}
-}
+.receipt-breakdown [data-receipt]{white-space:nowrap}
+.receipt-scores{display:grid;gap:7px;margin-top:12px}
+.receipt-floor{display:block;margin-top:5px;font-size:10px;line-height:1.4;color:#f2a18e}
+.fare-component{min-width:0;--fare-color:var(--mint);font-variant-numeric:tabular-nums}
+.fare-component[data-sign="negative"]{--fare-color:#f2a18e}
+.fare-component[data-sign="neutral"]{--fare-color:#b8c7bd}
+.fare-component-heading{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;line-height:15px;color:#c6d3c9}
+.fare-component-heading strong{color:var(--fare-color);font-size:11px;font-weight:600;white-space:nowrap}
+.fare-meter{position:relative;height:18px;margin-top:2px}
+.fare-meter-track{position:absolute;inset:0 0 auto;height:6px;overflow:hidden;border-radius:2px;background:linear-gradient(to right,#f2a18e30 0 50%,#a3ddc230 50% 100%)}
+.fare-meter-track i{position:absolute;top:0;left:var(--meter-left,50%);width:var(--meter-width,0%);height:100%;background:var(--fare-color)}
+.fare-meter::after{content:'';position:absolute;left:50%;top:-1px;width:1px;height:8px;background:#e8e9dc;transform:translateX(-50%)}
+.fare-meter-zero{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:8px;line-height:9px;color:#c6d3c9}
 @container(max-width:180px){.receipt-total{font-size:38px}}
 body:has(.mission-inbox:not([hidden])) .notification-stack,
 body:has(.mission-inbox:not([hidden])) .campaign-notice{visibility:hidden}

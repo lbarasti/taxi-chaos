@@ -41,6 +41,7 @@ import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgr
 import { saveCar, type SavedCar } from '../vehicles/garage-save';
 import { FREIGHT_ROUTE, PORT_ENTRY, PORT_EXIT, PORT_FEE, SWAP_CONTAINER, SWAP_EXIT, SWAP_SECONDS } from '../world/harbour';
 import { NotificationStack, type NotificationKind, type NotificationOptions } from './notifications';
+import { baseFareForDistance, calculateFare } from './fare';
 
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
@@ -52,6 +53,7 @@ export { upgradeInfo, type Upgrade } from '../vehicles/vehicle-upgrades';
 function loadSettings(): Settings { const settings = defaultSettings(); try { const s = JSON.parse(readStorage(storageKeys.settings) ?? 'null'); if (s) { settings.gore = s.gore === true; if (Object.hasOwn(difficulties, s.difficulty)) settings.difficulty = s.difficulty; } } catch {} return settings; }
 const PASSENGER_NAMES = ['Jules', 'Ravi', 'Cleo', 'Oscar', 'Sam', 'Ruby'];
 const PLACES = ['Noodle Club', 'Vinyl & Co.', 'Garden Café', 'The Arcade', 'Dockside Deli', 'East Village', 'Moonlight Hotel', 'Flower Market'];
+const fareAdjustment = (amount: number) => `${amount < 0 ? '−' : amount > 0 ? '+' : ''}$${Math.abs(amount)}`;
 export type Blast = { position: Vec; radius: number; power: number; blamed: boolean; due: number; sourceVehicle?: number; sourceProp?: number };
 export class Game {
   world: World; save: Save; mode: Mode = 'intro'; keys = new Set<string>();
@@ -711,7 +713,7 @@ export class Game {
     const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55', mission.offer ? { phase: 0, angle: 0 } : undefined) : undefined;
     const name = this.campaignEnabled && this.campaignContent.jobNames[missionId] ? this.campaignContent.jobNames[missionId] : mission.passenger ? characters[mission.passenger].name : PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length];
-    return { type, pickup, dropoff, name, destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, missionId };
+    return { type, pickup, dropoff, name, destination, fare: baseFareForDistance(distance), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1, missionId };
   }
   private newMissionJob(missionId: MissionId) {
     this.missions.begin(missionId, this.missionContext());
@@ -835,7 +837,7 @@ export class Game {
     const destination = this.missions.catalogue.stops.destinations.find(s => dist(s.position, dropoff) < 1)?.name ?? storefront?.label.toLowerCase().replace(/\b\w/g, s => s.toUpperCase()) ?? PLACES[this.jobsDone % PLACES.length];
     const type = this.player.definition.access.job;
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
-    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
+    this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: PASSENGER_NAMES[this.offer % PASSENGER_NAMES.length], destination, fare: baseFareForDistance(distance), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
     if (regular) {
       this.job.name = regular.name;
       this.job.everyday = { character: regular.character, family: type === 'parcel' ? 'Small deliveries' : regular.family, line: type === 'parcel' ? `${regular.name}’s ordinary delivery. Please keep the signed slip.` : regular.lines[Math.min(regularRides, regular.lines.length - 1)] };
@@ -1391,19 +1393,18 @@ export class Game {
           this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55');
         }
         else {
-          const timeBonus = Math.max(0, Math.round((j.time - j.elapsed) * 0.8)), comfortBonus = Math.round(j.comfort * 0.3), payout = j.fare + timeBonus + comfortBonus;
+          const fare = calculateFare(j), { payout, speedBonus, comfortBonus } = fare;
+          const payment = `Base $${fare.baseFare} · Speed ${fareAdjustment(speedBonus)} · Comfort ${fareAdjustment(comfortBonus)} · Paid $${payout}${fare.baseFare + fare.adjustment < 0 ? ' (minimum payout)' : ''}`;
           const completion: Extract<CampaignEvent, { type: 'ride-completed' }> = { type: 'ride-completed', missionId: j.missionId, name: j.name,
-            receipt: { id: `fare-${this.save.story.deliveries + 1}`, title: `${j.name} · signed ${j.type === 'parcel' ? 'delivery' : 'fare'} receipt`, text: `${j.name}. Pickup (${j.pickup.x}, ${j.pickup.y}) → ${j.destination}. Paid $${payout}, including $${timeBonus + comfortBonus} tips. ${j.everyday?.line ?? this.missions.mission(j.missionId!)?.title ?? 'Transport completed.'}`, kind: 'receipt' } };
+            receipt: { id: `fare-${this.save.story.deliveries + 1}`, title: `${j.name} · signed ${j.type === 'parcel' ? 'delivery' : 'fare'} receipt`, text: `${j.name}. Pickup (${j.pickup.x}, ${j.pickup.y}) → ${j.destination}. ${payment}. ${j.everyday?.line ?? this.missions.mission(j.missionId!)?.title ?? 'Transport completed.'}`, kind: 'receipt' } };
           if (j.missionId) this.missions.complete(this.missionContext(), this.campaignEnabled ? completion : undefined);
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
           this.save.cash += payout; this.save.deliveries++; this.save.story.deliveries++; this.shiftEarnings += payout; this.save.shiftStats.earnings += payout; this.jobsDone++; this.save.shiftStats.jobs++; this.save.best = Math.max(this.save.best, this.shiftEarnings); this.persist();
-          const speedScore = j.time > 0 ? Math.round(clamp((j.time - j.elapsed) / j.time, 0, 1) * 100) : 0;
-          const comfortScore = Math.round(clamp(j.comfort, 0, 100));
           this.floating(this.player.body.position, `+$${payout}`, '#a8e2bd');
-          this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · $${payout} ($${timeBonus + comfortBonus} in tips). Speed ${speedScore}/100 · Comfort ${comfortScore}/100.`, 'success', {
+          this.notify(`${j.type === 'parcel' ? 'DELIVERY' : 'FARE'} COMPLETE · ${payment}.`, 'success', {
             category: 'dispatch', duration: null,
-            receipt: { type: j.type, baseFare: j.fare, payout, tips: timeBonus + comfortBonus, speedScore, comfortScore, speedBonus: timeBonus, comfortBonus },
+            receipt: { type: j.type, ...fare },
           });
           this.sounds.emit('payment', this.time);
           const arrival = j.missionId ? rideMessage(j.missionId, 'arrival', j.type === 'parcel', this.campaignContent) : null, completedId = j.missionId;
@@ -1414,7 +1415,7 @@ export class Game {
         }
       }
     } else j.wait = 0;
-    // Time is a tip target rather than a hard fail: the player is always able to finish.
+    // Missing the time target reduces the payout, but the player can always finish.
     for (const v of this.vehicles) if (v.alive && v.kind === 'traffic') {
       if (v.parked) continue;
       const distance = dist(v.body.position, this.player.body.position);

@@ -1,9 +1,8 @@
+import type { FareBreakdown } from './fare';
+
 export type NotificationCategory = 'newsroom' | 'movement' | 'services' | 'danger' | 'dispatch';
 export type NotificationKind = '' | 'danger' | 'success';
-export type TripReceipt = {
-  type: 'fare' | 'parcel'; baseFare: number; payout: number; tips: number;
-  speedScore: number; comfortScore: number; speedBonus: number; comfortBonus: number;
-};
+export type TripReceipt = FareBreakdown & { type: 'fare' | 'parcel' };
 export type NotificationOptions = { category?: NotificationCategory; duration?: number | null; receipt?: TripReceipt };
 export type Notification = {
   id: number; message: string; kind: NotificationKind; category: NotificationCategory;

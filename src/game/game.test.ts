@@ -13,10 +13,15 @@ describe('cab jobs and economy', () => {
     expect(g.jobsDone).toBe(1); expect(g.save.cash).toBeGreaterThanOrEqual(cash + fare); expect(g.job.stage).toBe('pickup');
     const paid = g.save.cash; step(g, 0.9); expect(g.save.cash).toBe(paid); expect(g.jobsDone).toBe(1);
   });
-  it('keeps late deliveries playable with the base fare intact', () => {
+  it('finishes a late uncomfortable trip once without deducting money from the existing balance', () => {
     const g = make(); g.job.stage = 'dropoff'; g.job.elapsed = g.job.time + 50; g.job.comfort = 0;
-    const expected = g.save.cash + g.job.fare; g.player.body.position = { ...g.job.dropoff }; step(g, 0.9);
-    expect(g.save.cash).toBe(expected); expect(g.jobsDone).toBe(1);
+    const cash = g.save.cash, deliveries = g.save.deliveries, earnings = g.save.shiftStats.earnings;
+    g.player.body.position = { ...g.job.dropoff }; step(g, 0.9);
+    expect(g.save.cash).toBe(cash); expect(g.jobsDone).toBe(1);
+    expect(g.save.deliveries).toBe(deliveries + 1); expect(g.save.shiftStats.earnings).toBe(earnings);
+    expect(g.notifications.items.find(card => card.receipt)?.receipt?.payout).toBe(0);
+    step(g, 0.9);
+    expect(g.save.cash).toBe(cash); expect(g.jobsDone).toBe(1); expect(g.save.deliveries).toBe(deliveries + 1);
   });
   it('charges upgrades, applies physics changes, caps levels and rejects unaffordable buys', () => {
     const g = make(); g.garage(); expect(g.buy('engine')).toBe(false); g.save.cash = 3000;

@@ -199,3 +199,18 @@ measurements remain authoritative for authored geometry.
 
 Vector ground tiles stay as authored. The final product is still one standalone
 offline HTML file, with no runtime external requests or lazy chunks.
+
+## 15. Adjust fares for both good and poor service
+
+Reduce distance-based passenger and parcel base fares to one tenth of their
+previous scale, rounded to whole dollars. Keep early-arrival speed bonuses at
+their existing rate, cross zero at the existing trip time target and continue
+deducting money for lateness. Centre comfort adjustments at 50%, ranging from
+−$30 to +$30. Clamp the final payout at $0; completing a poor trip still advances
+delivery and mission progress and never debits the existing wallet.
+
+Use one shared calculation for settlement and completion receipts. Show speed and
+comfort meters only on the completed-fare card, with a visible zero in the centre,
+green bonuses and red deductions. Bound the visual meter without capping the
+lateness deduction, and identify the minimum payout when raw adjustments exceed
+the fare.
