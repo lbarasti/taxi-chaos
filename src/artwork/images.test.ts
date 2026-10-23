@@ -110,7 +110,7 @@ describe('artwork image caching', () => {
     await art.load();
     expect(art.draw(main.ctx, propArtwork.hospital)).toBe(true);
     const args = main.calls.drawImage.mock.calls[0];
-    expect(args.slice(0, 5)).toEqual([images[indexOf('hospital')], 26, 13, 595, 1595]);
+    expect(args.slice(0, 5)).toEqual([images[indexOf('hospital')], 25, 12, 560, 1503]);
     expect(args[5]).toBeCloseTo(-13.3);
     expect(args[6]).toBeCloseTo(-33.3);
     expect(args[7]).toBeCloseTo(26.6);

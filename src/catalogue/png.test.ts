@@ -35,7 +35,7 @@ describe('browser-free PNG source preparation', () => {
   });
 
   it('reads WebP derivative dimensions without decoding pixels', () => {
-    expect(readWebpSize(bytes('optimized/map/hospital-structure.webp'))).toEqual({ width: 643, height: 1632 });
+    expect(readWebpSize(bytes('optimized/map/hospital-structure.webp'))).toEqual({ width: 606, height: 1538 });
     expect(readWebpSize(bytes('optimized/characters/lena.webp'))).toEqual({ width: 256, height: 256 });
     expect(readWebpSize(new Uint8Array(8))).toBeUndefined();
     expect(readWebpSize(bytes('map/shop-tar.png'))).toBeUndefined();
@@ -50,7 +50,7 @@ describe('browser-free PNG source preparation', () => {
     expect(measured.hospital).toEqual({
       width: 787, height: 1997,
       crop: { x: 33, y: 16, width: 726, height: 1951 },
-      image: { width: 643, height: 1632 },
+      image: { width: 606, height: 1538 },
     });
     expect(() => measureArtworkSources([{ id: 'hospital', png: 'map/hospital-structure.png' }], read, () => undefined)).toThrow(/missing bundled/);
   });

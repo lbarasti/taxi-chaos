@@ -31,6 +31,8 @@ try {
   const { bundledArtworkPath } = await server.ssrLoadModule('/src/catalogue/assets.ts');
   const { measureArtworkSources, readPng, readWebpSize } = await server.ssrLoadModule('/src/catalogue/png.ts');
   const { compileArtworkCatalogue, compileObjectCatalogue, deriveArtwork } = await server.ssrLoadModule('/src/catalogue/compile.ts');
+  const { defaultMap } = await server.ssrLoadModule('/src/map/default.ts');
+  const { compileMap } = await server.ssrLoadModule('/src/map/compile.ts');
   const { MAX_ZOOM } = await server.ssrLoadModule('/src/rendering/zoom.ts');
   const portraitSourceIds = JSON.parse(readFileSync(resolve(root, 'src/narrative/portrait-manifest.json'), 'utf8'));
 
@@ -43,27 +45,51 @@ try {
   const sources = measureArtworkSources(entries, read);
   const catalogue = compileArtworkCatalogue(artworkRecords, sources);
   const objects = compileObjectCatalogue(objectRecords, sources, artworkRecords);
-  // Two device pixels per CSS pixel at the game's closest camera, with a small margin
-  // for art that is drawn slightly wider than its footprint.
-  const pixelsPerMetre = MAX_ZOOM * 2 * 1.15;
+  // Two device pixels per CSS pixel at the game's closest camera. The largest drawn
+  // extent—not the type's default footprint—drives the budget, so a placement resized
+  // in the authored map still gets full display resolution.
+  const pixelsPerMetre = MAX_ZOOM * 2;
+
+  /** Largest drawn extent of each image in the shipped map, in metres. Placements
+   * already fold in their footprint, artwork fit and `artworkScale`. */
+  const placed = new Map();
+  for (const object of Object.values(compileMap(defaultMap).objects)) {
+    const art = object.artwork;
+    if (!art) continue;
+    const extent = placed.get(art.image) ?? { width: 0, height: 0 };
+    extent.width = Math.max(extent.width, art.bounds.width);
+    extent.height = Math.max(extent.height, art.bounds.height);
+    placed.set(art.image, extent);
+  }
 
   const jobs = [];
   for (const entry of entries) {
     const source = sources[entry.id];
     if (!source) continue; // Vector ground tiles inline as authored.
     const legacy = artworkRecords.find((record) => record.id === entry.id);
-    let metres;
+    // Start from the type's default drawn extent. Runtime props such as park trees
+    // derive artwork from their bodies, so a type default can exceed every map
+    // placement; the shipped map can only raise the budget.
+    let extent;
     if (legacy) {
       const structure = catalogue.structures[entry.id];
-      metres = structure ? structure.bounds.width : catalogue.ground[entry.id].tileMetres;
+      const grounds = catalogue.ground[entry.id];
+      extent = structure ? structure.bounds : { width: grounds.tileMetres, height: grounds.tileMetres };
     } else {
       const record = objectRecords.find((candidate) => candidate.id === entry.id);
       const template = objects[entry.id]?.artwork?.[0];
       if (!record || !template) throw new Error(`Artwork ${entry.id}: no compiled source for its direct image`);
-      metres = deriveArtwork(template, record.width, record.height, record.artworkScale ?? 1).bounds.width;
+      extent = deriveArtwork(template, record.width, record.height, record.artworkScale ?? 1).bounds;
     }
-    if (!Number.isFinite(metres) || metres <= 0) throw new Error(`Artwork ${entry.id}: missing metric art width`);
-    const target = Math.min(source.width, Math.max(64, Math.ceil(metres * pixelsPerMetre)));
+    const actual = placed.get(entry.id);
+    if (actual) extent = { width: Math.max(extent.width, actual.width), height: Math.max(extent.height, actual.height) };
+    if (!Number.isFinite(extent.width) || extent.width <= 0 || !Number.isFinite(extent.height) || extent.height <= 0) throw new Error(`Artwork ${entry.id}: missing metric art extent`);
+    // The derivative is drawn through the authored crop, so budget the master pixels
+    // that survive that crop. Scaling width alone keeps the source aspect.
+    const record = legacy ?? objectRecords.find((candidate) => candidate.id === entry.id);
+    const crop = record?.crop ?? source.crop ?? { x: 0, y: 0, width: source.width, height: source.height };
+    const scale = Math.max(extent.width * pixelsPerMetre / crop.width, extent.height * pixelsPerMetre / crop.height);
+    const target = Math.min(source.width, Math.max(64, Math.ceil(source.width * scale)));
     jobs.push({ group: 'map', id: entry.id, source: entry.png, output: bundledArtworkPath(entry.png), masterWidth: source.width, target });
   }
 

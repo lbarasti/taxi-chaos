@@ -49,17 +49,17 @@ export const artworkInline: Readonly<Record<string, string>> = {
 
 /** Measured master pixels, transparent-padding crop and bundled derivative size. */
 export const artworkSources: Readonly<Record<string, ArtworkSource>> = {
-  'shop-tar': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, image: { width: 256, height: 256 } },
-  'shop-rust': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, image: { width: 256, height: 256 } },
-  'shop-concrete': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, image: { width: 256, height: 256 } },
-  'tree-worn': { width: 192, height: 192, crop: { x: 0, y: 0, width: 192, height: 192 }, image: { width: 126, height: 126 } },
+  'shop-tar': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, image: { width: 223, height: 223 } },
+  'shop-rust': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, image: { width: 223, height: 223 } },
+  'shop-concrete': { width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, image: { width: 223, height: 223 } },
+  'tree-worn': { width: 192, height: 192, crop: { x: 0, y: 0, width: 192, height: 192 }, image: { width: 110, height: 110 } },
   'golf-course': { width: 1280, height: 640, crop: { x: 0, y: 0, width: 1280, height: 640 }, image: { width: 1280, height: 640 } },
-  'golf-clubhouse': { width: 256, height: 543, crop: { x: 0, y: 0, width: 256, height: 543 }, image: { width: 138, height: 293 } },
-  'hospital': { width: 787, height: 1997, crop: { x: 33, y: 16, width: 726, height: 1951 }, image: { width: 643, height: 1632 } },
-  'condo': { width: 1254, height: 1254, crop: { x: 0, y: 110, width: 1175, height: 1106 }, image: { width: 346, height: 346 } },
-  'ocean-crest-condo': { width: 1254, height: 1254, crop: { x: 0, y: 19, width: 1190, height: 1235 }, image: { width: 346, height: 346 } },
-  'hotel': { width: 2172, height: 724, crop: { x: 49, y: 30, width: 2076, height: 664 }, image: { width: 807, height: 269 } },
+  'golf-clubhouse': { width: 256, height: 543, crop: { x: 0, y: 0, width: 256, height: 543 }, image: { width: 120, height: 255 } },
+  'hospital': { width: 787, height: 1997, crop: { x: 33, y: 16, width: 726, height: 1951 }, image: { width: 606, height: 1538 } },
+  'condo': { width: 1254, height: 1254, crop: { x: 0, y: 110, width: 1175, height: 1106 }, image: { width: 697, height: 697 } },
+  'ocean-crest-condo': { width: 1254, height: 1254, crop: { x: 0, y: 19, width: 1190, height: 1235 }, image: { width: 711, height: 711 } },
+  'hotel': { width: 2172, height: 724, crop: { x: 49, y: 30, width: 2076, height: 664 }, image: { width: 784, height: 262 } },
   'bakery': { width: 48, height: 48, crop: { x: 0, y: 0, width: 48, height: 48 }, image: { width: 48, height: 48 } },
-  'palm': { width: 256, height: 256, crop: { x: 0, y: 3, width: 254, height: 253 }, image: { width: 145, height: 145 } },
+  'palm': { width: 256, height: 256, crop: { x: 0, y: 3, width: 254, height: 253 }, image: { width: 126, height: 126 } },
   'shipping-crate': { width: 32, height: 32, crop: { x: 0, y: 0, width: 32, height: 32 }, image: { width: 32, height: 32 } },
 };
