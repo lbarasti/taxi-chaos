@@ -115,7 +115,7 @@ try {
     assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuetext'), '$18 bonus');
     for (const bar of await page.locator('.fare-meter').all()) {
       const size = await bar.boundingBox();
-      assert(size.width > 60 && size.width <= 260, `${name}: signed bars remain readable`);
+      assert(size.width > 24 && size.width <= 200, `${name}: compact signed bars remain readable`);
       assert.equal(await bar.getAttribute('aria-valuemin'), '-100');
       assert.equal(await bar.getAttribute('aria-valuemax'), '100');
       const zero = await bar.locator('.fare-meter-zero').boundingBox();
@@ -130,6 +130,8 @@ try {
     assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}: receipt has no horizontal overflow`);
     const receiptBounds = await page.locator('#toast').boundingBox();
     assert(receiptBounds.x >= 0 && receiptBounds.y + receiptBounds.height <= height, `${name}: receipt stays in the viewport`);
+    assert(receiptBounds.height <= 180, `${name}: completed card stays compact`);
+    assert.equal(await page.locator('.receipt-icon').count(), 2);
     await page.screenshot({ path: resolve(output, `${name}-receipt.png`) });
     await page.locator('#toast').screenshot({ path: resolve(output, `${name}-receipt-card.png`) });
     await page.locator('.receipt-comfort .fare-meter').scrollIntoViewIfNeeded();
@@ -179,6 +181,18 @@ try {
       }
       assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}/${receipt.name}: no receipt overflow`);
       assert(!(await page.locator('.notification-receipt').innerText()).includes('+−'));
+      const cardBounds = await page.locator('#toast').boundingBox();
+      assert(cardBounds.height <= 180, `${name}/${receipt.name}: completed card stays compact`);
+      const controlsOverlap = await page.locator('#toast').evaluate(card => {
+        const b = card.getBoundingClientRect();
+        return ['.context-actions', '#joystick', '.thumb-actions'].filter(selector => {
+          const e = document.querySelector(selector);
+          if (!e?.getClientRects().length || getComputedStyle(e).display === 'none') return false;
+          const a = e.getBoundingClientRect();
+          return b.left < a.right && b.right > a.left && b.top < a.bottom && b.bottom > a.top;
+        });
+      });
+      assert.deepEqual(controlsOverlap, [], `${name}/${receipt.name}: receipt clears driving controls`);
       await page.screenshot({ path: resolve(output, `${name}-${receipt.name}.png`) });
       await page.locator('#toast').screenshot({ path: resolve(output, `${name}-${receipt.name}-card.png`) });
       await page.locator('.receipt-speed .fare-meter').scrollIntoViewIfNeeded();

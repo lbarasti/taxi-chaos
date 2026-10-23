@@ -8,11 +8,15 @@ export const signedMoney = (amount: number) => `${amount > 0 ? '+' : amount < 0 
 export function fareMetersMarkup() {
   return components.map(component => {
     const label = component === 'speed' ? 'Speed' : 'Comfort';
+    const icon = component === 'speed'
+      ? '<circle cx="12" cy="12" r="10"/><path d="M5 16a8 8 0 1 1 14 0 M12 5v2 M5 10l2 1 M19 10l-2 1 M12 13l4-5"/><circle cx="12" cy="13" r="1"/>'
+      : '<circle cx="12" cy="12" r="10"/><path d="m8 9 2 8h7 M8 6v.5 M7 9h3l2 6h5"/>';
     return `<div class="fare-component receipt-${component}" data-fare-component="${component}">
-      <div class="fare-component-heading"><span>${label}</span><strong data-receipt="${component}Bonus"></strong></div>
+      <svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg>
       <div class="fare-meter" role="meter" aria-label="${label} adjustment" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
         <div class="fare-meter-track" aria-hidden="true"><i></i></div><span class="fare-meter-zero" aria-hidden="true">0</span>
       </div>
+      <strong data-receipt="${component}Bonus"></strong>
     </div>`;
   }).join('');
 }
