@@ -33,6 +33,22 @@ describe('stateful scenario harness', () => {
     }
   });
 
+  it('discovers borrowed linen, resumes an accepted wash and records local aftermath without campaign evidence', () => {
+    const scenario = example('borrowed-linen'), runner = new ScenarioRunner(scenario.options);
+    for (const command of scenario.steps) pass(runner, command);
+    const final = runner.snapshot();
+    expect(final.completed).toEqual(['linen-sam-clockoff', 'linen-mags-loan', 'linen-return']);
+    expect(final.campaign?.world['linen-stock']).toBe('clean');
+    expect(final.materialIds).toEqual([]);
+    const unvisited = new ScenarioRunner();
+    pass(unvisited, { op: 'advance', event: 'linen-stock-count' });
+    const outsideLinen = (world: Record<string, unknown>) => Object.fromEntries(Object.entries(world).filter(([key]) => !key.startsWith('linen-')));
+    expect(outsideLinen(final.campaign!.world)).toEqual(outsideLinen(unvisited.snapshot().campaign!.world));
+    expect(final.campaign?.newsroom).toEqual(unvisited.snapshot().campaign?.newsroom);
+    expect(final.campaign?.publications).toEqual(unvisited.snapshot().campaign?.publications);
+    expect(final.physicsSeconds).toBeLessThan(25);
+  }, 10000);
+
   it('retains accepted choices and material across a real serialized save reconstruction, without user storage', () => {
     const storage = { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() }; vi.stubGlobal('localStorage', storage);
     const r = new ScenarioRunner();
@@ -58,6 +74,8 @@ describe('stateful scenario harness', () => {
     pass(r, { op: 'photo', expected: false });
     pass(r, { op: 'submit', material: 'cafe-photo', expected: false });
     pass(r, { op: 'route', mission: 'nico-safe-ride', expected: false });
+    pass(r, { op: 'stopover', action: 'route', expected: false });
+    pass(r, { op: 'stopover', action: 'begin', expected: false });
     expect(r.snapshot().materialIds).toEqual([]); expect(r.snapshot().choices).toEqual({});
     expect(r.execute({ op: 'deliver' }).status).toBe('failed');
   });
@@ -103,6 +121,7 @@ describe('stateful scenario harness', () => {
       { op: 'place', at: { x: 3, y: NaN } }, { op: 'capture', name: '../escape' },
       { op: 'capture', name: 'panel', panelOnly: true }, { op: 'expect', path: 'cash', equals: 5, gte: 0 },
       { op: 'facts', facts: { publications: ['coordination'] } }, { op: 'sleep', expect: false },
+      { op: 'stopover', action: 'complete' }, { op: 'stopover' }, { op: 'stopover', action: 'begin', expected: 'yes' },
     ]) expect(() => parseCommand(command)).toThrow();
     expect(() => parseScenario({ version: 2, name: 'Future', steps: [{ op: 'read' }] })).toThrow();
     expect(() => parseScenario({ version: 1, name: 'Duplicate', steps: [{ op: 'capture', name: 'x' }, { op: 'capture', name: 'x' }] })).toThrow();

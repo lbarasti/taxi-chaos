@@ -8,11 +8,16 @@ import { advanceCampaignTo } from './scheduler';
 import { compareCampaignBoundaries } from './history';
 import { restoreEditions } from './editions';
 import type { Occurrence } from './events';
+import type { CharacterId } from '../narrative/characters';
 
 export type PrintedEdition = { day: number; at: number; articles: string[]; briefs: string[]; read: boolean };
 export type Publication = { allegation: Allegation; submittedShift: number; publishedShift: number; at: number };
 export type EditorialCase = { verifiedAt: number; approvedAt: number | null; editionAt: number | null };
-export type ActiveRide = { missionId: string; type: 'fare' | 'parcel'; elapsed: number; comfort: number; rideBeat: number };
+export type RideStopover = { started: boolean; completed: boolean; elapsed: number; detourAllowance: number; routed: boolean };
+export type ActiveRide = {
+  missionId?: string; ordinary?: { character: CharacterId; journeyId: string };
+  type: 'fare' | 'parcel'; elapsed: number; comfort: number; rideBeat: number; rideDistance?: number; stopover?: RideStopover;
+};
 export type Campaign = {
   editions: PrintedEdition[]; endingSeen: boolean;
   version: 2; minute: number; shift: number; finished: boolean;
@@ -134,8 +139,22 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   state.minute = minute; state.shift = campaignDay(minute, definition.timing); state.finished = minute === definition.timing.end;
   Object.assign(state.world, savedWorld);
   const active = object(s.activeRide);
-  if (typeof active.missionId === 'string' && Object.hasOwn(definition.missions.missions, active.missionId) && (active.type === 'fare' || active.type === 'parcel')) {
-    state.activeRide = { missionId: active.missionId, type: active.type, elapsed: typeof active.elapsed === 'number' && Number.isFinite(active.elapsed) ? Math.max(0, Math.min(1e6, active.elapsed)) : 0, comfort: typeof active.comfort === 'number' && Number.isFinite(active.comfort) ? Math.max(0, Math.min(100, active.comfort)) : 100, rideBeat: active.rideBeat === 1 ? 1 : 0 };
+  const finite = (v: unknown, max: number, fallback = 0): number => typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : fallback;
+  if (active.type === 'fare' || active.type === 'parcel') {
+    const ride: ActiveRide = { type: active.type, elapsed: finite(active.elapsed, 1e6), comfort: finite(active.comfort, 100, 100), rideBeat: active.rideBeat === 1 ? 1 : 0, rideDistance: finite(active.rideDistance, 1e6) };
+    if (typeof active.missionId === 'string' && Object.hasOwn(definition.missions.missions, active.missionId)) {
+      ride.missionId = active.missionId;
+      const spec = definition.stopovers?.[active.missionId], saved = object(active.stopover);
+      if (spec && active.stopover) ride.stopover = { started: saved.started === true && saved.completed !== true, completed: saved.completed === true,
+        elapsed: saved.completed === true ? spec.seconds : finite(saved.elapsed, spec.seconds), detourAllowance: finite(saved.detourAllowance, 600), routed: saved.routed === true && saved.completed !== true };
+      state.activeRide = ride;
+    } else {
+      const ordinary = object(active.ordinary), regular = definition.everydayJobs.find(job => job.character === ordinary.character);
+      const journeys = active.type === 'parcel' ? regular?.parcelJourneys : regular?.journeys;
+      if (regular && journeys?.some(journey => journey.id === ordinary.journeyId)) {
+        ride.ordinary = { character: regular.character, journeyId: ordinary.journeyId as string }; state.activeRide = ride;
+      }
+    }
   }
   for (const [name, count] of Object.entries(object(s.regularRides)).slice(0, definition.everydayJobs.length)) if (definition.everydayJobs.some(job => job.name === name) && typeof count === 'number' && Number.isInteger(count) && count >= 0) state.regularRides[name] = Math.min(1e6, count);
   state.ordinarySinceStory = typeof s.ordinarySinceStory === 'number' && Number.isInteger(s.ordinarySinceStory) ? Math.max(0, Math.min(2, s.ordinarySinceStory)) : 0;

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { campaignDefinition, everydayJobs } from '../campaign/content';
+import type { CampaignDefinition } from '../campaign/model';
 import { defaultCompiledMap } from '../map/compile';
-import { compileMissions } from './compile';
+import { campaignMissions, compileMissions } from './compile';
 import type { MissionCatalogue } from './schema';
 
 const STOPS = {
@@ -15,6 +17,23 @@ const STOPS = {
 const mission = (over: Record<string, unknown> = {}) => ({
   title: 'Mission', chapter: 1, category: 'plot', repeat: 'once', abandon: { retry: 'always' },
   requires: { all: [] }, allowed: { jobs: ['fare'] }, stops: { pickup: 'a', dropoff: 'b' }, beats: { pickup: 'line' }, ...over,
+});
+
+describe('campaign stop references', () => {
+  it('resolves ordinary fare and parcel journeys against actual stops', () => {
+    const regular = everydayJobs[0];
+    const unknownPickup: CampaignDefinition = { ...campaignDefinition, everydayJobs: [{ ...regular, journeys: [{ ...regular.journeys![0], pickup: 'missing-stop' }] }] };
+    expect(() => campaignMissions(defaultCompiledMap, unknownPickup)).toThrow(/everyday journey .* pickup: unknown stop missing-stop/);
+    const unknownDropoff: CampaignDefinition = { ...campaignDefinition, everydayJobs: [{ ...regular, parcelJourneys: [{ ...regular.parcelJourneys![0], dropoff: 'missing-stop' }] }] };
+    expect(() => campaignMissions(defaultCompiledMap, unknownDropoff)).toThrow(/everyday journey .* dropoff: unknown stop missing-stop/);
+  });
+
+  it('rejects an optional stopover that is absent from the map stop catalogue', () => {
+    const definition: CampaignDefinition = { ...campaignDefinition, stopovers: {
+      'bea-first-shift': { stop: 'missing-stop', title: 'A quick stop', request: 'Please wait here.', seconds: 3, completedText: 'Ready.', effects: [] },
+    } };
+    expect(() => campaignMissions(defaultCompiledMap, definition)).toThrow(/mission bea-first-shift stopover: unknown stop missing-stop/);
+  });
 });
 
 const catalogue = (missions: Record<string, unknown>, dialogue: Record<string, unknown> = {

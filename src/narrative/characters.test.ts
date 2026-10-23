@@ -48,6 +48,9 @@ describe('character catalogue', () => {
       if (legacy.has(id)) {
         expect(character.attribution).toContain('Neutral legacy placeholder card');
         expect(character.attribution).toContain('not shipped');
+      } else if (['mags', 'nell'].includes(id)) {
+        expect(character.attribution).toContain('Text-only character card for Taxi Chaos');
+        expect(character.portrait.sources).toEqual([]);
       } else if (['sam', 'june', 'ravi', 'cleo', 'oscar'].includes(id)) {
         expect(character.attribution).toContain('Portrait art generated for Taxi Chaos');
       } else {
@@ -63,6 +66,13 @@ describe('character catalogue', () => {
     expect(isCharacterId('mia')).toBe(true);
     expect(isCharacterId('mia-meridian-vans')).toBe(false);
     expect(isCharacterId('toString')).toBe(false);
+  });
+  it('renders new local characters as explicit text cards without borrowing existing faces', () => {
+    for (const id of ['mags', 'nell'] as const) {
+      expect(resolvePortrait(characters[id])).toMatchObject({ source: null, format: 'svg' });
+      expect(decodeURIComponent(resolvePortrait(characters[id]).src)).toContain(`>${characters[id].name[0]}</text>`);
+    }
+    expect(() => validateCharacterCatalogue({ mags: { ...characters.mags, portrait: { sources: [] } } })).toThrow(/explicit text card/);
   });
 
   it('keeps the legacy ids on their own neutral placeholders, never a reassigned cast portrait', () => {

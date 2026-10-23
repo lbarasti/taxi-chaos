@@ -230,11 +230,18 @@ const campaignCache = new WeakMap<object, CompiledMissions>();
 
 export function campaignMissions(map: CompiledMap, definition: CampaignDefinition = campaignDefinition): CompiledMissions {
   assertCampaignDefinition(definition);
-  if (definition !== campaignDefinition) return compileMissions(map, definition.missions);
-  const cached = campaignCache.get(map);
+  const cached = definition === campaignDefinition && campaignCache.get(map);
   if (cached) return cached;
   const compiled = compileMissions(map, definition.missions);
-  campaignCache.set(map, compiled);
+  const requireStop = (id: string, where: string) => {
+    if (!Object.hasOwn(compiled.stops.byId, id)) throw new Error(`${where}: unknown stop ${id}`);
+  };
+  for (const regular of definition.everydayJobs) for (const journey of [...(regular.journeys ?? []), ...(regular.parcelJourneys ?? [])]) {
+    requireStop(journey.pickup, `everyday journey ${journey.id} pickup`);
+    requireStop(journey.dropoff, `everyday journey ${journey.id} dropoff`);
+  }
+  for (const [missionId, stopover] of Object.entries(definition.stopovers ?? {})) requireStop(stopover.stop, `mission ${missionId} stopover`);
+  if (definition === campaignDefinition) campaignCache.set(map, compiled);
   return compiled;
 }
 

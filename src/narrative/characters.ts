@@ -7,6 +7,8 @@ export type PortraitCrop = Readonly<{ x: number; y: number; width: number; heigh
 export type CharacterPortrait = Readonly<{
   /** Ordered authored files; the first source available in the registry wins. */
   sources: readonly PortraitSourceId[];
+  /** Intentional text card while a new character's artwork is deferred. */
+  placeholder?: boolean;
   /** CSS object-position; frames use `object-fit: cover`, so this sets the focal point. */
   objectPosition?: string;
   /** Optional crop of the source file, useful when the art has generous margins. */
@@ -48,8 +50,9 @@ export function validateCharacterCatalogue(entries: Readonly<Record<string, Char
     if (character.id !== id) throw new Error(`Character id mismatch: entry "${id}" declares "${character.id}"`);
     if (!character.name.trim()) throw new Error(`Character ${id} needs a display name`);
     if (!character.attribution.trim()) throw new Error(`Character ${id} needs attribution`);
-    const { sources, objectPosition, crop } = character.portrait;
-    if (!sources.length) throw new Error(`Character ${id} needs at least one portrait source`);
+    const { sources, placeholder, objectPosition, crop } = character.portrait;
+    if (!sources.length && placeholder !== true) throw new Error(`Character ${id} needs a portrait source or an explicit text card`);
+    if (placeholder !== undefined && (placeholder !== true || sources.length > 0 || crop || objectPosition)) throw new Error(`Character ${id} has an invalid text card`);
     for (const source of sources) if (!(portraitSourceIds as readonly string[]).includes(source)) throw new Error(`Character ${id} references unknown portrait ${source}`);
     if (objectPosition && !OBJECT_POSITION.test(objectPosition.trim())) throw new Error(`Character ${id} has an invalid objectPosition: ${objectPosition}`);
     if (crop) {

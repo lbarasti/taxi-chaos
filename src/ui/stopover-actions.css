@@ -1,0 +1,52 @@
+.stopover-actions{position:fixed;z-index:4;left:50%;bottom:78px;transform:translateX(-50%);width:min(440px,calc(100vw - 56px));padding:12px;border:1px solid #b9a7e666;border-radius:12px;background:#14232af2;box-shadow:0 4px 18px #06121b40;touch-action:manipulation}
+.stopover-heading{display:flex;align-items:baseline;gap:10px;min-width:0}
+.stopover-heading span{font-size:8px;letter-spacing:1px;color:#c4b5ed;white-space:nowrap}
+.stopover-heading strong{font-size:12px;font-weight:500;overflow-wrap:anywhere}
+.stopover-actions p{font-size:11px;line-height:1.5;color:#bac8c5;margin:6px 0 10px}
+.stopover-buttons{display:flex;gap:8px}
+.stopover-buttons button{flex:1;min-width:0;min-height:44px;padding:8px 12px;border:1px solid #b9a7e655;border-radius:8px;background:#b9a7e610;font-size:11px;line-height:1.4;color:#e5d9ff;overflow-wrap:anywhere;touch-action:manipulation}
+.stopover-buttons button:hover:not(:disabled){background:#b9a7e62a;border-color:#c4b5ed}
+.stopover-buttons button[aria-pressed="true"]{border-color:#c4b5ed;background:#b9a7e624}
+.stopover-buttons button:disabled{opacity:.65}
+.splash-active .stopover-actions{visibility:hidden}
+/* The left receipt column keeps its full width on narrow desktop windows. */
+@media(min-width:701px) and (max-width:1100px) and (min-height:501px) and (pointer:fine){
+  .stopover-actions{left:auto;right:max(28px,env(safe-area-inset-right,0px));width:min(440px,calc(100vw - 352px));transform:none}
+}
+@media(max-height:500px){
+  .stopover-actions{padding:8px}
+  .stopover-heading,.stopover-actions p{display:none}
+  .stopover-buttons{flex-direction:row;gap:6px}
+}
+/* Keep a shallow desktop's two-column shortcuts and notifications accessible. */
+@media(min-width:1001px) and (max-width:1100px) and (max-height:500px) and (pointer:fine){
+  .stopover-actions{left:324px;right:138px;width:auto;max-width:440px;margin-inline:auto;transform:none}
+}
+@media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
+  .stopover-actions{left:calc(var(--edge-left) + 64px);right:var(--edge-right);bottom:calc(var(--edge-bottom) + max(var(--stick-size),112px) + 114px);width:auto;transform:none;padding:10px}
+  .stopover-heading{display:block}
+  .stopover-heading span{display:none}
+  .stopover-heading strong{display:block;font-size:11px;margin-bottom:7px}
+  .stopover-actions p{display:none}
+  .stopover-buttons{flex-direction:column;gap:6px}
+  .stopover-buttons button{padding:6px 8px;font-size:11px}
+  /* Retain notices while controls use this corner; their existing visibility gate
+     also pauses countdowns. Emergencies hide these controls instead. */
+  body:has(.stopover-actions:not([hidden])) .notification-stack,
+  body:has(.stopover-actions:not([hidden])) .campaign-notice{visibility:hidden}
+}
+@media(max-width:700px) and (min-height:501px) and (max-height:600px), (pointer:coarse) and (max-width:1200px) and (min-height:501px) and (max-height:600px){
+  .stopover-heading{display:none}
+  .stopover-buttons{flex-direction:row}
+}
+@media(max-width:700px) and (min-height:501px), (pointer:coarse) and (max-width:1200px) and (min-height:501px){
+  body:has(.stopover-actions:not([hidden])) .story:not(.collapsed){max-height:calc(100dvh - var(--top-height) - var(--edge-bottom) - max(var(--stick-size),112px) - 290px)}
+}
+@media(max-height:500px) and (max-width:1000px), (max-height:500px) and (pointer:coarse) and (max-width:1200px){
+  .stopover-actions{left:50%;right:auto;bottom:var(--edge-bottom);width:min(420px,calc(100vw - var(--edge-left) - var(--edge-right) - 248px));transform:translateX(-50%);padding:8px}
+  .stopover-heading{display:none}
+  .stopover-buttons{flex-direction:row;gap:6px}
+}
+@media(max-height:360px) and (max-width:1000px), (max-height:360px) and (pointer:coarse) and (max-width:1200px){
+  .stopover-actions{bottom:calc(var(--edge-bottom) + 56px)}
+}

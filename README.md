@@ -287,6 +287,7 @@ references and portrait framing without importing browser assets.
 
 ```sh
 node tools/scenario-run.mjs --scenario src/scenarios/fixtures/open-shore.json --json
+node tools/scenario-run.mjs --scenario src/scenarios/fixtures/borrowed-linen.json --json
 npm run scenario:run -- --scenario src/scenarios/fixtures/open-shore.json
 node tools/scenario-run.mjs --stdin --json < commands.jsonl
 node tools/scenario-run.mjs --help
@@ -295,8 +296,10 @@ node tools/scenario-run.mjs --help
 The same persistent game runs ordered commands headlessly or with actual-app
 PNG checkpoints. `--list` shows valid IDs; `--help` describes command fields and
 scenario format. Examples under `src/scenarios/fixtures/` cover the investigation,
-missed events and hearing outcomes and are exercised by the runner tests.
+missed events, hearing outcomes and the borrowed-linen wash/return, and are exercised by the runner tests.
 `advance` skips calendar time without physics; `step` runs 120 Hz inputs.
+`stopover` with `action: "route"` toggles optional guidance; `action: "begin"`
+accepts a nearby stationary wait, which progresses through `step`.
 `place`, `pickup` and `deliver` use explicit fixture placement and cannot establish
 physical route clearance. Output goes to a new ignored `scenario-runs/` directory;
 `--output` must not already exist. JSON-lines input replies once per command and

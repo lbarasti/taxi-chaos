@@ -29,7 +29,8 @@ describe('hospital dispatch after a distant explosion', () => {
     expect(wreck.damage.status).toBe('wreck');
     expect(game.save.cash).toBe(cash - Math.min(cash, 110));
     expect(game.job.stage).toBe('pickup');
-    expect(game.job.pickup).toEqual(vec(164, 108));
+    // Choose the nearby authored Arcade booking without relocating its rider.
+    expect(game.job.pickup).toEqual(vec(116, 84));
     expect(dist(game.job.pickup, game.actor.position)).toBeLessThan(160);
 
     // Taking another car must keep the nearby offer, not send the driver back to the wreck.

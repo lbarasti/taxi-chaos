@@ -20,7 +20,9 @@ import { bindStoryView, storyMarkup } from './narrative/story-view';
 import { bindMissionInbox, inboxMarkup } from './narrative/mission-inbox';
 import { bindPlayerHud, playerHudMarkup } from './ui/player-hud';
 import { bindNavigationHud, navigationHudMarkup } from './ui/navigation-hud';
+import { bindStopoverActions, stopoverActionsMarkup } from './ui/stopover-actions';
 import './ui/navigation-hud.css';
+import './ui/stopover-actions.css';
 import './ui/notifications.css';
 import { dialoguePreviewScene } from './missions/dialogue-preview-scene';
 import type { PreviewState } from './missions/dialogue-preview';
@@ -38,6 +40,7 @@ document.querySelector('#app')!.innerHTML = `
   ${inboxMarkup}
   ${playerHudMarkup}
   ${campaignNoticeMarkup}
+  ${stopoverActionsMarkup}
   <div class="context-actions" role="group" aria-label="Vehicle actions"><button id="garage-action" class="context-action" hidden>Garage</button><button id="interact" class="context-action" hidden>Get in</button></div>
   <section id="roadside" class="roadside panel" role="status" hidden><strong>CAB DESTROYED</strong><p>The wreck stays here. Walk to a parked car and keep your shift going.</p><div><button id="tow">R · Tow & repair</button></div><small id="tow-price"></small></section>
   ${notificationsMarkup}
@@ -63,6 +66,7 @@ const refreshStory = bindStoryView($('app'), () => game.dialogue, () => $('city'
 const { refresh: refreshInbox, open: openInbox } = bindMissionInbox($('app'), () => game, () => $('city').focus(), () => !scenarioPreviewMode, () => refreshNavigationHud.routeFare());
 const refreshPlayerHud = bindPlayerHud($('app'), () => game);
 const refreshNavigationHud = bindNavigationHud($('app'), () => game, { texts: openInbox, shift: () => drawer.openShift(), newsroom: () => drawer.openNewsroom(), focus: () => $('city').focus(), routeVisibility: visible => { renderer.navigationRouteVisible = visible; } });
+const refreshStopoverActions = bindStopoverActions($('app'), () => game, stopover);
 let inputDevice: InputDevice = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keyboard';
 const drawer = new GameDrawer($('modal'), { game: () => game, audio, saved: () => game.sessionStarted || game.persistenceEnabled && hasSavedCampaign, play: playFromMenu, returnToTitle, newGame, loadGame });
 drawer.setInputDevice(inputDevice);
@@ -214,6 +218,8 @@ function hud() {
     && !drivingEmergency
     && !harbourInteraction
     && !showRoadside;
+  refreshStopoverActions(showStory && $('mission-inbox').hidden && g.notifications.current?.category !== 'danger'
+    && !drafting() && !renderer.inspection.paused && !renderer.inspection.freeCamera);
   refreshStory(showStory);
   lab?.refreshUI();
   inspection.refresh();
@@ -221,6 +227,7 @@ function hud() {
 function toggleSound() { audio.configure({ muted: !audio.preferences.muted }); void audio.unlock(); hud(); }
 function realtime() { if (mapWorkspace?.previewing) mapWorkspace.api.live(); else if (!drafting()) lab?.realtime(); }
 function interact() { if (drafting() || renderer.inspection.paused || renderer.inspection.freeCamera || game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; game.interact(); hud(); $('city').focus(); }
+function stopover(wait: boolean) { if (drafting() || renderer.inspection.paused || renderer.inspection.freeCamera || game.mode !== 'playing') return; if (externalClock && lab) realtime(); externalClock = false; if (wait) game.beginStopover(); else game.navigateStopover(); hud(); $('city').focus(); }
 function garage() { if (drafting()) return; game.garage(); hud(); if (game.mode === 'playing') $('city').focus(); }
 function tow() { if (drafting() || game.mode !== 'playing' || !game.onFoot || !(game.player.damage.status === 'wreck' && dist(game.driver.position, game.player.body.position) < 6 || game.bikeTowable)) return; realtime(); externalClock = false; game.recover(); renderer.camera = { ...game.actor.position }; $('city').focus(); }
 $('garage-action').addEventListener('click', garage); $('interact').addEventListener('click', interact); $('tow').addEventListener('click', tow);
@@ -256,11 +263,11 @@ window.addEventListener('keydown', e => {
   // Preserve native keyboard activation for HUD buttons.
   if (target?.closest('button') && (e.code === 'Space' || e.code === 'Enter')) return;
   if (e.code !== 'Tab' && target?.closest('input, select, textarea')) return;
-  if (renderer.inspection.paused && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyG', 'KeyH', 'KeyR'].includes(e.code)) { e.preventDefault(); return; }
-  if (renderer.inspection.freeCamera && ['Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyG', 'KeyH', 'KeyR'].includes(e.code)) { e.preventDefault(); return; }
+  if (renderer.inspection.paused && ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyR'].includes(e.code)) { e.preventDefault(); return; }
+  if (renderer.inspection.freeCamera && ['Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyR'].includes(e.code)) { e.preventDefault(); return; }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code) && e.code !== 'Tab') e.preventDefault();
    if (e.code === 'Tab' && game.mode !== 'playing' && !target?.closest('#debug-panel')) { const buttons = Array.from($('modal').querySelectorAll<HTMLElement>('button:not(:disabled),input,select')).filter(element => element.getClientRects().length > 0); const current = buttons.indexOf(document.activeElement as HTMLElement); if (buttons.length) { e.preventDefault(); buttons[(current + (e.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus(); } }
-    if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyR') tow(); }
+    if (!e.repeat) { if (e.code === 'KeyP' || e.code === 'Escape') pause(); if (e.code === 'KeyG') garage(); if (e.code === 'KeyH') { game.navigateHarbour(); hud(); } if (e.code === 'KeyM') toggleSound(); if (e.code === 'KeyE') interact(); if (e.code === 'KeyF') refreshStopoverActions.shortcut(); if (e.code === 'KeyR') tow(); }
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) { if (externalClock && lab) realtime(); externalClock = false; }
   if (game.mode === 'playing' && !e.repeat) game.keys.add(e.code);
 });

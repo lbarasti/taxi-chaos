@@ -14,6 +14,7 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 | R | Optional tow and repair when near a wreck |
 | H | Set or cancel a route to harbour security |
 | G | Set or cancel a garage route; enter when stopped nearby |
+| F / optional-stop buttons | Route to an optional stop; when parked there, accept the wait |
 | Tab / HUD clipboard below Texts | Open This shift (Tab again resumes) |
 | P / Escape | Pause or resume |
 | M | Mute or unmute sound effects |
@@ -52,6 +53,25 @@ commit only when you stop at the deliberately selected pickup. This shift →
 **Ask dispatch for an ordinary fare** skips a suggested story booking. Dialogue
 continues during travel and at arrival. The HUD shows the calendar day alongside
 its clock; overnight booking shifts still turn over at 07:00.
+
+### Neighbourhood lives
+
+Some regulars have plans of their own. Near Moonlight Hotel or Flower Market from
+Day 2, Sam and Oscar may tell you about a reunion at Market Quarter. Following up
+can introduce Mags, who runs the hotel laundry, and Nell, a musician with her own
+paid booking. Their invitations have times; the reunion and next morning's stock
+count happen whether you take the work or carry on with other fares.
+
+On Oscar's return trip, **Wash stop** marks an optional East Village detour with
+a purple clock. The green delivery destination remains Moonlight. Stop at the
+wash room and choose **Wait for wash · 18 min** (or press **F**) to begin. Those
+are game minutes. Moving away or losing a safe, stationary cab pauses the wash;
+return and stop to resume it. Oscar pays for the completed detour and wait.
+**Direct to destination** restores guidance to Moonlight at any time, and you can
+deliver without washing. People remember what came back and when. These local
+consequences stay separate from the Open Shore investigation.
+
+### Newspapers and the investigation
 
 A persistent morning headline opens the latest unread newspaper. **Newsroom →
 Publications** keeps the edition archive, including days when you did not pursue
@@ -106,7 +126,7 @@ the current neighbourhood, load and destination. Clock, cash, personal health
 and police stars stay separate at the top right.
 
 Destinations use one distinctive symbol each: a ringed circle for a pickup, a
-diamond for a delivery, and drawn garage, newsroom, harbour and container
+diamond for a delivery, a purple clock for an optional wash, and drawn garage, newsroom, harbour and container
 markers. A chevron on the rim points along the destination bearing, whether the
 destination still sits on the wheel or beyond it. Once a passenger or parcel is
 aboard, a soft green light stays within the cab roof's footprint, or lights a

@@ -46,7 +46,7 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
   const t = def.timing;
   if (!t || ![t.start, t.end, t.lastEdition, t.editionHour].every(Number.isInteger) || t.start < 0 || t.end <= t.start || campaignDays(t) > 366 || t.lastEdition < t.start || t.lastEdition >= t.end || t.editionHour < 0 || t.editionHour > 23) throw new Error('Invalid campaign timing');
   id(def.id); assertMissionCatalogue(def.missions);
-  for (const job of def.everydayJobs) if (!isCharacterId(job.character)) throw new Error(`Unknown everyday character: ${job.character}`);
+  if (!Array.isArray(def.everydayJobs) || def.everydayJobs.length > 32) throw new Error('Invalid everyday jobs');
   for (const [name, items, max] of [
     ['world', Object.keys(def.initialWorld), 128], ['materials', Object.keys(def.materials), 100], ['claims', Object.keys(def.claims), 100],
     ['operations', def.operations, 256], ['handlers', def.handlers, 256], ['scenes', def.scenes, 256],
@@ -85,6 +85,23 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
       if ('acquireMaterial' in e) ref(def.materials, e.acquireMaterial, 'material');
     }
   };
+  const text = (value: unknown, max = 600) => typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+  const journeyIds = new Set<string>();
+  for (const job of def.everydayJobs) {
+    if (!isCharacterId(job.character)) throw new Error(`Unknown everyday character: ${job.character}`);
+    if (!text(job.name, 80) || !text(job.family, 80) || !text(job.during) || !Array.isArray(job.lines) || !job.lines.length || job.lines.length > 16 || job.lines.some((line: unknown) => !text(line))) throw new Error(`Invalid everyday job: ${job.character}`);
+    for (const pool of [job.journeys, job.parcelJourneys]) {
+      if (pool === undefined) continue;
+      if (!Array.isArray(pool) || !pool.length || pool.length > 16) throw new Error(`Invalid everyday journeys: ${job.character}`);
+      for (const journey of pool) {
+        id(journey.id); id(journey.pickup); id(journey.dropoff);
+        if (journeyIds.has(journey.id)) throw new Error(`Duplicate everyday journey: ${journey.id}`);
+        journeyIds.add(journey.id);
+        if (journey.pickup === journey.dropoff || ![journey.line, journey.during, journey.arrival].every(value => text(value)) || journey.roughArrival !== undefined && !text(journey.roughArrival)) throw new Error(`Invalid everyday journey: ${journey.id}`);
+        condition(journey.requires);
+      }
+    }
+  }
   for (const [key, initial] of Object.entries(def.initialWorld)) { id(key); value(key, initial); }
   const ids = new Set<string>();
   for (const op of def.operations) {
@@ -103,12 +120,12 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     claim.routes.flat().forEach(material => ref(def.materials, material, 'material'));
     condition(claim.verifyRequires); condition(claim.approveRequires); condition(claim.publishRequires); effects(claim.reactionEffects);
   }
-  const eventTypes = ['clock', 'accepted', 'pickup', 'completed', 'abandoned', 'choice', 'missed', 'observation', 'material-submitted', 'publication-requested', 'operation', 'material-verified', 'case-verified', 'edition', 'reaction', 'ride-completed'];
+  const eventTypes = ['clock', 'accepted', 'pickup', 'completed', 'abandoned', 'choice', 'missed', 'observation', 'material-submitted', 'publication-requested', 'operation', 'material-verified', 'case-verified', 'edition', 'reaction', 'ride-completed', 'stopover-completed'];
   for (const h of def.handlers) {
     if (!eventTypes.includes(h.on)) throw new Error(`Unknown domain event: ${h.on}`);
     if (h.id) {
       id(h.id);
-      if (['accepted', 'pickup', 'completed', 'abandoned', 'missed', 'ride-completed'].includes(h.on)) ref(def.missions.missions, h.id, 'mission');
+      if (['accepted', 'pickup', 'completed', 'abandoned', 'missed', 'ride-completed', 'stopover-completed'].includes(h.on)) ref(def.missions.missions, h.id, 'mission');
       if (['case-verified', 'publication-requested', 'edition', 'reaction'].includes(h.on)) ref(def.claims, h.id, 'claim');
       if (['material-submitted', 'material-verified', 'observation'].includes(h.on)) ref(def.materials, h.id, 'material');
       if (h.on === 'choice') choice(h.id);
@@ -121,6 +138,20 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     if (!window || !Number.isInteger(window.from) || !Number.isInteger(window.until) || window.from < t.start || window.until > t.end || window.from >= window.until) throw new Error(`Invalid campaign job window: ${id}`);
     condition(m.requires); effects(m.effects ?? []); effects(m.contactLost?.effects ?? []);
     for (const g of m.choices ?? []) for (const o of g.options) { condition(o.requires); effects(o.effects ?? []); }
+  }
+  if (Object.keys(def.stopovers ?? {}).length > 32) throw new Error('Too many optional stopovers');
+  for (const [missionId, stopover] of Object.entries(def.stopovers ?? {})) {
+    ref(def.missions.missions, missionId, 'stopover mission'); id(stopover.stop);
+    if (!Number.isFinite(stopover.seconds) || stopover.seconds < 1 || stopover.seconds > 120 ||
+      [stopover.title, stopover.request, stopover.completedText].some(text => typeof text !== 'string' || !text.trim() || text.length > 600)) throw new Error(`Invalid stopover: ${missionId}`);
+    effects(stopover.effects);
+  }
+  for (const [missionId, variants] of Object.entries(def.rideVariants ?? {})) {
+    ref(def.missions.missions, missionId, 'ride variant mission');
+    for (const lines of [variants.during ?? [], variants.arrival ?? []]) {
+      if (lines.length > 16) throw new Error(`Too many ride variants: ${missionId}`);
+      for (const line of lines) { condition(line.requires); if (!line.text.trim() || line.text.length > 600) throw new Error(`Invalid ride variant: ${missionId}`); }
+    }
   }
   for (const o of def.observations) { if (!Number.isFinite(o.radius) || o.radius <= 0 || o.radius > 100) throw new Error('Invalid observation radius'); ref(def.materials, o.id, 'observation material'); condition(o.requires); }
   for (const v of def.vehicles) { id(v.id); ref(vehicleDefinitions, v.model, 'vehicle model'); if (!v.offsets.length || v.offsets.length > 16 || v.offsets.some(o => !Number.isFinite(o.x) || !Number.isFinite(o.y)) || !Number.isFinite(v.angle)) throw new Error('Invalid campaign vehicle placement'); condition(v.present); }
@@ -142,6 +173,7 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     // Only direct timed operation/reaction writes can be reconstructed from the ledger.
     const unrecordedWrites = new Set([
       ...def.handlers.flatMap(handler => handler.effects),
+      ...Object.values(def.stopovers ?? {}).flatMap(stopover => stopover.effects),
       ...Object.values(def.missions.missions).flatMap(mission => [...(mission.effects ?? []), ...(mission.contactLost?.effects ?? []),
         ...(mission.choices ?? []).flatMap(group => group.options.flatMap(option => option.effects ?? []))]),
     ].flatMap(effect => 'setWorld' in effect ? [effect.setWorld.key] : []));

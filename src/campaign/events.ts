@@ -58,11 +58,17 @@ export function reduceCampaignEvent(ctx: CampaignContext, event: CampaignEvent):
       applyEffectsTo(ctx.progress, [{ acquireMaterial: event.id }], ctx); break;
     }
     case 'ride-completed':
-      s.ordinarySinceStory = event.missionId ? 0 : Math.min(2, s.ordinarySinceStory + 1);
+      s.ordinarySinceStory = event.missionId && ctx.definition.missions.missions[event.missionId]?.category !== 'side-quest' ? 0 : Math.min(2, s.ordinarySinceStory + 1);
       if (!event.missionId) s.regularRides[event.name] = (s.regularRides[event.name] ?? 0) + 1;
       recordNote(ctx, event.receipt); break;
+    case 'stopover-completed': {
+      const stopover = ctx.definition.stopovers?.[event.missionId];
+      if (!stopover) return false;
+      applyEffectsTo(ctx.progress, stopover.effects, ctx); break;
+    }
   }
-  for (const handler of ctx.definition.handlers) if (handler.on === event.type && (handler.id === undefined || handler.id === id) && campaignCondition(handler.requires, s, ctx)) applyEffectsTo(ctx.progress, handler.effects, ctx);
+  const inputs = event.type === 'ride-completed' && Number.isFinite(event.comfort) ? { ...ctx, ride: { comfort: event.comfort! } } : ctx;
+  for (const handler of ctx.definition.handlers) if (handler.on === event.type && (handler.id === undefined || handler.id === id) && campaignCondition(handler.requires, s, inputs)) applyEffectsTo(ctx.progress, handler.effects, ctx);
   if (event.type !== 'case-verified') settleCases(ctx);
   return true;
 }

@@ -27,7 +27,7 @@ Scenario format:
     "steps": [ { "op": "advance", "event": "cafe-boarded" },
                { "op": "place", "at": "garden-cafe" }, { "op": "photo" },
                { "op": "expect", "path": "materialIds", "includes": "cafe-photo" } ] }
-Examples: src/scenarios/fixtures/{open-shore,missed-cafe,tenant-hearing}.json
+Examples: src/scenarios/fixtures/{open-shore,missed-cafe,tenant-hearing,borrowed-linen}.json
 Use --list for valid IDs. Every command accepts an optional label.
 
 Commands and fields (each object starts with "op"):
@@ -40,6 +40,8 @@ Commands and fields (each object starts with "op"):
             Real 120 Hz physics; keys are cleared after this command.
   mode      mode: intro | playing | paused | garage | arrested | wasted
   route     mission: id; routes an eligible pickup without committing its choice.
+  stopover  action: route | begin; toggle optional guidance or explicitly start waiting.
+            Place at the stop first; use step for progress, not advance.
   pickup    Fixture placement at the routed pickup, then real acceptance updates.
   deliver   Fixture placement at the aboard destination, then real delivery updates.
   read      Reveal and retain active dialogue; no invented travel beats.
@@ -55,7 +57,7 @@ Commands and fields (each object starts with "op"):
             exists, gte, lte. Object/array comparisons use deep equality.
   capture   name: unique lowercase filename stem; view?: world|story|texts|notebook|pause,
             panelOnly?: boolean (panel views only), focus?: site-id|actor, zoom?: 5-24.
-route, photo, sleep, submit and publish may use expected:false for a rejected action;
+route, stopover, photo, sleep, submit and publish may use expected:false for a rejected action;
 invalid IDs still fail. pickup/deliver/place are fixture placement, not evidence of
 a physically driven route. Use step with driving keys for that.
 Limits: 500 commands, 120 total physics seconds; advance handles longer calendar waits.

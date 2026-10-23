@@ -2,9 +2,11 @@ import { newspaper, milestones } from './content-newspaper';
 import { dayMinute } from './clock';
 import type { CampaignDefinition, Claim, WorldOperation } from './model';
 import { rides } from './content-rides';
+import { everydayJobs as everydayContent } from './content-everyday';
 import { bulletins, scenes, ordinaryResponses } from './content-presentation';
 import type { CharacterId } from '../narrative/characters';
 import type { Mission, MissionCatalogue, MissionDialogueBeat, Condition, Effect } from '../missions/schema';
+import { linenCatalogue, linenRides, linenJobWindows, linenInitialWorld, linenOperations, linenHandlers, linenSites, linenScenes, linenArrivalVariants, linenStopovers } from '../neighbourhood/linen';
 
 const freezeFacts = <T>(value: T): T => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -93,21 +95,7 @@ export const corroboration = freezeFacts({
 } as const);
 export type Allegation = keyof typeof corroboration;
 
-const everydaySpecs = [
-  { character: 'sam' as const, name: 'Sam', family: 'Staff transport', lines: ['Late shift, early alarm. Home, please.', 'Same shift, same bus I just missed.', 'First proper evening off. A lift to meet a friend?'] },
-  { character: 'june' as const, name: 'June', family: 'Small deliveries', lines: ['Birthday cake. Yes, it really is just a birthday cake.', 'Laundry collection; the blue bag is mine.', 'Groceries for my dad. He’ll try to tip you in tomatoes.'] },
-  { character: 'ravi' as const, name: 'Ravi', family: 'Personal journeys', lines: ['Interview today. I’ve checked the address four times.', 'I got the job! Could you take me in?', 'First payday. We’re celebrating at the arcade.'] },
-  { character: 'cleo' as const, name: 'Cleo', family: 'Vehicle assistance', lines: ['My car won’t start. Mechanic’s meeting me there.', 'New battery, same car. Much cheaper than my last idea.', 'Dropping off the borrowed jump leads.'] },
-  { character: 'oscar' as const, name: 'Oscar', family: 'Event logistics', lines: ['Community hall setup. Please mind the flowers.', 'The reunion went well. Nobody recognised my haircut.', 'Taking the leftover tablecloths back.'] },
-];
-
-export const everydayJobs = freezeFacts(everydaySpecs.map((job, i) => ({ ...job, during: [
-  'Could you leave me by the side entrance? The front door locks before my shift finishes.',
-  'Please take the corners gently. That box has survived the bus; I’d like it to survive the last street.',
-  'I nearly took the wrong bus again. It’s easier to ask you than pretend I know where I’m going.',
-  'My mechanic says it’ll be ready tomorrow. He said that yesterday too.',
-  'We borrowed the flowers from a neighbour. Now I’ve got to get them home in one piece.',
-][i] })));
+export const everydayJobs = freezeFacts(everydayContent);
 
 const change = (changes: Record<string, string | boolean>): Effect[] => Object.entries(changes).map(([key, value]) => ({ setWorld: { key, value } }));
 export const worldOperations: readonly WorldOperation[] = freezeFacts([
@@ -138,16 +126,20 @@ export const campaignTiming = { start: dayMinute(1), end: CAMPAIGN_END, lastEdit
 export const campaignDefinition: CampaignDefinition = freezeFacts({
   timing: campaignTiming, newspaper, milestones,
   id: 'open-shore', title: 'Open Shore', finishedLabel: 'ELECTION DAY · OFF THE CLOCK', completionText: 'Election-day campaign complete.',
-  initialWorld: { cafe: 'open', van: 'absent', patrol: 'normal', security: 'none', hearing: 'pending', appearance: 'booked', operator: 'unannounced', polls: false },
-  operations: worldOperations, materials, claims, missions: openShoreCatalogue, jobWindows, jobNames, handlers: [],
+  initialWorld: { cafe: 'open', van: 'absent', patrol: 'normal', security: 'none', hearing: 'pending', appearance: 'booked', operator: 'unannounced', polls: false, ...linenInitialWorld },
+  operations: [...worldOperations, ...linenOperations], materials, claims,
+  missions: { schemaVersion: 1, dialogue: { ...openShoreCatalogue.dialogue, ...linenCatalogue.dialogue }, missions: { ...openShoreCatalogue.missions, ...linenCatalogue.missions } },
+  jobWindows: { ...jobWindows, ...linenJobWindows }, jobNames, handlers: linenHandlers,
   dispatcher: 'bea',
   newsroom: { stop: NEWSROOM_STOP, name: 'Old Town South', editor: 'Ruth', guide: 'Dispatch mixes ordinary work with recurring customers. Texts let you choose a booking; its deadline is for pickup. Stop near the boarded Garden Café and use the camera icon in the quick actions to record its frontage. A check mark means the observation is already in your Dispatch notebook. The newsroom is at Old Town South: stop nearby and choose material to leave. Source checks take three game hours. Return to ask Ruth to run a ready story in the next 06:00 edition. Public responses happen later. The last edition is Day 14 at 06:00.' },
-  sites: { cafe: 'garden-cafe', newsroom: NEWSROOM_STOP, hotel: 'moonlight-hotel' },
+  sites: { cafe: 'garden-cafe', newsroom: NEWSROOM_STOP, hotel: 'moonlight-hotel', ...linenSites },
   observations: [{ id: 'cafe-photo', stop: 'garden-cafe', radius: 16,
     requires: { any: ['boarded', 'tenancy-review', 'closed'].map(value => ({ worldEquals: { key: 'cafe', value } })) },
     label: 'Record café frontage', unavailable: 'Stop near Garden Café from day 3 onward to record its frontage.', success: 'Observation saved: Garden Café frontage. In Dispatch notebook; bring a copy to the newsroom.' }],
   vehicles: [{ id: 'campaign-ms14', model: 'van', stop: 'garden-cafe', offsets: [{ x: 2.5, y: 12 }, { x: 2.5, y: 18 }, { x: -7, y: 12 }], angle: Math.PI / 2, color: '#d4c6ab', present: { worldEquals: { key: 'van', value: 'at-cafe' } }, departTo: 'the-docks' }],
-  scenes, bulletins, ordinaryResponses,
-  rides: Object.fromEntries(Object.entries(rides).map(([id, [during, arrival]]) => [id, { during, arrival, ...(jobNames[id] ? { channel: 'sender' as const } : {}) }])),
+  scenes: [...scenes, ...linenScenes], bulletins, ordinaryResponses,
+  rides: { ...Object.fromEntries(Object.entries(rides).map(([id, [during, arrival]]) => [id, { during, arrival, ...(jobNames[id] ? { channel: 'sender' as const } : {}) }])), ...linenRides },
+  rideVariants: Object.fromEntries(Object.entries(linenArrivalVariants).map(([id, arrival]) => [id, { arrival }])),
+  stopovers: linenStopovers,
   everydayJobs,
 });
