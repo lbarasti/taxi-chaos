@@ -1,5 +1,5 @@
 import type { CharacterId } from '../narrative/characters';
-import type { EverydayJob, EverydayJourney } from './model';
+import type { EverydayJob, EverydayJourney, ProceduralStopover } from './model';
 
 /** These are repeatable daily situations, never milestones advanced by fare count. */
 const regular = (character: CharacterId, name: string, family: string, journeys: readonly EverydayJourney[], parcelJourneys: readonly EverydayJourney[]): EverydayJob => ({
@@ -58,6 +58,13 @@ export const everydayJobs: readonly EverydayJob[] = [
       during: 'He asked for onions, so I bought onions. He will still ask whether I found the right onions.',
       arrival: 'I\'ll take the bags from here. If he offers you tomatoes, say how many you can actually use.',
       roughArrival: 'Let me check the eggs before I carry that bag. We may be having omelettes.',
+      stopover: {
+        stop: 'dockside-deli', title: 'Bread collection',
+        request: 'Dad’s bread is waiting at Dockside Deli. We can stop for a few minutes or go straight to his flat; I’ll cover the extra fare.',
+        seconds: 4, completedText: 'That is the bread. I said two loaves, and he has packed three. East Village next.',
+        labels: { route: 'Collect bread', begin: 'Pick up bread', active: 'Collecting bread', paused: 'Collection paused' },
+        effects: [],
+      },
     },
     {
       id: 'june-flowers', pickup: 'flower-market', dropoff: 'east-village',
@@ -188,4 +195,29 @@ export const everydayJobs: readonly EverydayJob[] = [
       arrival: 'Both bags are here. I can finish the arrangements now. Thanks.',
     },
   ]),
+];
+
+/** Occasional requests chosen only for routes passing plausibly close to the stop. */
+export const proceduralStopovers: readonly ProceduralStopover[] = [
+  {
+    id: 'quick-parcel', stop: 'market-quarter', title: 'Market Quarter collection',
+    request: 'The passenger has a small parcel waiting at Market Quarter. A short collection stop is optional; the extra drive and wait are paid.',
+    seconds: 5, completedText: 'Parcel collected. Thanks for stopping; we can head to the original destination.',
+    labels: { route: 'Collect parcel', begin: 'Collect parcel', active: 'Collecting parcel', paused: 'Collection paused' },
+    effects: [],
+  },
+  {
+    id: 'takeaway', stop: 'dockside-deli', title: 'Dockside Deli takeaway',
+    request: 'The passenger has food ready at Dockside Deli. Stop to collect it if convenient, or continue directly to the destination.',
+    seconds: 4, completedText: 'Food collected. It is still warm. Let’s get going.',
+    labels: { route: 'Collect takeaway', begin: 'Collect takeaway', active: 'Collecting takeaway', paused: 'Collection paused' },
+    effects: [],
+  },
+  {
+    id: 'spare-keys', stop: 'east-village', title: 'East Village key collection',
+    request: 'The passenger can collect spare keys in East Village on the way. The detour is optional and paid.',
+    seconds: 3, completedText: 'Got the keys. Thanks for waiting. On to the original address.',
+    labels: { route: 'Collect keys', begin: 'Collect keys', active: 'Collecting keys', paused: 'Collection paused' },
+    effects: [],
+  },
 ];

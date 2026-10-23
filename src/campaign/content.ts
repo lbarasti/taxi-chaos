@@ -2,7 +2,7 @@ import { newspaper, milestones } from './content-newspaper';
 import { dayMinute } from './clock';
 import type { CampaignDefinition, Claim, WorldOperation } from './model';
 import { rides } from './content-rides';
-import { everydayJobs as everydayContent } from './content-everyday';
+import { everydayJobs as everydayContent, proceduralStopovers } from './content-everyday';
 import { bulletins, scenes, ordinaryResponses } from './content-presentation';
 import type { CharacterId } from '../narrative/characters';
 import type { Mission, MissionCatalogue, MissionDialogueBeat, Condition, Effect } from '../missions/schema';
@@ -141,5 +141,6 @@ export const campaignDefinition: CampaignDefinition = freezeFacts({
   rides: { ...Object.fromEntries(Object.entries(rides).map(([id, [during, arrival]]) => [id, { during, arrival, ...(jobNames[id] ? { channel: 'sender' as const } : {}) }])), ...linenRides },
   rideVariants: Object.fromEntries(Object.entries(linenArrivalVariants).map(([id, arrival]) => [id, { arrival }])),
   stopovers: linenStopovers,
+  proceduralStopovers,
   everydayJobs,
 });

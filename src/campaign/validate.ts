@@ -86,6 +86,13 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     }
   };
   const text = (value: unknown, max = 600) => typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+  const assertStopover = (stop: import('./model').Stopover, owner: string) => {
+    id(stop.stop);
+    if (!Number.isFinite(stop.seconds) || stop.seconds < 1 || stop.seconds > 120 ||
+      [stop.title, stop.request, stop.completedText].some(value => !text(value))) throw new Error(`Invalid stopover: ${owner}`);
+    for (const label of Object.values(stop.labels ?? {})) if (!text(label, 90)) throw new Error(`Invalid stopover label: ${owner}`);
+    effects(stop.effects);
+  };
   const journeyIds = new Set<string>();
   for (const job of def.everydayJobs) {
     if (!isCharacterId(job.character)) throw new Error(`Unknown everyday character: ${job.character}`);
@@ -99,6 +106,7 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
         journeyIds.add(journey.id);
         if (journey.pickup === journey.dropoff || ![journey.line, journey.during, journey.arrival].every(value => text(value)) || journey.roughArrival !== undefined && !text(journey.roughArrival)) throw new Error(`Invalid everyday journey: ${journey.id}`);
         condition(journey.requires);
+        if (journey.stopover) assertStopover(journey.stopover, journey.id);
       }
     }
   }
@@ -141,10 +149,14 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
   }
   if (Object.keys(def.stopovers ?? {}).length > 32) throw new Error('Too many optional stopovers');
   for (const [missionId, stopover] of Object.entries(def.stopovers ?? {})) {
-    ref(def.missions.missions, missionId, 'stopover mission'); id(stopover.stop);
-    if (!Number.isFinite(stopover.seconds) || stopover.seconds < 1 || stopover.seconds > 120 ||
-      [stopover.title, stopover.request, stopover.completedText].some(text => typeof text !== 'string' || !text.trim() || text.length > 600)) throw new Error(`Invalid stopover: ${missionId}`);
-    effects(stopover.effects);
+    ref(def.missions.missions, missionId, 'stopover mission'); assertStopover(stopover, missionId);
+  }
+  if ((def.proceduralStopovers?.length ?? 0) > 32) throw new Error('Too many procedural stopovers');
+  const incidentalIds = new Set<string>();
+  for (const stop of def.proceduralStopovers ?? []) {
+    id(stop.id);
+    if (incidentalIds.has(stop.id)) throw new Error(`Duplicate procedural stopover: ${stop.id}`);
+    incidentalIds.add(stop.id); assertStopover(stop, stop.id);
   }
   for (const [missionId, variants] of Object.entries(def.rideVariants ?? {})) {
     ref(def.missions.missions, missionId, 'ride variant mission');
