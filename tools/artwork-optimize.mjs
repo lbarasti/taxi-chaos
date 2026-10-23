@@ -1,27 +1,29 @@
-// Display-resolution WebP derivatives for the standalone bundle. Masters stay at full
-// resolution beside the catalogue for measurement and future edits; the build imports
-// `src/assets/optimized/<same path>.webp` instead. Run after changing authored art:
-//
-//   npm run artwork:optimize
-//   npm run artwork:prep -- --write
-//
-// `--check` verifies every derivative exists at its budgeted width without encoding.
+// Generate only changed WebP derivatives for the standalone, offline build.
+// PNG masters are the source of truth; WebPs and the cache are generated and ignored.
+// "npm run assets:prepare" invokes this before regenerating the inline manifest.
+
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assets = resolve(root, 'src/assets');
-const check = process.argv.includes('--check');
+const args = process.argv.slice(2);
+if (args.some(arg => arg !== '--force')) throw new Error('Usage: npm run artwork:optimize -- [--force]');
+const force = args.includes('--force');
 const portraitWidth = 256;
 const quality = 80;
+const cachePath = resolve(assets, 'optimized/.artwork-cache.json');
+const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
+let encoderVersion;
 try {
-  execFileSync('cwebp', ['-version'], { stdio: 'ignore' });
+  encoderVersion = execFileSync('cwebp', ['-version'], { encoding: 'utf8' }).trim();
 } catch {
-  throw new Error('cwebp is required to regenerate artwork derivatives (brew install webp)');
+  throw new Error('Asset preparation needs cwebp (macOS: brew install webp; Ubuntu: sudo apt-get install webp)');
 }
 
 const server = await createServer({ root, configFile: false, logLevel: 'silent', server: { middlewareMode: true, hmr: false }, appType: 'custom' });
@@ -30,9 +32,8 @@ try {
   const { inlineEntries } = await server.ssrLoadModule('/src/catalogue/generate.ts');
   const { bundledArtworkPath } = await server.ssrLoadModule('/src/catalogue/assets.ts');
   const { measureArtworkSources, readPng, readWebpSize } = await server.ssrLoadModule('/src/catalogue/png.ts');
-  const { compileArtworkCatalogue, compileObjectCatalogue, deriveArtwork } = await server.ssrLoadModule('/src/catalogue/compile.ts');
+  const { compileArtworkCatalogue, compileObjectCatalogue, compileObjectPlacement, deriveArtwork } = await server.ssrLoadModule('/src/catalogue/compile.ts');
   const { defaultMap } = await server.ssrLoadModule('/src/map/default.ts');
-  const { compileMap } = await server.ssrLoadModule('/src/map/compile.ts');
   const { MAX_ZOOM } = await server.ssrLoadModule('/src/rendering/zoom.ts');
   const portraitSourceIds = JSON.parse(readFileSync(resolve(root, 'src/narrative/portrait-manifest.json'), 'utf8'));
 
@@ -53,8 +54,11 @@ try {
   /** Largest drawn extent of each image in the shipped map, in metres. Placements
    * already fold in their footprint, artwork fit and `artworkScale`. */
   const placed = new Map();
-  for (const object of Object.values(compileMap(defaultMap).objects)) {
-    const art = object.artwork;
+  // Compile authored placements with the in-memory catalogue. Importing compileMap
+  // here would load artwork/catalogue -> generated.ts before the first build has
+  // created that file, making generation from a clean checkout impossible.
+  for (const placement of defaultMap.objectPlacements) {
+    const art = compileObjectPlacement(placement, objects).artwork;
     if (!art) continue;
     const extent = placed.get(art.image) ?? { width: 0, height: 0 };
     extent.width = Math.max(extent.width, art.bounds.width);
@@ -102,40 +106,89 @@ try {
     jobs.push({ group: 'portraits', id, source, output: `optimized/characters/${id.replace(/\.[^.]+$/, '.webp')}`, masterWidth: measured.width, target: Math.min(measured.width, portraitWidth) });
   }
 
-  if (check) {
-    const failures = [];
-    for (const job of jobs) {
-      const output = read(job.output);
-      if (!output) { failures.push(`${job.id}: missing ${job.output}`); continue; }
-      const size = readWebpSize(output);
-      if (!size) { failures.push(`${job.id}: ${job.output} is not a readable WebP`); continue; }
-      if (size.width !== job.target) failures.push(`${job.id}: ${job.output} is ${size.width}px wide, expected ${job.target}px`);
-    }
-    if (failures.length) {
-      console.error(failures.join('\n'));
-      process.exitCode = 1;
-    } else console.log(`Current: ${jobs.length} artwork derivatives at display resolution`);
-  } else {
-    let before = 0, after = 0;
-    for (const job of jobs) {
-      const output = resolve(assets, job.output);
-      mkdirSync(dirname(output), { recursive: true });
-      const args = ['-quiet', '-q', String(quality), '-m', '6', '-alpha_q', '100'];
-      if (job.target < job.masterWidth) args.push('-resize', String(job.target), '0');
-      args.push(resolve(assets, job.source), '-o', output);
-      execFileSync('cwebp', args);
-      before += statSync(resolve(assets, job.source)).size;
-      after += statSync(output).size;
-    }
-    const mib = (bytes) => `${(bytes / 1048576).toFixed(2)} MiB`;
-    console.log(`Wrote ${jobs.length} derivatives: ${mib(before)} of masters -> ${mib(after)} bundled (${(before / after).toFixed(1)}x smaller)`);
-    for (const group of ['portraits', 'map']) {
-      const selected = jobs.filter((job) => job.group === group);
-      const groupBefore = selected.reduce((sum, job) => sum + statSync(resolve(assets, job.source)).size, 0);
-      const groupAfter = selected.reduce((sum, job) => sum + statSync(resolve(assets, job.output)).size, 0);
-      console.log(`  ${group.padEnd(9)} ${selected.length} images, ${mib(groupBefore)} -> ${mib(groupAfter)}`);
+
+  // The same master can be shared by several IDs. Encode it once, at the largest
+  // required resolution, then let every catalogue ID refer to that one derivative.
+  const unique = new Map();
+  for (const job of jobs) {
+    const existing = unique.get(job.output);
+    if (!existing) unique.set(job.output, { ...job });
+    else {
+      if (existing.source !== job.source) throw new Error(`Conflicting artwork source for ${job.output}`);
+      existing.target = Math.max(existing.target, job.target);
     }
   }
+
+  let previous = {};
+  try {
+    const parsed = JSON.parse(readFileSync(cachePath, 'utf8'));
+    if (parsed.version === 1 && parsed.jobs && typeof parsed.jobs === 'object') previous = parsed.jobs;
+  } catch { /* First run, or invalid cache: regenerate rather than trusting it. */ }
+  const current = Object.create(null);
+  let generated = 0, reused = 0, removed = 0;
+  for (const job of unique.values()) {
+    const master = readFileSync(resolve(assets, job.source));
+    // A content fingerprint is cache invalidation, not a separate correctness check.
+    // Encoding settings, tool version and the compiled size budget are all inputs.
+    const key = digest(Buffer.concat([
+      master,
+      Buffer.from(JSON.stringify({ algorithm: 1, encoderVersion, quality, method: 6, alphaQuality: 100, target: job.target, masterWidth: job.masterWidth })),
+    ]));
+    const output = resolve(assets, job.output);
+    const cached = previous[job.output];
+    if (!force && cached?.key === key && existsSync(output) && cached.outputHash === digest(readFileSync(output))) {
+      current[job.output] = cached;
+      reused++;
+      continue;
+    }
+
+    mkdirSync(dirname(output), { recursive: true });
+    const temporary = `${output}.tmp-${process.pid}`;
+    try {
+      const options = ['-quiet', '-q', String(quality), '-m', '6', '-alpha_q', '100'];
+      if (job.target < job.masterWidth) options.push('-resize', String(job.target), '0');
+      execFileSync('cwebp', [...options, resolve(assets, job.source), '-o', temporary]);
+      const size = readWebpSize(readFileSync(temporary));
+      if (!size || size.width !== job.target) throw new Error(`Artwork ${job.id}: encoder produced an unexpected image size`);
+      renameSync(temporary, output);
+    } finally {
+      rmSync(temporary, { force: true });
+    }
+    current[job.output] = { key, outputHash: digest(readFileSync(output)) };
+    generated++;
+  }
+
+  // When an image is removed from the portrait catalogue, an old derivative must
+  // not linger in the glob registry and cause a spurious extra-portrait error.
+  for (const group of ['map', 'characters']) {
+    const directory = resolve(assets, 'optimized', group);
+    if (!existsSync(directory)) continue;
+    for (const file of readdirSync(directory)) {
+      if (!file.endsWith('.webp')) continue;
+      if (!Object.hasOwn(current, `optimized/${group}/${file}`)) {
+        rmSync(resolve(directory, file));
+        removed++;
+      }
+    }
+  }
+
+  mkdirSync(dirname(cachePath), { recursive: true });
+  const cacheText = JSON.stringify({ version: 1, jobs: current }, null, 2) + '\n';
+  if (!existsSync(cachePath) || readFileSync(cachePath, 'utf8') !== cacheText) {
+    const temporary = `${cachePath}.tmp-${process.pid}`;
+    try {
+      writeFileSync(temporary, cacheText);
+      renameSync(temporary, cachePath);
+    } finally {
+      rmSync(temporary, { force: true });
+    }
+  }
+
+  const listed = [...unique.values()];
+  const before = listed.reduce((sum, job) => sum + statSync(resolve(assets, job.source)).size, 0);
+  const after = listed.reduce((sum, job) => sum + statSync(resolve(assets, job.output)).size, 0);
+  const mib = bytes => (bytes / 1048576).toFixed(2) + ' MiB';
+  console.log(`Artwork: ${generated} generated, ${reused} reused, ${removed} removed (${listed.length} derivatives; ${mib(before)} masters -> ${mib(after)} bundled)`);
 } finally {
   await server.close();
 }

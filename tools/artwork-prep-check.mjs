@@ -20,7 +20,16 @@ const run = args => {
   return result;
 };
 
-test('the checked-in manifest is current and reports padding for every referenced image', () => {
+test('automatic artwork preparation reuses unchanged derivative bytes', () => {
+  const result = spawnSync(process.execPath, ['tools/artwork-optimize.mjs'], {
+    cwd, encoding: 'utf8', timeout: 120000, maxBuffer: 8e6,
+  });
+  if (result.error) throw result.error;
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Artwork: 0 generated, [1-9][0-9]* reused/);
+});
+
+test('the generated manifest is current and reports padding for every referenced image', () => {
   const result = run(['--check', '--json']);
   assert.equal(result.status, 0, result.stderr);
   const output = JSON.parse(result.stdout);

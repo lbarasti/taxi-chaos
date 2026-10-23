@@ -94,7 +94,8 @@ try {
   try { current = readFileSync(generated, 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const stale = current !== text;
 
-  if (write) await writeFile(generated, text);
+  // Avoid touching the generated module (and triggering Vite reloads) on cache hits.
+  if (write && stale) await writeFile(generated, text);
   const output = { generated: { path: 'src/catalogue/generated.ts', stale, written: write }, artworks: report };
   if (json) console.log(JSON.stringify(output, null, 2));
   else {

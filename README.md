@@ -4,7 +4,7 @@ A frontend-only TypeScript driving game with fixed-step vehicle physics, procedu
 
 ## Development
 
-Requires Node.js 22.12+ (or 24+) and npm.
+Requires Node.js 22.12+ (or 24+), npm, and the WebP encoder `cwebp` (`brew install webp` on macOS; `sudo apt-get install webp` on Ubuntu). CI installs the encoder automatically.
 
 ```sh
 npm install
@@ -214,18 +214,19 @@ hand. Artwork geometry is stored as fractions of the resolved footprint, so resi
 type default or a placement moves collision and drawing together; `artworkScale` changes
 the drawing alone. Keep provenance in asset attribution.
 
-PNG masters stay at full resolution for measurement and future edits. The standalone
-build imports a display-resolution WebP derivative from `src/assets/optimized/`, sized
-for two device pixels at the closest gameplay camera. After adding or changing any
-referenced PNG or portrait, regenerate the derivatives before the manifest:
+PNG masters are the only committed raster sources. Before a build, test, dev
+session or authoring preview, `npm run assets:prepare` automatically generates
+display-resolution WebP derivatives in `src/assets/optimized/` and refreshes
+`src/catalogue/generated.ts`. Neither output is tracked in Git. The single-file
+standalone build still inlines the derivatives, with no runtime asset requests.
 
-```sh
-npm run artwork:optimize
-npm run artwork:prep -- --write
-```
-
-`artwork:optimize` requires `cwebp`; `npm run artwork:optimize -- --check` fails when a
-committed derivative is missing or at the wrong resolution.
+Derivative sizes follow the largest compiled authored placement at 2x DPR and
+the closest gameplay camera; portrait derivatives are 256 px wide. The optimiser
+uses content fingerprints (PNG bytes, resolution budgets and encoding settings)
+and re-encodes **only** changed or missing assets. Repeated builds reuse cached
+derivatives; `npm run artwork:optimize -- --force` forces a full refresh.
+Changes to PNG masters during an already-running Vite dev session require a
+dev-server restart to run preparation again.
 
 ### Authoring previews
 
