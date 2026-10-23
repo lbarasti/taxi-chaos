@@ -114,7 +114,7 @@ try {
   await seed(page, progressed);
   const stored = await readSave(page);
   assert.deepEqual(stored, progressed, 'the progressed fixture is present before confirmation');
-  assert.match(await page.locator('.splash-snapshot').innerText(), /2,080/);
+  assert.equal(await page.locator('.splash-snapshot').count(), 0);
   await page.screenshot({ path: `${output}/title-saved-desktop.png` });
   await page.keyboard.press('ArrowDown'); assert.equal(await selected(page), 'new-game');
   await page.keyboard.press('Enter'); await waitForDrawer(page, 'new-game');

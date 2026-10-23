@@ -33,7 +33,7 @@ async function checkDesktop() {
   assert.equal(await page.locator('.splash-modal').count(),1);
   assert.match(await page.locator('#start').innerText(),/Resume your shift/);
   await checkHomeMenu(page);
-  assert.match(await page.locator('.splash-save-heading').innerText(),/CURRENT SHIFT · PAUSED/);
+  assert.equal(await page.locator('.splash-save').count(), 0);
   assert.equal(await page.locator('#start').evaluate(el=>el===document.activeElement),true);
   await page.screenshot({path:`${output}/pause-desktop.png`});
   // The last frame of the start transition can land just after the pause drawer opens.
@@ -111,10 +111,11 @@ async function checkDesktop() {
   await page.keyboard.press('Tab'); await page.locator('#overlay').waitFor({state:'hidden'});
   assert.equal(await page.evaluate(() => document.activeElement.id), 'city');
   await page.keyboard.press('p'); await waitForDrawer(page, 'home');
-  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'pause and shift show the same wake-to-sleep totals');
+  assert.equal(await page.locator('.shift-stats').count(), 0, 'pause keeps shift totals out of the branded menu');
   assert.equal(await page.locator('#menu-shift').count(), 0, 'pause has no shift entry');
   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
   await page.locator('#shift').click(); await waitForDrawer(page, 'shift');
+  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'shift view retains the wake-to-sleep totals');
   // Exercise skip behavior independently of where this saved cab is parked.
   await page.locator('#sleep').evaluate(button => { button.disabled = true; });
   await page.locator('#open-notebook').focus(); await page.keyboard.press('ArrowDown');
@@ -184,7 +185,9 @@ async function checkTouchResume() {
   await touch.waitForTimeout(350);
   await touch.evaluate(()=>window.dispatchEvent(new Event('blur')));
   assert.equal(await touch.locator('#joystick.pressed').count(),0,'pausing releases held touch input');
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  // Focus loss cancels the driving gesture. A synthetic touchEnd can otherwise
+  // click the newly opened menu if a row now lies under the released finger.
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
   const frozen = await touch.evaluate(()=>__taxi.state());
   assert.equal(frozen.mode,'paused');
   assert(Math.hypot(frozen.position.x-beforeDrive.position.x,frozen.position.y-beforeDrive.position.y)>0.1,'touch input physically drives');
@@ -212,6 +215,8 @@ async function checkTouchResume() {
 async function checkTouchLayouts() {
   for (const [name, width, height] of [['portrait', 390, 844], ['small', 320, 568], ['landscape', 844, 390]]) {
     const mobile = await openGame(browser, html, { viewport: { width, height }, hasTouch: true, isMobile: true });
+    await checkBrand(mobile);
+    await mobile.screenshot({ path: `${output}/title-touch-${name}.png` });
     await mobile.locator('#menu-settings').tap();
     assert.equal(await mobile.locator('#modal').getAttribute('data-page'), 'home');
     await mobile.locator('#menu-settings').tap(); await waitForDrawer(mobile, 'settings');
@@ -246,6 +251,23 @@ async function checkTouchLayouts() {
 }
 
 async function checkHomeMenu(page, paused = true) {
+  await checkBrand(page);
   assert.deepEqual(await page.locator('#modal .game-menu button').evaluateAll(buttons => buttons.map(button => button.id)),
     [paused ? 'start' : 'new-game', ...(paused ? ['return-to-title'] : ['menu-load-game']), 'menu-settings', 'menu-credits']);
+}
+
+async function checkBrand(page) {
+  const brand = page.getByRole('heading', { name: 'Taxi Chaos', exact: true });
+  const image = brand.getByRole('img', { name: 'Taxi Chaos', exact: true });
+  await image.evaluate(image => image.decode());
+  assert.match(await image.getAttribute('src'), /^data:image\/webp;base64,/, 'badge is embedded for offline play');
+  const dimensions = await image.evaluate(image => {
+    const rect = image.getBoundingClientRect(), drawer = document.querySelector('#modal').getBoundingClientRect();
+    return { decoded: image.naturalWidth > 0, inside: rect.left >= drawer.left && rect.right <= drawer.right, ratio: rect.width / rect.height, naturalRatio: image.naturalWidth / image.naturalHeight };
+  });
+  assert(dimensions.decoded && dimensions.inside, 'badge decodes and fits the drawer');
+  assert(Math.abs(dimensions.ratio - dimensions.naturalRatio) < 0.01, 'badge keeps its proportions');
+  assert.equal(await page.locator('#modal .intro-eyebrow, #modal .intro-copy').count(), 0, 'old title copy is removed');
+  assert.equal(await page.locator('.splash-tagline').innerText(), 'A little cab. A lot of trouble.');
+  assert.equal(await page.locator('.splash-save, .splash-snapshot, .splash-mission').count(), 0, 'shift information is absent');
 }

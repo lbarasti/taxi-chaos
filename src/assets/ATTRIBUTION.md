@@ -7,6 +7,15 @@ https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt
 
 City art combines procedural drawing and self-contained embedded artwork.
 
+`ui/title-cab-badge.webp` is original artwork generated from scratch with OpenAI's
+built-in image-generation tool on 2026-10-23, using the historical
+[`01-cab-badge.png` concept](https://github.com/lbarasti/taxi-chaos/blob/a5858a2ea40108d34e62428923f49e07f6fa4e37/docs/concepts/title-splash/01-cab-badge.png)
+as a composition and style reference. The prompt requested a freestanding golden
+badge with a front-facing yellow cab, cream “TAXI” over gold “CHAOS”, motion ticks
+and a checkerboard footer; actual transparency outside and inside the border;
+no city, tagline, button or extra words. The generated alpha is preserved in the
+768 px WebP, embedded inline in the standalone title/pause drawer.
+
 `src/assets/characters/` holds the user-supplied PNG portraits for the Open Shore
 cast (Mara, Eli, Victor, Celia, Adrian Vale, Leila, Harker, Lena, Iris, Tom, Ruth
 and Bea) plus the bundled `officer.png`. They are raster art supplied for Taxi

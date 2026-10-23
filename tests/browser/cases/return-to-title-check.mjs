@@ -125,7 +125,7 @@ try {
   await page.locator('#load-day-2').click(); await page.locator('#overlay').waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#player-cash').innerText(), '$4,321');
   await pause(page); await title(page);
-  assert.match(await page.locator('.splash-snapshot').innerText(), /4,321/);
+  assert.equal(JSON.parse(await stored(page)).cash, 4321);
   await page.locator('#menu-settings').click(); await waitForDrawer(page, 'settings');
   assert.equal(await page.locator('#gore-option').isChecked(), true);
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home'); await play(page);

@@ -84,7 +84,7 @@ try {
   assert.deepEqual(await stored(page, checkpointKey), collection);
   assert.deepEqual(await stored(page, settingsKey), settings); assert.deepEqual(await stored(page, audioKey), audio);
   await page.reload(); await waitForDrawer(page, 'home');
-  assert.match(await page.locator('.splash-snapshot').innerText(), /\$300/);
+  assert.equal((await stored(page, saveKey)).cash, 300);
   await page.screenshot({ path: `${output}/loaded-continue-desktop.png` });
   await page.locator('#start').click(); await page.locator('#overlay').waitFor({ state: 'hidden' });
   await page.keyboard.down('w'); await page.waitForTimeout(500); await page.keyboard.up('w');
