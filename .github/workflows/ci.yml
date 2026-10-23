@@ -31,8 +31,8 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm test
-      - name: Run authoring tool tests
-        run: npm run tools:test
+      - name: Run browser-free artwork tests
+        run: npm run artwork:test
       - name: Build standalone HTML
         run: npm run build
       - name: Validate authored map
