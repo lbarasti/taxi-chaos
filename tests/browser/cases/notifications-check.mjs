@@ -180,6 +180,7 @@ try {
         else { assert.equal(left, 50); assert(amount === 0 ? fill === 0 : fill > 0); }
       }
       assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}/${receipt.name}: no receipt overflow`);
+      assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollHeight > e.clientHeight + 1), false, `${name}/${receipt.name}: both meters fit without scrolling`);
       assert(!(await page.locator('.notification-receipt').innerText()).includes('+−'));
       const cardBounds = await page.locator('#toast').boundingBox();
       assert(cardBounds.height <= 180, `${name}/${receipt.name}: completed card stays compact`);

@@ -46,6 +46,15 @@
   .receipt-money{float:left;width:46%;padding-right:10px}
   .receipt-scores{margin:2px 0 0 46%}
 }
+@container(max-width:140px){
+  .receipt-total{font-size:26px}
+  .receipt-breakdown{line-height:1.2}
+  .receipt-floor{margin-top:2px;line-height:1.2}
+  .receipt-scores{margin-top:3px;gap:1px}
+}
+@media(max-height:500px) and (min-width:1001px){
+  .notification-card.receipt-card{padding-block:8px;gap:3px}
+}
 body:has(.mission-inbox:not([hidden])) .notification-stack,
 body:has(.mission-inbox:not([hidden])) .campaign-notice{visibility:hidden}
 @media(max-width:700px), (max-width:1000px) and (max-height:500px), (pointer:coarse) and (max-width:1200px){
