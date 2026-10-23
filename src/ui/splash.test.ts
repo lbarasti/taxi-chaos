@@ -23,7 +23,7 @@ describe('startup splash', () => {
     const game = new Game(undefined, false); game.start(); game.setMode('paused');
     game.save.shiftStats = { earnings: 175, jobs: 3, smashed: 9, kills: 2 };
     const html = splashMarkup(game, false);
-    expect(html).toContain('A little cab.'); expect(html).toContain('Resume your shift');
+    expect(html).toContain('alt="Taxi Chaos"'); expect(html).toContain('Resume your shift');
     expect(html).toContain('YOUR CURRENT SHIFT · PAUSED'); expect(html).not.toContain('Start your shift');
     expect(html).not.toContain('new-game'); expect(html).not.toContain('menu-shift'); expect(html).toContain('Since you last woke up.'); expect(html).toContain('$175');
     const shift = shiftMarkup(game, '<button>Sleep</button>');
