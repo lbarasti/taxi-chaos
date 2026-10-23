@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "assets:prepare": "node tools/artwork-optimize.mjs && node tools/artwork-prep.mjs --write",
+    "assets:prepare": "node tools/assets-prepare.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
@@ -15,7 +15,7 @@
     "dialogue:preview": "node tools/dialogue-preview.mjs",
     "scenario:run": "node tools/scenario-run.mjs",
     "scenario:test": "node --test tools/scenario-cli-check.mjs",
-    "artwork:test": "node --test tools/artwork-prep-check.mjs",
+    "artwork:test": "node --test tools/artwork-prep-check.mjs tools/artwork-cache-check.mjs",
     "authoring:preview": "node tools/authoring-preview.mjs",
     "authoring:test": "node --test tools/authoring-preview-check.mjs",
     "tools:test": "npm run artwork:test && npm run scenario:test && npm run authoring:test",

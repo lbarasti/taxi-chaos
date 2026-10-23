@@ -3,61 +3,45 @@
 // `?inline` imports and asset ID unions. No Vite plugin is needed, so the module runner
 // loads with `configFile: false`.
 import { readFileSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
+import { withArtworkRuntime, writeIfChanged } from './artwork-runtime.mjs';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
-const assets = resolve(root, 'src/assets');
-const generated = resolve(root, 'src/catalogue/generated.ts');
+export async function prepareArtwork({ root, server, read, measurePng }, args = []) {
+  const generated = resolve(root, 'src/catalogue/generated.ts');
 
-const args = process.argv.slice(2);
-const allowed = new Set(['--check', '--write', '--json', '--artwork', '--crop']);
-for (let i = 0; i < args.length; i++) {
-  if (!allowed.has(args[i])) throw new Error(`Unknown argument: ${args[i]}`);
-  if (['--artwork', '--crop'].includes(args[i]) && (!args[++i] || args[i].startsWith('--'))) throw new Error(`Missing value for ${args[i - 1]}`);
-}
-if (args.includes('--write') && args.includes('--check')) throw new Error('Choose either --write or --check');
-const option = name => args.includes(name) ? args[args.indexOf(name) + 1] : undefined;
-const write = args.includes('--write'), json = args.includes('--json');
-const only = option('--artwork');
-const override = option('--crop')?.split(',').map(Number);
-if (override && (!only || override.length !== 4 || override.some(n => !Number.isInteger(n) || n < 0) || override[2] <= 0 || override[3] <= 0))
-  throw new Error('--crop needs x,y,width,height positive integers and an --artwork ID');
-if (override && args.includes('--write')) throw new Error('--crop inspects geometry; it cannot rewrite the manifest');
+  const allowed = new Set(['--check', '--write', '--json', '--artwork', '--crop']);
+  for (let i = 0; i < args.length; i++) {
+    if (!allowed.has(args[i])) throw new Error(`Unknown argument: ${args[i]}`);
+    if (['--artwork', '--crop'].includes(args[i]) && (!args[++i] || args[i].startsWith('--'))) throw new Error(`Missing value for ${args[i - 1]}`);
+  }
+  if (args.includes('--write') && args.includes('--check')) throw new Error('Choose either --write or --check');
+  const option = name => args.includes(name) ? args[args.indexOf(name) + 1] : undefined;
+  const write = args.includes('--write'), json = args.includes('--json');
+  const only = option('--artwork');
+  const override = option('--crop')?.split(',').map(Number);
+  if (override && (!only || override.length !== 4 || override.some(n => !Number.isInteger(n) || n < 0) || override[2] <= 0 || override[3] <= 0))
+    throw new Error('--crop needs x,y,width,height positive integers and an --artwork ID');
+  if (override && args.includes('--write')) throw new Error('--crop inspects geometry; it cannot rewrite the manifest');
 
-const server = await createServer({ root, configFile: false, logLevel: 'silent', server: { middlewareMode: true, hmr: false }, appType: 'custom' });
-try {
   const { artworkRecords, objectRecords } = await server.ssrLoadModule('/src/catalogue/content.ts');
   const { compileArtworkCatalogue, compileObjectCatalogue, deriveArtwork } = await server.ssrLoadModule('/src/catalogue/compile.ts');
   const { inlineEntries, renderCatalogueModule } = await server.ssrLoadModule('/src/catalogue/generate.ts');
-  const { measureArtworkSources, readPng } = await server.ssrLoadModule('/src/catalogue/png.ts');
+  const { measureArtworkSources } = await server.ssrLoadModule('/src/catalogue/png.ts');
 
   const entries = inlineEntries(artworkRecords, objectRecords);
   // Cache by file path so an image shared by several IDs is read and decoded once.
-  const files = new Map(), measurements = new Map();
+  const measurements = new Map();
   for (const entry of entries) {
-    if (files.has(entry.png)) continue;
-    let file;
-    try { file = readFileSync(resolve(assets, entry.png)); }
-    catch (error) {
-      if (error.code === 'ENOENT') throw new Error(`Artwork ${entry.id}: missing source src/assets/${entry.png}`);
-      throw error;
-    }
-    files.set(entry.png, file);
+    if (measurements.has(entry.png)) continue;
+    const file = read(entry.png);
+    if (!file) throw new Error(`Artwork ${entry.id}: missing source src/assets/${entry.png}`);
     if (!entry.png.endsWith('.png')) continue;
-    const measured = readPng(file);
+    const measured = measurePng(entry.png, file);
     if (!measured) throw new Error(`Artwork ${entry.id}: src/assets/${entry.png} is not a readable PNG`);
     measurements.set(entry.png, measured);
   }
-  const measuredSources = measureArtworkSources(entries, png => files.get(png), png => {
-    try { return readFileSync(resolve(assets, png)); }
-    catch (error) {
-      if (error.code === 'ENOENT') throw new Error(`Missing bundled derivative src/assets/${png}; run npm run artwork:optimize`);
-      throw error;
-    }
-  });
+  const measuredSources = measureArtworkSources(entries, read, read, measurePng);
   // `--crop` inspects a candidate crop without touching the checked-in manifest.
   const sources = { ...measuredSources };
   if (override) {
@@ -95,11 +79,11 @@ try {
   const stale = current !== text;
 
   // Avoid touching the generated module (and triggering Vite reloads) on cache hits.
-  if (write && stale) await writeFile(generated, text);
-  const output = { generated: { path: 'src/catalogue/generated.ts', stale, written: write }, artworks: report };
+  const written = write && stale && writeIfChanged(generated, text);
+  const output = { generated: { path: 'src/catalogue/generated.ts', stale, written }, artworks: report };
   if (json) console.log(JSON.stringify(output, null, 2));
   else {
-    console.log(`${write ? 'Wrote' : stale ? 'STALE' : 'Current'}: src/catalogue/generated.ts`);
+    console.log(`${written ? 'Wrote' : stale ? 'STALE' : 'Current'}: src/catalogue/generated.ts`);
     for (const art of report) {
       const source = art.source ? `${art.source.width}×${art.source.height}` : 'vector';
       const padding = art.padding ? `padding ${art.padding.left}/${art.padding.top}/${art.padding.right}/${art.padding.bottom}` : 'no measured padding';
@@ -109,5 +93,9 @@ try {
     if (stale && !write) console.log('Run `npm run artwork:prep -- --write` to refresh the manifest.');
   }
   if (stale && !write) process.exitCode = 1;
-} catch (error) { console.error(JSON.stringify({ error: error.message })); process.exitCode = 1; }
-finally { await server.close(); }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try { await withArtworkRuntime(runtime => prepareArtwork(runtime, process.argv.slice(2))); }
+  catch (error) { console.error(JSON.stringify({ error: error.message })); process.exitCode = 1; }
+}

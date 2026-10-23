@@ -105,6 +105,19 @@ export function readWebpSize(bytes: Uint8Array): Readonly<{ width: number; heigh
   return undefined;
 }
 
+/** Read dimensions from the PNG header without inflating or scanning any pixels.
+ * Portrait resizing needs only the width; the encoder validates the pixel stream. */
+export function readPngSize(bytes: Uint8Array): Readonly<{ width: number; height: number }> | undefined {
+  if (bytes.length < 33 || !SIGNATURE.every((byte, index) => bytes[index] === byte)) return undefined;
+  if (u32(bytes, 8) !== 13 || tag(bytes, 12) !== 'IHDR') throw new Error('PNG header is missing');
+  const width = u32(bytes, 16), height = u32(bytes, 20);
+  if (!width || !height) throw new Error('PNG dimensions must be positive');
+  if (bytes[24] !== 8) throw new Error(`unsupported PNG bit depth ${bytes[24]}`);
+  if (!CHANNELS[bytes[25]]) throw new Error(`unsupported PNG colour type ${bytes[25]}`);
+  if (bytes[28] !== 0) throw new Error('interlaced PNGs are not supported');
+  return { width, height };
+}
+
 /** Source dimensions and transparent-padding crop for one PNG buffer, with no DOM. */
 export function readPng(bytes: Uint8Array): PngMeasurement | undefined {  if (bytes.length < 8 || !SIGNATURE.every((byte, index) => bytes[index] === byte)) return undefined;
   const { header, pixels, transparent } = decode(bytes);
@@ -131,6 +144,7 @@ export function measureArtworkSources(
   records: readonly Readonly<{ id: string; png: string }>[],
   read: (png: string) => Uint8Array | undefined,
   readBundled?: (png: string) => Uint8Array | undefined,
+  measure: (png: string, bytes: Uint8Array) => PngMeasurement | undefined = (_png, bytes) => readPng(bytes),
 ): CatalogueSources {
   const sources: Record<string, ArtworkSource> = {};
   const byPng = new Map<string, Readonly<{ width: number; height: number; crop: PixelCrop; image?: Readonly<{ width: number; height: number }> }>>();
@@ -140,7 +154,7 @@ export function measureArtworkSources(
     if (!measurement) {
       const bytes = read(record.png);
       if (!bytes) throw new Error(`Artwork ${record.id}: missing source ${record.png}`);
-      const decoded = readPng(bytes);
+      const decoded = measure(record.png, bytes);
       if (!decoded) throw new Error(`Artwork ${record.id}: ${record.png} is not a PNG`);
       let image: Readonly<{ width: number; height: number }> | undefined;
       if (readBundled) {

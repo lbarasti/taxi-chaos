@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const cwd = fileURLToPath(new URL('../', import.meta.url));
@@ -19,6 +19,47 @@ const run = args => {
   if (result.error) throw result.error;
   return result;
 };
+const prepare = () => {
+  const result = spawnSync(process.execPath, ['tools/assets-prepare.mjs'], { cwd, encoding: 'utf8', timeout: 120000, maxBuffer: 8e6 });
+  if (result.error) throw result.error;
+  assert.equal(result.status, 0, result.stderr);
+  return result;
+};
+
+test('combined preparation reuses measurements and preserves every generated file timestamp', () => {
+  prepare();
+  const paths = [generated, 'src/assets/optimized/.artwork-cache.json', 'src/assets/optimized/.artwork-measurements.json',
+    ...['map', 'characters'].flatMap(group => readdirSync(`src/assets/optimized/${group}`).filter(file => file.endsWith('.webp')).map(file => `src/assets/optimized/${group}/${file}`))];
+  const before = paths.map(path => ({ bytes: readFileSync(path), mtime: statSync(path).mtimeMs }));
+  const result = prepare();
+  assert.match(result.stdout, /Artwork: 0 generated, [1-9][0-9]* reused/);
+  assert.match(result.stdout, /PNG measurements: 0 decoded, [1-9][0-9]* reused/);
+  assert.match(result.stdout, /Current: src\/catalogue\/generated.ts/);
+  for (let i = 0; i < paths.length; i++) {
+    assert.deepEqual(readFileSync(paths[i]), before[i].bytes, paths[i]);
+    assert.equal(statSync(paths[i]).mtimeMs, before[i].mtime, paths[i]);
+  }
+});
+
+test('combined preparation repairs missing and corrupt derivatives and a missing manifest', () => {
+  const derivative = 'src/assets/optimized/map/crate-shipping.webp';
+  const image = readFileSync(derivative), manifest = readFileSync(generated);
+  try {
+    for (const missing of [true, false]) {
+      if (missing) rmSync(derivative);
+      else writeFileSync(derivative, 'invalid WebP');
+      rmSync(generated);
+      const result = prepare();
+      assert.match(result.stdout, /Artwork: 1 generated, [1-9][0-9]* reused/);
+      assert.match(result.stdout, /PNG measurements: 0 decoded, [1-9][0-9]* reused/);
+      assert.deepEqual(readFileSync(derivative), image);
+      assert.deepEqual(readFileSync(generated), manifest);
+    }
+  } finally {
+    writeFileSync(derivative, image);
+    writeFileSync(generated, manifest);
+  }
+});
 
 test('automatic artwork preparation reuses unchanged derivative bytes', () => {
   const result = spawnSync(process.execPath, ['tools/artwork-optimize.mjs'], {
@@ -77,7 +118,14 @@ test('a stale manifest fails --check until --write restores it', () => {
     const stale = run(['--check']);
     assert.equal(stale.status, 1);
     assert.match(stale.stdout, /STALE/);
-    assert.equal(run(['--write']).status, 0);
+    const written = run(['--write', '--json']);
+    assert.equal(written.status, 0);
+    assert.equal(JSON.parse(written.stdout).generated.written, true);
     assert.equal(readFileSync(generated, 'utf8'), before);
+    const mtime = statSync(generated).mtimeMs;
+    const unchanged = run(['--write', '--json']);
+    assert.equal(unchanged.status, 0);
+    assert.equal(JSON.parse(unchanged.stdout).generated.written, false);
+    assert.equal(statSync(generated).mtimeMs, mtime);
   } finally { writeFileSync(generated, before); }
 });

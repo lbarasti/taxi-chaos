@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { measureArtworkSources, readPng, readWebpSize } from './png';
+import { measureArtworkSources, readPng, readPngSize, readWebpSize } from './png';
 
 const bytes = (png: string) => readFileSync(fileURLToPath(new URL(`../assets/${png}`, import.meta.url)));
 const asset = (png: string) => readPng(bytes(png));
@@ -11,6 +11,26 @@ const read = (png: string) => {
 };
 
 describe('browser-free PNG source preparation', () => {
+  it('reads portrait dimensions from just the header, without pixel data', () => {
+    const portrait = bytes('characters/lena.png');
+    expect(readPngSize(portrait.subarray(0, 33))).toEqual({ width: 1254, height: 1254 });
+    expect(readPngSize(bytes('map/hospital-structure.png'))).toEqual({ width: 787, height: 1997 });
+    expect(readPngSize(portrait.subarray(0, 32))).toBeUndefined();
+    expect(readPngSize(bytes('map/asphalt.svg'))).toBeUndefined();
+    const invalid = Buffer.from(portrait.subarray(0, 33));
+    invalid.writeUInt32BE(0, 16);
+    expect(() => readPngSize(invalid)).toThrow(/positive/);
+    invalid.writeUInt32BE(1254, 16);
+    invalid[24] = 16;
+    expect(() => readPngSize(invalid)).toThrow(/bit depth/);
+    invalid[24] = 8; invalid[25] = 1;
+    expect(() => readPngSize(invalid)).toThrow(/colour type/);
+    invalid[25] = 6; invalid[28] = 1;
+    expect(() => readPngSize(invalid)).toThrow(/interlaced/);
+    invalid[28] = 0; invalid.writeUInt32BE(12, 8);
+    expect(() => readPngSize(invalid)).toThrow(/header/);
+  });
+
   it('measures dimensions and transparent export padding', () => {
     expect(asset('map/hospital-structure.png')).toMatchObject({ width: 787, height: 1997, crop: { x: 33, y: 16, width: 726, height: 1951 }, padding: { left: 33, top: 16, right: 28, bottom: 30 } });
     expect(asset('map/shop-tar.png')).toMatchObject({ width: 256, height: 256, crop: { x: 0, y: 0, width: 256, height: 256 }, padding: { left: 0, top: 0, right: 0, bottom: 0 } });
@@ -32,6 +52,21 @@ describe('browser-free PNG source preparation', () => {
     expect(reads).toEqual(['map/shop-tar.png']);
     expect(shared.first.crop).toEqual(shared.second.crop);
     expect(shared.first.crop).not.toBe(shared.second.crop);
+  });
+
+  it('accepts cached measurements without decoding masters again', () => {
+    const calls: string[] = [];
+    const cached = asset('map/shop-tar.png');
+    const sources = measureArtworkSources(
+      [{ id: 'first', png: 'map/shop-tar.png' }, { id: 'second', png: 'map/shop-tar.png' }],
+      read,
+      undefined,
+      png => { calls.push(png); return cached; },
+    );
+    expect(calls).toEqual(['map/shop-tar.png']);
+    expect(sources.first).toEqual(sources.second);
+    expect(sources.first.crop).not.toBe(sources.second.crop);
+    expect(sources.first.crop).not.toBe(cached!.crop);
   });
 
   it('reads WebP derivative dimensions without decoding pixels', () => {

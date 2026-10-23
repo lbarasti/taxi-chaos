@@ -3,47 +3,36 @@
 // "npm run assets:prepare" invokes this before regenerating the inline manifest.
 
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
+import { digest, withArtworkRuntime, writeIfChanged } from './artwork-runtime.mjs';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
-const assets = resolve(root, 'src/assets');
-const args = process.argv.slice(2);
-if (args.some(arg => arg !== '--force')) throw new Error('Usage: npm run artwork:optimize -- [--force]');
-const force = args.includes('--force');
-const portraitWidth = 256;
-const quality = 80;
-const cachePath = resolve(assets, 'optimized/.artwork-cache.json');
-const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+export async function optimizeArtwork({ root, assets, server, read, measurePng }, args = []) {
+  if (args.some(arg => arg !== '--force')) throw new Error('Usage: npm run artwork:optimize -- [--force]');
+  const force = args.includes('--force');
+  const portraitWidth = 256;
+  const quality = 80;
+  const cachePath = resolve(assets, 'optimized/.artwork-cache.json');
 
-let encoderVersion;
-try {
-  encoderVersion = execFileSync('cwebp', ['-version'], { encoding: 'utf8' }).trim();
-} catch {
-  throw new Error('Asset preparation needs cwebp (macOS: brew install webp; Ubuntu: sudo apt-get install webp)');
-}
+  let encoderVersion;
+  try {
+    encoderVersion = execFileSync('cwebp', ['-version'], { encoding: 'utf8' }).trim();
+  } catch {
+    throw new Error('Asset preparation needs cwebp (macOS: brew install webp; Ubuntu: sudo apt-get install webp)');
+  }
 
-const server = await createServer({ root, configFile: false, logLevel: 'silent', server: { middlewareMode: true, hmr: false }, appType: 'custom' });
-try {
   const { artworkRecords, objectRecords } = await server.ssrLoadModule('/src/catalogue/content.ts');
   const { inlineEntries } = await server.ssrLoadModule('/src/catalogue/generate.ts');
   const { bundledArtworkPath } = await server.ssrLoadModule('/src/catalogue/assets.ts');
-  const { measureArtworkSources, readPng, readWebpSize } = await server.ssrLoadModule('/src/catalogue/png.ts');
+  const { measureArtworkSources, readPngSize, readWebpSize } = await server.ssrLoadModule('/src/catalogue/png.ts');
   const { compileArtworkCatalogue, compileObjectCatalogue, compileObjectPlacement, deriveArtwork } = await server.ssrLoadModule('/src/catalogue/compile.ts');
   const { defaultMap } = await server.ssrLoadModule('/src/map/default.ts');
   const { MAX_ZOOM } = await server.ssrLoadModule('/src/rendering/zoom.ts');
   const portraitSourceIds = JSON.parse(readFileSync(resolve(root, 'src/narrative/portrait-manifest.json'), 'utf8'));
 
-  const read = (png) => {
-    try { return readFileSync(resolve(assets, png)); }
-    catch { return undefined; }
-  };
-
   const entries = inlineEntries(artworkRecords, objectRecords);
-  const sources = measureArtworkSources(entries, read);
+  const sources = measureArtworkSources(entries, read, undefined, measurePng);
   const catalogue = compileArtworkCatalogue(artworkRecords, sources);
   const objects = compileObjectCatalogue(objectRecords, sources, artworkRecords);
   // Two device pixels per CSS pixel at the game's closest camera. The largest drawn
@@ -101,7 +90,7 @@ try {
     const source = `characters/${id}`;
     const bytes = read(source);
     if (!bytes) throw new Error(`Portrait ${id}: missing master ${source}`);
-    const measured = readPng(bytes);
+    const measured = readPngSize(bytes);
     if (!measured) throw new Error(`Portrait ${id}: ${source} is not a readable PNG`);
     jobs.push({ group: 'portraits', id, source, output: `optimized/characters/${id.replace(/\.[^.]+$/, '.webp')}`, masterWidth: measured.width, target: Math.min(measured.width, portraitWidth) });
   }
@@ -127,7 +116,7 @@ try {
   const current = Object.create(null);
   let generated = 0, reused = 0, removed = 0;
   for (const job of unique.values()) {
-    const master = readFileSync(resolve(assets, job.source));
+    const master = read(job.source);
     // A content fingerprint is cache invalidation, not a separate correctness check.
     // Encoding settings, tool version and the compiled size budget are all inputs.
     const key = digest(Buffer.concat([
@@ -172,23 +161,16 @@ try {
     }
   }
 
-  mkdirSync(dirname(cachePath), { recursive: true });
   const cacheText = JSON.stringify({ version: 1, jobs: current }, null, 2) + '\n';
-  if (!existsSync(cachePath) || readFileSync(cachePath, 'utf8') !== cacheText) {
-    const temporary = `${cachePath}.tmp-${process.pid}`;
-    try {
-      writeFileSync(temporary, cacheText);
-      renameSync(temporary, cachePath);
-    } finally {
-      rmSync(temporary, { force: true });
-    }
-  }
+  writeIfChanged(cachePath, cacheText);
 
   const listed = [...unique.values()];
   const before = listed.reduce((sum, job) => sum + statSync(resolve(assets, job.source)).size, 0);
   const after = listed.reduce((sum, job) => sum + statSync(resolve(assets, job.output)).size, 0);
   const mib = bytes => (bytes / 1048576).toFixed(2) + ' MiB';
   console.log(`Artwork: ${generated} generated, ${reused} reused, ${removed} removed (${listed.length} derivatives; ${mib(before)} masters -> ${mib(after)} bundled)`);
-} finally {
-  await server.close();
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await withArtworkRuntime(runtime => optimizeArtwork(runtime, process.argv.slice(2)));
 }

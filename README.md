@@ -224,7 +224,10 @@ Derivative sizes follow the largest compiled authored placement at 2x DPR and
 the closest gameplay camera; portrait derivatives are 256 px wide. The optimiser
 uses content fingerprints (PNG bytes, resolution budgets and encoding settings)
 and re-encodes **only** changed or missing assets. Repeated builds reuse cached
-derivatives; `npm run artwork:optimize -- --force` forces a full refresh.
+derivatives and PNG measurements, invalidating measurements when the master bytes
+or decoder change. Automatic preparation shares one module runner and file cache
+between optimisation and manifest generation; portraits need only header dimensions.
+`npm run artwork:optimize -- --force` forces a full derivative refresh.
 Changes to PNG masters during an already-running Vite dev session require a
 dev-server restart to run preparation again.
 
