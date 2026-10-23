@@ -18,27 +18,28 @@ export type { PortraitFormat, PortraitSourceId };
  */
 export type Portrait = Readonly<{ src: string; format: PortraitFormat }>;
 
-const portraitModules = import.meta.glob('../assets/characters/*.{svg,png,jpg,jpeg}', {
+const portraitModules = import.meta.glob('../assets/optimized/characters/*.webp', {
   eager: true, query: '?inline', import: 'default',
 }) as Record<string, string>;
 
-const modulePath = (id: PortraitSourceId) => `../assets/characters/${id}`;
+const modulePath = (id: PortraitSourceId) => `../assets/optimized/characters/${id.replace(/\.[^.]+$/, '.webp')}`;
 const fileName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
+const stem = (name: string) => name.slice(0, name.lastIndexOf('.'));
 
 function formatOf(name: string): PortraitFormat {
   const extension = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
-  if (extension === 'svg' || extension === 'png' || extension === 'jpg' || extension === 'jpeg') return extension;
+  if (extension === 'svg' || extension === 'png' || extension === 'jpg' || extension === 'jpeg' || extension === 'webp') return extension;
   throw new Error(`Unsupported portrait format: ${name}`);
 }
 
 export const portraits: Readonly<Record<PortraitSourceId, Portrait>> = Object.freeze(
-  Object.fromEntries(portraitSourceIds.map((id) => [id, Object.freeze({ src: portraitModules[modulePath(id)], format: formatOf(id) } satisfies Portrait)])),
+  Object.fromEntries(portraitSourceIds.map((id) => [id, Object.freeze({ src: portraitModules[modulePath(id)], format: formatOf(modulePath(id)) } satisfies Portrait)])),
 ) as Readonly<Record<PortraitSourceId, Portrait>>;
 
 /** Throws when the declared registry and the checked-in files drift apart. */
 export function validatePortraitRegistry(): void {
-  const bundled = Object.keys(portraitModules).map(fileName).sort();
-  const declared = [...portraitSourceIds].sort();
+  const bundled = Object.keys(portraitModules).map(fileName).map(stem).sort();
+  const declared = [...portraitSourceIds].map(stem).sort();
   if (bundled.join() !== declared.join()) throw new Error(`Portrait registry mismatch: bundled [${bundled}] vs declared [${declared}]`);
   for (const id of portraitSourceIds) {
     const { src } = portraits[id];

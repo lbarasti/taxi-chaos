@@ -26,6 +26,7 @@ describe('credits page', () => {
     expect(html).toContain('Drawn procedurally, not texture-based.');
     expect(html).toContain('User-supplied PNG portraits for the Open Shore cast');
     expect(html).toContain('plus the bundled officer portrait');
+    expect(html).toContain('Every portrait is bundled inline as a WebP data URL derived from its full-resolution master');
     expect(html).toContain('original neutral placeholder cards (legacy-mia.png, legacy-frankie.png) created for Taxi Chaos');
     // No stale vector-identity claim, and no separate "identity cards" category, survives
     // the raster migration: those nine supplied PNGs are part of the cast above.

@@ -1,6 +1,9 @@
 # Dependencies and generated output
 node_modules/
 dist/
+# Art derivatives and catalogue module are reproducible build outputs.
+src/assets/optimized/
+src/catalogue/generated.ts
 coverage/
 dialogue-previews/
 scenario-runs/

@@ -11,7 +11,7 @@ await mkdir(output, { recursive: true });
 // have the same export size while still needing independent draw assertions.
 const sources = Object.fromEntries(await Promise.all([
   ['azure', 'luxury-condo.png'], ['ocean-crest', 'ocean-crest-condo.png'], ['pacific-palm', 'pacific-palm-hotel.png'],
-].map(async ([id, file]) => [id, (await readFile(resolve('src/assets/map', file))).toString('base64').slice(-128)])));
+].map(async ([id, file]) => [id, (await readFile(resolve('src/assets/optimized/map', file.replace(/\.png$/, '.webp')))).toString('base64').slice(-128)])));
 assert.equal(new Set(Object.values(sources)).size, 3);
 const browser = await launchBrowser();
 try {
@@ -41,7 +41,7 @@ try {
       if (failImages) {
         const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
         Object.defineProperty(HTMLImageElement.prototype, 'src', { ...descriptor, set(value) {
-          descriptor.set.call(this, value.startsWith('data:image/png') ? 'data:image/png;base64,invalid' : value);
+          descriptor.set.call(this, /^data:image\/(png|webp)/.test(value) ? 'data:image/png;base64,invalid' : value);
         } });
       }
     }, { failImages, sources });

@@ -10,7 +10,7 @@ await mkdir(output, { recursive: true });
 const sources = Object.fromEntries(await Promise.all([
   ['shop-tar', 'shop-tar.png'], ['shop-rust', 'shop-rust.png'], ['shop-concrete', 'shop-concrete.png'],
   ['tree', 'tree-worn.png'], ['hospital', 'hospital-structure.png'],
-].map(async ([id, file]) => [id, (await readFile(resolve('src/assets/map', file))).toString('base64').slice(-128)])));
+].map(async ([id, file]) => [id, (await readFile(resolve('src/assets/optimized/map', file.replace(/\.png$/, '.webp')))).toString('base64').slice(-128)])));
 const asphaltMarker = (await readFile(resolve('src/assets/map/asphalt.svg'), 'utf8')).match(/<path d="([^"]{24})/)?.[1];
 assert(asphaltMarker);
 const browser = await launchBrowser();
@@ -64,7 +64,7 @@ try {
       if (failImages) {
         const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
         Object.defineProperty(HTMLImageElement.prototype, 'src', { ...descriptor, set(value) {
-          descriptor.set.call(this, /^data:image\/(svg\+xml|png)/.test(value) ? 'data:image/png;base64,invalid' : value);
+          descriptor.set.call(this, /^data:image\/(svg\+xml|png|webp)/.test(value) ? 'data:image/png;base64,invalid' : value);
         } });
       }
     }, { failImages, sources, asphaltMarker });

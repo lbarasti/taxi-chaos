@@ -25,10 +25,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Install WebP encoder
+        run: sudo apt-get update && sudo apt-get install -y webp
       - name: Install dependencies
         run: npm ci
       - name: Run tests
         run: npm test
+      - name: Run browser-free artwork tests
+        run: npm run artwork:test
       - name: Build standalone HTML
         run: npm run build
       - name: Validate authored map

@@ -5,20 +5,20 @@ import {
 } from './characters';
 import { portraitLayout, portraits, portraitSourceIds, resolvePortrait, validatePortraitRegistry, type PortraitFormat } from './portraits';
 
-const mime: Record<PortraitFormat, string> = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
+const mime: Record<PortraitFormat, string> = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
 
 describe('portrait registry', () => {
-  it('bundles every declared portrait as an inlined data URL', () => {
+  it('bundles every declared portrait as an inlined WebP data URL', () => {
     expect(() => validatePortraitRegistry()).not.toThrow();
     expect(Object.keys(portraits).sort()).toEqual([...portraitSourceIds].sort());
     for (const id of portraitSourceIds) expect(portraits[id].src.startsWith(`data:${mime[portraits[id].format]}`)).toBe(true);
   });
 
-  it('declares exactly the supplied PNG portraits, with no leftover vector identities', () => {
-    // The supplied cast is raster-only now, so the manifest must match the folder and
-    // every entry must be a PNG rather than a stale SVG identity card.
+  it('declares exactly the supplied PNG masters and bundles their WebP derivatives', () => {
+    // The supplied cast is raster-only, so the manifest matches the master folder and
+    // the standalone build inlines a downscaled WebP derivative of every entry.
     expect(portraitSourceIds.every(id => id.endsWith('.png'))).toBe(true);
-    expect(new Set(Object.values(portraits).map(({ format }) => format))).toEqual(new Set<PortraitFormat>(['png']));
+    expect(new Set(Object.values(portraits).map(({ format }) => format))).toEqual(new Set<PortraitFormat>(['webp']));
     expect([...portraitSourceIds]).toContain('officer.png');
     expect([...portraitSourceIds]).toContain('legacy-mia.png');
     expect([...portraitSourceIds]).toContain('legacy-frankie.png');
@@ -69,8 +69,8 @@ describe('character catalogue', () => {
     // `mia` and `frankie` stay stable because the legacy mission catalogue and the
     // dialogue preview reference them. Their supplied rasters are gone, so they must
     // fall back to the dedicated placeholder cards rather than borrow Mara or Celia.
-    expect(resolvePortrait(characters.mia)).toMatchObject({ source: 'legacy-mia.png', format: 'png' });
-    expect(resolvePortrait(characters.frankie)).toMatchObject({ source: 'legacy-frankie.png', format: 'png' });
+    expect(resolvePortrait(characters.mia)).toMatchObject({ source: 'legacy-mia.png', format: 'webp' });
+    expect(resolvePortrait(characters.frankie)).toMatchObject({ source: 'legacy-frankie.png', format: 'webp' });
     const castSources = new Set(Object.entries(characters)
       .filter(([id]) => !['mia', 'frankie'].includes(id))
       .flatMap(([, character]) => character.portrait.sources));

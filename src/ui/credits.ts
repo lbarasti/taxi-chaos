@@ -41,5 +41,5 @@ export function creditsMarkup() {
       row('City art', 'Drawn procedurally, not texture-based.') +
       row('Portraits', 'User-supplied PNG portraits for the Open Shore cast, plus the bundled officer portrait.') +
       row('Legacy placeholders', 'Mia and Frankie keep their stable ids on original neutral placeholder cards (legacy-mia.png, legacy-frankie.png) created for Taxi Chaos; no supplied portrait art is shipped for them.'),
-      '<p class="credit-note">Every portrait is bundled inline as a data URL, with no external image service.</p>')}`;
+      '<p class="credit-note">Every portrait is bundled inline as a WebP data URL derived from its full-resolution master, with no external image service.</p>')}`;
 }

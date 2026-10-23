@@ -5,8 +5,13 @@ export type PixelCrop = Readonly<{ x: number; y: number; width: number; height: 
 /** Metre rectangle relative to the object's collision centre. */
 export type ArtBounds = Readonly<{ x: number; y: number; width: number; height: number }>;
 
-/** Measured source pixels plus the crop that removes transparent export padding. */
-export type ArtworkSource = Readonly<{ width: number; height: number; crop: PixelCrop }>;
+/** Measured source pixels plus the crop that removes transparent export padding.
+ * `image` records the bundled derivative's decoded size when it is smaller than the
+ * PNG master; runtime crops scale from master pixels into that image. */
+export type ArtworkSource = Readonly<{
+  width: number; height: number; crop: PixelCrop;
+  image?: Readonly<{ width: number; height: number }>;
+}>;
 export type CatalogueSources = Readonly<Record<string, ArtworkSource>>;
 
 /** Sprite and shadow share their position relative to people and vehicles. */

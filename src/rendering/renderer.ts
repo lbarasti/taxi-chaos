@@ -10,6 +10,7 @@ import type { LightingState } from '../world/day-night';
 import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from '../vehicles/motorcycle';
 import { doorOpenness, LANDING_TIME } from '../vehicles/vehicle-exit';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
+import { MAX_ZOOM, MIN_ZOOM } from './zoom';
 import { onBoardLight, type OnBoardCue } from './onboard-cue';
 import { artworkImages } from '../artwork/images';
 import { artworkFor, artRadiusFor, fallbackScale, renderOrderForArt, type PropArtwork } from '../artwork/catalogue';
@@ -90,7 +91,7 @@ export class Renderer {
     this.frames++; const g = this.game, c = this.ctx, p = g.actor;
     const view = this.inspection;
     if (!view.freeCamera) {
-    const targetZoom = clamp(Math.min(this.width / 125, this.height / 86), 5, 10.5) * (1 - clamp(g.speed / 160, 0, 0.2));
+    const targetZoom = clamp(Math.min(this.width / 125, this.height / 86), MIN_ZOOM, MAX_ZOOM) * (1 - clamp(g.speed / 160, 0, 0.2));
     this.zoom += (targetZoom - this.zoom) * Math.min(1, dt * 3);
     if (g.mode === 'intro') this.ambientTime += dt;
     const wanted = g.mode === 'intro'

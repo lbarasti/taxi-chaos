@@ -184,3 +184,18 @@ a morning replaces the rolling session through a fresh Game instance. Both retai
 other archived days, which are replaced individually when their mornings are reached
 again. Sleep captures only after wake-up reconciliation; live crossings preserve
 the current ride and shift totals. The campaign endpoint is not a playable morning.
+
+## 14. Generate display-resolution artwork during preparation
+
+Keep full-resolution PNG masters for measurement, crops and future edits, but do
+not commit their derived WebPs or the generated TypeScript manifest. An automatic
+`assets:prepare` stage runs before builds, tests, dev sessions and authoring tools.
+It uses content-addressed inputs and the encoded output fingerprint to reuse valid
+local results and regenerate changed or missing derivatives. The encoder is provided
+by `cwebp`; CI installs the package in advance. The derived resolution budget
+accounts for the largest compiled authored placement, crop fractions, a 10.5 px/m
+closest gameplay camera at 2x DPR, and a 256-pixel portrait width. The PNG
+measurements remain authoritative for authored geometry.
+
+Vector ground tiles stay as authored. The final product is still one standalone
+offline HTML file, with no runtime external requests or lazy chunks.

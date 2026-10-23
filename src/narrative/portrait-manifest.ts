@@ -8,8 +8,10 @@
  * browser asset loader or emitting runtime image requests.
  */
 import manifest from './portrait-manifest.json';
-export type PortraitFormat = 'svg' | 'png' | 'jpg' | 'jpeg';
+export type PortraitFormat = 'svg' | 'png' | 'jpg' | 'jpeg' | 'webp';
 
-/** Portrait files shipped with the game; keep in sync with `src/assets/characters/`. */
+/** Portrait master files shipped with the game; keep in sync with
+ * `src/assets/characters/`. The standalone build inlines a WebP derivative from
+ * `src/assets/optimized/characters/`. */
 export const portraitSourceIds = Object.freeze(manifest);
 export type PortraitSourceId = (typeof portraitSourceIds)[number];

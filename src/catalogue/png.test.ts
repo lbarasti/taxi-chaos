@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { measureArtworkSources, readPng } from './png';
+import { measureArtworkSources, readPng, readWebpSize } from './png';
 
 const bytes = (png: string) => readFileSync(fileURLToPath(new URL(`../assets/${png}`, import.meta.url)));
 const asset = (png: string) => readPng(bytes(png));
@@ -32,6 +32,27 @@ describe('browser-free PNG source preparation', () => {
     expect(reads).toEqual(['map/shop-tar.png']);
     expect(shared.first.crop).toEqual(shared.second.crop);
     expect(shared.first.crop).not.toBe(shared.second.crop);
+  });
+
+  it('reads WebP derivative dimensions without decoding pixels', () => {
+    expect(readWebpSize(bytes('optimized/map/hospital-structure.webp'))).toEqual({ width: 606, height: 1538 });
+    expect(readWebpSize(bytes('optimized/characters/lena.webp'))).toEqual({ width: 256, height: 256 });
+    expect(readWebpSize(new Uint8Array(8))).toBeUndefined();
+    expect(readWebpSize(bytes('map/shop-tar.png'))).toBeUndefined();
+  });
+
+  it('records the bundled derivative size alongside the master crop', () => {
+    const measured = measureArtworkSources(
+      [{ id: 'hospital', png: 'map/hospital-structure.png' }],
+      read,
+      read,
+    );
+    expect(measured.hospital).toEqual({
+      width: 787, height: 1997,
+      crop: { x: 33, y: 16, width: 726, height: 1951 },
+      image: { width: 606, height: 1538 },
+    });
+    expect(() => measureArtworkSources([{ id: 'hospital', png: 'map/hospital-structure.png' }], read, () => undefined)).toThrow(/missing bundled/);
   });
 
   it('rejects unreadable or non-PNG input instead of guessing geometry', () => {
