@@ -26,7 +26,7 @@ export function createPreview(document: MapDocument, spawnId = 'fairway-club') {
   if (pickup && dropoff) {
     const old = game.world.people.find(p => p.id === game.job.customerId); if (old) old.alive = false;
     const customer = game.world.addPerson(vec(pickup.position.x + 3.4, pickup.position.y), 'customer', '#efc86b');
-    game.job = { type: 'fare', pickup: { ...pickup.position }, dropoff: { ...dropoff.position }, name: 'Map reviewer', destination: dropoff.name, fare: 80, time: 180, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer.id };
+    game.job = { type: 'fare', pickup: { ...pickup.position }, dropoff: { ...dropoff.position }, name: 'Map reviewer', destination: dropoff.name, fare: 8, time: 180, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer.id };
     const ahead = game.world.navigation.roadPath(spawn.position, dropoff.position).find(p => dist(p, spawn.position) > 3);
     if (ahead) {
       const angle = Math.atan2(ahead.y - spawn.position.y, ahead.x - spawn.position.x), probe = createVehicleBody(vehicleDefinition('car'), spawn.position, angle);

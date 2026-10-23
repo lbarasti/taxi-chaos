@@ -109,7 +109,7 @@ describe('southern woodland estates and golf club', () => {
     expect(g.job.dropoff).toEqual(vec(132, 458));
     expect(g.job.destination).toBe('Fairway Club');
     const distance = pathLength(roadPath(g.job.pickup, g.job.dropoff));
-    expect(g.job.fare).toBe(Math.round(55 + distance * 0.7));
+    expect(g.job.fare).toBe(Math.round((55 + distance * 0.7) / 10));
     expect(g.job.time).toBeCloseTo(28 + distance / 3);
     const fare = g.job.fare, cash = g.save.cash;
     g.answerDispatch();

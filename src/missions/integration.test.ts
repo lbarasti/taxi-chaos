@@ -24,13 +24,13 @@ const ctx = (over: Partial<DirectorContext> = {}): DirectorContext => ({ deliver
 afterEach(() => vi.unstubAllGlobals());
 
 describe('game mission integration', () => {
-  it('opens a fresh save with the authored Mia mission and unchanged fare economics', () => {
+  it('opens a fresh save with the authored Mia mission and reduced base fare', () => {
     const g = make();
     expect(g.job.missionId).toBe('mia-meridian-lead');
     expect(g.job.name).toBe('Mia');
     expect(g.job.pickup).toEqual(vec(4, 14));
     expect(g.job.dropoff).toEqual(vec(44, 14));
-    expect(g.job.fare).toBe(Math.round(55 + dist(g.job.pickup, g.job.dropoff) * 0.7));
+    expect(g.job.fare).toBe(Math.round((55 + dist(g.job.pickup, g.job.dropoff) * 0.7) / 10));
     expect(g.dialogue.active).toBeNull();
   });
 

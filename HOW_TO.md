@@ -35,7 +35,7 @@ later days until you reach them again. These saves use this browser's local stor
 
 ## Your shift
 
-Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to the **green ring** for base pay plus possible time and comfort tips. A late delivery can still be completed; the timer affects the bonus, not whether you get paid. Drifts and near-misses earn small skill bonuses, and nitro recharges automatically.
+Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to the **green ring** for base pay adjusted by speed and comfort. Arrive before the trip's time target to earn a speed bonus; after that target, each extra second reduces the payout. Comfort above 50% earns a bonus, while comfort below 50% deducts money. A very late or uncomfortable trip can pay **$0**, but completing it never takes money from your wallet and still counts as a completed job. Drifts and near-misses earn small skill bonuses, and nitro recharges automatically.
 
 You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Upgrades belong to the individual vehicle: repairs preserve them, another vehicle has its own levels, and explosion or sinking destroys them. Wallet and completed-job progress persist between runs, along with upgrades on surviving invested vehicles. **This shift**, opened with **Tab** or the HUD clipboard below Texts, shows earnings, completed jobs, smashed objects, and pedestrian fatalities since you last woke from sleep. The pause screen shows the same stats. These totals survive reloading and reset after sleeping.
 
@@ -124,9 +124,13 @@ covered cards resume with their remaining time. Pausing the game, hiding the tab
 or opening a menu also pauses the countdown. The unread-paper invitation returns
 when the stack is clear.
 
-Completed fares and deliveries show total cash earned, tips included in that
-total, and Speed and Comfort scores with their tip contributions. Speed reflects
-time left against the fare target; Comfort reflects how much comfort you retained.
+Completed fares and deliveries show their base fare, signed Speed and Comfort
+adjustments and total cash earned on the completion card. Both meters have
+**0 in the centre**: green to the right adds money, red to the left deducts it.
+Speed reaches zero at the trip's time target; Comfort reaches zero at 50% comfort.
+The signed dollar amounts show each adjustment, even if a very late trip pushes
+its speed deduction beyond the end of the meter. **Minimum payout $0** appears
+when deductions would otherwise exceed the fare and bonuses.
 
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
 

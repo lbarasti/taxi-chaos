@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { NotificationStack, type TripReceipt } from './notifications';
 import { Game } from './game';
+import { calculateFare } from './fare';
 
 describe('notification display time', () => {
   it('keeps separate receipts for equal payouts and snapshots their scores', () => {
     const stack = new NotificationStack();
-    const receipt: TripReceipt = { type: 'fare', baseFare: 100, payout: 184, tips: 84, speedScore: 75, comfortScore: 80, speedBonus: 60, comfortBonus: 24 };
+    const receipt: TripReceipt = { type: 'fare', baseFare: 100, payout: 178, adjustment: 78, speedScore: 75, comfortScore: 60, speedBonus: 60, comfortBonus: 18 };
     stack.push('Fare complete', 'success', { duration: null, receipt });
     stack.push('Fare complete', 'success', { duration: null, receipt });
     receipt.payout = 999;
     expect(stack.items).toHaveLength(2);
-    expect(stack.items.map(card => card.receipt?.payout)).toEqual([184, 184]);
+    expect(stack.items.map(card => card.receipt?.payout)).toEqual([178, 178]);
   });
 
   it('preempts newest first and resumes each interrupted countdown', () => {
@@ -57,25 +58,66 @@ describe('notification display time', () => {
 
 describe('game notification lifecycle', () => {
   it.each([
-    { type: 'fare' as const, elapsed: 25, comfort: 80, payout: 184, tips: 84, speed: 75, speedBonus: 60, comfortBonus: 24 },
-    { type: 'parcel' as const, elapsed: 25, comfort: 80, payout: 184, tips: 84, speed: 75, speedBonus: 60, comfortBonus: 24 },
-    { type: 'fare' as const, elapsed: 150, comfort: 0, payout: 100, tips: 0, speed: 0, speedBonus: 0, comfortBonus: 0 },
-  ])('keeps a $payout completion receipt for a $type with the actual earned bonuses', expected => {
+    { type: 'fare' as const, baseFare: 20, elapsed: 25, comfort: 80, payout: 98, adjustment: 78, speed: 75, comfortScore: 60, speedBonus: 60, comfortBonus: 18 },
+    { type: 'parcel' as const, baseFare: 20, elapsed: 25, comfort: 80, payout: 98, adjustment: 78, speed: 75, comfortScore: 60, speedBonus: 60, comfortBonus: 18 },
+    { type: 'fare' as const, baseFare: 20, elapsed: 100, comfort: 50, payout: 20, adjustment: 0, speed: 0, comfortScore: 0, speedBonus: 0, comfortBonus: 0 },
+    { type: 'fare' as const, baseFare: 100, elapsed: 150, comfort: 0, payout: 30, adjustment: -70, speed: -50, comfortScore: -100, speedBonus: -40, comfortBonus: -30 },
+    { type: 'fare' as const, baseFare: 20, elapsed: 150, comfort: 0, payout: 0, adjustment: -70, speed: -50, comfortScore: -100, speedBonus: -40, comfortBonus: -30 },
+    { type: 'parcel' as const, baseFare: 20, elapsed: 150, comfort: 0, payout: 0, adjustment: -70, speed: -50, comfortScore: -100, speedBonus: -40, comfortBonus: -30 },
+  ])('keeps a $payout completion receipt for a $type with the actual signed adjustments', expected => {
     const game = new Game(undefined, false, false);
     game.vehicles = [game.player]; game.trafficTarget = 0; game.settings.noPolice = true; game.start();
-    Object.assign(game.job, { type: expected.type, stage: 'dropoff', wait: 0.8, time: 100, elapsed: expected.elapsed, comfort: expected.comfort, fare: 100 });
+    Object.assign(game.job, { type: expected.type, stage: 'dropoff', wait: 0.8, time: 100, elapsed: expected.elapsed, comfort: expected.comfort, fare: expected.baseFare });
     game.player.body.position = { ...game.job.dropoff }; game.player.body.velocity = { x: 0, y: 0 };
     const cash = game.save.cash;
     game.update(1 / 120);
     expect(game.jobsDone).toBe(1);
     expect(game.save.cash - cash).toBe(expected.payout);
     expect(game.notifications.current).toMatchObject({ remaining: null, kind: 'success', receipt: {
-      type: expected.type, baseFare: 100, payout: expected.payout, tips: expected.tips,
-      speedScore: expected.speed, comfortScore: expected.comfort, speedBonus: expected.speedBonus, comfortBonus: expected.comfortBonus,
+      type: expected.type, baseFare: expected.baseFare, payout: expected.payout, adjustment: expected.adjustment,
+      speedScore: expected.speed, comfortScore: expected.comfortScore, speedBonus: expected.speedBonus, comfortBonus: expected.comfortBonus,
     } });
     expect(game.notifications.current?.message).not.toMatch(/Answer Dispatch|Next pickup marked/);
     game.job.comfort = 0;
-    expect(game.notifications.current?.receipt?.comfortScore).toBe(expected.comfort);
+    expect(game.notifications.current?.receipt?.comfortScore).toBe(expected.comfortScore);
+    expect(game.notifications.current?.message).not.toMatch(/\$-|\+-|tips/);
+    expect(game.notifications.current?.message.includes('(minimum payout)')).toBe(expected.baseFare + expected.adjustment < 0);
+  });
+
+  it('restores a bad story ride and completes it once at zero payout with a matching notebook receipt', () => {
+    const source = new Game(undefined, false);
+    source.vehicles = [source.player]; source.trafficTarget = 0; source.settings.noPolice = true; source.start();
+    source.player.body.position = { ...source.job.pickup }; source.player.body.velocity = { x: 0, y: 0 };
+    for (let tick = 0; tick < 108; tick++) source.update(1 / 120);
+    expect(source.job.stage).toBe('dropoff');
+    const missionId = source.job.missionId!, elapsed = source.job.time + 100;
+    source.job.elapsed = elapsed; source.job.comfort = 0; source.save.cash = 400;
+    source.shiftEarnings = 17; source.save.shiftStats.earnings = 17;
+    const quoted = calculateFare(source.job);
+    source.persist();
+
+    const game = new Game(undefined, false, true, source.save);
+    game.vehicles = [game.player]; game.trafficTarget = 0; game.settings.noPolice = true; game.start();
+    expect(game.job).toMatchObject({ missionId, stage: 'dropoff', elapsed, comfort: 0 });
+    expect(calculateFare(game.job)).toEqual(quoted);
+    const before = { cash: game.save.cash, deliveries: game.save.deliveries, storyDeliveries: game.save.story.deliveries, earnings: game.shiftEarnings, shift: { ...game.save.shiftStats }, best: game.save.best };
+    game.job.wait = 0.8; game.player.body.position = { ...game.job.dropoff }; game.player.body.velocity = { x: 0, y: 0 };
+    game.update(1 / 120);
+    expect(game.save.cash).toBe(before.cash); expect(game.shiftEarnings).toBe(before.earnings); expect(game.save.shiftStats.earnings).toBe(before.shift.earnings);
+    expect(game.save.best).toBe(Math.max(before.best, before.earnings));
+    expect(game.jobsDone).toBe(1); expect(game.save.deliveries).toBe(before.deliveries + 1);
+    expect(game.save.story.deliveries).toBe(before.storyDeliveries + 1); expect(game.save.shiftStats.jobs).toBe(before.shift.jobs + 1);
+    expect(game.save.story.completed.filter(id => id === missionId)).toHaveLength(1);
+    const receipt = game.notifications.items.find(card => card.receipt)?.receipt;
+    expect(receipt).toMatchObject({ ...quoted, type: 'fare', payout: 0 });
+    const notebook = game.save.playerRecords.notebook.find(entry => entry.id === `fare-${before.storyDeliveries + 1}`)!;
+    expect(notebook.text).toContain('Paid $0 (minimum payout)');
+    expect(notebook.text).toContain('Speed −$'); expect(notebook.text).toContain('Comfort −$30');
+    expect(notebook.text).not.toMatch(/\$-|\+-|tips/);
+    for (let tick = 0; tick < 108; tick++) game.update(1 / 120);
+    expect(game.save.cash).toBe(before.cash); expect(game.jobsDone).toBe(1);
+    expect(game.save.story.completed.filter(id => id === missionId)).toHaveLength(1);
+    expect(game.save.playerRecords.notebook.filter(entry => entry.id === notebook.id)).toHaveLength(1);
   });
 
   it.each(['fare', 'parcel'] as const)('starts %s pickup dialogue without adding or replacing notification cards', type => {

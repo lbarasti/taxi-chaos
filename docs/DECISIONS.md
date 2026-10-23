@@ -220,3 +220,18 @@ waiting requires an explicit action at a stopped, usable cab. World time continu
 progress pauses when the cab leaves or moves, and a completed stop earns its route
 and wait allowance once. Preserve partial progress in the active-ride snapshot.
 New characters can use explicit initial cards until portrait artwork is authored.
+
+## 16. Adjust fares for both good and poor service
+
+Reduce distance-based passenger and parcel base fares to one tenth of their
+previous scale, rounded to whole dollars. Keep early-arrival speed bonuses at
+their existing rate, cross zero at the existing trip time target and continue
+deducting money for lateness. Centre comfort adjustments at 50%, ranging from
+−$30 to +$30. Clamp the final payout at $0; completing a poor trip still advances
+delivery and mission progress and never debits the existing wallet.
+
+Use one shared calculation for settlement and completion receipts. Show speed and
+comfort meters only on the completed-fare card, with a visible zero in the centre,
+green bonuses and red deductions. Bound the visual meter without capping the
+lateness deduction, and identify the minimum payout when raw adjustments exceed
+the fare.

@@ -99,25 +99,32 @@ try {
     assert.equal((await read())[0].remaining, 4, `${name}: reading the inbox pauses alerts`);
     await page.locator('#texts-close').click();
     await page.evaluate(() => __taxi.step(4));
-    await page.evaluate(() => __taxi.notify('FARE COMPLETE · $132 ($35 in tips). Speed 65/100 · Comfort 90/100.', 'success', {
+    await page.evaluate(() => __taxi.notify('FARE COMPLETE · $98. Speed +$60 · Comfort +$18.', 'success', {
       category: 'dispatch', duration: null,
-      receipt: { type: 'fare', baseFare: 97, payout: 132, tips: 35, speedScore: 65, comfortScore: 90, speedBonus: 8, comfortBonus: 27 },
+      receipt: { type: 'fare', baseFare: 20, payout: 98, adjustment: 78, speedScore: 75, comfortScore: 60, speedBonus: 60, comfortBonus: 18 },
     }));
     assert.equal(await page.locator('#campaign-notice').isVisible(), false);
     assert.equal(await page.locator('.receipt-title').textContent(), 'Fare complete');
-    assert.equal(await page.locator('.receipt-scores > :first-child').getAttribute('class'), 'receipt-score receipt-comfort');
-    assert.equal(await page.locator('.receipt-breakdown').innerText(), 'Base $97\nTip $35');
-    assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$132');
-    assert.equal(await page.locator('[data-receipt=tips]').textContent(), '$35');
-    assert.equal(await page.locator('.receipt-speed [role=meter]').getAttribute('aria-valuenow'), '65');
-    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuenow'), '90');
-    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuetext'), '90 out of 100; $27 bonus');
-    for (const bar of await page.locator('.receipt-meter').all()) {
+    assert.equal(await page.locator('.receipt-scores > :first-child').getAttribute('data-fare-component'), 'comfort');
+    assert.equal(await page.locator('.receipt-base').textContent(), 'Base $20');
+    assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$98');
+    assert.equal(await page.locator('[data-receipt=adjustment]').textContent(), '+$78');
+    assert.equal(await page.locator('.receipt-floor').isVisible(), false);
+    assert.equal(await page.locator('.receipt-speed [role=meter]').getAttribute('aria-valuenow'), '75');
+    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuenow'), '60');
+    assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuetext'), '$18 bonus');
+    for (const bar of await page.locator('.fare-meter').all()) {
       const size = await bar.boundingBox();
-      assert(size.width > 20 && size.width <= 100, `${name}: compact score bars remain readable`);
+      assert(size.width > 60 && size.width <= 260, `${name}: signed bars remain readable`);
+      assert.equal(await bar.getAttribute('aria-valuemin'), '-100');
+      assert.equal(await bar.getAttribute('aria-valuemax'), '100');
+      const zero = await bar.locator('.fare-meter-zero').boundingBox();
+      assert(Math.abs(zero.x + zero.width / 2 - size.x - size.width / 2) < 1, `${name}: zero is at the bar centre`);
+      assert.equal(await bar.locator('.fare-meter-zero').textContent(), '0');
     }
-    assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--score')), '0.65');
-    assert.equal(await page.locator('.receipt-comfort [role=meter]').evaluate(e => e.style.getPropertyValue('--score')), '0.9');
+    assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--meter-left')), '50%');
+    assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--meter-width')), '37.5%');
+    assert.equal(await page.locator('.receipt-comfort').getAttribute('data-sign'), 'positive');
     assert.equal(await page.locator('#toast footer').isVisible(), false);
     assert(!(await page.locator('#toast').textContent()).includes('Answer Dispatch'));
     assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}: receipt has no horizontal overflow`);
@@ -125,7 +132,7 @@ try {
     assert(receiptBounds.x >= 0 && receiptBounds.y + receiptBounds.height <= height, `${name}: receipt stays in the viewport`);
     await page.screenshot({ path: resolve(output, `${name}-receipt.png`) });
     await page.locator('#toast').screenshot({ path: resolve(output, `${name}-receipt-card.png`) });
-    await page.locator('.receipt-comfort .receipt-meter').scrollIntoViewIfNeeded();
+    await page.locator('.receipt-comfort .fare-meter').scrollIntoViewIfNeeded();
     if (name === 'desktop') {
       await page.locator('.notification-receipt').focus();
       const parked = await page.evaluate(() => { const state = __taxi.state(); __taxi.realtime(); return state; });
@@ -139,11 +146,43 @@ try {
     assert.equal(await page.locator('.notification-category').textContent(), 'Roadside & services');
     assert.equal(await page.locator('.notification-receipt').isVisible(), false);
     await page.evaluate(() => __taxi.step(4));
-    assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$132', `${name}: covered receipt retains its totals`);
+    assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$98', `${name}: covered receipt retains its totals`);
     await page.evaluate(() => __taxi.step(8));
     assert.equal(await page.locator('.notification-dismiss').isVisible(), true);
     await page.locator('.notification-dismiss').click();
     assert.equal(await page.locator('#campaign-notice').isVisible(), true);
+
+    // Mixed bonuses/deductions, the neutral point and the payout floor use the same card.
+    for (const receipt of [
+      { name: 'deduction', baseFare: 20, payout: 10, adjustment: -10, speedScore: -50, comfortScore: 100, speedBonus: -40, comfortBonus: 30 },
+      { name: 'neutral', baseFare: 20, payout: 20, adjustment: 0, speedScore: 0, comfortScore: 0, speedBonus: 0, comfortBonus: 0 },
+      { name: 'zero-payout', baseFare: 20, payout: 0, adjustment: -110, speedScore: -100, comfortScore: -100, speedBonus: -80, comfortBonus: -30 },
+      { name: 'near-neutral', baseFare: 20, payout: 19, adjustment: -1, speedScore: 0, comfortScore: -1, speedBonus: -1, comfortBonus: 0 },
+    ]) {
+      await page.evaluate(receipt => __taxi.notify(`DELIVERY COMPLETE · $${receipt.payout}.`, 'success', { category: 'dispatch', duration: null, receipt: { ...receipt, type: 'parcel' } }), receipt);
+      const signed = value => `${value > 0 ? '+' : value < 0 ? '−' : ''}$${Math.abs(value)}`;
+      assert.equal(await page.locator('.receipt-title').textContent(), 'Delivery complete');
+      assert.equal(await page.locator('[data-receipt=payout]').textContent(), `$${receipt.payout}`);
+      assert.equal(await page.locator('[data-receipt=adjustment]').textContent(), signed(receipt.adjustment));
+      assert.equal(await page.locator('.receipt-floor').isVisible(), receipt.baseFare + receipt.adjustment < 0);
+      for (const component of ['speed', 'comfort']) {
+        const amount = receipt[`${component}Bonus`], score = receipt[`${component}Score`];
+        const row = page.locator(`.receipt-${component}`), meter = row.locator('[role=meter]');
+        assert.equal(await row.locator('strong').textContent(), signed(amount));
+        assert.equal(await row.getAttribute('data-sign'), amount > 0 ? 'positive' : amount < 0 ? 'negative' : 'neutral');
+        assert.equal(await meter.getAttribute('aria-valuenow'), String(score));
+        assert.equal(await meter.getAttribute('aria-valuetext'), amount === 0 ? 'No adjustment' : `$${Math.abs(amount)} ${amount > 0 ? 'bonus' : 'deduction'}`);
+        const left = parseFloat(await meter.evaluate(e => e.style.getPropertyValue('--meter-left')));
+        const fill = parseFloat(await meter.evaluate(e => e.style.getPropertyValue('--meter-width')));
+        if (amount < 0) { assert(left < 50); assert(Math.abs(left + fill - 50) < 0.01); }
+        else { assert.equal(left, 50); assert(amount === 0 ? fill === 0 : fill > 0); }
+      }
+      assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}/${receipt.name}: no receipt overflow`);
+      assert(!(await page.locator('.notification-receipt').innerText()).includes('+−'));
+      await page.locator('.receipt-speed .fare-meter').scrollIntoViewIfNeeded();
+      if (receipt.name === 'zero-payout') await page.locator('#toast').screenshot({ path: resolve(output, `${name}-zero-payout-card.png`) });
+      await page.locator('.notification-dismiss').click();
+    }
 
     // Short physical drive in the isolated fixture; no mid-drive placement or upgrades.
     if (name === 'desktop') {
