@@ -111,10 +111,11 @@ async function checkDesktop() {
   await page.keyboard.press('Tab'); await page.locator('#overlay').waitFor({state:'hidden'});
   assert.equal(await page.evaluate(() => document.activeElement.id), 'city');
   await page.keyboard.press('p'); await waitForDrawer(page, 'home');
-  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'pause and shift show the same wake-to-sleep totals');
+  assert.equal(await page.locator('.shift-stats').count(), 0, 'pause keeps shift totals out of the branded menu');
   assert.equal(await page.locator('#menu-shift').count(), 0, 'pause has no shift entry');
   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
   await page.locator('#shift').click(); await waitForDrawer(page, 'shift');
+  assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'shift view retains the wake-to-sleep totals');
   // Exercise skip behavior independently of where this saved cab is parked.
   await page.locator('#sleep').evaluate(button => { button.disabled = true; });
   await page.locator('#open-notebook').focus(); await page.keyboard.press('ArrowDown');
