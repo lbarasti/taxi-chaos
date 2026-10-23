@@ -11,7 +11,7 @@ import { campaignCast, corroboration, everydayJobs, jobMaterials, jobNames, jobW
 import { defaultCampaign, parseCampaign } from './state';
 import { dayMinute } from './clock';
 import { CAMPAIGN_END, LAST_EDITION } from './content';
-import { shiftStatsMarkup, splashMarkup } from '../ui/splash';
+import { shiftStatsMarkup, shiftMarkup } from '../ui/splash';
 import { notebookMarkup } from './view';
 import { rideDialogueIds } from './ride-dialogue';
 
@@ -182,7 +182,7 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.save.campaign.shift).toBe(2);
   });
 
-  it('shares wake-to-sleep totals across both menus, midnight, reload and recovery', () => {
+  it('keeps wake-to-sleep totals in the shift view across midnight, reload and recovery', () => {
     const g = make(); finish(g);
     expect(g.jobsDone).toBe(1); expect(g.shiftEarnings).toBeGreaterThan(0);
     const prop = g.world.props.find(p => p.alive && p.kind === 'crate')!;
@@ -192,8 +192,7 @@ describe('Open Shore world-driven campaign', () => {
     expect(stats).toMatchObject({ jobs: 1, smashed: 1, kills: 1 });
     g.advanceNarrativeTo(dayMinute(2, 8)); // Driving past midnight and 07:00 is not sleeping.
     g.setMode('paused');
-    expect(splashMarkup(g, true)).toContain(shiftStatsMarkup(g));
-    expect(splashMarkup(g, true)).not.toContain('menu-shift');
+    expect(shiftMarkup(g, '')).toContain(shiftStatsMarkup(g));
     expect(g.save.shiftStats).toEqual(stats);
     const loaded = new Game(defaultCompiledMap, false, true, g.save);
     expect(shiftStatsMarkup(loaded)).toBe(shiftStatsMarkup(g));

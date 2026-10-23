@@ -33,7 +33,7 @@ async function checkDesktop() {
   assert.equal(await page.locator('.splash-modal').count(),1);
   assert.match(await page.locator('#start').innerText(),/Resume your shift/);
   await checkHomeMenu(page);
-  assert.match(await page.locator('.splash-save-heading').innerText(),/CURRENT SHIFT · PAUSED/);
+  assert.equal(await page.locator('.splash-save').count(), 0);
   assert.equal(await page.locator('#start').evaluate(el=>el===document.activeElement),true);
   await page.screenshot({path:`${output}/pause-desktop.png`});
   // The last frame of the start transition can land just after the pause drawer opens.
@@ -267,4 +267,6 @@ async function checkBrand(page) {
   assert(dimensions.decoded && dimensions.inside, 'badge decodes and fits the drawer');
   assert(Math.abs(dimensions.ratio - dimensions.naturalRatio) < 0.01, 'badge keeps its proportions');
   assert.equal(await page.locator('#modal .intro-eyebrow, #modal .intro-copy').count(), 0, 'old title copy is removed');
+  assert.equal(await page.locator('.splash-tagline').innerText(), 'A little cab. A lot of trouble.');
+  assert.equal(await page.locator('.splash-save, .splash-snapshot, .splash-mission').count(), 0, 'shift information is absent');
 }
