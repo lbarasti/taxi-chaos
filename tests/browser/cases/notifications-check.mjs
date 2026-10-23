@@ -7,6 +7,15 @@ const output = resolve(process.env.SCREENSHOT_DIR ?? 'scenario-runs/notification
 await mkdir(output, { recursive: true });
 const browser = await launchBrowser();
 const standalone = await readFile('dist/index.html', 'utf8');
+async function assertMeterAlignment(page, state) {
+  for (const row of await page.locator('.fare-component').all()) {
+    const centres = await row.evaluate(element => ['.receipt-icon', '.fare-meter-track', 'strong'].map(selector => {
+      const bounds = element.querySelector(selector).getBoundingClientRect();
+      return bounds.top + bounds.height / 2;
+    }));
+    assert(Math.max(...centres) - Math.min(...centres) < 0.5, `${state}: icon, bar and amount share a vertical centre`);
+  }
+}
 try {
   for (const [name, width, height, touch] of [
     ...viewportTuples('desktop', 'portrait', 'compact', 'landscape', 'compactLandscape'),
@@ -132,6 +141,7 @@ try {
     assert(receiptBounds.x >= 0 && receiptBounds.y + receiptBounds.height <= height, `${name}: receipt stays in the viewport`);
     assert(receiptBounds.height <= 180, `${name}: completed card stays compact`);
     assert.equal(await page.locator('.receipt-icon').count(), 2);
+    await assertMeterAlignment(page, `${name}/positive`);
     await page.screenshot({ path: resolve(output, `${name}-receipt.png`) });
     await page.locator('#toast').screenshot({ path: resolve(output, `${name}-receipt-card.png`) });
     await page.locator('.receipt-comfort .fare-meter').scrollIntoViewIfNeeded();
@@ -182,6 +192,7 @@ try {
       assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}/${receipt.name}: no receipt overflow`);
       assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollHeight > e.clientHeight + 1), false, `${name}/${receipt.name}: both meters fit without scrolling`);
       assert(!(await page.locator('.notification-receipt').innerText()).includes('+−'));
+      await assertMeterAlignment(page, `${name}/${receipt.name}`);
       const cardBounds = await page.locator('#toast').boundingBox();
       assert(cardBounds.height <= 180, `${name}/${receipt.name}: completed card stays compact`);
       const controlsOverlap = await page.locator('#toast').evaluate(card => {

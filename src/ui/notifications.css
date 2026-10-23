@@ -32,16 +32,16 @@
 .receipt-breakdown [data-receipt]{white-space:nowrap}
 .receipt-scores{display:grid;gap:3px;margin-top:6px}
 .receipt-floor{display:block;margin-top:3px;font-size:9px;line-height:1.4;color:#f2a18e}
-.fare-component{display:grid;grid-template-columns:18px minmax(0,1fr) max-content;align-items:start;gap:6px;min-width:0;color:#c6d3c9;--fare-color:var(--mint);font-variant-numeric:tabular-nums}
+.fare-component{display:grid;grid-template-columns:18px minmax(0,1fr) max-content;align-items:center;gap:6px;min-width:0;color:#c6d3c9;--fare-color:var(--mint);font-variant-numeric:tabular-nums}
 .fare-component[data-sign="negative"]{--fare-color:#f2a18e}
 .fare-component[data-sign="neutral"]{--fare-color:#b8c7bd}
 .receipt-icon{width:18px;height:18px}
 .fare-component strong{color:var(--fare-color);font-size:10px;line-height:18px;font-weight:600;white-space:nowrap}
 .fare-meter{position:relative;height:18px}
-.fare-meter-track{position:absolute;inset:4px 0 auto;height:5px;overflow:hidden;border-radius:2px;background:linear-gradient(to right,#f2a18e30 0 50%,#a3ddc230 50% 100%)}
+.fare-meter-track{position:absolute;inset:50% 0 auto;height:5px;transform:translateY(-50%);overflow:hidden;border-radius:2px;background:linear-gradient(to right,#f2a18e30 0 50%,#a3ddc230 50% 100%)}
 .fare-meter-track i{position:absolute;top:0;left:var(--meter-left,50%);width:var(--meter-width,0%);height:100%;background:var(--fare-color)}
-.fare-meter::after{content:'';position:absolute;left:50%;top:3px;width:1px;height:7px;background:#e8e9dc;transform:translateX(-50%)}
-.fare-meter-zero{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:7px;line-height:8px;color:#c6d3c9}
+.fare-meter::after{content:'';position:absolute;left:50%;top:50%;width:1px;height:7px;background:#e8e9dc;transform:translate(-50%,-50%)}
+.fare-meter-zero{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:7px;line-height:6px;color:#c6d3c9}
 @container(min-width:220px){
   .receipt-money{float:left;width:46%;padding-right:10px}
   .receipt-scores{margin:2px 0 0 46%}
