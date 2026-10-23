@@ -4,8 +4,8 @@ export const stopoverActionsMarkup = `<section id="stopover-actions" class="stop
   <div class="stopover-heading"><span>F · OPTIONAL STOP</span><strong id="stopover-title"></strong></div>
   <p id="stopover-request"></p>
   <div class="stopover-buttons">
-    <button id="stopover-route" aria-describedby="stopover-request" aria-pressed="false" aria-keyshortcuts="F">Wash stop</button>
-    <button id="stopover-wait" aria-describedby="stopover-request" hidden>Wait for wash</button>
+    <button id="stopover-route" aria-describedby="stopover-request" aria-pressed="false" aria-keyshortcuts="F">Optional stop</button>
+    <button id="stopover-wait" aria-describedby="stopover-request" hidden>Start stop</button>
   </div>
 </section>`;
 
@@ -15,14 +15,18 @@ export function stopoverActionState(g: Pick<Game, 'mode' | 'onFoot' | 'navToStop
   if (g.mode !== 'playing' || g.onFoot || !stop || stop.completed) return null;
   const minutes = Math.max(0, Math.ceil(stop.started ? stop.remaining : stop.seconds));
   const paused = stop.started && !stop.available;
+  const labels = stop.labels;
+  const action = labels?.begin ?? 'Start stop';
+  const active = labels?.active ?? 'In progress';
+  const onHold = labels?.paused ?? 'Paused';
   return {
     title: stop.title, request: stop.request, routed: g.navToStopover,
-    routeText: g.navToStopover ? 'Direct to destination' : 'Wash stop',
+    routeText: g.navToStopover ? 'Direct to destination' : labels?.route ?? stop.title,
     routeLabel: g.navToStopover ? 'Route directly to your destination' : `Route to the optional stop: ${stop.title}`,
     showWait: stop.nearby || stop.started,
     waitDisabled: !stop.available || stop.started,
-    waitText: paused ? `Wash paused · ${minutes} min` : stop.started ? `Washing · ${minutes} min` : `Wait for wash · ${minutes} min`,
-    waitLabel: paused ? `Stop at the wash to resume: ${minutes} game minutes remaining` : stop.started ? `Washing: ${minutes} game minutes remaining` : stop.available ? `Wait ${minutes} game minutes for the wash` : 'Stop at the wash before waiting',
+    waitText: paused ? `${onHold} · ${minutes} min` : stop.started ? `${active} · ${minutes} min` : `${action} · ${minutes} min`,
+    waitLabel: paused ? `Stop at ${stop.title} to resume: ${minutes} game minutes remaining` : stop.started ? `${active}: ${minutes} game minutes remaining` : stop.available ? `${action}: ${minutes} game minutes` : `Stop at ${stop.title} before beginning`,
     shortcutWaits: stop.nearby && stop.available && !stop.started,
   };
 }

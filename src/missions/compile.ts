@@ -239,8 +239,10 @@ export function campaignMissions(map: CompiledMap, definition: CampaignDefinitio
   for (const regular of definition.everydayJobs) for (const journey of [...(regular.journeys ?? []), ...(regular.parcelJourneys ?? [])]) {
     requireStop(journey.pickup, `everyday journey ${journey.id} pickup`);
     requireStop(journey.dropoff, `everyday journey ${journey.id} dropoff`);
+    if (journey.stopover) requireStop(journey.stopover.stop, `everyday journey ${journey.id} stopover`);
   }
   for (const [missionId, stopover] of Object.entries(definition.stopovers ?? {})) requireStop(stopover.stop, `mission ${missionId} stopover`);
+  for (const stopover of definition.proceduralStopovers ?? []) requireStop(stopover.stop, `procedural stopover ${stopover.id}`);
   if (definition === campaignDefinition) campaignCache.set(map, compiled);
   return compiled;
 }

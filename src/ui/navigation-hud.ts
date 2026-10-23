@@ -58,7 +58,7 @@ export function navigationHudState(g: Game, fareRouted = true) {
   let label = pickup ? 'PICK UP' : 'DELIVER';
   let title = pickup ? parcel ? `${job.name}'s parcel.` : `Meet ${job.name}.` : `${job.destination}.`;
   if (parcel && !pickup) status = 'LOADED';
-  if (washing) { label = 'WASH STOP'; title = stopover.title; }
+  if (washing) { label = 'OPTIONAL STOP'; title = stopover.title; }
   if (g.navToGarage) { label = 'GARAGE'; title = 'Pit Stop.'; }
   if (g.navToNewsroom) { label = 'NEWSROOM'; title = `Newsroom · ${g.campaignContent.newsroom.name}`; }
   if (harbour) {

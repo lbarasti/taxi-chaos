@@ -226,8 +226,8 @@ export class Renderer {
     if (!g.dispatchWaiting) {
       const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
     }
-    const wash = g.stopoverStatus;
-    if (wash && !wash.completed) this.marker(wash.position, navigationTargetColours.stopover, wash.started ? `WASH · ${Math.ceil(wash.remaining)} MIN` : 'OPTIONAL WASH', true);
+    const stop = g.stopoverStatus;
+    if (stop && !stop.completed) this.marker(stop.position, navigationTargetColours.stopover, stop.started ? `${stop.title.toUpperCase()} · ${Math.ceil(stop.remaining)} MIN` : `OPTIONAL · ${stop.title.toUpperCase()}`, true);
     if (g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
       this.marker(offer.pickup, '#8edbe8', `TEXT / ${offer.name.toUpperCase()}`, true);
     }
@@ -957,7 +957,7 @@ export class Renderer {
       admitted: g.harbour.vehicleId === g.player.id, exchanged: g.harbour.exchanged,
     });
   }
-  /** Compact destination symbols: pickup ring, delivery diamond, wash clock and service glyphs. */
+  /** Compact destination symbols: pickup ring, delivery diamond, optional-stop clock and services. */
   private radarShape(c: CanvasRenderingContext2D, kind: NavigationTargetKind, x: number, y: number, size: number, colour: string) {
     c.save(); c.translate(x, y); c.lineWidth = Math.max(1, size * 0.26); c.strokeStyle = '#08161d'; c.fillStyle = colour;
     const shape = (path: () => void) => { c.beginPath(); path(); c.fill(); c.stroke(); };

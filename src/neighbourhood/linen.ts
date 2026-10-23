@@ -142,6 +142,7 @@ export const linenHandlers: readonly EventHandler[] = [
 export const linenStopovers = {
   'linen-return': {
     stop: 'east-village', title: 'Wash the borrowed linen',
+    labels: { route: 'Wash stop', begin: 'Wait for wash', active: 'Washing', paused: 'Wash paused' },
     request: 'Optional East Village wash stop · wait 18 minutes. Oscar pays for the extra route and wait. Or deliver straight to Moonlight; Sam will have a load to wash.',
     seconds: 18,
     completedText: 'Oscar has the clean bundle. Six tablecloths, blue laundry tag still attached. Back to Moonlight; the wash stop and waiting time are covered.',

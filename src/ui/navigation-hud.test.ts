@@ -145,7 +145,7 @@ describe('radar-first navigation HUD', () => {
     Object.defineProperty(game, 'stopoverStatus', { get: () => wash });
     expect(navigationHudState(game)).toMatchObject({ kind: 'delivery', caption: `DELIVER · ${destination}` });
     game.navToStopover = true;
-    expect(navigationHudState(game)).toMatchObject({ kind: 'stopover', caption: 'WASH STOP · East Village wash', load: 'passenger', routeVisible: true });
+    expect(navigationHudState(game)).toMatchObject({ kind: 'stopover', caption: 'OPTIONAL STOP · East Village wash', load: 'passenger', routeVisible: true });
     game.navToGarage = true;
     expect(navigationHudState(game)).toMatchObject({ kind: 'garage', label: 'GARAGE' });
     game.navToGarage = false;
