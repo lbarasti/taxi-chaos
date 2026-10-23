@@ -179,8 +179,12 @@ try {
       }
       assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}/${receipt.name}: no receipt overflow`);
       assert(!(await page.locator('.notification-receipt').innerText()).includes('+−'));
+      await page.screenshot({ path: resolve(output, `${name}-${receipt.name}.png`) });
+      await page.locator('#toast').screenshot({ path: resolve(output, `${name}-${receipt.name}-card.png`) });
       await page.locator('.receipt-speed .fare-meter').scrollIntoViewIfNeeded();
-      if (receipt.name === 'zero-payout') await page.locator('#toast').screenshot({ path: resolve(output, `${name}-zero-payout-card.png`) });
+      if (await page.locator('.notification-receipt').evaluate(e => e.scrollTop > 0)) {
+        await page.locator('#toast').screenshot({ path: resolve(output, `${name}-${receipt.name}-card-scrolled.png`) });
+      }
       await page.locator('.notification-dismiss').click();
     }
 
