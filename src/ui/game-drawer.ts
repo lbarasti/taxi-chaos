@@ -6,7 +6,8 @@ import type { Allegation } from '../campaign/model';
 import { isNewsroomSection, type NewsroomSection } from '../campaign/newsroom-view';
 import { DrawerMenu } from './drawer-menu';
 import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
-import { splashPrompts, type InputDevice } from './splash';
+import { splashPrompts } from './splash';
+import { menuHintText, type InputDevice } from './menu-hint';
 import type { DrawerPage } from './drawer-markup';
 
 // The title, pause and HUD newsroom entry share one mobile-friendly drawer.
@@ -180,7 +181,7 @@ export class GameDrawer {
     this.device = device;
     const prompts = this.root.querySelector('#splash-prompts'), hint = this.root.querySelector('#menu-hint');
     if (prompts) prompts.innerHTML = splashPrompts(device);
-    if (hint) hint.textContent = device === 'touch' ? 'Tap to select · Tap again to confirm' : device === 'xbox' || device === 'playstation' ? `D-pad Select · ${device === 'playstation' ? '×' : 'A'} Confirm` : '↑ ↓ Select · Enter Confirm';
+    if (hint) hint.textContent = menuHintText(device);
   }
   private frontPage() {
     const selected = this.articleId;

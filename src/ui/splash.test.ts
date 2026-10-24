@@ -54,7 +54,7 @@ describe('startup splash', () => {
     game.mode = mode; game.save.campaign.finished = finished;
     const html = splashMarkup(game, true);
     expect([...html.matchAll(/class="menu-item" id="([^"]+)"/g)].map(match => match[1]))
-      .toEqual(['start', ...(mode === 'intro' ? ['new-game', 'menu-load-game'] : []), 'menu-settings', 'menu-credits', ...(recap ? ['menu-finale'] : [])]);
+      .toEqual(['start', ...(mode === 'intro' ? ['new-game', 'menu-load-game'] : []), 'menu-settings', ...(mode === 'intro' ? ['menu-credits'] : []), ...(recap ? ['menu-finale'] : [])]);
   });
   it('maps prompts to the most recent device', () => {
     expect(splashPrompts('keyboard')).toContain('WASD'); expect(splashPrompts('touch')).toContain('DRAG'); expect(splashPrompts('xbox')).toContain('X'); expect(splashPrompts('playstation')).toContain('□');

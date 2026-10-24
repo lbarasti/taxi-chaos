@@ -138,7 +138,7 @@ try {
   });
   await pad(page, 0); await page.locator('#overlay').waitFor({ state: 'hidden' });
   await pad(page, 9); await waitForDrawer(page, 'home');
-  await pad(page, 13); assert.equal(await selected(page), 'return-to-title');
+  await pad(page, 12); assert.equal(await selected(page), 'return-to-title');
   await pad(page, 0); assert.equal(await page.locator('#start').innerText(), 'Continue');
   await pad(page, 0); await page.locator('#overlay').waitFor({ state: 'hidden' });
   // F2 must resume rather than repeat initialization before entering the isolated laboratory.

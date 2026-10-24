@@ -1,5 +1,6 @@
 import type { Game } from '../game/game';
 import { menuItem } from '../ui/drawer-markup';
+import { menuHintMarkup } from '../ui/menu-hint';
 import { canApprove } from './events';
 import { editorialMarkup, recordMarkup } from './view';
 
@@ -60,7 +61,7 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
       ${Object.entries(sections).map(([id, label]) => `<button class="menu-item" id="newsroom-open-${id}" data-newsroom-section="${id}" aria-controls="newsroom-detail" aria-pressed="${selected === id}"><span>${label}</span></button>`).join('')}
       ${menuItem('Publications', { id: 'newsroom-publications', page: 'publications' })}
       ${menuItem('Back to the streets', { id: 'start' })}
-    </nav><p class="menu-hint" id="menu-hint"></p></div></div>
+    </nav>${menuHintMarkup()}</div></div>
     <section class="newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
       ${selected ? menuItem('Back', { id: 'newsroom-menu' }) : ''}
       <h3 id="newsroom-detail-title">${selected ? selected === 'stories' ? 'Stories' : sections[selected] : 'Your newsroom records'}</h3>

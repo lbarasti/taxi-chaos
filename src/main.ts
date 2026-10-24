@@ -1,5 +1,6 @@
 import './style.css';
-import { savedCampaignAvailable, type InputDevice } from './ui/splash';
+import { savedCampaignAvailable } from './ui/splash';
+import type { InputDevice } from './ui/menu-hint';
 import { GameDrawer } from './ui/game-drawer';
 import './ui/drawer.css';
 import './ui/newspaper.css';
