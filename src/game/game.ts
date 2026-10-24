@@ -36,6 +36,7 @@ import { cityBulletin } from '../campaign/bulletin';
 import { ordinaryDuring, rideMessage, selectEverydayJourney } from '../campaign/ride-dialogue';
 import { pathLength } from '../world/countryside';
 import { selectProceduralStopover } from '../campaign/stopovers';
+import { applyEffectsTo, campaignTransaction } from '../campaign/effects';
 import { RAIL_BREAK_SPEED } from '../world/world';
 import { defaultCompiledMap, type CompiledMap } from '../map/compile';
 import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from '../vehicles/vehicle-upgrades';
@@ -461,6 +462,7 @@ export class Game {
     this.creditStopover(this.job);
     const job = this.job, spec = this.stopoverFor(job)!;
     if (job.missionId) dispatchCampaignEvent(this.campaignContext, { type: 'stopover-completed', missionId: job.missionId });
+    else if (this.campaignEnabled && spec.effects.length) campaignTransaction(this.campaignContext, draft => applyEffectsTo(draft.progress, spec.effects, draft));
     const speaker = job.missionId ? this.missions.mission(job.missionId).passenger : job.everyday?.character;
     if (speaker) this.speak(`ride-${job.missionId ?? job.everyday?.journeyId}-stopover`, { speaker, category: job.missionId ? this.missions.mission(job.missionId).category : 'lore', channel: 'passenger', text: spec.completedText });
     else this.notify(spec.completedText, 'success', { category: 'dispatch' });
