@@ -30,6 +30,8 @@ charcoal leather headrests, a softly blurred coastal city through the windows an
 warm afternoon light. These portraits belong to the ordinary customers; Bea's
 existing headset portrait remains the dispatch identity. All are bundled inline.
 
+`characters/{mags,nell}.png` are original portraits generated with OpenAI's built-in image-generation tool on 2026-10-24, taking the existing Sam, June and Oscar passenger portraits and the Bea-referenced painterly direction above as visual references. The two images were cropped from a shared contact sheet: Mags wears a practical green Moonlight Hotel laundry uniform; Nell is an older performer with silver-streaked curls, a denim jacket and an instrument case. Both are seated in a taxi rear cabin with dark leather seats, softly blurred coastal buildings and warm afternoon light. The PNG masters are bundled inline through the normal asset pipeline.
+
 The legacy ids `mia` and `frankie` stay in `src/narrative/characters.json` because the
 authored legacy mission catalogue and the dialogue preview reference them. Their
 supplied rasters are no longer shipped, so each resolves to its own neutral
