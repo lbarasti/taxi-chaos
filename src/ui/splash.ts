@@ -29,10 +29,10 @@ export function splashMarkup(game: Game, saved: boolean): string {
     ${!paused && game.titleSaveFailed ? '<p class="campaign-hint" role="alert">Progress could not be saved to the browser. Continue is still available while this page stays open.</p>' : ''}
     <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
       ${paused || saved ? menuItem(paused ? 'Resume your shift' : 'Continue', { id: 'start' }) : ''}
-      ${game.canReturnToTitle ? menuItem('Return to title', { id: 'return-to-title' }) : ''}
       ${!paused ? menuItem('New game', { id: 'new-game' }) : ''}
       ${!paused ? menuItem('Load game', { id: 'menu-load-game', page: 'load-game' }) : ''}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
+      ${game.canReturnToTitle ? menuItem('Return to title', { id: 'return-to-title' }) : ''}
       ${!paused ? menuItem('Credits', { id: 'menu-credits', page: 'credits' }) : ''}
       ${paused && game.campaignEnabled && game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}
     </nav>
