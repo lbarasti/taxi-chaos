@@ -21,7 +21,7 @@ export function parseNotebookRun(raw: unknown): NotebookRun | undefined {
   if (typeof run.id !== 'string' || !/^[a-z][a-z0-9-]{0,99}$/.test(run.id)
     || typeof run.customer !== 'string' || !run.customer.trim() || run.customer.length > 120
     || typeof run.destination !== 'string' || !run.destination.trim() || run.destination.length > 120
-    || !['fare', 'parcel'].includes(run.type) || !Number.isFinite(run.minute) || run.minute < 420 || run.minute > 20580) return;
+    || !['fare', 'parcel'].includes(run.type) || !Number.isFinite(run.minute) || run.minute < 420 || run.minute > Number.MAX_SAFE_INTEGER) return;
   return { id: run.id, customer: run.customer, type: run.type, destination: run.destination, minute: run.minute,
     ...(typeof run.character === 'string' && Object.hasOwn(characters, run.character) ? { character: run.character } : {}),
     ...(typeof run.totalFare === 'number' && Number.isFinite(run.totalFare) && run.totalFare >= 0 && run.totalFare < 1e6 ? { totalFare: run.totalFare } : {}) };
@@ -50,9 +50,9 @@ export function parsePlayerRecords(raw: unknown): PlayerRecords {
     const e = value as NotebookEntry;
     if (typeof e.id !== 'string' || !/^[a-z][a-z0-9-]{0,99}$/.test(e.id) || records.notebook.some(old => old.id === e.id)) continue;
     if (![e.title, e.text].every(t => typeof t === 'string' && t.length > 0 && t.length <= 1200)) continue;
-    if (!['receipt', 'conversation', 'document', 'observation'].includes(e.kind) || !Number.isInteger(e.shift) || e.shift < 1 || e.shift > 14 || !Number.isFinite(e.at) || e.at < 0) continue;
+    if (!['receipt', 'conversation', 'document', 'observation'].includes(e.kind) || !Number.isSafeInteger(e.shift) || e.shift < 1 || !Number.isFinite(e.at) || e.at < 0) continue;
     const run = parseNotebookRun(e.run);
-    records.notebook.push({ id: e.id, title: e.title, text: e.text, kind: e.kind, shift: e.shift, at: e.at, ...(typeof e.minute === 'number' && Number.isFinite(e.minute) && e.minute >= 420 && e.minute <= 20580 ? { minute: e.minute } : {}), ...(typeof e.source === 'string' && /^[a-z][a-z0-9-]{0,99}$/.test(e.source) ? { source: e.source } : {}), ...(run ? { run } : {}) });
+    records.notebook.push({ id: e.id, title: e.title, text: e.text, kind: e.kind, shift: e.shift, at: e.at, ...(typeof e.minute === 'number' && Number.isFinite(e.minute) && e.minute >= 420 && e.minute <= Number.MAX_SAFE_INTEGER ? { minute: e.minute } : {}), ...(typeof e.source === 'string' && /^[a-z][a-z0-9-]{0,99}$/.test(e.source) ? { source: e.source } : {}), ...(run ? { run } : {}) });
   }
   return records;
 }

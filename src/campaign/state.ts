@@ -3,7 +3,7 @@ import type { Allegation, CampaignDefinition, CampaignInputs, WorldState } from 
 import { campaignCondition } from '../missions/conditions';
 import { claimOrder } from './validate';
 import type { Effect } from '../missions/schema';
-import { campaignDay, nextEdition } from './clock';
+import { campaignDay, workingDay, nextEdition } from './clock';
 import { advanceCampaignTo } from './scheduler';
 import { compareCampaignBoundaries } from './history';
 import { restoreEditions } from './editions';
@@ -47,7 +47,8 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   // Loading uses ledger reconstruction, never startup gameplay effects.
   const state = initialCampaign(definition);
   const time = (value: unknown, until: number): value is number => typeof value === 'number' && Number.isFinite(value) && value >= definition.timing.start && value <= until;
-  const minute = time(s.minute, definition.timing.end) ? s.minute : definition.timing.start;
+  const savedMinute = time(s.minute, s.finished === true ? Number.MAX_SAFE_INTEGER : definition.timing.end) ? s.minute : definition.timing.start;
+  const minute = Math.min(savedMinute, definition.timing.end);
   const allegations = claimOrder(definition), rank = (id: string) => allegations.indexOf(id);
   const savedWorld: WorldState = {};
   for (const [key, value] of Object.entries(object(s.world))) if (Object.hasOwn(definition.initialWorld, key) && typeof value === typeof definition.initialWorld[key] && (typeof value !== 'number' || Number.isFinite(value))) savedWorld[key] = value as WorldState[string];
@@ -195,5 +196,8 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   state.ordinarySinceStory = typeof s.ordinarySinceStory === 'number' && Number.isInteger(s.ordinarySinceStory) ? Math.max(0, Math.min(2, s.ordinarySinceStory)) : 0;
   restoreEditions(state, s.editions, definition);
   state.endingSeen = state.finished && s.endingSeen === true;
+  if (savedMinute > definition.timing.end) {
+    state.minute = savedMinute; state.shift = workingDay(savedMinute, definition.timing);
+  }
   return state;
 }

@@ -103,6 +103,27 @@ try {
     await endingPage.keyboard.press('KeyP');
     await waitForDrawer(endingPage, 'home');
     assert.equal(await endingPage.locator('#menu-finale').count(), 1, 'recap remains available after continuation');
+    await endingPage.keyboard.press('Escape');
+    await endingPage.locator('#overlay').waitFor({ state: 'hidden' });
+    await endingPage.evaluate(() => window.__taxi.step(0));
+    const completed = await endingPage.evaluate(() => window.__taxi.state().campaign);
+    for (const day of [16, 17]) {
+      if (touch) await endingPage.locator('#shift').tap(); else await endingPage.keyboard.press('Tab');
+      await waitForDrawer(endingPage, 'shift');
+      assert.equal(await endingPage.locator('#sleep').isEnabled(), true);
+      assert.match(await endingPage.locator('#sleep').innerText(), new RegExp(`Sleep at Pit Stop · wake Day ${day} · 07:00`));
+      await endingPage.evaluate(() => document.fonts.ready);
+      await endingPage.screenshot({ path: resolve(output, `${name}-sleep-day-${day}.png`) });
+      if (touch) await tapToConfirm(endingPage, '#sleep'); else await endingPage.locator('#sleep').click();
+      assert.equal(await endingPage.locator('#overlay').isVisible(), false);
+      const state = await endingPage.evaluate(() => window.__taxi.step(0));
+      const morning = (day - 1) * 1440 + 7 * 60;
+      assert(state.campaign.minute >= morning && state.campaign.minute < morning + 1, 'wake at the next 07:00 and resume realtime');
+      assert.equal(state.dayNight.day, day); assert.equal(state.dayNight.time, '07:00');
+      assert.equal(state.campaign.finished, true); assert.equal(state.campaign.endingSeen, true);
+      for (const key of ['world', 'editions', 'publications', 'reactions', 'occurrences']) assert.deepEqual(state.campaign[key], completed[key]);
+    }
+    await endingPage.evaluate(() => window.__taxi.realtime());
     await endingContext.close();
   }
 } catch (error) { await captureFailure(); throw error; }

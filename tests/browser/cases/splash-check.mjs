@@ -117,8 +117,8 @@ async function checkDesktop() {
   assert.equal(await page.locator('.shift-stats').innerText(), shiftStats, 'shift view retains the wake-to-sleep totals');
   // Exercise skip behavior independently of where this saved cab is parked.
   await page.locator('#sleep').evaluate(button => { button.disabled = true; });
-  await page.locator('#open-notebook').focus(); await page.keyboard.press('ArrowDown');
-  assert.notEqual(await selected(page).getAttribute('id'), 'sleep', 'arrows skip unavailable actions');
+  await page.locator('#ordinary-fare').focus(); await page.keyboard.press('ArrowDown');
+  assert.equal(await selected(page).getAttribute('id'), 'open-notebook', 'arrows skip unavailable sleep');
   await page.locator('#open-notebook').click(); await waitForDrawer(page, 'shift'); await page.locator('#shift-menu').waitFor();
   assert.equal(await page.locator('#menu-notebook-guide, #notebook-route, #notebook-back').count(), 0);
   await page.screenshot({path:`${output}/notebook-desktop.png`});

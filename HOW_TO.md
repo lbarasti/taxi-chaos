@@ -42,9 +42,12 @@ You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades
 ### Open Shore, texts and your notebook
 
 The campaign lasts **fourteen full days**, beginning at 07:00 and including the
-fourteenth night. Time advances while driving. Park at Pit Stop and use
-**This shift → Sleep at Pit Stop** to skip to the next 07:00. The menu previews known
-bookings closing during sleep; passengers, pursuits and fires block sleeping.
+fourteenth night. Time advances while driving. Use
+**Your shift → Route to Pit Stop to sleep** to set the garage as your destination.
+Once safely parked there, choose **Sleep at Pit Stop** to skip to the next 07:00.
+Passengers, pursuits and fires block sleeping.
+Sleep remains available after the campaign: the calendar and ordinary fares
+continue, while the completed story and printed editions stay settled.
 Recovery, reload and run reset preserve the date.
 
 Normal dispatch mixes ordinary jobs with recurring customers. **Texts** lets
@@ -90,7 +93,7 @@ Publications** keeps the edition archive, including days when you did not pursue
 an investigation. Reading pauses the game. Each edition keeps the findings and
 public responses that were known when it printed; later events do not rewrite it.
 
-Open **This shift (Tab)** and select **Dispatch notebook** to view records beside
+Open **Your shift (Tab)** and select **Past trips** to view records beside
 your shift actions. This is the notebook’s only entry point. Runs show the customer,
 destination, total fare, conversations and collected documents together. On smaller
 screens, the records appear below the shift menu; **Back** returns to its actions.

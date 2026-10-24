@@ -61,7 +61,13 @@ try {
     if (touch) await page.locator('#shift').tap(); else await page.keyboard.press('Tab');
     await waitForDrawer(page, 'shift');
     assert.equal(await page.locator('#shift-detail [data-run]').count(), 0, 'notebook is populated only on activation');
-    assert.match(await page.locator('#shift-detail').innerText(), /Choose Dispatch notebook/);
+    assert.match(await page.locator('#shift-detail').innerText(), /Choose Past trips/);
+    assert.deepEqual(await page.locator('[aria-label="Shift actions"] button').evaluateAll(buttons => buttons.map(button => button.id)), ['ordinary-fare', 'sleep', 'open-notebook', 'start']);
+    assert.equal(await page.locator('#open-notebook').innerText(), 'Past trips');
+    assert.equal(await page.locator('#start').innerText(), 'Resume shift');
+    assert.equal(await page.locator('#sleep-route').count(), 0);
+    assert.equal(await page.locator('#sleep').innerText(), 'Route to Pit Stop to sleep');
+    assert.equal(await page.locator('#sleep').isEnabled(), true);
     assert.equal(await page.locator('[data-page="notebook"]').count(), 0, 'no standalone notebook entry');
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: `${output}/${name}-shift.png` });
@@ -173,7 +179,16 @@ try {
     if (touch) await page.locator('#shift').tap(); else await page.keyboard.press('Tab');
     await waitForDrawer(page, 'shift');
     assert.equal(await notebook.locator('[data-run]').count(), 0, 'a new shift visit starts with the placeholder');
-    await page.keyboard.press('Escape'); await page.locator('#overlay').waitFor({ state: 'hidden' });
+    // Routing resumes the same shift; choosing it again must keep the destination.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (touch) await tapToConfirm(page, '#sleep'); else await page.locator('#sleep').click();
+      await page.locator('#overlay').waitFor({ state: 'hidden' });
+      await page.waitForFunction(() => document.querySelector('#map').getAttribute('aria-label').includes('GARAGE'));
+      if (attempt === 0) {
+        if (touch) await page.locator('#shift').tap(); else await page.keyboard.press('Tab');
+        await waitForDrawer(page, 'shift');
+      }
+    }
     await context.close();
     console.log(`${name}: grouped runs, portraits, icons, arrow navigation, record selection, scrolling, source retention, totals and overflow passed`);
   }

@@ -76,8 +76,8 @@ describe('deliberate observation quick action', () => {
     ] };
     const g = make(definition); visit(g);
     expect(g.observeScene()).toBe(true);
-    expect(g.toast).toBe('Observation saved: Garden Café frontage. In Dispatch notebook; bring a copy to the newsroom.');
-    expect(observationActionState(g)).toMatchObject({ recorded: true, disabled: true, label: 'Already recorded: Garden Café frontage. Saved in your Dispatch notebook.' });
+    expect(g.toast).toBe('Observation saved: Garden Café frontage. In Past trips; bring a copy to the newsroom.');
+    expect(observationActionState(g)).toMatchObject({ recorded: true, disabled: true, label: 'Already recorded: Garden Café frontage. Saved in Past trips.' });
     const saved = structuredClone(g.save), log = [...g.eventLog];
     g.toastTime = 0;
     expect(g.observeScene()).toBe(true); // Existing command stays idempotent.
