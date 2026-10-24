@@ -44,7 +44,7 @@ const festival: CampaignDefinition = {
     { id: 'passed', requires: { all: [{ worldEquals: { key: 'quay', value: 'open' } }, { knows: 'lamp-log' }, { materialState: { id: 'lamp-log', state: 'verified' } }, { caseState: { id: 'lanterns', state: 'verified' } }, { published: 'lanterns' }] }, effects: [{ setWorld: { key: 'ferry', value: 'inspected' } }] },
     { id: 'deferred', effects: [{ setWorld: { key: 'ferry', value: 'delayed' } }] },
   ] }],
-  newsroom: { stop: 'east-village', name: 'Quay office', guide: 'Bring your records here.' },
+  newsroom: { stop: 'east-village', name: 'Quay office' },
   sites: { office: 'east-village' }, observations: [], vehicles: [], scenes: [], bulletins: [{ text: 'The lantern festival is underway.' }],
   rides: {}, everydayJobs: [{ character: 'eli', name: 'Ash', family: 'Festival staff', lines: ['Off to work.'], during: 'The lamps look lovely.' }], ordinaryResponses: [],
 };

@@ -87,7 +87,7 @@ export type CampaignDefinition = Readonly<{
   materials: Readonly<Record<string, Material>>; claims: Readonly<Record<string, Claim>>;
   missions: MissionCatalogue; jobWindows: Readonly<Record<string, Readonly<{ from: number; until: number }>>>;
   jobNames: Readonly<Record<string, string>>; handlers: readonly EventHandler[];
-  newsroom: Readonly<{ stop: string; name: string; guide: string }>;
+  newsroom: Readonly<{ stop: string; name: string }>;
   sites: Readonly<Record<string, string>>;
   observations: readonly Readonly<{ id: string; stop: string; radius: number; requires: Condition; label: string; unavailable: string; success: string }>[];
   vehicles: readonly Readonly<{ id: string; model: VehicleModel; stop: string; offsets: readonly Readonly<{ x: number; y: number }>[]; angle: number; color: string; present: Condition; departTo: string }>[];

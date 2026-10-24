@@ -22,7 +22,7 @@ const definition: CampaignDefinition = {
   timing: { start: dayMinute(1), end: dayMinute(9), lastEdition: dayMinute(8, 6), editionHour: 6 },
   initialWorld: linenInitialWorld, operations: linenOperations, materials: {}, claims: {},
   missions: linenCatalogue, jobWindows: linenJobWindows, jobNames: {}, handlers: linenHandlers,
-  newsroom: { stop: 'old-town-south', name: 'Unused', guide: 'Unused' },
+  newsroom: { stop: 'old-town-south', name: 'Unused' },
   sites: linenSites, observations: [], vehicles: [], scenes: linenScenes, bulletins: [],
   rides: linenRides, everydayJobs: [], ordinaryResponses: [], dispatcher: 'bea',
 };

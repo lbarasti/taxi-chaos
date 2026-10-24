@@ -2,6 +2,7 @@ import type { Game } from '../game/game';
 import { district } from '../world/world';
 import { navigationTargetKind, type NavigationTargetKind } from '../rendering/radar';
 import { onBoardCue } from '../rendering/onboard-cue';
+import { PAST_TRIPS_LABEL } from './copy';
 
 // Original, embedded line artwork; reference mock-up assets are not used.
 const paths = {
@@ -42,7 +43,7 @@ export function observationActionState(g: Game) {
   if (!status) return null;
   const title = g.campaignContent.materials[status.observation.id].title;
   return { id: status.observation.id, recorded: status.recorded, disabled: !status.available || status.recorded,
-    label: status.recorded ? `Already recorded: ${title}. Saved in Past trips.` : status.available ? status.observation.label : `${status.observation.label}: ${status.reason}` };
+    label: status.recorded ? `Already recorded: ${title}. Saved in ${PAST_TRIPS_LABEL}.` : status.available ? status.observation.label : `${status.observation.label}: ${status.reason}` };
 }
 
 /** View-only state: dispatch, physics, pickups and the saved game remain authoritative. */

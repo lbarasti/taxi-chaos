@@ -102,7 +102,7 @@ try {
     assert.equal(await camera.isDisabled(), true);
     assert.equal(await camera.getAttribute('data-state'), 'recorded');
     assert.match(await camera.getAttribute('aria-label'), /Already recorded: Garden Café frontage/);
-    assert.match(await page.locator('#toast').textContent(), /Observation saved: Garden Café frontage.*Past trips.*newsroom/);
+    assert.match(await page.locator('#toast').textContent(), /Observation saved: Garden Café frontage.*newsroom/);
     assert.equal(await page.locator('.observation-recorded').isVisible(), true);
     if (touch) {
       const overlaps = await page.evaluate(() => {

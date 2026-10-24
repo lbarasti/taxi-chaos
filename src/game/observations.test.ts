@@ -4,6 +4,7 @@ import { vec } from '../physics/physics';
 import { campaignDefinition } from '../campaign/content';
 import { dayMinute } from '../campaign/clock';
 import { observationActionState } from '../ui/navigation-hud';
+import { PAST_TRIPS_LABEL } from '../ui/copy';
 import { parsePlayerRecords } from '../narrative/player-records';
 import type { CampaignDefinition } from '../campaign/model';
 
@@ -76,8 +77,8 @@ describe('deliberate observation quick action', () => {
     ] };
     const g = make(definition); visit(g);
     expect(g.observeScene()).toBe(true);
-    expect(g.toast).toBe('Observation saved: Garden Café frontage. In Past trips; bring a copy to the newsroom.');
-    expect(observationActionState(g)).toMatchObject({ recorded: true, disabled: true, label: 'Already recorded: Garden Café frontage. Saved in Past trips.' });
+    expect(g.toast).toBe('Observation saved: Garden Café frontage. Bring a copy to the newsroom.');
+    expect(observationActionState(g)).toMatchObject({ recorded: true, disabled: true, label: `Already recorded: Garden Café frontage. Saved in ${PAST_TRIPS_LABEL}.` });
     const saved = structuredClone(g.save), log = [...g.eventLog];
     g.toastTime = 0;
     expect(g.observeScene()).toBe(true); // Existing command stays idempotent.

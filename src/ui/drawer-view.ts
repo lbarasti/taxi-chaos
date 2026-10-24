@@ -9,6 +9,7 @@ import { creditsMarkup } from './credits';
 import { splashMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
 import { menuHintMarkup } from './menu-hint';
+import { PAST_TRIPS_LABEL } from './copy';
 
 const pages = {
   home: { title: '', parent: null },
@@ -46,7 +47,7 @@ function campaignActionsMarkup(game: Game, notebookSelected: boolean) {
   const routeToSleep = !game.garageNear;
   return `${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}
     ${menuItem(routeToSleep ? 'Route to Pit Stop to sleep' : game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !routeToSleep && !!game.sleepReason })}
-    <button class="menu-item" id="open-notebook" aria-controls="shift-detail" aria-pressed="${notebookSelected}"><span>Past trips</span></button>`;
+    <button class="menu-item" id="open-notebook" aria-controls="shift-detail" aria-pressed="${notebookSelected}"><span>${PAST_TRIPS_LABEL}</span></button>`;
 }
 export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroomSection = null, notebookSelected = false, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; newsroomSection?: NewsroomSection | null; notebookSelected?: boolean; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {
   let body: string;
