@@ -137,7 +137,7 @@ try {
   assert.equal(continued.garage.current.upgrades.engine, 3);
   assert.equal(continued.garage.current.damage.health, 55);
   assert.deepEqual(continued.garage.current.position, progressed.garage.current.position, 'Cancel keeps the active scene');
-  assert.deepEqual(await menu(page), ['start', 'return-to-title', 'menu-settings', 'menu-credits'], 'pause menu includes Return to title');
+  assert.deepEqual(await menu(page), ['start', 'return-to-title', 'menu-settings'], 'pause menu includes Return to title');
 
   await seed(page, progressed);
   await page.evaluate(() => {

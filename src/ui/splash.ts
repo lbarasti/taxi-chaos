@@ -33,7 +33,7 @@ export function splashMarkup(game: Game, saved: boolean): string {
       ${!paused ? menuItem('New game', { id: 'new-game' }) : ''}
       ${!paused ? menuItem('Load game', { id: 'menu-load-game', page: 'load-game' }) : ''}
       ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
-      ${menuItem('Credits', { id: 'menu-credits', page: 'credits' })}
+      ${!paused ? menuItem('Credits', { id: 'menu-credits', page: 'credits' }) : ''}
       ${paused && game.campaignEnabled && game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}
     </nav>
     <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;

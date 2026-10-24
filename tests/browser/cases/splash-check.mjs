@@ -22,6 +22,16 @@ async function checkDesktop() {
   await checkHomeMenu(page, false);
   const first = await page.locator('#city').screenshot(); await page.waitForTimeout(600); const second=await page.locator('#city').screenshot(); assert(!first.equals(second),'ambient camera moves');
   await page.screenshot({path:`${output}/start-desktop.png`});
+  await page.locator('#menu-credits').click(); await waitForDrawer(page, 'credits');
+  assert.equal(await page.locator('.credits-section').count(), 4, 'credits are grouped by functional role');
+  assert(await page.locator('.credits-section a').count() >= 8, 'source links are preserved');
+  assert.equal(await page.locator('.credits-section a[href="https://opengameart.org/content/car-sound-effects-pack-low-quality"]').count(), 1);
+  assert(await page.locator('#modal').evaluate(el => el.scrollWidth <= el.clientWidth), 'credits has no horizontal overflow');
+  await page.locator('#drawer-back').focus(); await page.keyboard.press('Tab');
+  assert.equal(await selected(page).evaluate(el => el.tagName), 'A', 'keyboard reaches an attribution link');
+  await page.screenshot({path:`${output}/credits-desktop.png`});
+  await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
+  assert.equal(await selected(page).getAttribute('id'), 'menu-credits');
   await page.locator('#overlay').evaluate(element => element.addEventListener('click', () => {
     window.exitTransition = { visible: !element.hidden, duration: getComputedStyle(element).transitionDuration };
   }, { once: true }));
@@ -49,7 +59,7 @@ async function checkDesktop() {
   await page.waitForTimeout(400);
   assert(pausedCanvas.equals(await page.locator('#city').screenshot()), 'paused backdrop stays frozen');
   await page.mouse.move(1300, 800);
-  await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'menu-credits', 'navigation wraps');
+  await page.keyboard.press('ArrowUp'); assert.equal(await selected(page).getAttribute('id'), 'menu-settings', 'navigation wraps');
   await page.keyboard.press('ArrowDown'); assert.equal(await selected(page).getAttribute('id'), 'start');
   await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'return-to-title');
   await page.keyboard.press('ArrowRight'); assert.equal(await selected(page).getAttribute('id'), 'menu-settings');
@@ -91,16 +101,6 @@ async function checkDesktop() {
   assert.equal(await page.locator('#menu-credits').count(), 0);
   await page.screenshot({path:`${output}/settings-desktop.png`});
   await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
-  await page.locator('#menu-credits').click(); await waitForDrawer(page, 'credits');
-  assert.equal(await page.locator('.credits-section').count(), 4, 'credits are grouped by functional role');
-  assert(await page.locator('.credits-section a').count() >= 8, 'source links are preserved');
-  assert.equal(await page.locator('.credits-section a[href="https://opengameart.org/content/car-sound-effects-pack-low-quality"]').count(), 1);
-  assert(await page.locator('#modal').evaluate(el => el.scrollWidth <= el.clientWidth), 'credits has no horizontal overflow');
-  await page.locator('#drawer-back').focus(); await page.keyboard.press('Tab');
-  assert.equal(await selected(page).evaluate(el => el.tagName), 'A', 'keyboard reaches an attribution link');
-  await page.screenshot({path:`${output}/credits-desktop.png`});
-  await page.keyboard.press('Escape'); await waitForDrawer(page, 'home');
-  assert.equal(await selected(page).getAttribute('id'), 'menu-credits');
   await page.locator('#menu-settings').hover(); assert.equal(await selected(page).getAttribute('id'), 'menu-settings', 'mouse hover selects');
   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'});
   await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift');
@@ -253,7 +253,7 @@ async function checkTouchLayouts() {
 async function checkHomeMenu(page, paused = true) {
   await checkBrand(page);
   assert.deepEqual(await page.locator('#modal .game-menu button').evaluateAll(buttons => buttons.map(button => button.id)),
-    [paused ? 'start' : 'new-game', ...(paused ? ['return-to-title'] : ['menu-load-game']), 'menu-settings', 'menu-credits']);
+    [paused ? 'start' : 'new-game', ...(paused ? ['return-to-title'] : ['menu-load-game']), 'menu-settings', ...(!paused ? ['menu-credits'] : [])]);
 }
 
 async function checkBrand(page) {
