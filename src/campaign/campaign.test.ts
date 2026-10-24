@@ -210,6 +210,7 @@ describe('Open Shore world-driven campaign', () => {
 
   it('sleeps only at a safe parked Pit Stop, traverses events, and preserves physics and economy', () => {
     const g = make(); g.player.body.position = { ...GARAGE }; g.advanceNarrativeTo(dayMinute(2, 20)); g.setMode('paused');
+    g.driverHealth = 34; g.driverKnockback = 0.6; g.player.damage.health = 62;
     const cash = g.save.cash, time = g.time, health = g.health, player = g.player, keys = g.world;
     expect(g.sleepPreview.label).toBe('Day 3 · 07:00'); expect(g.sleepPreview.expiring).toContain('Temporary barriers');
     const toast = { text: g.toast, time: g.toastTime };
@@ -218,6 +219,7 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.save.campaign.occurrences['cafe-windows-broken'].at).toBe(dayMinute(2, 23));
     expect(g.save.playerRecords.notebook).toEqual([]); expect(g.save.cash).toBe(cash);
     expect(g.player).toBe(player); expect(g.world).toBe(keys); expect(g.health).toBe(health); expect(g.time).toBe(time);
+    expect(g.driverHealth).toBe(100); expect(g.driverKnockback).toBe(0);
     expect(g.sleep()).toBe(false); // playing; duplicate clicks cannot consume another day
   });
 
@@ -268,10 +270,14 @@ describe('Open Shore world-driven campaign', () => {
 
   it('rejects sleep with passengers, pursuits, burning vehicles and away from Pit Stop', () => {
     const g = make(); arrive(g, g.job.pickup); g.player.body.position = { ...GARAGE }; g.setMode('paused');
+    g.driverHealth = 34;
     const snapshot = structuredClone(g.save); expect(g.sleep()).toBe(false); expect(g.save).toEqual(snapshot);
     g.newJob(false, 'shift'); g.heat = 1; expect(g.sleep()).toBe(false);
     g.heat = 0; g.player.damage.status = 'burning'; expect(g.sleep()).toBe(false);
     g.player.damage.status = 'intact'; g.player.body.position = vec(84, 58); expect(g.sleep()).toBe(false);
+    g.player.body.position = { ...GARAGE }; g.onFoot = true; expect(g.sleep()).toBe(false);
+    g.onFoot = false; g.player.damage.status = 'wreck'; expect(g.sleep()).toBe(false);
+    expect(g.driverHealth).toBe(34);
   });
 
   it('expires half-open pickup windows permanently without killing contacts or resurrecting offers', () => {

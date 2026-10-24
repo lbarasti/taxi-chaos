@@ -257,10 +257,11 @@ export class Game {
     if (this.job.missionId && this.job.stage === 'pickup' && this.campaignContent.jobWindows[this.job.missionId]?.until <= until && !expiring.includes(this.missions.mission(this.job.missionId).title)) expiring.push(this.missions.mission(this.job.missionId).title);
     return { until, label: calendarLabel(until), hours: (until - this.save.campaign.minute) / 60, expiring };
   }
-  /** One safe overnight transaction. Transient physics, fares, damage and cash stay put. */
+  /** One safe overnight transaction. Personal health recovers; vehicle damage and cash stay put. */
   sleep(): boolean {
     if ((this.mode !== 'paused' && this.mode !== 'garage') || this.sleepReason) return false;
     this.releaseMission('shift'); this.dialogue.clear();
+    this.driverHealth = 100; this.driverKnockback = 0; this.driverHits.clear();
     // The new day is reported by the front page and campaign notice; waking stays silent.
     const morning = this.sleepPreview.until;
     this.advanceNarrative(morning, false); this.save.shiftStats = emptyShiftStats(); this.newJob(false, 'shift');

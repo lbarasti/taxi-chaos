@@ -69,11 +69,14 @@ describe('automatic campaign morning checkpoints', () => {
     expect(days()).toEqual([2]); expect(morning(2).campaign.minute).toBe(dayMinute(2));
   });
 
-  it('captures sleep after scheduled world changes, expiring offers, shift reset and the new job', () => {
+  it.each(['paused', 'garage'] as const)('captures sleep from %s after personal recovery, world changes, shift reset and the new job', mode => {
     storage(); const game = play(); game.advanceNarrativeTo(dayMinute(2, 20));
     game.player.body.position = { ...GARAGE }; game.player.body.velocity = vec(); game.dialogue.clear();
     game.save.shiftStats = { earnings: 345, jobs: 5, smashed: 6, kills: 2 }; game.save.cash = 1200;
-    game.setMode('paused'); const player = game.player, previousJob = game.job;
+    game.driverHealth = 34; game.player.damage.health = 62; game.persist();
+    expect(new Game().driverHealth).toBe(34);
+    const damage = structuredClone(game.player.damage);
+    game.setMode(mode); const player = game.player, previousJob = game.job;
     expect(game.sleep()).toBe(true);
     const saved = morning(3);
     expect(saved.campaign.minute).toBe(dayMinute(3)); expect(saved.campaign.world.cafe).toBe('boarded');
@@ -83,6 +86,12 @@ describe('automatic campaign morning checkpoints', () => {
     expect(saved.campaign.activeRide).toBeNull(); expect(game.player).toBe(player); expect(game.job).not.toBe(previousJob);
     expect(saved.story.failed).toContain('celia-barriers');
     expect(saved.playerRecords).toEqual(game.save.playerRecords); expect(saved.story).toEqual(game.save.story);
+    expect(game.driverHealth).toBe(100); expect(game.player.damage).toEqual(damage);
+    expect(saved.garage?.driverHealth).toBe(100); expect(saved.garage?.current.damage).toEqual(damage);
+    const continued = new Game(), loaded = game.loadMorning(3)!;
+    for (const restored of [continued, loaded]) {
+      expect(restored.driverHealth).toBe(100); expect(restored.player.damage).toEqual(damage);
+    }
     expect(game.sleep()).toBe(false);
   });
 
