@@ -9,6 +9,7 @@ import { compareCampaignBoundaries } from './history';
 import { restoreEditions } from './editions';
 import { scheduledEdition, type Occurrence } from './events';
 import type { CharacterId } from '../narrative/characters';
+import { parseNotebookRun, type NotebookRun } from '../narrative/player-records';
 
 export type PrintedEdition = { day: number; at: number; articles: string[]; briefs: string[]; read: boolean };
 export type Publication = { allegation: Allegation; submittedShift: number; publishedShift: number; at: number };
@@ -18,6 +19,7 @@ export type ActiveRide = {
   missionId?: string; ordinary?: { character: CharacterId; journeyId: string };
   procedural?: { pickup: { x: number; y: number }; dropoff: { x: number; y: number }; name: string; destination: string; fare: number; time: number };
   incidentalId?: string;
+  notebookRun?: NotebookRun;
   type: 'fare' | 'parcel'; elapsed: number; comfort: number; rideBeat: number; rideDistance?: number; stopover?: RideStopover;
 };
 export type Campaign = {
@@ -154,6 +156,8 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   const finite = (v: unknown, max: number, fallback = 0): number => typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : fallback;
   if (active.type === 'fare' || active.type === 'parcel') {
     const ride: ActiveRide = { type: active.type, elapsed: finite(active.elapsed, 1e6), comfort: finite(active.comfort, 100, 100), rideBeat: active.rideBeat === 1 ? 1 : 0, rideDistance: finite(active.rideDistance, 1e6) };
+    const notebookRun = parseNotebookRun(active.notebookRun);
+    if (notebookRun) ride.notebookRun = notebookRun;
     if (typeof active.missionId === 'string' && Object.hasOwn(definition.missions.missions, active.missionId)) {
       ride.missionId = active.missionId;
       state.activeRide = ride;

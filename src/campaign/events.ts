@@ -51,7 +51,7 @@ export function reduceCampaignEvent(ctx: CampaignContext, event: CampaignEvent):
     case 'observation': {
       const observation = ctx.definition.observations.find(o => o.id === event.id);
       if (!observation || !campaignCondition(observation.requires, s, ctx)) return false;
-      applyEffectsTo(ctx.progress, [{ acquireMaterial: event.id }], ctx); break;
+      applyEffectsTo(ctx.progress, [{ acquireMaterial: event.id }], { ...ctx, notebookRun: undefined }); break;
     }
     case 'ride-completed':
       s.ordinarySinceStory = event.missionId && ctx.definition.missions.missions[event.missionId]?.category !== 'side-quest' ? 0 : Math.min(2, s.ordinarySinceStory + 1);

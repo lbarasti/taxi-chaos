@@ -14,7 +14,7 @@ export function recordNote(ctx: CampaignContext, entry: Omit<NotebookEntry, 'shi
     if (oldest < 0) return false;
     notebook.splice(oldest, 1);
   }
-  notebook.push({ ...entry, shift: ctx.state.shift, at: ctx.progress?.campaignSeconds ?? 0, minute: ctx.state.minute, source: entry.source ?? 'driver-record' });
+  notebook.push({ ...entry, ...(entry.run ? { run: { ...entry.run } } : {}), shift: ctx.state.shift, at: ctx.progress?.campaignSeconds ?? 0, minute: ctx.state.minute, source: entry.source ?? 'driver-record' });
   return true;
 }
 
@@ -28,7 +28,7 @@ export function applyEffectsTo(progress: MissionProgress | undefined, effects: r
     } else if ('acquireMaterial' in effect) {
       const material = ctx?.definition.materials[effect.acquireMaterial];
       if (!ctx || !material) throw new Error(`Unknown material ${effect.acquireMaterial}`);
-      recordNote(ctx, { id: effect.acquireMaterial, ...material });
+      recordNote(ctx, { id: effect.acquireMaterial, ...material, ...(ctx.notebookRun ? { run: ctx.notebookRun } : {}) });
     } else {
       if (!progress) throw new Error('Story effects require mission progress');
       if ('setFlag' in effect) { if (!progress.flags.includes(effect.setFlag)) progress.flags.push(effect.setFlag); }

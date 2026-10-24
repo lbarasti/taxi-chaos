@@ -2,7 +2,7 @@ import type { CharacterId } from '../narrative/characters';
 import type { Condition, Effect, MissionCatalogue } from '../missions/schema';
 import type { MissionEvent } from '../missions/director';
 import type { MissionProgress } from '../missions/progress';
-import type { NotebookEntry, PlayerRecords } from '../narrative/player-records';
+import type { NotebookEntry, NotebookRun, PlayerRecords } from '../narrative/player-records';
 import type { VehicleModel } from '../vehicles/vehicles';
 import type { Campaign } from './state';
 import type { CampaignTiming } from './clock';
@@ -19,7 +19,7 @@ export type Claim = Readonly<{
   reactionEffects: readonly Effect[];
 }>;
 export type CampaignInputs = { progress?: MissionProgress; records?: PlayerRecords; ride?: Readonly<{ comfort: number }> };
-export type CampaignContext = CampaignInputs & { state: Campaign; definition: CampaignDefinition };
+export type CampaignContext = CampaignInputs & { state: Campaign; definition: CampaignDefinition; notebookRun?: NotebookRun };
 export type CampaignEvent =
   | MissionEvent
   | { type: 'clock'; at: number }

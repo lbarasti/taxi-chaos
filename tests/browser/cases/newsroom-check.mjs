@@ -70,10 +70,10 @@ try {
     const layout = async () => {
       const result = await page.evaluate(() => {
         const modal = document.querySelector('#modal');
-        const menu = modal.querySelector('.newsroom-menu-panel').getBoundingClientRect();
+        const menu = modal.querySelector('.drawer-menu-panel').getBoundingClientRect();
         const detail = modal.querySelector('#newsroom-detail').getBoundingClientRect();
         return { overflow: modal.scrollWidth > modal.clientWidth || document.documentElement.scrollWidth > innerWidth,
-          columns: getComputedStyle(modal.querySelector('.newsroom-columns')).gridTemplateColumns.split(' ').length,
+          columns: getComputedStyle(modal.querySelector('.drawer-columns')).gridTemplateColumns.split(' ').length,
           sideBySide: detail.left >= menu.right, stacked: detail.top >= menu.bottom,
           width: modal.getBoundingClientRect().width,
           buttons: [...modal.querySelectorAll('button')].filter(button => button.getClientRects().length).map(button => ({ width: button.getBoundingClientRect().width, height: button.getBoundingClientRect().height })) };
@@ -89,10 +89,10 @@ try {
         assert(b.x >= -1 && b.y >= -1 && b.x + b.width <= width + 1 && b.y + b.height <= height + 1, `${name}: ${id} remains reachable`);
       }
       await page.locator('#modal').evaluate(modal => { modal.scrollTop = 0; });
-      await page.locator('.newsroom-menu-panel').evaluate(panel => { panel.scrollTop = 0; });
+      await page.locator('.drawer-menu-panel').evaluate(panel => { panel.scrollTop = 0; });
     };
     // Normalize explicit scrolling of a short left pane, not changes in its alignment.
-    const menuPositions = () => page.locator('.newsroom-menu-content').evaluate(panel => [...panel.querySelectorAll('#modal-title, .game-menu button')].map(element => ({ id: element.id, y: element.getBoundingClientRect().top + panel.parentElement.scrollTop })));
+    const menuPositions = () => page.locator('.drawer-menu-content').evaluate(panel => [...panel.querySelectorAll('#modal-title, .game-menu button')].map(element => ({ id: element.id, y: element.getBoundingClientRect().top + panel.parentElement.scrollTop })));
     const stableMenu = async baseline => {
       if (width < 1000) return;
       const positions = await menuPositions();
@@ -176,9 +176,9 @@ try {
     assert.equal(await page.evaluate(() => document.activeElement.id), 'newsroom-menu');
     await stableMenu(menuBefore);
     assert.match(await page.locator('[data-record="cleaner-note"]').textContent(), /source check due Day 3 · 10:/);
-    const leftScroll = await page.locator('.newsroom-menu-panel').evaluate(panel => panel.scrollTop);
+    const leftScroll = await page.locator('.drawer-menu-panel').evaluate(panel => panel.scrollTop);
     await page.locator('#newsroom-checking').scrollIntoViewIfNeeded();
-    assert.equal(await page.locator('.newsroom-menu-panel').evaluate(panel => panel.scrollTop), leftScroll, 'scrolling the right pane does not scroll the left');
+    assert.equal(await page.locator('.drawer-menu-panel').evaluate(panel => panel.scrollTop), leftScroll, 'scrolling the right pane does not scroll the left');
     await shot('checking');
     await stableMenu(menuBefore);
     assert.equal(await page.locator('[data-record="contractor-register"]').count(), 0);
@@ -222,7 +222,7 @@ try {
     await command({ op: 'advance', minutes: 180 });
     await open(empty); await select('sources'); assert.equal((await records('checked')).length, 3); await shot('checked');
     assert.equal(await page.locator('#newsroom-open-stories, [data-story], [data-publish]').count(), 0);
-    assert.match(await page.locator('.newsroom-menu-content').textContent(), /automatically scheduled/);
+    assert.match(await page.locator('.drawer-menu-content').textContent(), /automatically scheduled/);
     await close();
     assert.equal((await state()).campaign.newsroom.cases.coordination.editionAt, 4680);
     await command({ op: 'reload' });
@@ -255,8 +255,8 @@ try {
     await page.locator('#city').focus(); await page.keyboard.press('KeyE'); assert.equal((await state()).onFoot, true);
     await open(empty); await select('sources'); assert.equal((await records('checked')).length, 3); await close();
     // The notebook remains available from This shift, outside the newsroom.
-    await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift'); await activate('#open-notebook'); await waitForDrawer(page, 'notebook');
-    assert.equal(await page.locator('#notebook-back').textContent(), 'Back to pause menu');
+    await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift'); await activate('#open-notebook'); await waitForDrawer(page, 'shift'); await page.locator('#shift-menu').waitFor();
+    assert.equal(await page.locator('#menu-notebook-guide, #notebook-route, #notebook-back').count(), 0);
     assert.equal(await page.locator('[data-record="cafe-photo"]').count(), 1);
     assert.equal(await page.locator('.editorial-cases, [data-story], [data-publish]').count(), 0);
     await command({ op: 'mode', mode: 'playing' });

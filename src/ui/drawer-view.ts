@@ -2,7 +2,7 @@ import type { Game } from '../game/game';
 import type { SettingsControls } from './settings';
 import { settingRow } from './setting-controls';
 import { campaignDays, displayDay, calendarLabel } from '../campaign/clock';
-import { notebookMarkup, notebookGuideMarkup } from '../campaign/view';
+import { notebookMarkup } from '../campaign/view';
 import { newsroomMarkup, type NewsroomSection } from '../campaign/newsroom-view';
 import { publicationsMarkup, finaleMarkup } from '../campaign/newspaper-view';
 import { creditsMarkup } from './credits';
@@ -20,10 +20,8 @@ const pages = {
   newsroom: { title: '', parent: null },
   publications: { title: '', parent: 'newsroom' },
   finale: { title: '', parent: null },
-  notebook: { title: '', parent: 'home' },
-  'notebook-guide': { title: 'Keeping records.', parent: 'notebook' },
 } as const satisfies Record<DrawerPage, { title: string; parent: DrawerPage | null }>;
-export const drawerParent = (page: DrawerPage, entry: 'home' | 'newsroom' = 'home') => page === 'notebook' ? entry : pages[page].parent;
+export const drawerParent = (page: DrawerPage) => pages[page].parent;
 export const isDrawerPage = (page: string): page is DrawerPage => Object.hasOwn(pages, page);
 
 function settingsMarkup(settings: SettingsControls) {
@@ -42,15 +40,15 @@ function campaignMarkup(game: Game) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';
   return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${displayDay(game.save.campaign.minute, game.campaignContent.timing)} OF ${campaignDays(game.campaignContent.timing)} · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p></div>`;
 }
-function campaignActionsMarkup(game: Game) {
+function campaignActionsMarkup(game: Game, notebookSelected: boolean) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';
   const preview = game.sleepPreview;
-  return `${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}
+  return `<button class="menu-item" id="open-notebook" aria-controls="shift-detail" aria-pressed="${notebookSelected}"><span>Dispatch notebook</span></button>
     ${menuItem(game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !!game.sleepReason })}
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
     ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}`;
 }
-export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {
+export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroomSection = null, notebookSelected = false, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; newsroomSection?: NewsroomSection | null; notebookSelected?: boolean; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {
   let body: string;
   switch (page) {
     case 'home': return splashMarkup(game, saved);
@@ -71,11 +69,13 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
     case 'publications': return publicationsMarkup(game, editionDay, publicationBack, articleId);
     case 'finale': return finaleMarkup(game);
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
-    case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;
-    case 'shift': return `<div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, campaignActionsMarkup(game))}${menuItem('Resume your shift', { id: 'start' })}`;
+    case 'shift': return `<div class="drawer-columns"><div class="drawer-menu-panel" data-menu-scope><div class="drawer-menu-content">
+      <div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, `<nav class="game-menu" aria-label="Shift actions">${campaignActionsMarkup(game, notebookSelected)}${menuItem('Resume your shift', { id: 'start' })}</nav>`)}${menuHintMarkup()}</div></div>
+      <section class="drawer-detail shift-detail" id="shift-detail" aria-labelledby="${notebookSelected ? 'open-notebook' : 'shift-detail-title'}" data-menu-scope tabindex="-1">
+        ${notebookSelected ? `${menuItem('Back', { id: 'shift-menu' })}${notebookMarkup(game)}` : '<h3 id="shift-detail-title">Your dispatch records</h3><p>Choose Dispatch notebook to view your runs and collected records.</p>'}
+      </section></div>`;
     case 'credits': body = creditsMarkup(); break;
-    case 'notebook-guide': body = notebookGuideMarkup(game); break;
   }
   const { title, parent } = pages[page];
   return drawerHeading(title, parent) + body;

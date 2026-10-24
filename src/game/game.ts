@@ -23,7 +23,7 @@ import { defaultSave, emptyShiftStats, loadSave, type Save } from './save';
 export { defaultSave, type Save, type ShiftStats } from './save';
 import { readMorningCheckpoints, writeMorningCheckpoint } from './morning-checkpoints';
 import { touchSteering } from '../ui/touch-controls';
-import { defaultPlayerRecords, MAX_TEXT_RECEIPTS, type NotebookEntry } from '../narrative/player-records';
+import { defaultPlayerRecords, MAX_TEXT_RECEIPTS, type NotebookRun, type NotebookEntry } from '../narrative/player-records';
 import { defaultCampaign, type ActiveRide, type RideStopover } from '../campaign/state';
 import { campaignDefinition } from '../campaign/content';
 import type { CampaignDefinition, CampaignContext, CampaignEvent, EverydayJob, EverydayJourney, Stopover } from '../campaign/model';
@@ -48,7 +48,7 @@ import { baseFareForDistance, calculateFare } from './fare';
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
-export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; stopover?: RideStopover; optionalStop?: Stopover; incidentalId?: string; everyday?: { character: CharacterId; family: string; line: string; journeyId?: string; during?: string; arrival?: string; roughArrival?: string } };
+export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; notebookRun?: NotebookRun; missionId?: MissionId; stopover?: RideStopover; optionalStop?: Stopover; incidentalId?: string; everyday?: { character: CharacterId; family: string; line: string; journeyId?: string; during?: string; arrival?: string; roughArrival?: string } };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
 export { upgradeInfo, type Upgrade } from '../vehicles/vehicle-upgrades';
@@ -95,6 +95,7 @@ export class Game {
   }
   private offerCheckpoint = 0;
   private rideBeat = 0;
+  private dialogueRun?: NotebookRun;
   private dialogueStartedAt = 0;
   private pendingDispatch: Job | null = null;
   /** A paid booking is retired before any autosave or next-offer reconciliation. */
@@ -154,6 +155,7 @@ export class Game {
       // journeys are rebuilt from their original base amounts and need one credit.
       if (ride.stopover.completed && !ride.procedural) this.creditStopover(this.job);
     }
+    this.job.notebookRun = ride.notebookRun;
     this.job.type = ride.type; this.job.stage = 'dropoff'; this.job.elapsed = ride.elapsed; this.job.comfort = ride.comfort; this.rideBeat = ride.rideBeat; this.rideDistance = ride.rideDistance ?? 0;
     const rider = this.world.people.find(p => p.id === this.job.customerId); if (rider) { rider.alive = false; rider.aboard = true; }
     if (!this.save.garage) this.player.body.position = { ...this.job.pickup };
@@ -263,7 +265,7 @@ export class Game {
     this.advanceNarrative(morning, false); this.save.shiftStats = emptyShiftStats(); this.newJob(false, 'shift');
     this.setMode('playing'); this.syncMissionOffers(); this.persist(); this.captureMorning(); return true;
   }
-  get campaignContext(): CampaignContext { return { state: this.save.campaign, definition: this.campaignContent, progress: this.save.story, records: this.save.playerRecords }; }
+  get campaignContext(): CampaignContext { return { state: this.save.campaign, definition: this.campaignContent, progress: this.save.story, records: this.save.playerRecords, notebookRun: this.job?.notebookRun }; }
   campaignMatches(condition: import('../missions/schema').Condition | undefined) { return campaignCondition(condition, this.save.campaign, this.campaignContext); }
   isCampaignVehicle(id: string | undefined) { return this.campaignContent.vehicles.some(v => v.id === id); }
   get campaignBulletin() { return cityBulletin(this.save.campaign, this.campaignContext, this.campaignContent); }
@@ -355,11 +357,18 @@ export class Game {
   }
   recordDialogue() {
     const active = this.dialogue.active;
-    if (!this.campaignEnabled || !active) return;
-    this.note({ id: active.beatId, title: `${characters[active.message.speaker].name} · ride conversation`, text: active.message.text, kind: 'conversation', source: active.message.speaker });
+    if (!this.campaignEnabled || !active || /^ordinary-\d+-dispatch$/.test(active.beatId)) return;
+    this.note({ id: active.beatId, title: `${characters[active.message.speaker].name} · ride conversation`, text: active.message.text, kind: 'conversation', source: active.message.speaker, ...(this.dialogueRun ? { run: this.dialogueRun } : {}) });
     this.persist();
   }
-  private speak(beatId: string, message: import('../narrative/story').StoryMessage | null) { this.dialogue.start(beatId, message); this.dialogueStartedAt = this.time; }
+  private notebookRun(job: Job): NotebookRun {
+    const character = job.everyday?.character ?? (job.missionId ? this.missions.mission(job.missionId)?.passenger : undefined);
+    return job.notebookRun ??= { id: `run-${this.save.story.deliveries + 1}-${Math.round(this.save.story.campaignSeconds * 120)}`, customer: job.name,
+      ...(character ? { character } : {}), type: job.type, destination: job.destination, minute: this.save.campaign.minute };
+  }
+  private speak(beatId: string, message: import('../narrative/story').StoryMessage | null, run = this.job?.notebookRun) {
+    this.dialogue.start(beatId, message); this.dialogueStartedAt = this.time; this.dialogueRun = run ? { ...run } : undefined;
+  }
   /** Abandons any active mission and detaches it from the current job. */
   releaseMission(reason: AbandonReason = 'shift') { const active = this.missions.activeId; if (active) { const persistent = this.missions.active?.abandon.retry !== 'always'; this.missions.abandon(reason, this.save.story.campaignSeconds); if (persistent) this.persist(); } if (this.job && (active || !this.missionOffers.has(this.job.missionId ?? ''))) delete this.job.missionId; }
   vehicle(kind: Vehicle['kind'], x: number, y: number, angle: number, color: string, model: Vehicle['model'] = 'car') {
@@ -760,6 +769,7 @@ export class Game {
       const procedural = !j.missionId && !ordinary && j.incidentalId ? { pickup: j.pickup, dropoff: j.dropoff, name: j.name, destination: j.destination, fare: j.fare, time: j.time } : undefined;
       this.save.campaign.activeRide = j !== this.settledRide && j.stage === 'dropoff' && (j.missionId || ordinary || procedural) ? {
         ...(j.missionId ? { missionId: j.missionId } : ordinary ? { ordinary } : { procedural, incidentalId: j.incidentalId }), type: j.type, elapsed: j.elapsed, comfort: j.comfort, rideBeat: this.rideBeat, rideDistance: this.rideDistance,
+        ...(j.notebookRun ? { notebookRun: { ...j.notebookRun } } : {}),
         ...(j.stopover ? { stopover: { ...j.stopover, routed: this.navToStopover } } : {}),
       } : null;
     }
@@ -1497,6 +1507,7 @@ export class Game {
           if (j.missionId && this.missions.activeId !== j.missionId && !this.missions.begin(j.missionId, this.missionContext())) {
             this.newJob(); return;
           }
+          if (this.campaignEnabled) this.notebookRun(j);
           const outcome = j.missionId ? this.missions.pickup(this.missionContext()) : null;
           if (j.missionId && outcome?.missionId !== j.missionId) {
             this.releaseMission('vehicle-change'); this.newJob(false, 'vehicle-change');
@@ -1519,9 +1530,10 @@ export class Game {
         }
         else {
           const fare = calculateFare(j), { payout, speedBonus, comfortBonus } = fare;
+          const run = { ...this.notebookRun(j), totalFare: payout };
           const payment = `Base $${fare.baseFare} · Speed ${fareAdjustment(speedBonus)} · Comfort ${fareAdjustment(comfortBonus)} · Paid $${payout}${fare.baseFare + fare.adjustment < 0 ? ' (minimum payout)' : ''}`;
           const completion: Extract<CampaignEvent, { type: 'ride-completed' }> = { type: 'ride-completed', missionId: j.missionId, name: j.name, comfort: j.comfort,
-            receipt: { id: `fare-${this.save.story.deliveries + 1}`, title: `${j.name} · signed ${j.type === 'parcel' ? 'delivery' : 'fare'} receipt`, text: `${j.name}. Pickup (${j.pickup.x}, ${j.pickup.y}) → ${j.destination}. ${payment}. ${j.everyday?.line ?? this.missions.mission(j.missionId!)?.title ?? 'Transport completed.'}`, kind: 'receipt' } };
+            receipt: { id: `fare-${this.save.story.deliveries + 1}`, title: `${j.name} · signed ${j.type === 'parcel' ? 'delivery' : 'fare'} receipt`, text: `${j.name}. Pickup (${j.pickup.x}, ${j.pickup.y}) → ${j.destination}. ${payment}. ${j.everyday?.line ?? this.missions.mission(j.missionId!)?.title ?? 'Transport completed.'}`, kind: 'receipt', run } };
           if (j.missionId) this.missions.complete(this.missionContext(), this.campaignEnabled ? completion : undefined);
           else if (this.campaignEnabled) dispatchCampaignEvent(this.campaignContext, completion);
           if (this.campaignEnabled) this.syncCampaignWorld();
@@ -1539,7 +1551,7 @@ export class Game {
           } : null, completedId = j.missionId ?? `ordinary-${this.save.story.deliveries}`;
           this.newJob();
           if (this.campaignEnabled) this.pendingDispatch = this.job;
-          if (arrival) this.speak(`ride-${completedId}-arrival`, arrival);
+          if (arrival) this.speak(`ride-${completedId}-arrival`, arrival, run);
           this.persist();
         }
       }

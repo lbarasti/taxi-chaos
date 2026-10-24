@@ -46,7 +46,7 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
         + group('checking', 'Being checked', 'Submitted copies · checks take three game hours.', records.checking, 'No source checks underway.')
         + group('checked', 'Checked sources', 'Verified material, not necessarily a complete story.', records.checked, 'No checked sources yet.'); break;
   }
-  return `<div class="newsroom-columns"><div class="newsroom-menu-panel" data-menu-scope><div class="newsroom-menu-content">
+  return `<div class="drawer-columns"><div class="drawer-menu-panel" data-menu-scope><div class="drawer-menu-content">
     <div class="intro-eyebrow">DISPATCH / RECORDS</div><h2 id="modal-title">Newsroom.</h2>
     <p class="intro-copy" id="newsroom-summary">${summary}</p>
     <p>${closed ? 'The final edition has closed. Your collected records are retained.' : 'A useful source is not necessarily a complete story. Bring copies to the newsroom for source checks. Complete stories are automatically scheduled for the next edition.'}</p>
@@ -56,7 +56,7 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
       ${menuItem('Publications', { id: 'newsroom-publications', page: 'publications' })}
       ${menuItem('Back to the streets', { id: 'start' })}
     </nav>${menuHintMarkup()}</div></div>
-    <section class="newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
+    <section class="drawer-detail newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
       ${selected ? menuItem('Back', { id: 'newsroom-menu' }) : ''}
       <h3 id="newsroom-detail-title">${selected ? sections[selected] : 'Your newsroom records'}</h3>
       <p>${selected ? copy : 'Choose Sources to view collected material and source checks.'}</p>

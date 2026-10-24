@@ -406,7 +406,10 @@ if (scenarioPreviewMode) {
     $('mission-inbox').hidden = true;
     const mode = game.mode;
     try {
-      if (view === 'notebook' || view === 'pause') { game.mode = 'paused'; void drawer.open(view === 'notebook' ? 'notebook' : 'home', { animate: false }); }
+      if (view === 'notebook' || view === 'pause') {
+        game.mode = 'paused'; void drawer.open(view === 'notebook' ? 'shift' : 'home', { animate: false });
+        if (view === 'notebook') drawer.selectNotebook();
+      }
       modal(); hud(); renderer.draw(0);
       if (view === 'texts') { if (mode !== 'playing') throw new Error('Texts capture requires playing mode'); openInbox(); }
       if (view === 'story' && $('story').hidden) throw new Error('No visible ride conversation to capture');

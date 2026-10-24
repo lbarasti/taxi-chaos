@@ -120,7 +120,7 @@ describe('newsroom drawer', () => {
     submit(game, 'eli-docket', 'contractor-register');
     game.advanceNarrativeTo(game.save.campaign.minute + 180);
     expect(game.save.campaign.newsroom.cases.coordination?.editionAt).toBe(dayMinute(2, 6));
-    for (const html of [newsroomMarkup(game), newsroomMarkup(game, 'sources'), notebookMarkup(game), notebookMarkup(game, 'newsroom')]) {
+    for (const html of [newsroomMarkup(game), newsroomMarkup(game, 'sources'), notebookMarkup(game)]) {
       expect(html).not.toMatch(/data-publish|data-story|Stories at the editor|At the editor’s desk|editorial review/);
     }
     expect(newsroomSummary(game).summary).toBe('0 sources to submit · 0 sources being checked');
@@ -154,15 +154,13 @@ describe('newsroom drawer', () => {
     expect(newsroomSummary(game).summary).toBe('0 sources to submit · 0 sources being checked');
   });
 
-  it('keeps the notebook back destination tied to the entry point', () => {
+  it('keeps the notebook inside the shift rather than a standalone drawer page', () => {
     const game = new Game(undefined, false);
     expect(isDrawerPage('newsroom')).toBe(true);
     expect(drawerParent('newsroom')).toBeNull();
-    expect(drawerParent('notebook')).toBe('home');
-    expect(drawerParent('notebook', 'newsroom')).toBe('newsroom');
-    expect(drawerParent('notebook-guide', 'newsroom')).toBe('notebook');
-    expect(notebookMarkup(game)).toContain('Back to pause menu');
-    expect(notebookMarkup(game, 'newsroom')).toContain('data-page="newsroom"><span>Back to newsroom');
+    expect(drawerParent('shift')).toBe('home');
+    expect(isDrawerPage('notebook')).toBe(false);
+    expect(isDrawerPage('notebook-guide')).toBe(false);
     game.navToNewsroom = true;
     expect(newsroomMarkup(game)).toContain('Cancel newsroom route');
   });

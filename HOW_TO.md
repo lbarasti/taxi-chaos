@@ -90,10 +90,14 @@ Publications** keeps the edition archive, including days when you did not pursue
 an investigation. Reading pauses the game. Each edition keeps the findings and
 public responses that were known when it printed; later events do not rewrite it.
 
-The **This shift (Tab) → Dispatch notebook** keeps signed receipts, ride conversations
-and documents.
-The café changes on the calendar whether or not you visit it. Search your own
-records to revisit the details.
+Open **This shift (Tab)** and select **Dispatch notebook** to view records beside
+your shift actions. This is the notebook’s only entry point. Runs show the customer,
+destination, total fare, conversations and collected documents together. On smaller
+screens, the records appear below the shift menu; **Back** returns to its actions.
+Use **↑ / ↓** to select records and scroll through the notebook; **Esc** returns to
+the shift menu.
+The café changes on the calendar whether or not you visit it. Revisit your own
+records for the details.
 
 Route to the newsroom at **Old Town South**, stop nearby and leave selected
 copies from the notebook. Source checks take **three game hours** and need

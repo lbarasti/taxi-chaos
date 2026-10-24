@@ -119,10 +119,10 @@ async function checkDesktop() {
   await page.locator('#sleep').evaluate(button => { button.disabled = true; });
   await page.locator('#open-notebook').focus(); await page.keyboard.press('ArrowDown');
   assert.notEqual(await selected(page).getAttribute('id'), 'sleep', 'arrows skip unavailable actions');
-  await page.locator('#open-notebook').click(); await waitForDrawer(page, 'notebook');
-  await page.locator('#menu-notebook-guide').click(); await waitForDrawer(page, 'notebook-guide');
-  await page.keyboard.press('Escape'); await waitForDrawer(page, 'notebook');
-  await page.locator('#notebook-back').click(); await waitForDrawer(page, 'home');
+  await page.locator('#open-notebook').click(); await waitForDrawer(page, 'shift'); await page.locator('#shift-menu').waitFor();
+  assert.equal(await page.locator('#menu-notebook-guide, #notebook-route, #notebook-back').count(), 0);
+  await page.screenshot({path:`${output}/notebook-desktop.png`});
+  await page.keyboard.press('Escape'); await waitForDrawer(page, 'shift');
   await page.locator('#start').focus();
   await page.keyboard.press('Escape'); assert(await page.locator('#overlay').isHidden());
   await page.keyboard.press('p'); await page.keyboard.press('Enter'); assert(await page.locator('#overlay').isHidden());
@@ -162,8 +162,9 @@ async function checkDesktop() {
    await page.keyboard.press('Escape'); assert.match(await page.locator('#start').innerText(),/Resume/);
    assert(await page.evaluate(()=>document.querySelector('#modal').scrollWidth<=document.querySelector('#modal').clientWidth),'drawer has no horizontal overflow');
    await page.screenshot({path:`${output}/pause-${name}.png`});
-   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'}); await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift'); await page.locator('#open-notebook').click(); await waitForDrawer(page, 'notebook');
-   await page.locator('#notebook-back').click(); await waitForDrawer(page, 'home'); await page.locator('#start').click(); await page.reload();
+   await page.locator('#start').click(); await page.locator('#overlay').waitFor({state:'hidden'}); await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift'); await page.locator('#open-notebook').click(); await waitForDrawer(page, 'shift'); await page.locator('#shift-menu').waitFor();
+   await page.screenshot({path:`${output}/notebook-${name}.png`});
+   await page.keyboard.press('Escape'); await waitForDrawer(page, 'shift'); await page.locator('#start').click(); await page.reload();
   }
   await page.emulateMedia({reducedMotion:'reduce'}); await page.locator('#start').click();
   assert(await page.locator('#overlay').isHidden()); await page.keyboard.press('p');

@@ -249,8 +249,8 @@ try {
     await waitForDrawer(page, 'shift');
     await page.locator('#open-notebook').focus();
     await page.keyboard.press('Enter');
-    await waitForDrawer(page, 'notebook');
-    assert.equal(await page.locator('#modal.notebook-modal').isVisible(), true);
+    await waitForDrawer(page, 'shift'); await page.locator('#shift-menu').waitFor();
+    assert.equal(await page.locator('#shift-detail').isVisible(), true);
     await command({ op: 'mode', mode: 'playing' });
     // Booking newsroom guidance clears through the same toggle and keeps the booking.
     const booking = (await render()).job;

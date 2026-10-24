@@ -43,11 +43,11 @@ export class DrawerMenu {
     }, true);
   }
   private items(scope = this.selected?.closest<HTMLElement>('[data-menu-scope]') ?? this.root) {
-    return Array.from(scope.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]'))
+    return Array.from(scope.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [data-menu-item]'))
       .filter(item => !item.hidden && item.getClientRects().length > 0);
   }
   private item(target: EventTarget | null) {
-    const item = target instanceof Element ? target.closest<HTMLElement>('button, input, select, a[href]') : null;
+    const item = target instanceof Element ? target.closest<HTMLElement>('button, input, select, a[href], [data-menu-item]') : null;
     return item && this.root.contains(item) && !item.matches(':disabled') && item.getClientRects().length ? item : null;
   }
   private select(item: HTMLElement) {
@@ -78,7 +78,7 @@ export class DrawerMenu {
     this.touchArmed = null;
     const current = items.indexOf(this.selected!);
     this.select(items[current < 0 ? delta > 0 ? 0 : items.length - 1 : (current + delta + items.length) % items.length]);
-    this.selected?.scrollIntoView({ block: 'nearest' });
+    this.selected?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   adjust(delta: number) {
     const input = this.selected;
