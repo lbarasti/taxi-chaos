@@ -56,7 +56,7 @@
 .notebook-run-records h4{font-size:14px;line-height:1.4;margin:0 0 6px}
 @media(max-width:420px){.notebook-run-header{grid-template-columns:52px minmax(0,1fr);gap:12px}.notebook-portrait{width:52px;height:64px}.splash-modal .notebook-run h3{font-size:20px}.notebook-run-summary{flex-direction:column}}
 /* Desktop panes scroll independently; mobile retains the single-column flow. */
-.splash-modal:is([data-page="newsroom"],[data-page="shift"]){background:linear-gradient(105deg,#14242cf5 0%,#17262df0 55%,#203039eb 100%);user-select:text}
+.splash-modal:is([data-page="newsroom"],[data-page="shift"]){--drawer-menu-background:linear-gradient(105deg,#14242cf5 0%,#17262df0 55%,#203039eb 100%);background:var(--drawer-menu-background);user-select:text}
 .drawer-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
 .drawer-columns>div{min-width:0}
 .drawer-menu-content>p{font-size:13px;line-height:1.7;color:#b8c7bd}
@@ -87,16 +87,24 @@
 .splash-modal .menu-item[aria-pressed="true"]{border-left-color:var(--mint);background:#a3ddc210}
 .newsroom-empty{margin:0;padding:12px 0;border-top:1px solid var(--border)}
 @media(min-width:1000px){
-  .splash-modal:is([data-page="newsroom"],[data-page="shift"]){width:min(1080px,100vw);overflow:hidden}
+  .splash-modal:is([data-page="newsroom"],[data-page="shift"]){--drawer-menu-width:380px;--drawer-menu-shell:calc(var(--drawer-menu-width) + max(38px,env(safe-area-inset-left)) + max(38px,env(safe-area-inset-right)));position:relative;isolation:isolate;width:calc(var(--drawer-menu-shell) + 1px);overflow:visible;background:none;border:0;box-shadow:none}
+  /* Each column owns its chrome; changing the layout width paints no new edges. */
+  .splash-modal:is([data-page="newsroom"],[data-page="shift"])::before{content:"";position:absolute;inset:0 auto 0 0;box-sizing:border-box;width:calc(var(--drawer-menu-shell) + 1px);z-index:-1;pointer-events:none;background:var(--drawer-menu-background);border-right:1px solid #a3ddc235;box-shadow:18px 0 64px #06121b80}
+  .splash-modal:is([data-page="newsroom"],[data-page="shift"]):has(.drawer-detail){width:min(1080px,100vw)}
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-page{height:100%;min-height:0;flex-shrink:1;margin-block:0}
-  :is([data-page="newsroom"],[data-page="shift"]) .drawer-columns{height:100%;min-height:0;grid-template-columns:minmax(0,380px) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:48px}
+  :is([data-page="newsroom"],[data-page="shift"]) .drawer-columns{height:100%;min-height:0;grid-template-columns:minmax(0,var(--drawer-menu-width));grid-template-rows:minmax(0,1fr);gap:48px}
+  :is([data-page="newsroom"],[data-page="shift"]) .drawer-columns:has(.drawer-detail){grid-template-columns:minmax(0,var(--drawer-menu-width)) minmax(0,1fr)}
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-menu-panel{display:flex;overflow-y:auto;min-height:0;overscroll-behavior:contain}
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-menu-content{flex:0 0 auto;width:100%;min-width:0;margin-block:auto;padding:3px}
-  :is([data-page="newsroom"],[data-page="shift"]) .drawer-detail{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:44px 3px 3px}
+  :is([data-page="newsroom"],[data-page="shift"]) .drawer-detail{isolation:isolate;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:44px 3px 3px}
+  /* Fade the detail column's full-height backdrop together with its content. */
+  :is([data-page="newsroom"],[data-page="shift"]) .drawer-detail::before{content:"";position:absolute;inset:0 0 0 var(--drawer-menu-shell);z-index:-1;pointer-events:none;background:linear-gradient(105deg,#17262df0,#203039eb);border-right:1px solid #a3ddc235;box-shadow:18px 0 64px #06121b80}
 }
+.drawer-detail-entering{animation:drawer-detail-in .2s ease-out both}
+@keyframes drawer-detail-in{from{opacity:0}to{opacity:1}}
 .drawer-entering{animation:drawer-in .24s cubic-bezier(.2,.75,.25,1) both}
 @keyframes drawer-in{from{opacity:0;transform:translateX(calc(18px * var(--drawer-direction,1)))}to{opacity:1;transform:translateX(0)}}
-@media(prefers-reduced-motion:reduce){.drawer-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field{transition:none}}
+@media(prefers-reduced-motion:reduce){.drawer-entering,.drawer-detail-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field{transition:none}}
 @media(max-width:700px){.splash-modal{width:min(420px,calc(100vw - 24px));padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.splash-modal h2{font-size:clamp(34px,8vw,48px)}.splash-modal .intro-controls{gap:8px;font-size:9px}}
 @media(max-height:650px){.splash-modal{padding-top:max(20px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}.splash-modal h2{font-size:40px;margin-top:14px}.drawer-page>.intro-copy{margin-bottom:14px}}
 /* Settings share the drawer palette, with native controls and aligned values. */
