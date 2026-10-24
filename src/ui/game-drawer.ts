@@ -9,6 +9,10 @@ import { splashPrompts } from './splash';
 import { menuHintText, type InputDevice } from './menu-hint';
 import type { DrawerPage } from './drawer-markup';
 
+// Shift and the newsroom sit on one horizontal wheel; each shows the other as its neighbour.
+const panelWheel = ['shift', 'newsroom'] as const satisfies readonly DrawerPage[];
+type WheelEffect = { outgoing: HTMLElement; rect: DOMRect; step: number };
+
 // The title, pause and HUD newsroom entry share one mobile-friendly drawer.
 export class GameDrawer {
   private settings: SettingsControls;
@@ -36,7 +40,7 @@ export class GameDrawer {
         return;
       }
       if (page === 'publications') { this.openPublications(this.page === 'finale'); return; }
-      if (page && isDrawerPage(page)) { void this.open(page); return; }
+      if (page && isDrawerPage(page)) { void this.open(page, button.hasAttribute('data-wheel') ? { direction: 1 } : {}); return; }
       if (button.dataset.edition) {
         this.selectEdition(Number(button.dataset.edition)); this.refresh();
         this.root.scrollTop = 0; this.menu.reset('publication-back');
@@ -136,15 +140,25 @@ export class GameDrawer {
     if (this.page === 'settings' && this.root.dataset.page === 'settings') this.refreshSettings();
     else this.paint();
   }
-  async open(page: DrawerPage, { animate = true } = {}) {
+  async open(page: DrawerPage, { animate = true, direction }: { animate?: boolean; direction?: number } = {}) {
     // Capture previews can choose a page before entering paused mode.
     if (!this.active) { this.page = page; return; }
     if (this.transition || page === this.page) return;
     const selection = this.menu.selectionId;
     if (selection) this.selections.set(this.page, selection);
-    const backwards = drawerParent(this.page) === page;
-    const content = this.root.querySelector('.drawer-page');
-    if (animate && content && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const backwards = direction !== undefined ? direction < 0 : drawerParent(this.page) === page;
+    const content = this.root.querySelector<HTMLElement>('.drawer-page');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Wheel steps are a carousel: both pages travel together, so the old title
+    // slides out while the new one rolls in from the other side.
+    if (animate && direction !== undefined && content && !reducedMotion) {
+      this.page = page;
+      if (page === 'shift') this.notebookSelected = false;
+      if (page === 'newsroom') this.newsroomSection = null;
+      this.paint(backwards ? -1 : 1, this.wheelEffect(content));
+      return;
+    }
+    if (animate && content && !reducedMotion) {
       const current = getComputedStyle(content);
       const animation = content.animate([{ opacity: current.opacity, transform: current.transform }, { opacity: 0, transform: `translateX(${backwards ? 14 : -14}px)` }], { duration: 120, easing: 'ease-in', fill: 'forwards' });
       this.transition = animation;
@@ -177,11 +191,29 @@ export class GameDrawer {
     void this.open(parent); return true;
   }
   move(delta: number) { if (this.active && !this.transition) this.menu.move(delta); }
-  adjust(delta: number) { if (this.active && !this.transition) this.menu.adjust(delta); }
+  /** The two campaign panels form a closed horizontal wheel. */
+  private get wheelPage() { return this.page === 'shift' || this.page === 'newsroom'; }
+  private get wheelVisible() { return this.active && this.options.game().campaignEnabled && this.wheelPage && !(this.page === 'shift' ? this.notebookSelected : this.newsroomSection); }
+  panel(delta: number) {
+    if (!this.wheelVisible || this.transition) return;
+    const index = this.page === 'shift' ? 0 : 1, direction = delta < 0 ? -1 : 1;
+    const next = (index + direction + panelWheel.length) % panelWheel.length;
+    if (next === index) return;
+    void this.open(panelWheel[next]!, { direction });
+  }
+  adjust(delta: number) {
+    if (!this.active || this.transition) return;
+    // Ranges keep their native value editing; everywhere else left/right turns the wheel.
+    if (this.wheelVisible && !(document.activeElement instanceof HTMLInputElement) && !(document.activeElement instanceof HTMLSelectElement)) { this.panel(delta); return; }
+    this.menu.adjust(delta);
+  }
   activate() { if (this.active && !this.transition) this.menu.activate(); }
   handleKey(event: KeyboardEvent) {
     if (!this.active) return false;
     if (this.transition) { event.preventDefault(); return true; }
+    if ((event.code === 'ArrowLeft' || event.code === 'ArrowRight') && this.wheelVisible) {
+      event.preventDefault(); if (!event.repeat) this.panel(event.code === 'ArrowRight' ? 1 : -1); return true;
+    }
     if (event.code === 'Escape' && (this.page === 'newsroom' || this.page === 'finale' || drawerParent(this.page))) {
       event.preventDefault(); if (!event.repeat) this.back(); return true;
     }
@@ -189,9 +221,13 @@ export class GameDrawer {
   }
   setInputDevice(device: InputDevice) {
     this.device = device;
-    const prompts = this.root.querySelector('#splash-prompts'), hint = this.root.querySelector('#menu-hint');
+    const prompts = this.root.querySelector('#splash-prompts');
     if (prompts) prompts.innerHTML = splashPrompts(device);
-    if (hint) hint.textContent = menuHintText(device);
+    this.paintHint();
+  }
+  private paintHint() {
+    const hint = this.root.querySelector('#menu-hint');
+    if (hint) hint.textContent = menuHintText(this.device, this.wheelVisible);
   }
   private frontPage() {
     const selected = this.articleId;
@@ -199,7 +235,7 @@ export class GameDrawer {
     this.refresh(); this.root.scrollTop = 0; this.menu.reset(selected ? `read-article-${selected}` : 'publication-back');
     this.root.querySelector('[data-selected]')?.scrollIntoView({ block: 'nearest' });
   }
-  private paint(direction = 0) {
+  private paint(direction = 0, wheel?: WheelEffect) {
     const samePage = this.root.dataset.page === this.page;
     const selected = samePage ? this.menu.selectionId : this.selections.get(this.page);
     const scroll = samePage ? this.root.scrollTop : 0;
@@ -209,7 +245,7 @@ export class GameDrawer {
     const menuScroll = samePage ? this.root.querySelector('.drawer-menu-panel')?.scrollTop ?? 0 : 0;
     this.root.dataset.page = this.page;
     this.root.classList.add('splash-modal');
-    this.root.innerHTML = `<div class="drawer-page${direction ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved(), newsroomSection: this.newsroomSection, notebookSelected: this.notebookSelected, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId, loadFailed: this.loadFailed })}</div>`;
+    this.root.innerHTML = `<div class="drawer-page${direction && !wheel ? ' drawer-entering' : ''}" style="--drawer-direction:${direction}">${drawerMarkup(this.page, { game: this.options.game(), settings: this.settings, saved: this.options.saved(), newsroomSection: this.newsroomSection, notebookSelected: this.notebookSelected, editionDay: this.editionDay, publicationBack: this.publicationBack, articleId: this.articleId, loadFailed: this.loadFailed })}</div>`;
     this.refreshSettings = bindSettingControls(this.root, Object.values(this.settings));
     this.setInputDevice(this.device);
     this.menu.reset(selected);
@@ -222,6 +258,74 @@ export class GameDrawer {
     this.root.scrollTop = scroll;
     if (!samePage) this.root.querySelector<HTMLElement>('[data-selected]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     else if (detailFocused) nextDetail?.querySelector<HTMLElement>('[data-selected]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (wheel) this.carousel(wheel, direction < 0 ? -1 : 1);
+  }
+  /** Capture what the wheel needs to roll the old page into the new one. */
+  private wheelEffect(content: HTMLElement): WheelEffect {
+    const head = content.querySelector<HTMLElement>('.drawer-head');
+    const title = head?.querySelector<HTMLElement>('#modal-title');
+    const peek = head?.querySelector<HTMLElement>('.drawer-wheel-next');
+    const step = title && peek ? peek.getBoundingClientRect().left - title.getBoundingClientRect().left : 0;
+    return { outgoing: content.cloneNode(true) as HTMLElement, rect: content.getBoundingClientRect(), step };
+  }
+  /**
+   * The visible neighbour title is the page you are about to see, so it must
+   * land under the cursor: both header strips travel exactly one title apart,
+   * while the bodies hand over beneath them.
+   */
+  private carousel({ outgoing, rect, step }: WheelEffect, direction: -1 | 1) {
+    const incoming = this.root.querySelector<HTMLElement>('.drawer-page');
+    if (!incoming || !rect.width) return;
+    const modal = this.root.getBoundingClientRect(), page = incoming.getBoundingClientRect();
+    const stage = document.createElement('div');
+    stage.className = 'drawer-carousel';
+    stage.style.cssText = `position:fixed;left:${modal.left}px;top:${modal.top}px;width:${modal.width}px;height:${modal.height}px;overflow:hidden;pointer-events:none;z-index:2`;
+    const layer = (node: HTMLElement, box: DOMRect) => {
+      node.classList.remove('drawer-entering');
+      const head = node.querySelector<HTMLElement>('.drawer-head');
+      if (head) head.style.visibility = 'hidden';
+      node.style.cssText = `position:absolute;margin:0;top:${box.top - modal.top}px;left:${box.left - modal.left}px;width:${box.width}px;height:${box.height}px;will-change:transform,opacity`;
+      stage.appendChild(node);
+      return node;
+    };
+    const leaving = layer(outgoing, rect), arriving = layer(incoming.cloneNode(true) as HTMLElement, page);
+    incoming.style.visibility = 'hidden';
+    this.root.appendChild(stage);
+    const timing = { duration: 420, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' } as const;
+    const quiet = { duration: 420, easing: 'linear', fill: 'forwards' } as const;
+    const frames: Animation[] = [
+      // One body at a time: the old one is gone before the new one appears.
+      arriving.animate([{ opacity: 0, transform: `translateX(${32 * direction}px)` }, { opacity: 0, transform: `translateX(${32 * direction}px)`, offset: .55 }, { opacity: 1, transform: 'translateX(0)' }], quiet),
+      leaving.animate([{ opacity: 1 }, { opacity: 0 }], { ...quiet, duration: 260 }),
+    ];
+    const source = incoming.querySelector<HTMLElement>('.drawer-head');
+    if (step > 0 && source) {
+      const head = source.getBoundingClientRect();
+      const strip = (from: HTMLElement) => {
+        const clone = from.querySelector('.drawer-head')!.cloneNode(true) as HTMLElement;
+        clone.style.cssText = `position:absolute;margin:0;top:${head.top - modal.top}px;left:${page.left - modal.left}px;width:${page.width}px;height:${head.height}px;will-change:transform,opacity`;
+        stage.appendChild(clone);
+        return clone;
+      };
+      const next = strip(incoming), previous = strip(outgoing);
+      const travel = step * direction;
+      frames.push(
+        next.animate([{ transform: `translateX(${travel}px)` }, { transform: 'translateX(0)' }], timing),
+        previous.animate([{ transform: 'translateX(0)' }, { transform: `translateX(${-travel}px)` }], timing),
+        // Hold the leaving strip solid until its dim neighbour has landed, then fade.
+        previous.animate([{ opacity: 1 }, { opacity: 1, offset: .72 }, { opacity: 0 }], timing),
+      );
+    }
+    this.transition = frames[0];
+    let settled = false;
+    const settle = () => {
+      if (settled) return; settled = true;
+      stage.remove();
+      frames.forEach(frame => frame.cancel());
+      incoming.style.visibility = '';
+      if (this.transition === frames[0]) this.transition = undefined;
+    };
+    frames[0].onfinish = settle; frames[0].oncancel = settle;
   }
   selectNotebook() {
     if (this.page !== 'shift' || !this.options.game().campaignEnabled) return;
@@ -257,6 +361,7 @@ export class GameDrawer {
     detail?.remove();
     menuItem?.setAttribute('aria-pressed', 'false');
     menuItem?.focus({ preventScroll: true });
+    this.paintHint();
     if (!matchMedia('(min-width:1000px)').matches) this.root.scrollTop = 0;
     menuItem?.scrollIntoView({ block: 'nearest' });
   }

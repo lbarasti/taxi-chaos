@@ -7,10 +7,18 @@ const hints: Record<InputDevice, string> = {
   playstation: 'D-pad Select · × Confirm',
 };
 
-export function menuHintText(device: InputDevice): string {
-  return hints[device];
+// Shift and the newsroom sit on one horizontal wheel; say so only where a
+// neighbouring panel actually exists.
+const wheelHints: Partial<Record<InputDevice, string>> = {
+  keyboard: '← → Panels · ↑ ↓ Select · Enter Confirm',
+  xbox: '◄ ► Panels · D-pad Select · A Confirm',
+  playstation: '◄ ► Panels · D-pad Select · × Confirm',
+};
+
+export function menuHintText(device: InputDevice, wheel = false): string {
+  return wheel && wheelHints[device] || hints[device];
 }
 
-export function menuHintMarkup(device: InputDevice = 'keyboard'): string {
-  return `<p class="menu-hint" id="menu-hint">${menuHintText(device)}</p>`;
+export function menuHintMarkup(device: InputDevice = 'keyboard', wheel = false): string {
+  return `<p class="menu-hint" id="menu-hint">${menuHintText(device, wheel)}</p>`;
 }

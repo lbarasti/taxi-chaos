@@ -4,6 +4,8 @@
 .splash-backdrop.splash-exiting{opacity:0;pointer-events:none;transition:opacity .55s ease-in-out}
 .splash-modal{display:flex;flex-direction:column;width:min(540px,100vw);height:100dvh;max-height:none;padding:max(32px,env(safe-area-inset-top)) max(38px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(38px,env(safe-area-inset-left));background:linear-gradient(105deg,#14242c9e 0%,#17262d85 55%,#20303970 100%);border:0;border-right:1px solid #a3ddc235;border-radius:0;box-shadow:18px 0 64px #06121b80;backdrop-filter:none;overscroll-behavior:contain}
 .drawer-page{flex-shrink:0;min-width:0;margin-block:auto;text-align:left}.drawer-page>.intro-copy{font-size:14px;line-height:1.7;color:#aebcaf;margin-bottom:22px}
+/* Every menu page starts at the same height, so changing pages never shifts the title. */
+.splash-modal:not([data-page="home"]) .drawer-page{margin-block:0;padding-block-start:clamp(12px,9dvh,84px)}
 .splash-modal h2{font-size:54px;margin:22px 0 14px;letter-spacing:-2.5px}
 .splash-modal .splash-brand{margin:0 0 14px;line-height:0;letter-spacing:0}
 .splash-brand img{display:block;width:auto;height:auto;max-width:100%;max-height:clamp(140px,26dvh,240px);margin-inline:auto;object-fit:contain}
@@ -61,6 +63,16 @@
 .drawer-columns>div{min-width:0}
 .drawer-menu-content>p{font-size:13px;line-height:1.7;color:#b8c7bd}
 .drawer-menu-content>.intro-copy{font-size:14px;color:#aebcaf;margin-bottom:22px}
+/* A wheel step shows the neighbouring title beside the current one: same type,
+   dimmed and clipped by the drawer edge, and still a pointer target. */
+.drawer-wheel{display:flex;align-items:baseline;gap:.22em;margin:22px 0 14px;overflow:hidden;font-size:54px;font-weight:500;letter-spacing:-2.5px;line-height:1.1}
+.splash-modal .drawer-wheel>h2{flex:0 0 auto;margin:0;font:inherit;white-space:nowrap}
+.drawer-wheel-next{flex:0 1 auto;display:block;min-width:0;min-height:44px;overflow:hidden;margin:0;padding:0;border:0;background:none;font:inherit;color:#75897f;text-align:left;white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:color .16s ease}
+.drawer-wheel-next:hover{color:#b7c8bb}
+.drawer-wheel-next[data-selected]{color:#d3ded3}
+.drawer-wheel-next:focus-visible{outline:1px solid #f7ce5588;outline-offset:4px}
+@media(max-width:700px){.drawer-wheel{font-size:clamp(34px,8vw,48px)}}
+@media(max-height:650px){.drawer-wheel{font-size:40px;margin-top:14px}}
 .drawer-detail{min-width:0;overflow-wrap:anywhere}
 .drawer-detail:focus{outline:none}
 .drawer-detail[data-selected]>h3{color:var(--gold)}
@@ -95,7 +107,7 @@
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-columns{height:100%;min-height:0;grid-template-columns:minmax(0,var(--drawer-menu-width));grid-template-rows:minmax(0,1fr);gap:48px}
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-columns:has(.drawer-detail){grid-template-columns:minmax(0,var(--drawer-menu-width)) minmax(0,1fr)}
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-menu-panel{display:flex;overflow-y:auto;min-height:0;overscroll-behavior:contain}
-  :is([data-page="newsroom"],[data-page="shift"]) .drawer-menu-content{flex:0 0 auto;width:100%;min-width:0;margin-block:auto;padding:3px}
+  :is([data-page="newsroom"],[data-page="shift"]) .drawer-menu-content{flex:0 0 auto;width:100%;min-width:0;margin-block:0;padding:0 3px 3px}
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-detail{isolation:isolate;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:44px 3px 3px}
   /* Fade the detail column's full-height backdrop together with its content. */
   :is([data-page="newsroom"],[data-page="shift"]) .drawer-detail::before{content:"";position:absolute;inset:0 0 0 var(--drawer-menu-shell);z-index:-1;pointer-events:none;background:linear-gradient(105deg,#17262df0,#203039eb);border-right:1px solid #a3ddc235;box-shadow:18px 0 64px #06121b80}
@@ -104,7 +116,7 @@
 @keyframes drawer-detail-in{from{opacity:0}to{opacity:1}}
 .drawer-entering{animation:drawer-in .24s cubic-bezier(.2,.75,.25,1) both}
 @keyframes drawer-in{from{opacity:0;transform:translateX(calc(18px * var(--drawer-direction,1)))}to{opacity:1;transform:translateX(0)}}
-@media(prefers-reduced-motion:reduce){.drawer-entering,.drawer-detail-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field{transition:none}}
+@media(prefers-reduced-motion:reduce){.drawer-entering,.drawer-detail-entering{animation:none}.splash-modal .menu-item,.splash-modal .menu-item::after,.splash-modal .menu-field,.drawer-wheel-next{transition:none}}
 @media(max-width:700px){.splash-modal{width:min(420px,calc(100vw - 24px));padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.splash-modal h2{font-size:clamp(34px,8vw,48px)}.splash-modal .intro-controls{gap:8px;font-size:9px}}
 @media(max-height:650px){.splash-modal{padding-top:max(20px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}.splash-modal h2{font-size:40px;margin-top:14px}.drawer-page>.intro-copy{margin-bottom:14px}}
 /* Settings share the drawer palette, with native controls and aligned values. */

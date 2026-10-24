@@ -7,7 +7,7 @@ import { newsroomMarkup, type NewsroomSection } from '../campaign/newsroom-view'
 import { publicationsMarkup, finaleMarkup } from '../campaign/newspaper-view';
 import { creditsMarkup } from './credits';
 import { splashMarkup, shiftMarkup } from './splash';
-import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
+import { drawerHeading, menuItem, panelWheelMarkup, type DrawerPage } from './drawer-markup';
 import { menuHintMarkup } from './menu-hint';
 import { PAST_TRIPS_LABEL } from './copy';
 
@@ -72,7 +72,7 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroom
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'settings': body = settingsMarkup(settings); break;
     case 'shift': return `<div class="drawer-columns"><div class="drawer-menu-panel" data-menu-scope><div class="drawer-menu-content">
-      <div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, `<nav class="game-menu" aria-label="Shift actions">${campaignActionsMarkup(game, notebookSelected)}${menuItem('Resume shift', { id: 'start' })}</nav>`)}${menuHintMarkup()}</div></div>
+      ${panelWheelMarkup('DISPATCH / SHIFT', 'Your shift.', game.campaignEnabled ? { page: 'newsroom', label: 'Newsroom.' } : null)}${campaignMarkup(game)}${shiftMarkup(game, `<nav class="game-menu" aria-label="Shift actions">${campaignActionsMarkup(game, notebookSelected)}${menuItem('Resume shift', { id: 'start' })}</nav>`)}${menuHintMarkup('keyboard', game.campaignEnabled && !notebookSelected)}</div></div>
       ${notebookSelected ? `<section class="drawer-detail shift-detail" id="shift-detail" aria-labelledby="open-notebook" data-menu-scope tabindex="-1">
         ${menuItem('Back', { id: 'shift-menu' })}${notebookMarkup(game)}
       </section>` : ''}</div>`;

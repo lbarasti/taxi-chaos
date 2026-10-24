@@ -43,7 +43,8 @@ export class DrawerMenu {
     }, true);
   }
   private items(scope = this.selected?.closest<HTMLElement>('[data-menu-scope]') ?? this.root) {
-    return Array.from(scope.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [data-menu-item]'))
+    // Panel tabs sit on the horizontal wheel; Up/Down/Tab cycle the actions below them.
+    return Array.from(scope.querySelectorAll<HTMLElement>('button:not(:disabled):not([data-wheel]), input:not(:disabled), select:not(:disabled), a[href], [data-menu-item]'))
       .filter(item => !item.hidden && item.getClientRects().length > 0);
   }
   private item(target: EventTarget | null) {

@@ -4,7 +4,9 @@ import { newContext } from '../runtime.mjs';
 // Helpers for the actual game drawer; no test-only navigation API in the app.
 export async function waitForDrawer(page, name) {
   await page.waitForFunction(name => document.querySelector('#modal').dataset.page === name, name);
-  await page.locator('.drawer-page').evaluate(async element => {
+  // Wheel steps roll a detached stage over the drawer; land it before asserting.
+  await page.waitForFunction(() => !document.querySelector('#modal > .drawer-carousel'));
+  await page.locator('#modal > .drawer-page').evaluate(async element => {
     await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished));
   });
 }

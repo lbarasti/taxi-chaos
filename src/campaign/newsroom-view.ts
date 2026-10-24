@@ -1,5 +1,5 @@
 import type { Game } from '../game/game';
-import { menuItem } from '../ui/drawer-markup';
+import { menuItem, panelWheelMarkup } from '../ui/drawer-markup';
 import { menuHintMarkup } from '../ui/menu-hint';
 import { recordMarkup } from './view';
 
@@ -47,7 +47,7 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
         + group('checked', 'Checked sources', 'Verified material, not necessarily a complete story.', records.checked, 'No checked sources yet.'); break;
   }
   return `<div class="drawer-columns"><div class="drawer-menu-panel" data-menu-scope><div class="drawer-menu-content">
-    <div class="intro-eyebrow">DISPATCH / RECORDS</div><h2 id="modal-title">Newsroom.</h2>
+    ${panelWheelMarkup('DISPATCH / RECORDS', 'Newsroom.', game.campaignEnabled ? { page: 'shift', label: 'Your shift.' } : null)}
     <p class="intro-copy" id="newsroom-summary">${summary}</p>
     <p>${closed ? 'The final edition has closed. Your collected records are retained.' : 'A useful source is not necessarily a complete story. Bring copies to the newsroom for source checks. Complete stories are automatically scheduled for the next edition.'}</p>
     <nav class="game-menu" aria-label="Newsroom actions">
@@ -55,7 +55,7 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
       ${Object.entries(sections).map(([id, label]) => `<button class="menu-item" id="newsroom-open-${id}" data-newsroom-section="${id}" aria-controls="newsroom-detail" aria-pressed="${selected === id}"><span>${label}</span></button>`).join('')}
       ${menuItem('Publications', { id: 'newsroom-publications', page: 'publications' })}
       ${menuItem('Back to the streets', { id: 'start' })}
-    </nav>${menuHintMarkup()}</div></div>
+    </nav>${menuHintMarkup('keyboard', game.campaignEnabled && !selected)}</div></div>
     ${selected ? `<section class="drawer-detail newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
       ${menuItem('Back', { id: 'newsroom-menu' })}
       <h3 id="newsroom-detail-title">${sections[selected]}</h3>

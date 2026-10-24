@@ -39,6 +39,8 @@ Slow down inside a **yellow ring** to collect a passenger or parcel. Deliver to 
 
 You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades there, and repair damaged vehicles. Upgrades belong to the individual vehicle: repairs preserve them, another vehicle has its own levels, and explosion or sinking destroys them. Wallet and completed-job progress persist between runs, along with upgrades on surviving invested vehicles. **This shift**, opened with **Tab** or the HUD clipboard below Texts, shows earnings, completed jobs, smashed objects, and pedestrian fatalities since you last woke from sleep. The pause screen shows the same stats. These totals survive reloading and reset after sleeping.
 
+**Your shift** and the **Newsroom** share one menu wheel. Press **← / →** (or select the dimmed next title at the right edge) to roll between them; **↑ / ↓** still selects an action in the page you are on. The newsroom shortcut above Texts opens the same panel directly.
+
 ### Open Shore, texts and your notebook
 
 The campaign lasts **fourteen full days**, beginning at 07:00 and including the
