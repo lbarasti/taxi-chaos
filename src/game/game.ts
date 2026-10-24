@@ -147,7 +147,9 @@ export class Game {
     if (ride.stopover && this.stopoverFor(this.job)) {
       this.job.stopover = { ...ride.stopover };
       this.navToStopover = ride.stopover.routed && !ride.stopover.completed;
-      if (ride.stopover.completed) this.creditStopover(this.job);
+      // Generated fares persist the already-adjusted fare and timer; authored
+      // journeys are rebuilt from their original base amounts and need one credit.
+      if (ride.stopover.completed && !ride.procedural) this.creditStopover(this.job);
     }
     this.job.type = ride.type; this.job.stage = 'dropoff'; this.job.elapsed = ride.elapsed; this.job.comfort = ride.comfort; this.rideBeat = ride.rideBeat; this.rideDistance = ride.rideDistance ?? 0;
     const rider = this.world.people.find(p => p.id === this.job.customerId); if (rider) { rider.alive = false; rider.aboard = true; }
