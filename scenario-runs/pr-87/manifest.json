@@ -1,0 +1,51 @@
+{
+  "sourceCommit": "612d5be1fda3f17fde1389acbb82769c90444580",
+  "runtime": "@napi-rs/canvas; native game Canvas frames, not browser screenshots; DOM HUD not captured",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "fixture": "motorcycle",
+  "step": 0.008333333333333333,
+  "actions": "Exit cab; walk S 0.2s; mount; W 0.5s; W+Shift 0.15s then 0.3s; W 0.12s. No teleports, wheelie assignments or upgrades.",
+  "lighting": "14:00 frozen",
+  "captures": [
+    {
+      "file": "02-full-wheelie-overview.png",
+      "time": 1.1499999999999984,
+      "position": {
+        "x": 6.478938910618681,
+        "y": 30.194365043734884
+      },
+      "velocity": {
+        "x": -0.14721845623287894,
+        "y": -12.442614375666594
+      },
+      "heading": -1.5825658066068482,
+      "wheelie": 1,
+      "airborne": true,
+      "fallen": false,
+      "boost": 86.95000000000036,
+      "zoom": 18
+    },
+    {
+      "file": "03-full-wheelie-detail.png",
+      "time": 1.1499999999999984,
+      "position": {
+        "x": 6.478938910618681,
+        "y": 30.194365043734884
+      },
+      "velocity": {
+        "x": -0.14721845623287894,
+        "y": -12.442614375666594
+      },
+      "heading": -1.5825658066068482,
+      "wheelie": 1,
+      "airborne": true,
+      "fallen": false,
+      "boost": 86.95000000000036,
+      "zoom": 60
+    }
+  ],
+  "overlays": "World markers hidden through the existing Layers inspector; no collision or debugging overlays"
+}
