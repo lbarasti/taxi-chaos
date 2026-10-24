@@ -138,6 +138,16 @@ try {
     await page.keyboard.press('Escape');
     await page.locator('#overlay').waitFor({ state: 'hidden' });
 
+    // Tab toggles both campaign panels, like the HUD shift entry; it never steps
+    // through the actions once a panel is open.
+    await page.keyboard.press('Tab'); await waitForDrawer(page, 'shift');
+    await page.keyboard.press('Tab'); await page.locator('#overlay').waitFor({ state: 'hidden' });
+    assert.equal(await page.evaluate(() => window.__scenario.render('world').mode), 'playing');
+    if (touch) await page.locator('#newsroom').tap(); else { await page.locator('#newsroom').focus(); await page.keyboard.press('Enter'); }
+    await waitForDrawer(page, 'newsroom');
+    await page.keyboard.press('Tab'); await page.locator('#overlay').waitFor({ state: 'hidden' });
+    assert.equal(await page.evaluate(() => window.__scenario.render('world').mode), 'playing', 'Tab resumes play from the newsroom');
+
     // The wheel tab is a plain pointer target too.
     if (!touch) {
       if (await page.locator('#shift').isVisible()) await page.locator('#shift').click();
@@ -206,6 +216,12 @@ try {
       const boxes = [...stage.querySelectorAll(':scope > .drawer-page')];
       const heads = [...stage.querySelectorAll(':scope > .drawer-head')];
       const left = node => Math.round(node.getBoundingClientRect().left);
+      // Strip boxes match the head itself, not the wider page it sits in.
+      const headBox = node => {
+        const box = node.getBoundingClientRect(), transform = getComputedStyle(node).transform;
+        const tx = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
+        return { left: Math.round(box.left - tx), width: Math.round(box.width), top: Math.round(box.top) };
+      };
       return {
         start, page: document.querySelector('#modal').dataset.page,
         hidden: getComputedStyle(document.querySelector('#modal > .drawer-page')).visibility,
@@ -214,13 +230,18 @@ try {
         peek: heads[1] && left(heads[1].querySelector('.drawer-wheel-next')),
         arriving: heads[0] && left(heads[0].querySelector('#modal-title')),
         leaving: heads[1] && left(heads[1].querySelector('#modal-title')),
+        strips: heads.map(headBox),
+        liveHead: headBox(document.querySelector('#modal > .drawer-page .drawer-head')),
         stage: { width: Math.round(stage.getBoundingClientRect().width), left: Math.round(stage.getBoundingClientRect().left) },
         modal: Math.round(document.querySelector('#modal').getBoundingClientRect().width),
+        exposed: stage.getAttribute('aria-hidden') !== 'true' || !stage.inert,
       };
     }, before);
     assert.equal(rolling.bodies.length, 2, 'both bodies are on the stage at once');
     assert.equal(rolling.page, 'newsroom', 'the destination page is already mounted');
     assert.equal(rolling.hidden, 'hidden', 'the live page waits beneath the moving stage');
+    assert.equal(rolling.exposed, false, 'the cloned stage stays out of the focus order and accessibility tree');
+    assert.deepEqual(rolling.strips, [rolling.liveHead, rolling.liveHead], 'both strips use the head box, so the title does not jump when the stage is removed');
     assert.match(rolling.bodies[0].text, /DISPATCH \/ SHIFT/, 'the old page is still visible while leaving');
     assert.match(rolling.bodies[1].text, /DISPATCH \/ RECORDS/, 'the new page arrives underneath');
     assert(rolling.leaving < rolling.start - 40, 'the old title travels out');

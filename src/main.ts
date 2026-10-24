@@ -251,9 +251,9 @@ window.addEventListener('keydown', e => {
   if (inspection.keydown(e)) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (e.isTrusted && !e.repeat && !target?.closest('input, select, textarea')) void audio.unlock();
-  if (e.code === 'Tab' && !e.shiftKey && !target?.closest('input, select, textarea, #debug-panel') && (game.mode === 'playing' || drawer.showingShift)) {
+  if (e.code === 'Tab' && !e.shiftKey && !target?.closest('input, select, textarea, #debug-panel') && (game.mode === 'playing' || drawer.showingPanels)) {
     e.preventDefault();
-    if (!e.repeat) { if (drawer.showingShift) playFromMenu(); else drawer.openShift(); }
+    if (!e.repeat) { if (drawer.showingPanels) playFromMenu(); else drawer.openShift(); }
     return;
   }
   if (!$('overlay').inert && !target?.closest('#debug-panel') && drawer.handleKey(e)) return;

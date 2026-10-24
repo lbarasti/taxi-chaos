@@ -98,7 +98,7 @@ export class GameDrawer {
     this.page = 'shift'; this.notebookSelected = false;
     game.setMode('paused');
   }
-  get showingShift() { return this.active && this.page === 'shift'; }
+  get showingPanels() { return this.active && (this.page === 'shift' || this.page === 'newsroom'); }
   openNewsroom() {
     const game = this.options.game();
     if (game.mode !== 'playing' || !game.campaignEnabled) return;
@@ -279,6 +279,10 @@ export class GameDrawer {
     const modal = this.root.getBoundingClientRect(), page = incoming.getBoundingClientRect();
     const stage = document.createElement('div');
     stage.className = 'drawer-carousel';
+    // The stage clones whole pages, so hide its duplicate ids and controls from
+    // assistive tech and focus while the roll plays.
+    stage.setAttribute('aria-hidden', 'true');
+    stage.inert = true;
     stage.style.cssText = `position:fixed;left:${modal.left}px;top:${modal.top}px;width:${modal.width}px;height:${modal.height}px;overflow:hidden;pointer-events:none;z-index:2`;
     const layer = (node: HTMLElement, box: DOMRect) => {
       node.classList.remove('drawer-entering');
@@ -303,7 +307,9 @@ export class GameDrawer {
       const head = source.getBoundingClientRect();
       const strip = (from: HTMLElement) => {
         const clone = from.querySelector('.drawer-head')!.cloneNode(true) as HTMLElement;
-        clone.style.cssText = `position:absolute;margin:0;top:${head.top - modal.top}px;left:${page.left - modal.left}px;width:${page.width}px;height:${head.height}px;will-change:transform,opacity`;
+        // Both strips land on the head's measured box, not the wider page box,
+        // so the title does not jump when the live page replaces the stage.
+        clone.style.cssText = `position:absolute;margin:0;top:${head.top - modal.top}px;left:${head.left - modal.left}px;width:${head.width}px;height:${head.height}px;will-change:transform,opacity`;
         stage.appendChild(clone);
         return clone;
       };
