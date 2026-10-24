@@ -131,9 +131,11 @@ describe('courier motorcycle integration', () => {
     runGame(g, 0.6, ['KeyW', 'ShiftLeft']);
     expect(dynamics.wheelie).toBe(1); expect(g.snapshot().wheelie).toBe(1);
     expect(g.boost).toBeCloseTo(100 - 29 * 0.6);
-    const heading = g.player.body.angle;
-    runGame(g, 0.1, ['KeyW', 'KeyD']);
-    expect(dynamics.frontAirborne).toBe(true); expect(g.player.body.angle).toBeCloseTo(heading, 6);
+    // The mounted bike can retain a tiny yaw impulse. Compare with the same
+    // physical ride without steering rather than requiring a frozen heading.
+    const straight = takeBike(); runGame(straight, 0.6, ['KeyW', 'ShiftLeft']);
+    runGame(straight, 0.1, ['KeyW']); runGame(g, 0.1, ['KeyW', 'KeyD']);
+    expect(dynamics.frontAirborne).toBe(true); expect(g.player.body.angle).toBeCloseTo(straight.player.body.angle, 6);
     runGame(g, 0.4, ['KeyS']);
     expect(dynamics.wheelie).toBe(0); expect(g.boost).toBeGreaterThan(100 - 29 * 0.6);
   });
