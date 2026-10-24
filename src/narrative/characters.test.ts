@@ -49,8 +49,8 @@ describe('character catalogue', () => {
         expect(character.attribution).toContain('Neutral legacy placeholder card');
         expect(character.attribution).toContain('not shipped');
       } else if (['mags', 'nell'].includes(id)) {
-        expect(character.attribution).toContain('Text-only character card for Taxi Chaos');
-        expect(character.portrait.sources).toEqual([]);
+        expect(character.attribution).toContain('Original illustrated portrait created for Taxi Chaos');
+        expect(character.portrait.sources).toEqual([`${id}.png`]);
       } else if (['sam', 'june', 'ravi', 'cleo', 'oscar'].includes(id)) {
         expect(character.attribution).toContain('Portrait art generated for Taxi Chaos');
       } else {
@@ -67,11 +67,13 @@ describe('character catalogue', () => {
     expect(isCharacterId('mia-meridian-vans')).toBe(false);
     expect(isCharacterId('toString')).toBe(false);
   });
-  it('renders new local characters as explicit text cards without borrowing existing faces', () => {
-    for (const id of ['mags', 'nell'] as const) {
-      expect(resolvePortrait(characters[id])).toMatchObject({ source: null, format: 'svg' });
-      expect(decodeURIComponent(resolvePortrait(characters[id]).src)).toContain(`>${characters[id].name[0]}</text>`);
-    }
+  it('gives Mags and Nell their own illustrated portraits', () => {
+    const mags = resolvePortrait(characters.mags);
+    const nell = resolvePortrait(characters.nell);
+    expect(mags).toMatchObject({ source: 'mags.png', format: 'webp' });
+    expect(nell).toMatchObject({ source: 'nell.png', format: 'webp' });
+    expect(mags.src).not.toBe(nell.src);
+    expect(mags.src).not.toBe(resolvePortrait(characters.sam).src);
     expect(() => validateCharacterCatalogue({ mags: { ...characters.mags, portrait: { sources: [] } } })).toThrow(/explicit text card/);
   });
 
