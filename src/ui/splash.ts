@@ -1,4 +1,4 @@
-import { menuItem } from './drawer-markup';
+import { menuItem, type DrawerPage } from './drawer-markup';
 import type { Game } from '../game/game';
 import { readStorage, storageKeys } from '../game/storage';
 import titleCabBadge from '../assets/ui/title-cab-badge.webp?inline';
@@ -22,19 +22,43 @@ export function shiftStatsMarkup(game: Game) {
 export function shiftMarkup(game: Game, actions: string) {
   return shiftStatsMarkup(game) + actions;
 }
+
+type SplashMenuItem = { label: string; id: string; page?: DrawerPage; visible?: boolean };
+type SplashScreen = { menuLabel: string; notice?: string; items: readonly SplashMenuItem[] };
+
+function titleScreen(game: Game, saved: boolean): SplashScreen {
+  return {
+    menuLabel: 'Main menu',
+    notice: game.titleSaveFailed ? 'Progress could not be saved to the browser. Continue is still available while this page stays open.' : undefined,
+    items: [
+      { label: 'Continue', id: 'start', visible: saved },
+      { label: 'New game', id: 'new-game' },
+      { label: 'Load game', id: 'menu-load-game', page: 'load-game' },
+      { label: 'Settings', id: 'menu-settings', page: 'settings' },
+      { label: 'Credits', id: 'menu-credits', page: 'credits' },
+    ],
+  };
+}
+
+function pauseScreen(game: Game): SplashScreen {
+  return {
+    menuLabel: 'Pause menu',
+    items: [
+      { label: 'Resume your shift', id: 'start' },
+      { label: 'Settings', id: 'menu-settings', page: 'settings' },
+      { label: 'Return to title', id: 'return-to-title', visible: game.canReturnToTitle },
+      { label: 'Campaign recap', id: 'menu-finale', page: 'finale', visible: game.campaignEnabled && game.save.campaign.finished },
+    ],
+  };
+}
+
 export function splashMarkup(game: Game, saved: boolean): string {
-  const paused = game.mode === 'paused';
+  const screen = game.mode === 'paused' ? pauseScreen(game) : titleScreen(game, saved);
   return `<h2 id="modal-title" class="splash-brand"><img src="${titleCabBadge}" alt="Taxi Chaos" width="768" height="680" draggable="false"></h2>
     <p class="splash-tagline"><span>A little cab.</span> <em>A lot of trouble.</em></p>
-    ${!paused && game.titleSaveFailed ? '<p class="campaign-hint" role="alert">Progress could not be saved to the browser. Continue is still available while this page stays open.</p>' : ''}
-    <nav class="game-menu" aria-label="${paused ? 'Pause menu' : 'Main menu'}">
-      ${paused || saved ? menuItem(paused ? 'Resume your shift' : 'Continue', { id: 'start' }) : ''}
-      ${!paused ? menuItem('New game', { id: 'new-game' }) : ''}
-      ${!paused ? menuItem('Load game', { id: 'menu-load-game', page: 'load-game' }) : ''}
-      ${menuItem('Settings', { id: 'menu-settings', page: 'settings' })}
-      ${game.canReturnToTitle ? menuItem('Return to title', { id: 'return-to-title' }) : ''}
-      ${!paused ? menuItem('Credits', { id: 'menu-credits', page: 'credits' }) : ''}
-      ${paused && game.campaignEnabled && game.save.campaign.finished ? menuItem('Campaign recap', { id: 'menu-finale', page: 'finale' }) : ''}
+    ${screen.notice ? `<p class="campaign-hint" role="alert">${screen.notice}</p>` : ''}
+    <nav class="game-menu" aria-label="${screen.menuLabel}">
+      ${screen.items.filter(({ visible = true }) => visible).map(({ label, id, page }) => menuItem(label, { id, page })).join('\n      ')}
     </nav>
     <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
 }
