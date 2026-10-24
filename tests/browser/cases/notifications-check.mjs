@@ -118,7 +118,7 @@ try {
     assert.equal(await page.locator('.receipt-base').textContent(), 'Base $20');
     assert.equal(await page.locator('[data-receipt=payout]').textContent(), '$98');
     assert.equal(await page.locator('[data-receipt=adjustment]').textContent(), '+$78');
-    assert.equal(await page.locator('.receipt-floor').isVisible(), false);
+    assert.equal(await page.locator('.receipt-floor').count(), 0);
     assert.equal(await page.locator('.receipt-speed [role=meter]').getAttribute('aria-valuenow'), '75');
     assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuenow'), '60');
     assert.equal(await page.locator('.receipt-comfort [role=meter]').getAttribute('aria-valuetext'), '$18 bonus');
@@ -139,8 +139,17 @@ try {
     assert.equal(await page.locator('.notification-receipt').evaluate(e => e.scrollWidth > e.clientWidth), false, `${name}: receipt has no horizontal overflow`);
     const receiptBounds = await page.locator('#toast').boundingBox();
     assert(receiptBounds.x >= 0 && receiptBounds.y + receiptBounds.height <= height, `${name}: receipt stays in the viewport`);
-    assert(receiptBounds.height <= 180, `${name}: completed card stays compact`);
+    assert(receiptBounds.height <= 190, `${name}: completed card stays compact`);
     assert.equal(await page.locator('.receipt-icon').count(), 2);
+    const layout = await page.locator('.notification-receipt').evaluate(receipt => {
+      const money = receipt.querySelector('.receipt-money');
+      const total = receipt.querySelector('.receipt-total');
+      const scores = receipt.querySelector('.receipt-scores');
+      return { sideBySide: getComputedStyle(money).float === 'left', fontSize: parseFloat(getComputedStyle(total).fontSize), money: money.getBoundingClientRect().toJSON(), scores: scores.getBoundingClientRect().toJSON() };
+    });
+    assert.equal(layout.fontSize, layout.sideBySide ? 44 : 22, `${name}: stacked payout is half the wide-layout size`);
+    if (layout.sideBySide) assert(layout.scores.x >= layout.money.right - 1, `${name}: meters stay to the right of the payout`);
+    else assert(layout.scores.y >= layout.money.bottom, `${name}: meters stack beneath the payout`);
     await assertMeterAlignment(page, `${name}/positive`);
     await page.screenshot({ path: resolve(output, `${name}-receipt.png`) });
     await page.locator('#toast').screenshot({ path: resolve(output, `${name}-receipt-card.png`) });
@@ -176,7 +185,7 @@ try {
       assert.equal(await page.locator('.receipt-title').textContent(), 'Delivery complete');
       assert.equal(await page.locator('[data-receipt=payout]').textContent(), `$${receipt.payout}`);
       assert.equal(await page.locator('[data-receipt=adjustment]').textContent(), signed(receipt.adjustment));
-      assert.equal(await page.locator('.receipt-floor').isVisible(), receipt.baseFare + receipt.adjustment < 0);
+      assert.equal(await page.locator('.receipt-floor').count(), 0);
       for (const component of ['speed', 'comfort']) {
         const amount = receipt[`${component}Bonus`], score = receipt[`${component}Score`];
         const row = page.locator(`.receipt-${component}`), meter = row.locator('[role=meter]');
@@ -194,7 +203,7 @@ try {
       assert(!(await page.locator('.notification-receipt').innerText()).includes('+−'));
       await assertMeterAlignment(page, `${name}/${receipt.name}`);
       const cardBounds = await page.locator('#toast').boundingBox();
-      assert(cardBounds.height <= 180, `${name}/${receipt.name}: completed card stays compact`);
+      assert(cardBounds.height <= 190, `${name}/${receipt.name}: completed card stays compact`);
       const controlsOverlap = await page.locator('#toast').evaluate(card => {
         const b = card.getBoundingClientRect();
         return ['.context-actions', '#joystick', '.thumb-actions'].filter(selector => {

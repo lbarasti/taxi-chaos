@@ -129,8 +129,8 @@ adjustments and total cash earned on the completion card. Both meters have
 **0 in the centre**: green to the right adds money, red to the left deducts it.
 Speed reaches zero at the trip's time target; Comfort reaches zero at 50% comfort.
 The signed dollar amounts show each adjustment, even if a very late trip pushes
-its speed deduction beyond the end of the meter. **Minimum payout $0** appears
-when deductions would otherwise exceed the fare and bonuses.
+its speed deduction beyond the end of the meter. The total stays at **$0** when
+deductions exceed the fare and bonuses.
 
 Use the radar and navigation markers to find jobs and destinations. Routes follow roads, and fare distance and timing account for the road network.
 

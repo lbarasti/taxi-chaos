@@ -19,8 +19,7 @@ export const notificationsMarkup = `<section id="notifications" class="notificat
     <div class="notification-receipt" aria-label="Trip receipt" tabindex="0" hidden>
       <div class="receipt-money">
         <strong class="receipt-total" data-receipt="payout"></strong>
-        <div class="receipt-breakdown"><span class="receipt-base"></span><span>Adjustment <span data-receipt="adjustment"></span></span></div>
-        <small class="receipt-floor" hidden>Minimum payout $0</small>
+        <div class="receipt-breakdown"><span class="receipt-base"></span><span title="Adjustment">Adj. <span data-receipt="adjustment"></span></span></div>
       </div>
       <div class="receipt-scores">${fareMetersMarkup()}</div>
     </div>
@@ -78,7 +77,6 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
         receiptView.querySelector('.receipt-base')!.textContent = `Base ${money(receipt.baseFare)}`;
         receiptView.querySelector('[data-receipt="payout"]')!.textContent = money(receipt.payout);
         receiptView.querySelector('[data-receipt="adjustment"]')!.textContent = signedMoney(receipt.adjustment);
-        receiptView.querySelector<HTMLElement>('.receipt-floor')!.hidden = receipt.baseFare + receipt.adjustment >= 0;
         refreshMeters(receipt);
       }
     }
