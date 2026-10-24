@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile } from 'node:fs/promises';
 import { createServer } from 'vite';
 import { launchBrowser, newContext, closeBrowser, captureFailure } from '../runtime.mjs';
-import { tapToConfirm, waitForDrawer } from '../helpers/drawer.mjs';
+import { checkDetailFade, tapToConfirm, waitForDrawer } from '../helpers/drawer.mjs';
 
 const output = process.env.SCREENSHOT_DIR ?? 'scenario-runs/notebook';
 await mkdir(output, { recursive: true });
@@ -50,7 +50,7 @@ try {
     ['desktop', 1440, 900, false], ['portrait', 390, 844, true],
     ['compact', 320, 568, true], ['landscape', 844, 390, true],
   ]) {
-    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce' });
+    const context = await newContext(browser, { viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: touch ? 'reduce' : 'no-preference' });
     await context.route('http://localhost:4173/**', route => route.fulfill({ contentType: 'text/html', body: html }));
     await context.addInitScript(save => {
       if (location.origin === 'http://localhost:4173') localStorage.setItem('taxi-chaos-v1', JSON.stringify(save));
@@ -60,8 +60,10 @@ try {
     await page.locator('#overlay').waitFor({ state: 'hidden' });
     if (touch) await page.locator('#shift').tap(); else await page.keyboard.press('Tab');
     await waitForDrawer(page, 'shift');
-    assert.equal(await page.locator('#shift-detail [data-run]').count(), 0, 'notebook is populated only on activation');
-    assert.match(await page.locator('#shift-detail').innerText(), /Choose Past trips/);
+    assert.equal(await page.locator('#shift-detail').count(), 0, 'no detail column before activation');
+    const menuBounds = await page.locator('.drawer-menu-panel').boundingBox();
+    const collapsedWidth = await page.locator('#modal').evaluate(modal => modal.getBoundingClientRect().width);
+    assert(collapsedWidth <= 540, 'shift opens with just the menu column');
     assert.deepEqual(await page.locator('[aria-label="Shift actions"] button').evaluateAll(buttons => buttons.map(button => button.id)), ['ordinary-fare', 'sleep', 'open-notebook', 'start']);
     assert.equal(await page.locator('#open-notebook').innerText(), 'Past trips');
     assert.equal(await page.locator('#start').innerText(), 'Resume shift');
@@ -73,9 +75,10 @@ try {
     await page.screenshot({ path: `${output}/${name}-shift.png` });
     if (!touch) {
       await page.locator('#open-notebook').hover();
-      assert.equal(await page.locator('#shift-detail [data-run]').count(), 0, 'hover selects without opening');
+      assert.equal(await page.locator('#shift-detail').count(), 0, 'hover selects without opening');
     }
     if (touch) await tapToConfirm(page, '#open-notebook'); else await page.locator('#open-notebook').click();
+    if (!touch) await checkDetailFade(page, '#shift-detail', true);
     await waitForDrawer(page, 'shift'); await page.locator('#shift-menu').waitFor();
     const notebook = page.locator('#shift-detail');
     assert.equal(await page.locator('#modal-title').innerText(), 'Your shift.');
@@ -83,6 +86,7 @@ try {
     assert.equal(await page.locator('#open-notebook').getAttribute('aria-pressed'), 'true');
     assert.equal(await page.evaluate(() => document.activeElement.id), 'shift-menu');
     if (width >= 1000) {
+      assert.deepEqual(await page.locator('.drawer-menu-panel').boundingBox(), menuBounds, 'opening detail keeps the menu steady');
       const layout = await page.locator('.drawer-columns').evaluate(columns => {
         const menu = columns.querySelector('.drawer-menu-panel').getBoundingClientRect();
         const detail = columns.querySelector('.drawer-detail').getBoundingClientRect();
@@ -171,14 +175,30 @@ try {
     }
     await page.screenshot({ path: `${output}/${name}-selected-record.png` });
     // Returning from detail restores its menu item, then Escape resumes play.
+    const menuPanel = await page.locator('.drawer-menu-panel').elementHandle();
     if (touch) await tapToConfirm(page, '#shift-menu'); else await page.keyboard.press('Escape');
+    if (!touch) await checkDetailFade(page, '#shift-detail', false);
+    await notebook.waitFor({ state: 'detached' });
+    assert(await menuPanel.evaluate(panel => panel.isConnected), 'Back preserves the mounted menu instead of repainting it');
     assert.equal(await page.evaluate(() => document.activeElement.id), 'open-notebook');
+    assert.equal(await page.locator('#open-notebook').getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.locator('#modal').evaluate(modal => modal.getBoundingClientRect().width), collapsedWidth);
+    if (width >= 1000) assert.deepEqual(await page.locator('.drawer-menu-panel').boundingBox(), menuBounds, 'closing detail keeps the menu steady');
+    await page.screenshot({ path: `${output}/${name}-back.png` });
+    // Reopening after Back repopulates the column; its own Back action clears it too.
+    if (touch) await tapToConfirm(page, '#open-notebook'); else await page.locator('#open-notebook').click();
+    await waitForDrawer(page, 'shift');
+    assert.equal(await notebook.locator('[data-run]').count(), 4);
+    const reopenedMenu = await page.locator('.drawer-menu-panel').elementHandle();
+    if (touch) await tapToConfirm(page, '#shift-menu'); else await page.locator('#shift-menu').click();
+    await notebook.waitFor({ state: 'detached' });
+    assert(await reopenedMenu.evaluate(panel => panel.isConnected), 'the Back button also preserves the mounted menu');
     await page.keyboard.press('ArrowDown');
     assert.equal(await page.locator('.drawer-menu-panel [data-selected]').count(), 1, 'keyboard navigation returns to the menu scope');
     await page.keyboard.press('Escape'); await page.locator('#overlay').waitFor({ state: 'hidden' });
     if (touch) await page.locator('#shift').tap(); else await page.keyboard.press('Tab');
     await waitForDrawer(page, 'shift');
-    assert.equal(await notebook.locator('[data-run]').count(), 0, 'a new shift visit starts with the placeholder');
+    assert.equal(await notebook.count(), 0, 'a new shift visit starts without detail');
     // Routing resumes the same shift; choosing it again must keep the destination.
     for (let attempt = 0; attempt < 2; attempt++) {
       if (touch) await tapToConfirm(page, '#sleep'); else await page.locator('#sleep').click();

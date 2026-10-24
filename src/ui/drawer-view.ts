@@ -72,9 +72,9 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroom
     case 'settings': body = settingsMarkup(settings); break;
     case 'shift': return `<div class="drawer-columns"><div class="drawer-menu-panel" data-menu-scope><div class="drawer-menu-content">
       <div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, `<nav class="game-menu" aria-label="Shift actions">${campaignActionsMarkup(game, notebookSelected)}${menuItem('Resume shift', { id: 'start' })}</nav>`)}${menuHintMarkup()}</div></div>
-      <section class="drawer-detail shift-detail" id="shift-detail" aria-labelledby="${notebookSelected ? 'open-notebook' : 'shift-detail-title'}" data-menu-scope tabindex="-1">
-        ${notebookSelected ? `${menuItem('Back', { id: 'shift-menu' })}${notebookMarkup(game)}` : '<h3 id="shift-detail-title">Past trips</h3><p>Choose Past trips to view your rides, deliveries and collected records.</p>'}
-      </section></div>`;
+      ${notebookSelected ? `<section class="drawer-detail shift-detail" id="shift-detail" aria-labelledby="open-notebook" data-menu-scope tabindex="-1">
+        ${menuItem('Back', { id: 'shift-menu' })}${notebookMarkup(game)}
+      </section>` : ''}</div>`;
     case 'credits': body = creditsMarkup(); break;
   }
   const { title, parent } = pages[page];

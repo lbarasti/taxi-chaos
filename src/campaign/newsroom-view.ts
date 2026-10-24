@@ -56,10 +56,10 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
       ${menuItem('Publications', { id: 'newsroom-publications', page: 'publications' })}
       ${menuItem('Back to the streets', { id: 'start' })}
     </nav>${menuHintMarkup()}</div></div>
-    <section class="drawer-detail newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
-      ${selected ? menuItem('Back', { id: 'newsroom-menu' }) : ''}
-      <h3 id="newsroom-detail-title">${selected ? sections[selected] : 'Your newsroom records'}</h3>
-      <p>${selected ? copy : 'Choose Sources to view collected material and source checks.'}</p>
+    ${selected ? `<section class="drawer-detail newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
+      ${menuItem('Back', { id: 'newsroom-menu' })}
+      <h3 id="newsroom-detail-title">${sections[selected]}</h3>
+      <p>${copy}</p>
       <div class="notebook-entries">${body}</div>
-    </section></div>`;
+    </section>` : ''}</div>`;
 }

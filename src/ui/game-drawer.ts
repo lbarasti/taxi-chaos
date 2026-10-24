@@ -154,18 +154,21 @@ export class GameDrawer {
     }
     if (!this.active) return;
     this.page = page;
+    if (page === 'shift') this.notebookSelected = false;
+    if (page === 'newsroom') this.newsroomSection = null;
     this.paint(animate ? backwards ? -1 : 1 : 0);
   }
   back() {
+    if (this.transition) return true;
     if (this.page === 'shift') {
-      if (this.root.querySelector('#shift-detail')?.contains(document.activeElement)) this.focusShiftMenu();
+      if (this.notebookSelected) this.focusShiftMenu();
       else this.options.play();
       return true;
     }
     if (this.page === 'finale') { if (this.options.game().save.campaign.endingSeen) void this.open('home'); return true; }
     if (this.page === 'publications') { if (this.articleId) this.frontPage(); else void this.open(this.publicationBack); return true; }
     if (this.page === 'newsroom') {
-      if (this.root.querySelector('#newsroom-detail')?.contains(document.activeElement)) this.focusNewsroomMenu();
+      if (this.newsroomSection) this.focusNewsroomMenu();
       else this.options.play();
       return true;
     }
@@ -211,6 +214,7 @@ export class GameDrawer {
     this.setInputDevice(this.device);
     this.menu.reset(selected);
     const nextDetail = this.root.querySelector<HTMLElement>('.drawer-detail');
+    if (nextDetail && (!samePage || !detail)) nextDetail.classList.add('drawer-detail-entering');
     if (detailFocused && nextDetail && !nextDetail.contains(document.activeElement)) this.menu.focusScope(nextDetail);
     if (nextDetail) nextDetail.scrollTop = detailScroll;
     const menuPanel = this.root.querySelector('.drawer-menu-panel');
@@ -230,13 +234,30 @@ export class GameDrawer {
     }
   }
   private focusShiftMenu() {
-    this.root.querySelector<HTMLElement>('#open-notebook')?.focus({ preventScroll: true });
-    if (!matchMedia('(min-width:1000px)').matches) this.root.scrollTop = 0;
-    this.root.querySelector<HTMLElement>('#open-notebook')?.scrollIntoView({ block: 'nearest' });
+    void this.closeDetail('open-notebook');
   }
   private focusNewsroomMenu() {
-    this.root.querySelector<HTMLElement>(`#newsroom-open-${this.newsroomSection}`)?.focus({ preventScroll: true });
+    void this.closeDetail(`newsroom-open-${this.newsroomSection}`);
+  }
+  private async closeDetail(menuId: string) {
+    if (this.transition) return;
+    const menuItem = this.root.querySelector<HTMLElement>(`#${menuId}`);
+    menuItem?.focus({ preventScroll: true });
+    const detail = this.root.querySelector<HTMLElement>('.drawer-detail');
+    if (detail && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      detail.inert = true;
+      const animation = detail.animate([{ opacity: getComputedStyle(detail).opacity }, { opacity: 0 }], { duration: 160, easing: 'ease-out', fill: 'forwards' });
+      this.transition = animation;
+      try { await animation.finished; } catch { return; }
+      if (this.transition !== animation) return;
+      this.transition = undefined;
+    }
+    this.notebookSelected = false; this.newsroomSection = null;
+    // Keep the menu mounted: repainting it restarts its highlight transitions.
+    detail?.remove();
+    menuItem?.setAttribute('aria-pressed', 'false');
+    menuItem?.focus({ preventScroll: true });
     if (!matchMedia('(min-width:1000px)').matches) this.root.scrollTop = 0;
-    this.root.querySelector<HTMLElement>(`#newsroom-open-${this.newsroomSection}`)?.scrollIntoView({ block: 'nearest' });
+    menuItem?.scrollIntoView({ block: 'nearest' });
   }
 }
