@@ -43,8 +43,9 @@ function campaignMarkup(game: Game) {
 function campaignActionsMarkup(game: Game, notebookSelected: boolean) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';
   const preview = game.sleepPreview;
+  const routeToSleep = !game.garageNear;
   return `${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}
-    ${menuItem(game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !!game.sleepReason })}
+    ${menuItem(routeToSleep ? 'Route to Pit Stop to sleep' : game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !routeToSleep && !!game.sleepReason })}
     <button class="menu-item" id="open-notebook" aria-controls="shift-detail" aria-pressed="${notebookSelected}"><span>Past trips</span></button>`;
 }
 export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroomSection = null, notebookSelected = false, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; newsroomSection?: NewsroomSection | null; notebookSelected?: boolean; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {

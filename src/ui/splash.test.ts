@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { savedCampaignAvailable, splashMarkup, splashPrompts, shiftMarkup } from './splash';
 import { drawerHeading, menuItem } from './drawer-markup';
 import { defaultSave, Game } from '../game/game';
+import { drawerMarkup } from './drawer-view';
+import { createSettings } from './settings';
+import { GARAGE } from '../world/world';
 describe('startup splash', () => {
   it('recognizes only a compatible campaign and handles inaccessible storage', () => {
     for (const [value, expected] of [[null, false], ['{', false], ['{}', false], [JSON.stringify(defaultSave()), true]] as const) {
@@ -43,6 +46,23 @@ describe('startup splash', () => {
     expect(html).not.toContain('<details'); expect(html).not.toContain('<summary');
     expect(drawerHeading('Settings.', 'home')).toContain('data-page="home"');
     expect(drawerHeading('Credits.', 'home')).toContain('data-page="home"');
+  });
+  it('offers Pit Stop routing outside the garage even after the campaign, and retains sleep restrictions on arrival', () => {
+    const game = new Game(undefined, false); game.start(); game.setMode('paused'); game.dialogue.clear();
+    const settings = createSettings(() => game, {
+      preferences: { muted: false, volume: 1, playerEngine: 1, ambient: 1, sirens: 1 },
+      configure: () => {}, unlock: async () => true,
+    });
+    const markup = () => drawerMarkup('shift', { game, settings, saved: false });
+    game.player.body.position = { x: GARAGE.x + 40, y: GARAGE.y };
+    for (const finished of [false, true]) {
+      game.save.campaign.finished = finished;
+      expect(markup()).toContain('id="sleep"><span>Route to Pit Stop to sleep</span>');
+    }
+    game.save.campaign.finished = false; game.player.body.position = { ...GARAGE };
+    expect(markup()).toContain('id="sleep"><span>Sleep at Pit Stop · wake');
+    game.job.stage = 'dropoff';
+    expect(markup()).toContain('id="sleep" disabled><span>Finish or abandon your current ride first</span>');
   });
   it.each([
     ['intro', true, false, false],

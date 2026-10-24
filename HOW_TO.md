@@ -42,9 +42,10 @@ You start in Old Town near Pit Stop. Buy engine, grip, armor, and boost upgrades
 ### Open Shore, texts and your notebook
 
 The campaign lasts **fourteen full days**, beginning at 07:00 and including the
-fourteenth night. Time advances while driving. Park at Pit Stop and use
-**This shift → Sleep at Pit Stop** to skip to the next 07:00. The menu previews known
-bookings closing during sleep; passengers, pursuits and fires block sleeping.
+fourteenth night. Time advances while driving. Use
+**Your shift → Route to Pit Stop to sleep** to set the garage as your destination.
+Once safely parked there, choose **Sleep at Pit Stop** to skip to the next 07:00.
+Passengers, pursuits and fires block sleeping.
 Recovery, reload and run reset preserve the date.
 
 Normal dispatch mixes ordinary jobs with recurring customers. **Texts** lets
