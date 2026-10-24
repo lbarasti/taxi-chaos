@@ -39,11 +39,7 @@ try {
     await page.goto('http://localhost:4173/?scenario-preview=1');
     for (const character of viewport === 'desktop' ? ['Sam', 'June', 'Ravi', 'Cleo', 'Oscar'] : ['Sam']) {
       await page.evaluate(() => __scenario.start({ traffic: 'quiet', noPolice: true }));
-      let state;
-      for (let i = 0; i < 5; i++) {
-        state = await run(page, { op: 'ordinary' });
-        if (state.job.name === character) break;
-      }
+      let state = await run(page, { op: 'ordinary', character: character.toLowerCase() });
       assert.equal(state.job.name, character);
       state = await run(page, { op: 'step', seconds: 0.01 });
       assert.equal(state.job.stage, 'pickup');

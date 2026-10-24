@@ -121,6 +121,8 @@ describe('stateful scenario harness', () => {
       { op: 'place', at: { x: 3, y: NaN } }, { op: 'capture', name: '../escape' },
       { op: 'capture', name: 'panel', panelOnly: true }, { op: 'expect', path: 'cash', equals: 5, gte: 0 },
       { op: 'facts', facts: { publications: ['coordination'] } }, { op: 'sleep', expect: false },
+      { op: 'ordinary', character: 'nobody' },
+      { op: 'ordinary', character: '' },
       { op: 'stopover', action: 'complete' }, { op: 'stopover' }, { op: 'stopover', action: 'begin', expected: 'yes' },
     ]) expect(() => parseCommand(command)).toThrow();
     expect(() => parseScenario({ version: 2, name: 'Future', steps: [{ op: 'read' }] })).toThrow();
@@ -128,6 +130,18 @@ describe('stateful scenario harness', () => {
     const r = new ScenarioRunner();
     expect(r.execute({ op: 'place', at: 'typo' }).status).toBe('failed');
     expect(r.execute({ op: 'step', seconds: 31 }).state.physicsSeconds).toBe(0);
+  });
+
+  it('dispatches a named ordinary fare without moving the taxi', () => {
+    const r = new ScenarioRunner();
+    const start = { ...r.game.actor.position };
+    for (const character of ['sam', 'june', 'ravi', 'cleo', 'oscar'] as const) {
+      const reply = pass(r, { op: 'ordinary', character });
+      expect(reply.state.job.name.toLowerCase()).toBe(character);
+      expect(r.game.job.everyday?.character).toBe(character);
+      expect(reply.state.dialogue?.message.speaker).toBe('bea');
+      expect(r.game.actor.position).toEqual(start);
+    }
   });
 
   it('bounds a stateful stream and does not spend physics budget on scheduler advances', () => {

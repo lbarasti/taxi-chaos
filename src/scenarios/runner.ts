@@ -6,6 +6,8 @@ import { parsePlayerRecords } from '../narrative/player-records';
 import { parseCampaign } from '../campaign/state';
 import { dayMinute } from '../campaign/clock';
 import { campaignDefinition } from '../campaign/content';
+import { selectEverydayJourney } from '../campaign/ride-dialogue';
+import type { CharacterId } from '../narrative/characters';
 import { GARAGE } from '../world/world';
 import { vec, type Vec } from '../physics/physics';
 
@@ -22,7 +24,8 @@ export type ScenarioCommand = (
   | { op: 'mode'; mode: Mode }
   | { op: 'route'; mission: string; expected?: boolean }
   | { op: 'stopover'; action: 'route' | 'begin'; expected?: boolean }
-  | { op: 'pickup' | 'deliver' | 'read' | 'dispatch' | 'ordinary' | 'abandon' | 'reload' }
+  | { op: 'pickup' | 'deliver' | 'read' | 'dispatch' | 'abandon' | 'reload' }
+  | { op: 'ordinary'; character?: CharacterId }
   | { op: 'photo'; observation?: string; expected?: boolean }
   | { op: 'sleep'; expected?: boolean }
   | { op: 'submit'; material: string; expected?: boolean }
@@ -70,7 +73,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   const c = object(value), op = string(c.op, 'op');
   const allowed: Record<string, string[]> = {
     facts: ['facts'], advance: ['minutes', 'to', 'event'], place: ['at', 'angle'], step: ['seconds', 'keys'], mode: ['mode'],
-    route: ['mission', 'expected'], stopover: ['action', 'expected'], pickup: [], deliver: [], read: [], dispatch: [], ordinary: [], abandon: [], reload: [],
+    route: ['mission', 'expected'], stopover: ['action', 'expected'], pickup: [], deliver: [], read: [], dispatch: [], ordinary: ['character'], abandon: [], reload: [],
     photo: ['observation', 'expected'], sleep: ['expected'], submit: ['material', 'expected'],
     expect: ['path', 'equals', 'includes', 'length', 'exists', 'gte', 'lte'], capture: ['name', 'view', 'panelOnly', 'focus', 'zoom'],
   };
@@ -93,6 +96,10 @@ export function parseCommand(value: unknown): ScenarioCommand {
     if (c.event !== undefined) string(c.event, 'event');
   }
   if (op === 'place') { if (typeof c.at === 'string') string(c.at, 'at'); else point(c.at); if (c.angle !== undefined) number(c.angle, 'angle', -Math.PI * 2, Math.PI * 2); }
+  if (op === 'ordinary' && c.character !== undefined) {
+    string(c.character, 'character');
+    if (!campaignDefinition.everydayJobs.some(job => job.character === c.character)) throw new Error(`Unknown ordinary character: ${c.character}`);
+  }
   if (op === 'step') {
     number(c.seconds, 'seconds', 0, 30);
     if (c.keys !== undefined && (!Array.isArray(c.keys) || c.keys.length > keys.length || c.keys.some(key => !keys.includes(key)))) throw new Error(`keys must contain only: ${keys.join(', ')}`);
@@ -255,7 +262,30 @@ export class ScenarioRunner {
       }
       case 'read': if (!g.dialogue.active) throw new Error('No active dialogue'); g.dialogue.readAll(); g.recordDialogue(); return g.dialogue.active.beatId;
       case 'dispatch': if (!g.answerDispatch()) throw new Error('No dispatch call can be answered'); return g.job.name;
-      case 'ordinary': if (g.job.stage === 'dropoff') throw new Error('Abandon the aboard ride explicitly first'); g.newJob(false, 'replaced', true); g.answerDispatch(); return g.job.name;
+      case 'ordinary': {
+        if (g.job.stage === 'dropoff') throw new Error('Abandon the aboard ride explicitly first');
+        const character = c.character;
+        if (!character) { g.newJob(false, 'replaced', true); g.answerDispatch(); return g.job.name; }
+        // Offer a named regular deterministically: stand at the booking dispatch
+        // will pick for them, then step offers until their turn comes round, and
+        // never keep the taxi at that fixture placement.
+        const regular = g.campaignContent.everydayJobs.find(job => job.character === character);
+        const rides = regular ? g.save.campaign.regularRides[regular.name] ?? 0 : 0;
+        const booking = regular && selectEverydayJourney(regular, rides, g.save.campaign, g.campaignContext, g.player.definition.access.job === 'parcel');
+        if (!regular || !booking) throw new Error(`No ordinary fare available for ${character}`);
+        const actor = { position: { ...g.actor.position }, angle: g.actor.angle, velocity: { ...g.actor.velocity }, angularVelocity: g.actor.angularVelocity };
+        try {
+          this.place(booking.pickup);
+          for (let attempt = 0; attempt < g.campaignContent.everydayJobs.length; attempt++) {
+            g.newJob(false, 'replaced', true);
+            if (g.job.everyday?.character === character) break;
+          }
+        } finally {
+          g.actor.position = actor.position; g.actor.angle = actor.angle; g.actor.velocity = actor.velocity; g.actor.angularVelocity = actor.angularVelocity;
+        }
+        if (g.job.everyday?.character !== character) throw new Error(`Could not dispatch an ordinary fare for ${character}`);
+        g.answerDispatch(); return g.job.name;
+      }
       case 'abandon': g.newJob(false, 'shift'); return true;
       case 'photo': return this.boolean(g.observeScene(c.observation), c.expected);
       case 'sleep': return this.boolean(g.sleep(), c.expected);
