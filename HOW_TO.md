@@ -90,7 +90,7 @@ Publications** keeps the edition archive, including days when you did not pursue
 an investigation. Reading pauses the game. Each edition keeps the findings and
 public responses that were known when it printed; later events do not rewrite it.
 
-Open **This shift (Tab)** and select **Dispatch notebook** to view records beside
+Open **Your shift (Tab)** and select **Past trips** to view records beside
 your shift actions. This is the notebook’s only entry point. Runs show the customer,
 destination, total fare, conversations and collected documents together. On smaller
 screens, the records appear below the shift menu; **Back** returns to its actions.

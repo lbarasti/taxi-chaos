@@ -61,7 +61,11 @@ try {
     if (touch) await page.locator('#shift').tap(); else await page.keyboard.press('Tab');
     await waitForDrawer(page, 'shift');
     assert.equal(await page.locator('#shift-detail [data-run]').count(), 0, 'notebook is populated only on activation');
-    assert.match(await page.locator('#shift-detail').innerText(), /Choose Dispatch notebook/);
+    assert.match(await page.locator('#shift-detail').innerText(), /Choose Past trips/);
+    assert.deepEqual(await page.locator('[aria-label="Shift actions"] button').evaluateAll(buttons => buttons.map(button => button.id)), ['ordinary-fare', 'sleep', 'open-notebook', 'start']);
+    assert.equal(await page.locator('#open-notebook').innerText(), 'Past trips');
+    assert.equal(await page.locator('#start').innerText(), 'Resume shift');
+    assert.equal(await page.locator('#sleep-route').count(), 0);
     assert.equal(await page.locator('[data-page="notebook"]').count(), 0, 'no standalone notebook entry');
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: `${output}/${name}-shift.png` });

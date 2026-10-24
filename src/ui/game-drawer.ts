@@ -73,7 +73,6 @@ export class GameDrawer {
           break;
         case 'confirm-new-game': if (this.page === 'new-game' && game.mode === 'intro') options.newGame(); break;
         case 'sleep': if (game.sleep()) options.play(); break;
-        case 'sleep-route': options.play(); game.garage(); break;
         case 'ordinary-fare': game.newJob(false, 'replaced', true); options.play(); game.answerDispatch(); break;
         case 'abandon-ride': game.newJob(false, 'shift'); this.refresh(); break;
         case 'notebook-route': options.play(); game.navigateNewsroom(); break;

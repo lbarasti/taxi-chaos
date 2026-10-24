@@ -324,7 +324,7 @@ export class Game {
   }
   get newsroom() { return this.missions.catalogue.stops.byId[this.campaignContent.newsroom.stop]?.position ?? vec(4, 32); }
   get newsroomNear() { return this.campaignEnabled && (this.mode === 'playing' || this.mode === 'paused') && dist(this.actor.position, this.newsroom) < 9 && this.speed < 2.8; }
-  navigateNewsroom() { if (this.mode !== 'playing' || !this.campaignEnabled) return; this.navToNewsroom = !this.navToNewsroom; this.navToGarage = this.navToHarbour = this.navToStopover = false; this.notify(this.navToNewsroom ? `Newsroom at ${this.campaignContent.newsroom.name}. Stop nearby to leave selected material from your Notebook.` : 'Back to your driving route.', '', { category: 'newsroom', duration: this.navToNewsroom ? null : 4 }); }
+  navigateNewsroom() { if (this.mode !== 'playing' || !this.campaignEnabled) return; this.navToNewsroom = !this.navToNewsroom; this.navToGarage = this.navToHarbour = this.navToStopover = false; this.notify(this.navToNewsroom ? `Newsroom at ${this.campaignContent.newsroom.name}. Stop nearby to leave selected material from Past trips.` : 'Back to your driving route.', '', { category: 'newsroom', duration: this.navToNewsroom ? null : 4 }); }
   private note(entry: Omit<NotebookEntry, 'shift' | 'at'>) {
     recordNote(this.campaignContext, entry);
   }
@@ -353,7 +353,7 @@ export class Game {
   submitMaterial(id: string): boolean {
     if (!this.newsroomNear || this.save.campaign.finished || !Object.hasOwn(this.campaignContent.materials, id) || !this.save.playerRecords.notebook.some(e => e.id === id) || Object.hasOwn(this.save.campaign.newsroom.received, id)) return false;
     if (!receiveMaterial(this.save.campaign, id, this.campaignContext, this.campaignContent)) return false; this.syncCampaignWorld(); this.persist();
-    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Complete stories are automatically scheduled for the next edition.', '', { category: 'newsroom', duration: null }); return true;
+    this.notify('Copy left at the newsroom. Originals stay in Past trips. Source checks take three game hours. Complete stories are automatically scheduled for the next edition.', '', { category: 'newsroom', duration: null }); return true;
   }
   recordDialogue() {
     const active = this.dialogue.active;

@@ -43,10 +43,9 @@ function campaignMarkup(game: Game) {
 function campaignActionsMarkup(game: Game, notebookSelected: boolean) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';
   const preview = game.sleepPreview;
-  return `<button class="menu-item" id="open-notebook" aria-controls="shift-detail" aria-pressed="${notebookSelected}"><span>Dispatch notebook</span></button>
+  return `${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}
     ${menuItem(game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !!game.sleepReason })}
-    ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
-    ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}`;
+    <button class="menu-item" id="open-notebook" aria-controls="shift-detail" aria-pressed="${notebookSelected}"><span>Past trips</span></button>`;
 }
 export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroomSection = null, notebookSelected = false, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; newsroomSection?: NewsroomSection | null; notebookSelected?: boolean; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {
   let body: string;
@@ -71,9 +70,9 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, newsroom
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'settings': body = settingsMarkup(settings); break;
     case 'shift': return `<div class="drawer-columns"><div class="drawer-menu-panel" data-menu-scope><div class="drawer-menu-content">
-      <div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, `<nav class="game-menu" aria-label="Shift actions">${campaignActionsMarkup(game, notebookSelected)}${menuItem('Resume your shift', { id: 'start' })}</nav>`)}${menuHintMarkup()}</div></div>
+      <div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, `<nav class="game-menu" aria-label="Shift actions">${campaignActionsMarkup(game, notebookSelected)}${menuItem('Resume shift', { id: 'start' })}</nav>`)}${menuHintMarkup()}</div></div>
       <section class="drawer-detail shift-detail" id="shift-detail" aria-labelledby="${notebookSelected ? 'open-notebook' : 'shift-detail-title'}" data-menu-scope tabindex="-1">
-        ${notebookSelected ? `${menuItem('Back', { id: 'shift-menu' })}${notebookMarkup(game)}` : '<h3 id="shift-detail-title">Your dispatch records</h3><p>Choose Dispatch notebook to view your runs and collected records.</p>'}
+        ${notebookSelected ? `${menuItem('Back', { id: 'shift-menu' })}${notebookMarkup(game)}` : '<h3 id="shift-detail-title">Past trips</h3><p>Choose Past trips to view your rides, deliveries and collected records.</p>'}
       </section></div>`;
     case 'credits': body = creditsMarkup(); break;
   }

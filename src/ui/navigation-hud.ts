@@ -42,7 +42,7 @@ export function observationActionState(g: Game) {
   if (!status) return null;
   const title = g.campaignContent.materials[status.observation.id].title;
   return { id: status.observation.id, recorded: status.recorded, disabled: !status.available || status.recorded,
-    label: status.recorded ? `Already recorded: ${title}. Saved in your Dispatch notebook.` : status.available ? status.observation.label : `${status.observation.label}: ${status.reason}` };
+    label: status.recorded ? `Already recorded: ${title}. Saved in Past trips.` : status.available ? status.observation.label : `${status.observation.label}: ${status.reason}` };
 }
 
 /** View-only state: dispatch, physics, pickups and the saved game remain authoritative. */
