@@ -453,7 +453,7 @@ export class Game {
     const spec = this.stopoverFor(job);
     if (!spec || !job.stopover) return;
     job.time += job.stopover.detourAllowance;
-    job.fare += Math.round(Math.max(0, job.stopover.detourAllowance - spec.seconds) * 3 * 0.7 + spec.seconds);
+    job.fare += Math.round((Math.max(0, job.stopover.detourAllowance - spec.seconds) * 3 * 0.7 + spec.seconds) / 10);
   }
   private updateStopover(dt: number) {
     const stop = this.job.stopover, status = this.stopoverStatus;
@@ -815,7 +815,7 @@ export class Game {
     const pickup = { ...stops[journey.pickup].position }, dropoff = { ...stops[journey.dropoff].position };
     const distance = pathLength(this.world.navigation.roadPath(pickup, dropoff));
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
-    return { type, pickup, dropoff, name: regular.name, destination: stops[journey.dropoff].name, fare: Math.round(55 + distance * 0.7), time: 28 + distance / 3, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1,
+    return { type, pickup, dropoff, name: regular.name, destination: stops[journey.dropoff].name, fare: baseFareForDistance(distance), time: 28 + distance / 3, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1,
       ...(journey.stopover ? { optionalStop: journey.stopover } : {}),
       everyday: { character: regular.character, family: type === 'parcel' ? 'Small deliveries' : regular.family, journeyId: journey.id, line: journey.line, during: journey.during, arrival: journey.arrival, ...(journey.roughArrival ? { roughArrival: journey.roughArrival } : {}) } };
   }

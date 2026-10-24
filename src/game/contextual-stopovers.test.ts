@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from './game';
 import { vec } from '../physics/physics';
+import { pathLength } from '../world/countryside';
 import { campaignDefinition } from '../campaign/content';
 import { defaultCampaign } from '../campaign/state';
 import { selectProceduralStopover } from '../campaign/stopovers';
@@ -16,6 +17,17 @@ function juneBooking() {
 }
 
 describe('optional stops outside authored campaign missions', () => {
+  it.each(['fare', 'parcel'] as const)('uses reduced road-distance pricing for every authored ordinary %s', type => {
+    const game = juneBooking();
+    for (const regular of campaignDefinition.everydayJobs) {
+      for (const journey of type === 'fare' ? regular.journeys ?? [] : regular.parcelJourneys ?? []) {
+        const job = (game as any).makeEverydayJob(regular, journey, type);
+        const distance = pathLength(game.world.navigation.roadPath(job.pickup, job.dropoff));
+        expect(job.fare, journey.id).toBe(Math.round((55 + distance * 0.7) / 10));
+      }
+    }
+  });
+
   it('makes a regular fare optional, location-specific, and reversible', () => {
     const game = juneBooking();
     expect(game.job.missionId).toBeUndefined();
@@ -52,7 +64,9 @@ describe('optional stops outside authored campaign missions', () => {
     restored.player.body.velocity = vec();
     for (let i = 0; i < 500; i++) restored.update(1 / 120);
     expect(restored.job.stopover?.completed).toBe(true);
-    expect(restored.job.fare).toBeGreaterThan(before);
+    const seconds = restored.stopoverStatus!.seconds;
+    const detour = Math.max(0, restored.job.stopover!.detourAllowance - seconds) * 3;
+    expect(restored.job.fare).toBe(before + Math.round((detour * 0.7 + seconds) / 10));
     const credited = restored.job.fare;
     const twice = new Game(undefined, false, true, restored.saveSnapshot());
     expect(twice.job.fare).toBe(credited);
