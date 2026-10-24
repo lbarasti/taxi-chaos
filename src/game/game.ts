@@ -1383,7 +1383,8 @@ export class Game {
     }
     this.player.dynamics.tyres.forEach((t, i) => {
       const position = this.player.body.toWorld(t.position);
-      const active = !this.onFoot && !this.player.sinking && !inSand(position);
+      const active = !this.onFoot && !this.player.sinking && !inSand(position)
+        && !(t.steered && this.player.dynamics instanceof MotorcycleDynamics && this.player.dynamics.frontAirborne);
       const direction = rotate(vec(1, 0), this.player.body.angle + t.angle);
       const lateral = vec(-direction.y, direction.x);
       const velocity = this.player.body.velocityAt(position);
@@ -1430,7 +1431,8 @@ export class Game {
     }
     this.player.dynamics.tyres.forEach((t, i) => {
       const p = this.player.body.toWorld(t.position), previous = this.previousTyres[i];
-      if (!inSand(p) || !inSand(previous) || dist(p, previous) > 1.5) { delete this.sandRuts[i]; return; }
+      if (t.steered && this.player.dynamics instanceof MotorcycleDynamics && this.player.dynamics.frontAirborne
+        || !inSand(p) || !inSand(previous) || dist(p, previous) > 1.5) { delete this.sandRuts[i]; return; }
       const rut = this.sandRuts[i] ??= { anchor: previous };
       // Teleports and vehicle changes must not paint a line across the world.
       if (dist(rut.anchor, p) > 5) { this.sandRuts[i] = { anchor: p }; return; }
@@ -1604,7 +1606,7 @@ export class Game {
   }
   snapshot() {
     const { sample, handling: surfaceHandling } = this.map.terrain, { roadPath } = this.world.navigation;
-    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: sample(this.actor.position), sandCoverage: surfaceHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain).coverage, lean: this.lean, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
+    return structuredClone({ mode: this.mode, time: this.time, onFoot: this.onFoot, exitPending: !!this.pendingExit, tumble: this.tumble && { ...this.tumble }, playerId: this.player.id, vehicleModel: this.player.model, surface: sample(this.actor.position), sandCoverage: surfaceHandling(this.player.body, this.player.definition.physics.tyres, this.player.definition.terrain).coverage, lean: this.lean, wheelie: this.player.dynamics instanceof MotorcycleDynamics ? this.player.dynamics.wheelie : 0, nearestCarId: this.nearestCar?.id ?? null, position: this.actor.position, velocity: this.actor.velocity, angle: this.actor.angle, speed: this.speed, cash: this.save.cash,
       health: this.health, driverHealth: this.driverHealth, wastedReason: this.wastedReason, sinking: this.player.sinking?.elapsed ?? null, water: this.player.sinking ? this.player.sinking.pool ? 'pool' : 'ocean' : null, condition: this.player.damage.status, critical: this.player.damage.critical, fireFuse: this.player.damage.fuse, boost: this.boost, heat: this.heat, stars: this.stars,
       police: this.police.map(p => ({ id: p.id, position: p.body.position, speed: length(p.body.velocity), role: p.ai.role, phase: p.ai.phase, condition: p.damage.status })),
       escape: this.escape, arrest: this.arrest, smashed: this.smashed, buildingsSmashed: this.buildingsSmashed, kills: this.kills, explosions: this.explosions, combo: this.combo,

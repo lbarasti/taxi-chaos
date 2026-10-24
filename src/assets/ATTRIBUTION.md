@@ -150,3 +150,11 @@ words, logos, captions, watermarks, invented arrests or election results. Subjec
 - Café investigation: a shuttered café threshold and barriers.
 - Patrol investigation: a reassignment log beside a station radio.
 - Vale investigation: a briefing folder and retained supplier agreement.
+
+## Motorcycle wheelies
+
+`motorcycle/wheelie-spritesheet.png`: original illustrated artwork generated with
+OpenAI image generation from the user-supplied orange courier motorcycle reference.
+Four transparent poses (full wheelie, intense wheelie, initial lift, regular ride),
+packed into 256 × 320 cells at a shared rear-axle anchor. The game rotates the
+south-facing drawings into vehicle heading and selects poses from physics state.

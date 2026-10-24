@@ -315,7 +315,7 @@ export function collectLights(scene: LightScene): LightSource[] {
       const fire = vehicle.body.toWorld({ x: fuel ? -0.8 : 0.9, y: 0 });
       out.push({ x: fire.x, y: fire.y, radius: fuel ? 10 : 7, color: FIRE, intensity: clamp01(0.85 * flicker) });
     }
-    if (vehicle.id === scene.playerId && scene.playerBoosting && !scene.playerOnFoot) {
+    if (vehicle.model !== 'motorcycle' && vehicle.id === scene.playerId && scene.playerBoosting && !scene.playerOnFoot) {
       const pulse = 0.6 + 0.4 * Math.sin(time * 43);
       const back = vehicle.body.toWorld({ x: -2.4, y: 0 });
       out.push({ x: back.x, y: back.y, radius: 6, color: NITRO, intensity: clamp01(pulse) });

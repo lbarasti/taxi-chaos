@@ -187,6 +187,8 @@ describe('collectLights', () => {
     const on = collectLights(scene({ playerId: 7, playerBoosting: true, vehicles: [car] }));
     expect(off.some(l => l.color[2] === 241)).toBe(false);
     expect(on.some(l => l.color[2] === 241)).toBe(true);
+    const bike = vehicle({ id: 7, kind: 'taxi', model: 'motorcycle' });
+    expect(collectLights(scene({ playerId: 7, playerBoosting: true, vehicles: [bike] })).some(l => l.color[2] === 241)).toBe(false);
   });
 
   it('bursts a local explosion glow that decays with the ring', () => {

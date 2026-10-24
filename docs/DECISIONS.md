@@ -269,3 +269,20 @@ the next 07:00 and resets shift totals. Retain the finished story, acknowledged
 ending, city outcomes and printed archive; do not replay scheduled story events
 or create additional campaign morning checkpoints. Preserve later dates and fare
 records through reloads and recovery.
+
+## 20. Use wheelies for motorcycle boost
+
+Motorcycle boost raises the front wheel while retaining the rechargeable tank and
+acceleration. Lifting, holding and landing use deterministic physics state and
+procedural frames from the existing bike artwork. The airborne front tyre cannot
+steer or leave road tracks; steering resumes on touchdown. Preserve collision
+impulses and rear-tyre forces rather than locking the whole body's heading.
+Cars retain their nitro flame and glow; motorcycles show the wheelie instead.
+
+## 21. Draw occupied motorcycles from the authored wheelie atlas
+
+Supersede the procedural artwork portion of decision 20 with four transparent
+illustrated poses selected by physics lift state. Share a rear-axle anchor and
+rotate one south-facing atlas into vehicle heading. Decode it before play and
+embed it in the standalone HTML. Keep procedural fallbacks for decode failures,
+empty bikes, fallen bikes and wrecks; preserve the existing wheelie physics.

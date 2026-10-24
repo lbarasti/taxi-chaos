@@ -7,7 +7,7 @@ import { drawCorpse, drawFire, drawSmoke } from './effects';
 import { LightingLayer, collectLights, cullLights, type LightScene, type LightingRenderOptions, type Viewport } from './lighting';
 import { collectOccluders, type Occluder } from './lighting-occlusion';
 import type { LightingState } from '../world/day-night';
-import { MotorcycleDynamics, leanProjection, motorcycleEngineWorks } from '../vehicles/motorcycle';
+import { MAX_WHEELIE_PITCH, MotorcycleDynamics, leanProjection, motorcycleEngineWorks, wheelieProjection } from '../vehicles/motorcycle';
 import { doorOpenness, LANDING_TIME } from '../vehicles/vehicle-exit';
 import { navigationTargetColours, navigationTargetKind, radarMarker, radarPoint, radarView, type NavigationTargetKind } from './radar';
 import { MAX_ZOOM, MIN_ZOOM } from './zoom';
@@ -17,6 +17,7 @@ import { artworkFor, artRadiusFor, fallbackScale, renderOrderForArt, type PropAr
 import { InspectionState } from '../debug/inspection';
 import { drawInspection } from '../debug/inspection-renderer';
 import { defaultMap } from '../map/default';
+import { motorcycleArtwork } from './motorcycle-artwork';
 
 import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from '../world/harbour';
 import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
@@ -864,6 +865,18 @@ export class Renderer {
   private motorcycle(v: Vehicle) {
     const c = this.ctx, b = v.body, g = this.game, wreck = v.damage.status === 'wreck';
     const dynamics = v.dynamics as MotorcycleDynamics, fallen = dynamics.fallen;
+    const lift = fallen || wreck ? 0 : dynamics.wheelie;
+    const pitch = MAX_WHEELIE_PITCH * lift * lift * (3 - 2 * lift);
+    const rear = Math.min(...dynamics.tyres.map(t => t.position.x));
+    // Screen-up displacement makes elevation legible at every heading. The ground
+    // shadow uses the true projected height, while the rear axle remains anchored.
+    const up = rotate(vec(0, -0.65), -b.angle);
+    const pitched = (x: number, height: number) => wheelieProjection(pitch, x, height, rear);
+    const pitchLayer = (height: number) => {
+      const origin = pitched(0, height), rise = origin.height - height;
+      c.transform(Math.cos(pitch) + up.x * Math.sin(pitch), up.y * Math.sin(pitch), 0, 1,
+        origin.x + up.x * rise, up.y * rise);
+    };
     const occupied = !v.driverExited && !wreck;
     const roll = fallen ? dynamics.lean : wreck ? 1.25 : v.parked && length(b.velocity) < 0.5 ? -0.18 : dynamics.lean;
     const projection = (height: number) => {
@@ -875,22 +888,28 @@ export class Renderer {
     const frame = projection(0.65), rider = projection(1.05), helmet = projection(1.4);
     const so = this.shadowOffset(b.angle);
     c.save(); c.translate(b.position.x, b.position.y); c.rotate(b.angle);
-    // Contact patches stay at y=0. The cast shadow shortens as the bike's upper parts get lower.
-    this.shadowRect(-1.25 + so.x * frame.height, -0.3 + frame.offset + so.y * frame.height, 2.5, 0.6, '#0e1a2290');
-    if (occupied) this.shadowCircle(vec(0.18 + so.x * helmet.height, helmet.offset + so.y * helmet.height), 0.42, '#0e1a2270');
-    if (v === g.player && !v.sinking && !g.onFoot && g.mode === 'playing' && g.controls.boost) {
-      const pulse = 0.5 + Math.sin(g.time * 43) * 0.12;
-      c.fillStyle = '#57d6f1bb'; c.beginPath(); c.moveTo(-1.1, frame.offset + 0.3); c.lineTo(-3.5 - pulse, frame.offset + 0.38); c.lineTo(-1.1, frame.offset + 0.55); c.fill();
-      this.rect(-1.8, frame.offset + 0.33, 0.8, 0.1, '#d9fbff');
+    const frameShadow = pitched(-1.25, frame.height), headShadow = pitched(0.32, helmet.height);
+    this.shadowRect(frameShadow.x + so.x * frameShadow.height, -0.3 + frame.offset + so.y * frameShadow.height,
+      2.5 * Math.cos(pitch), 0.6, '#0e1a2290');
+    if (occupied) this.shadowCircle(vec(headShadow.x + so.x * headShadow.height, helmet.offset + so.y * headShadow.height), 0.42, '#0e1a2270');
+    // Empty, fallen and wrecked bikes retain rider-free procedural geometry.
+    // Shadows stay on the road; do not draw procedural tyres over the sprite.
+    const parcel = v === g.player && !g.onFoot && g.job.type === 'parcel' && g.job.stage === 'dropoff';
+    if (occupied && !fallen && motorcycleArtwork.draw(c, lift, roll, parcel, rear)) {
+      c.restore(); return;
     }
     for (const t of v.dynamics.tyres) {
-      this.circle(t.position, 0.16, '#0c161c'); // unmoving road contact, not a floating sprite
-      c.save(); c.translate(t.position.x, Math.sin(roll) * 0.28); c.rotate(t.angle);
+      if (!t.steered || !dynamics.frontAirborne) this.circle(t.position, 0.16, '#0c161c');
+      else {
+        const shadow = pitched(t.position.x, 0.28);
+        this.shadowCircle(vec(shadow.x + so.x * shadow.height, so.y * shadow.height), 0.2, '#0e1a2260');
+      }
+      c.save(); pitchLayer(0.28); c.translate(t.position.x, Math.sin(roll) * 0.28); c.rotate(t.angle);
       this.rect(-0.4, -0.13 * frame.width, 0.8, 0.26 * frame.width, '#111c22');
       this.rect(-0.3, -0.045 * frame.width, 0.6, 0.09 * frame.width, '#72838a'); c.restore();
     }
     c.save(); c.scale(b.w / 2.6, b.h / 0.8);
-    c.save(); c.translate(0, frame.offset); c.scale(1, frame.width);
+    c.save(); pitchLayer(frame.height); c.translate(0, frame.offset); c.scale(1, frame.width);
     this.rect(-0.85, -0.13, 1.85, 0.26, '#adb7af'); // chassis/spine
     this.rect(-0.9, 0.32, 1.05, 0.14, '#aebbc0'); this.rect(-0.9, 0.32, 0.32, 0.14, '#34464e'); // exhaust
     c.fillStyle = wreck ? '#34393b' : v.color; c.beginPath(); c.roundRect(-0.65, -0.32, 1.55, 0.64, 0.24); c.fill();
@@ -904,7 +923,7 @@ export class Renderer {
     this.rect(-1.03, -0.14, 0.12, 0.28, v === g.player && g.controls.throttle < 0 ? '#ff675f' : '#ba6b61');
     c.restore();
     // Courier rack/box rolls with the frame; the box only appears when carrying an actual parcel.
-    c.save(); c.translate(-0.85, projection(0.8).offset); c.scale(1, frame.width);
+    c.save(); pitchLayer(projection(0.8).height); c.translate(-0.85, projection(0.8).offset); c.scale(1, frame.width);
     this.rect(-0.4, -0.37, 0.65, 0.74, '#46575c', '#a9b4ac');
     if (v === g.player && !g.onFoot && g.job.type === 'parcel' && g.job.stage === 'dropoff' && !wreck) {
       this.rect(-0.45, -0.4, 0.75, 0.8, '#dca668', '#ffe3af');
@@ -912,18 +931,18 @@ export class Renderer {
     }
     c.restore();
     if (occupied) {
-      c.save(); c.translate(0, rider.offset); c.scale(1, rider.width);
+      c.save(); pitchLayer(rider.height); c.translate(0, rider.offset); c.scale(1, rider.width);
       this.rect(-0.32, -0.45, 0.7, 0.18, '#263942'); this.rect(-0.32, 0.27, 0.7, 0.18, '#263942'); // knees
       c.strokeStyle = '#e5bd8f'; c.lineWidth = 0.16; c.lineCap = 'round';
       for (const side of [-1, 1]) { c.beginPath(); c.moveTo(0.05, side * 0.3); c.lineTo(0.45, side * 0.4); c.lineTo(0.82, side * 0.52); c.stroke(); }
       c.fillStyle = GOLD; c.beginPath(); c.roundRect(-0.32, -0.32, 0.62, 0.64, 0.15); c.fill();
       this.rect(-0.26, -0.23, 0.12, 0.46, '#ffe8a3'); c.restore();
       // Helmet's larger lateral displacement is the strongest top-down depth cue.
-      c.save(); c.translate(0.32, helmet.offset); c.scale(1, helmet.width);
+      c.save(); pitchLayer(helmet.height); c.translate(0.32, helmet.offset); c.scale(1, helmet.width);
       this.circle(vec(), 0.3, '#f0ede0'); this.rect(0.09, -0.23, 0.18, 0.46, '#28444d'); this.circle(vec(-0.09, -0.09), 0.09, '#ffffff'); c.restore();
-      if (length(b.velocity) < 0.8) this.rect(-0.22, 0.55, 0.32, 0.18, '#253a43'); // foot down at stops
+      if (!dynamics.frontAirborne && length(b.velocity) < 0.8) this.rect(-0.22, 0.55, 0.32, 0.18, '#253a43'); // foot down at stops
     }
-    if (v.damage.health < 75) this.rect(0.3, frame.offset - 0.1, 0.4, 0.1, '#34393b');
+    if (v.damage.health < 75) { c.save(); pitchLayer(frame.height); this.rect(0.3, frame.offset - 0.1, 0.4, 0.1, '#34393b'); c.restore(); }
     c.restore();
     c.restore();
   }

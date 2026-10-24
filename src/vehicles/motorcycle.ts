@@ -3,6 +3,7 @@ import type { VehicleDamage } from './damage';
 
 export const BIKE_ENGINE = 2800, BIKE_GRIP = 950;
 export const MAX_LEAN = Math.PI * 0.26; // 46.8°, road-bike grip, not a racing slick.
+export const MAX_WHEELIE_PITCH = Math.PI / 5; // 36°; readable from above without hiding the rider.
 const GRAVITY = 9.81;
 export const MOTORCYCLE_KNOCKOFF_SPEED = 6; // relative closing speed at the contact (m/s)
 export const BIKE_MIN_START_HP = 25;
@@ -30,6 +31,13 @@ export const leanProjection = (lean: number, height: number) => ({
   offset: Math.sin(lean) * height, height: Math.cos(lean) * height, width: Math.cos(lean),
 });
 
+/** Pitch around the rear axle. Height is above the road; the rear tyre stays planted. */
+export function wheelieProjection(pitch: number, x: number, height: number, rear = -0.88) {
+  const dx = x - rear, dz = height - 0.28;
+  return { x: rear + dx * Math.cos(pitch) - dz * Math.sin(pitch),
+    height: 0.28 + dx * Math.sin(pitch) + dz * Math.cos(pitch) };
+}
+
 // Same force/integration/collision pipeline as cars, with a single-track pair of tyres.
 // The rider's balance controller is represented by a damped roll response; no fragile free-fall
 // balance simulation or binary steering animation. Lateral forces remain physical and grip-limited.
@@ -38,6 +46,8 @@ export class MotorcycleDynamics extends CarDynamics {
   override grip = BIKE_GRIP;
   override tyres = [-0.88, 0.88].map(x => ({ position: vec(x, 0), steered: x > 0, angle: 0, skidding: false }));
   lean = 0; leanVelocity = 0; lateralAcceleration = 0;
+  wheelie = 0;
+  get frontAirborne() { return this.wheelie > 0; }
   fallen = false;
   fallSide: -1 | 1 = 1;
 
@@ -46,6 +56,7 @@ export class MotorcycleDynamics extends CarDynamics {
   crash(side: -1 | 1, closingSpeed: number) {
     if (this.fallen) return;
     this.fallen = true;
+    this.wheelie = 0;
     this.fallSide = side;
     this.lean = side * Math.max(0.08, side * this.lean);
     this.leanVelocity = side * clamp(1.5 + closingSpeed * 0.26, 2.3, 7);
@@ -79,12 +90,16 @@ export class MotorcycleDynamics extends CarDynamics {
     if (tyres) this.tyres = tyres.map(t => ({ position: vec(t.x, t.y), steered: t.steered, angle: 0, skidding: false }));
   }
 
-  resetLean() { this.lean = 0; this.leanVelocity = 0; this.lateralAcceleration = 0; this.fallen = false; this.fallSide = 1; }
+  resetLean() { this.lean = 0; this.leanVelocity = 0; this.lateralAcceleration = 0; this.wheelie = 0; this.fallen = false; this.fallSide = 1; }
 
   override apply(body: Body, controls: Controls, dt: number) {
     if (this.fallen) { this.slide(body, dt); return; }
     const forward = rotate(vec(1, 0), body.angle), lateral = vec(-forward.y, forward.x);
     const speed = dot(body.velocity, forward);
+    const lifting = controls.boost && controls.throttle > 0 && !controls.handbrake && speed > 2 && this.engineForce > 0;
+    // A bounded lift/landing is deterministic at the physics cadence. Steering stays
+    // unavailable through touchdown, including after boost release or tank exhaustion.
+    this.wheelie = clamp(this.wheelie + dt * (lifting ? 2.4 : -3.4), 0, 1);
     this.rearGripLoss = controls.handbrake ? 0.65 : Math.max(0, this.rearGripLoss - dt * 4);
     const braking = controls.throttle < 0 && speed > 0.5;
     const drive = braking ? body.mass * this.tuning.brakeDeceleration : controls.throttle < 0 ? this.engineForce * this.tuning.reverseRatio : this.engineForce;
@@ -102,12 +117,13 @@ export class MotorcycleDynamics extends CarDynamics {
     let sideForce = 0;
     this.skidding = false;
     for (const tyre of this.tyres) {
+      if (this.frontAirborne && tyre.steered) { tyre.angle = 0; tyre.skidding = false; continue; }
       const desired = tyre.steered ? controls.turn * lock : 0;
       tyre.angle += (desired - tyre.angle) * (1 - Math.exp(-dt * 12));
       const p = body.toWorld(tyre.position), v = body.velocityAt(p);
       const rolling = rotate(vec(1, 0), body.angle + tyre.angle), side = vec(-rolling.y, rolling.x);
       const slip = dot(v, side), rear = !tyre.steered;
-      const limit = body.mass * maxAcceleration * 0.5 * (rear ? 1 - this.rearGripLoss : 1);
+      const limit = body.mass * maxAcceleration * (this.frontAirborne ? 1 : 0.5) * (rear ? 1 - this.rearGripLoss : 1);
       const demand = -this.grip * this.surface.grip * slip;
       const force = scale(side, clamp(demand, -limit, limit));
       tyre.skidding = Math.abs(slip) > 1.6 && Math.abs(demand) > limit;
@@ -116,7 +132,7 @@ export class MotorcycleDynamics extends CarDynamics {
       sideForce += dot(force, lateral);
     }
     this.lateralAcceleration = sideForce / body.mass;
-    const target = cornerLean(this.lateralAcceleration) * clamp(Math.abs(speed) / 2, 0, 1);
+    const target = this.frontAirborne ? 0 : cornerLean(this.lateralAcceleration) * clamp(Math.abs(speed) / 2, 0, 1);
     // Critically damped roll (~0.3 s transition). No snapping when steering reverses or brakes apply.
     const frequency = 12;
     this.leanVelocity += (frequency * frequency * (target - this.lean) - 2 * frequency * this.leanVelocity) * dt;

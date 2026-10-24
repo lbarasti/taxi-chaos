@@ -79,7 +79,7 @@ export type ScenarioInfo = { name: ScenarioName; label: string; description: str
 /** Every reproducible LAB fixture, in the order they appear in the select. */
 export const scenarioInfo: ScenarioInfo[] = [
   { name: 'first-fare', label: 'First fare', description: 'Fresh run parked at Old Town; the first customer waits just down the street.' },
-  { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes.' },
+  { name: 'motorcycle', label: 'Motorbike deliveries', description: 'Press E to leave the cab, walk right to the courier bike, then E to ride. Yellow loads a parcel; green pays. A/D leans into corners; Space brakes. Shift + accelerate lifts a wheelie; steering returns on landing.' },
   { name: 'moving-car-exit', label: 'Moving cab / jump out', description: 'A cab coasts east at 18 m/s. Press E while moving; watch the door swing outward before the jump, the driver tumble with momentum, the landing HP hit and the empty cab coast away. Hold A + E for a left-side exit.' },
   { name: 'moving-bike-exit', label: 'Moving motorbike / hop off', description: 'A courier bike rolls east at 5 m/s. Press E to jump right; the lighter empty bike recoils and steers left while the rider tumbles. Hold A + E to reverse the recoil; at rest E dismounts safely.' },
   { name: 'motorcycle-impact', label: 'Motorbike / collision ejection', description: 'A cab drives east at 18 m/s into a 5 m/s oncoming motorcyclist. Watch the rider tumble separately while the motorcycle falls on its side, skids, spins and settles. Low-damage bikes can be lifted again.' },

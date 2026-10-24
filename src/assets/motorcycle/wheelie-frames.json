@@ -1,0 +1,9 @@
+{
+  "frameSize": [256, 320],
+  "anchor": [128, 72],
+  "anchorKind": "rear-axle",
+  "metresPerPixel": 0.01,
+  "heading": "south",
+  "poses": ["full-wheelie", "intense-wheelie", "initial-lift", "ride"],
+  "wheelie": [1, 0.6666666666666666, 0.3333333333333333, 0]
+}
