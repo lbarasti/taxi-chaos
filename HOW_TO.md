@@ -46,6 +46,8 @@ fourteenth night. Time advances while driving. Use
 **Your shift → Route to Pit Stop to sleep** to set the garage as your destination.
 Once safely parked there, choose **Sleep at Pit Stop** to skip to the next 07:00.
 Passengers, pursuits and fires block sleeping.
+Sleep remains available after the campaign: the calendar and ordinary fares
+continue, while the completed story and printed editions stay settled.
 Recovery, reload and run reset preserve the date.
 
 Normal dispatch mixes ordinary jobs with recurring customers. **Texts** lets

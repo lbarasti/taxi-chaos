@@ -61,6 +61,8 @@ describe('startup splash', () => {
     }
     game.save.campaign.finished = false; game.player.body.position = { ...GARAGE };
     expect(markup()).toContain('id="sleep"><span>Sleep at Pit Stop · wake');
+    game.advanceNarrativeTo(game.campaignContent.timing.end);
+    expect(markup()).toContain('id="sleep"><span>Sleep at Pit Stop · wake Day 16 · 07:00');
     game.job.stage = 'dropoff';
     expect(markup()).toContain('id="sleep" disabled><span>Finish or abandon your current ride first</span>');
   });

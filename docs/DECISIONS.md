@@ -260,3 +260,12 @@ notebook and scenario commands. Keep physical source submission, source status
 and the printed publication archive. Preserve existing saved edition dates and
 printed history; migrate checked, unscheduled stories to the next future edition
 without inventing earlier publications or responses.
+
+## 19. Keep the calendar and sleep available after the story
+
+Extend section 10's arcade continuation: the saved calendar and working days keep
+advancing after campaign completion, and safe sleep at Pit Stop always reaches
+the next 07:00 and resets shift totals. Retain the finished story, acknowledged
+ending, city outcomes and printed archive; do not replay scheduled story events
+or create additional campaign morning checkpoints. Preserve later dates and fare
+records through reloads and recovery.

@@ -30,7 +30,7 @@ import type { CampaignDefinition, CampaignContext, CampaignEvent, EverydayJob, E
 import { campaignCondition } from '../missions/conditions';
 import { dispatchCampaignEvent } from '../campaign/events';
 import { recordNote } from '../campaign/effects';
-import { CAMPAIGN_START, campaignDays, calendarLabel, nextMorning } from '../campaign/clock';
+import { CAMPAIGN_START, workingDay, calendarLabel, nextMorning } from '../campaign/clock';
 import { advanceCampaignTo, receiveMaterial, VERIFICATION_MINUTES } from '../campaign/scheduler';
 import { cityBulletin } from '../campaign/bulletin';
 import { ordinaryDuring, rideMessage, selectEverydayJourney } from '../campaign/ride-dialogue';
@@ -243,7 +243,7 @@ export class Game {
     this.save.campaign.endingSeen = true; this.persist(); return true;
   }
   get sleepReason(): string | null {
-    if (!this.campaignEnabled || this.save.campaign.finished) return 'Campaign finished · free driving continues';
+    if (!this.campaignEnabled) return 'Sleep is unavailable in this preview';
     if (!this.garageNear || this.onFoot || this.speed > 0.5) return 'Park at Pit Stop to sleep';
     if (this.job.stage === 'dropoff') return 'Finish or abandon your current ride first';
     if (this.heat > 0 || this.policeVisible || this.pendingExit || this.tumble || this.player.damage.status === 'burning' || this.player.damage.status === 'wreck' || this.vehicles.some(v => v.damage.status === 'burning' && dist(v.body.position, this.actor.position) < 30) || this.blasts.some(b => dist(b.position, this.actor.position) < 30)) return 'Wait until the area and your car are safe';
@@ -272,7 +272,14 @@ export class Game {
   /** Also used by the explicit Lab campaign control; never changes simulation seconds. */
   advanceNarrativeTo(minute: number): boolean { return this.advanceNarrative(minute, true); }
   private advanceNarrative(minute: number, captureMornings: boolean): boolean {
-    if (!this.campaignEnabled || !Number.isFinite(minute) || minute < this.save.campaign.minute || this.save.campaign.finished) return false;
+    if (!this.campaignEnabled || !Number.isFinite(minute) || minute < this.save.campaign.minute) return false;
+    // The calendar keeps running after the story; its settled events stay frozen.
+    if (this.save.campaign.finished) {
+      if (minute === this.save.campaign.minute) return false;
+      this.save.campaign.minute = minute; this.save.campaign.shift = workingDay(minute, this.campaignContent.timing);
+      this.dayNight.synchronize(minute);
+      return true;
+    }
     const timing = this.campaignContent.timing, target = Math.min(minute, timing.end);
     let changed = false;
     // Stop at each actual working-day boundary so a skip cannot archive a later
@@ -800,7 +807,7 @@ export class Game {
   }
   notify(message: string, kind: NotificationKind = '', options: NotificationOptions = {}) { this.notifications.push(message, kind, options); this.eventLog.push(message); if (this.eventLog.length > 30) this.eventLog.shift(); }
   private missionContext(): DirectorContext {
-    return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds, minute: this.save.campaign.minute, shift: this.save.campaign.finished ? campaignDays(this.campaignContent.timing) + 1 : this.save.campaign.shift };
+    return { deliveries: this.save.story.deliveries, careerDeliveries: this.save.deliveries, jobType: this.player.definition.access.job, model: this.player.model, kind: this.player.kind, time: this.save.story.campaignSeconds, minute: this.save.campaign.minute, shift: this.save.campaign.finished ? workingDay(this.save.campaign.minute, this.campaignContent.timing) : this.save.campaign.shift };
   }
   private makeMissionJob(missionId: MissionId): Job {
     const mission = this.missions.mission(missionId), { roadPath } = this.world.navigation;
@@ -1301,7 +1308,8 @@ export class Game {
     const campaignBucket = Math.floor(this.save.story.campaignSeconds / 5);
     this.save.story.campaignSeconds += dt;
     this.time += dt;
-    if (this.campaignEnabled && !this.save.campaign.finished) {
+    if (this.campaignEnabled && this.save.campaign.finished) this.advanceNarrative(this.save.campaign.minute + dt, false);
+    else if (this.campaignEnabled) {
       let target = Math.min(this.campaignContent.timing.end, this.save.campaign.minute + dt);
       if (Math.abs(target - Math.round(target)) < 1e-6) target = Math.round(target);
       // World/edition boundaries use whole minutes, but receipt checks keep
@@ -1311,7 +1319,7 @@ export class Game {
       else this.save.campaign.minute = target;
       this.dayNight.synchronize(this.save.campaign.minute);
     }
-    if (!this.campaignEnabled || this.dayNight.previewing || this.save.campaign.finished) this.dayNight.update(dt);
+    if (!this.campaignEnabled || this.dayNight.previewing) this.dayNight.update(dt);
     if (Math.floor(this.save.story.campaignSeconds / 5) !== campaignBucket) this.persist();
     this.notifications.tick(dt, this.notificationsVisible); this.crashCooldown -= dt; this.comboTimer -= dt;
     if (this.comboTimer <= 0) this.combo = 0;

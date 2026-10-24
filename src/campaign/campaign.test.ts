@@ -6,6 +6,7 @@ import { assertMissionCatalogue } from '../missions/schema';
 import { contact, vec } from '../physics/physics';
 import { GARAGE } from '../world/world';
 import { storageKeys } from '../game/storage';
+import { parseSave } from '../game/save';
 import { MAX_NOTEBOOK_ENTRIES, parsePlayerRecords } from '../narrative/player-records';
 import { campaignCast, corroboration, everydayJobs, jobMaterials, jobNames, jobWindows, materials, openShoreCatalogue } from './content';
 import { defaultCampaign, parseCampaign } from './state';
@@ -228,6 +229,43 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.toast).toBe(''); expect(g.toastTime).toBe(0);
   });
 
+  it('keeps sleeping, driving and saving later mornings after the campaign without replaying the story', () => {
+    const g = make(); g.advanceNarrativeTo(CAMPAIGN_END); g.continueArcade();
+    const history = () => structuredClone({ world: g.save.campaign.world, occurrences: g.save.campaign.occurrences,
+      editions: g.save.campaign.editions, publications: g.save.campaign.publications, reactions: g.save.campaign.reactions });
+    const completed = history();
+    g.player.body.position = { ...GARAGE }; g.player.body.velocity = vec(); g.dialogue.clear();
+    g.save.shiftStats = { earnings: 30, jobs: 2, smashed: 1, kills: 0 }; g.setMode('paused');
+    const physical = { time: g.time, cash: g.save.cash, damage: structuredClone(g.player.damage), position: { ...g.player.body.position } };
+    expect(g.sleepPreview.label).toBe('Day 16 · 07:00'); expect(g.sleepReason).toBeNull();
+    expect(g.sleep()).toBe(true); expect(g.save.campaign.minute).toBe(dayMinute(16));
+    expect(g.dayNight.snapshot()).toMatchObject({ day: 16, time: '07:00' });
+    expect(g.save.shiftStats).toEqual({ earnings: 0, jobs: 0, smashed: 0, kills: 0 });
+    expect({ time: g.time, cash: g.save.cash, damage: g.player.damage, position: g.player.body.position }).toEqual(physical);
+    expect(g.sleep()).toBe(false); // A second activation while playing cannot skip another day.
+    step(g, 0.5); expect(g.save.campaign.minute).toBeCloseTo(dayMinute(16) + 0.5);
+    g.dialogue.clear(); g.setMode('paused'); expect(g.sleepPreview.label).toBe('Day 17 · 07:00');
+    expect(g.sleep()).toBe(true); expect(g.save.campaign.minute).toBe(dayMinute(17));
+    expect(history()).toEqual(completed);
+    const save = parseSave(JSON.parse(JSON.stringify(g.saveSnapshot())))!;
+    expect(save.campaign.minute).toBe(dayMinute(17)); expect(save.campaign.shift).toBe(17);
+    expect(save.campaign.finished).toBe(true); expect(save.campaign.endingSeen).toBe(true);
+    expect({ world: save.campaign.world, occurrences: save.campaign.occurrences, editions: save.campaign.editions,
+      publications: save.campaign.publications, reactions: save.campaign.reactions }).toEqual(completed);
+    const loaded = new Game(undefined, false, true, save); loaded.settings.noPolice = true; loaded.start();
+    expect(loaded.dayNight.snapshot()).toMatchObject({ day: 17, time: '07:00' });
+    expect(loaded.campaignFinaleReady).toBe(false);
+    loaded.dialogue.clear(); loaded.setMode('paused'); expect(loaded.sleep()).toBe(true);
+    expect(loaded.save.campaign.minute).toBe(dayMinute(18));
+    expect(loaded.save.campaign.editions).toEqual(completed.editions);
+    loaded.vehicles = [loaded.player]; loaded.trafficTarget = 0; finish(loaded);
+    const receipt = loaded.save.playerRecords.notebook.find(entry => entry.kind === 'receipt')!;
+    expect(receipt.shift).toBe(18); expect(receipt.minute).toBeGreaterThanOrEqual(dayMinute(18));
+    expect(parseSave(JSON.parse(JSON.stringify(loaded.saveSnapshot())))!.playerRecords).toEqual(loaded.save.playerRecords);
+    const minute = loaded.save.campaign.minute; loaded.resetRun();
+    expect(loaded.save.campaign.minute).toBe(minute); expect(loaded.dayNight.snapshot().day).toBe(18);
+  });
+
   it('rejects sleep with passengers, pursuits, burning vehicles and away from Pit Stop', () => {
     const g = make(); arrive(g, g.job.pickup); g.player.body.position = { ...GARAGE }; g.setMode('paused');
     const snapshot = structuredClone(g.save); expect(g.sleep()).toBe(false); expect(g.save).toEqual(snapshot);
@@ -374,7 +412,7 @@ describe('Open Shore world-driven campaign', () => {
 
   it('ends at the fourteenth-night cutoff once; an uninterested driver can continue working', () => {
     const g = make(); g.advanceNarrativeTo(CAMPAIGN_END - 1); step(g, 2);
-    expect(g.save.campaign.finished).toBe(true); expect(g.save.campaign.minute).toBe(CAMPAIGN_END);
+    expect(g.save.campaign.finished).toBe(true); expect(g.save.campaign.minute).toBeCloseTo(CAMPAIGN_END + 1);
     expect(g.campaignBulletin).toContain('remains the favourite'); g.newJob();
     expect(g.job.missionId).toBeUndefined(); expect(g.job.everyday).toBeDefined();
     expect(g.save.campaign.publications).toEqual([]); expect(notebookMarkup(g)).not.toMatch(/\d+%|truth score/i);
@@ -406,6 +444,8 @@ describe('Open Shore world-driven campaign', () => {
     const catalogue = structuredClone(openShoreCatalogue); (catalogue.missions['bea-first-shift'] as { requires: unknown }).requires = { minuteBefore: 20581 };
     expect(() => assertMissionCatalogue(catalogue)).toThrow();
     expect(parseCampaign(undefined)).toEqual(defaultCampaign());
-    expect(parsePlayerRecords({ version: 1, texts: [], notebook: [{ id: 'bad', title: 'X', text: 'Y', shift: 99, at: 0, kind: 'observation' }] }).notebook).toEqual([]);
+    for (const shift of [-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(parsePlayerRecords({ version: 1, texts: [], notebook: [{ id: 'bad', title: 'X', text: 'Y', shift, at: 0, kind: 'observation' }] }).notebook).toEqual([]);
+    }
   });
 });
