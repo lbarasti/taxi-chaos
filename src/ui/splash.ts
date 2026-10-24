@@ -17,7 +17,7 @@ export function splashPrompts(device: InputDevice): string {
   return prompts.map(([key, action]) => `<span><kbd>${key}</kbd> ${action}</span>`).join('');
 }
 export function shiftStatsMarkup(game: Game) {
-  return `<div class="shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.save.shiftStats.earnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.save.shiftStats.jobs}</strong></div><div><small>OBJECTS SMASHED</small><strong>${game.save.shiftStats.smashed}</strong></div><div><small>PEDESTRIAN FATALITIES</small><strong>${game.save.shiftStats.kills}</strong></div></div>`;
+  return `<div class="shift-stats"><div><small>SHIFT EARNINGS</small><strong>$${game.save.shiftStats.earnings}</strong></div><div><small>JOBS COMPLETE</small><strong>${game.save.shiftStats.jobs}</strong></div></div>`;
 }
 export function shiftMarkup(game: Game, actions: string) {
   return shiftStatsMarkup(game) + actions;

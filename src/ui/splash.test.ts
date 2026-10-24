@@ -29,7 +29,8 @@ describe('startup splash', () => {
     expect(html).not.toContain('splash-save'); expect(html).not.toContain('Start your shift');
     expect(html).not.toContain('new-game'); expect(html).not.toContain('menu-shift'); expect(html).not.toContain('Since you last woke up.'); expect(html).not.toContain('$175');
     const shift = shiftMarkup(game, '<button>Sleep</button>');
-    expect(shift).toContain('$175'); expect(shift).toContain('PEDESTRIAN FATALITIES'); expect(shift).toContain('Sleep');
+    expect(shift).toContain('$175'); expect(shift).toContain('JOBS COMPLETE'); expect(shift).toContain('Sleep');
+    expect(shift).not.toContain('OBJECTS SMASHED'); expect(shift).not.toContain('PEDESTRIAN FATALITIES');
     game.mode = 'intro';
     expect(splashMarkup(game, true)).not.toContain('Dispatch notebook');
   });

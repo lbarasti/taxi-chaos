@@ -40,7 +40,7 @@
 @media(prefers-reduced-motion:reduce){.credit-row{transition:none}}
 .splash-modal .notebook-actions{flex-direction:column}.splash-modal .campaign-summary{margin-top:0}.drawer-page>p,.splash-modal .notebook-entries p{font-size:13px;line-height:1.7;color:#b8c7bd}.splash-modal .eyebrow{line-height:1.7}
 /* Desktop panes scroll independently; mobile retains the single-column flow. */
-.splash-modal[data-page="newsroom"]{background:linear-gradient(105deg,#14242cf5 0%,#17262df0 55%,#203039eb 100%);user-select:text}
+.splash-modal:is([data-page="newsroom"],[data-page="shift"]){background:linear-gradient(105deg,#14242cf5 0%,#17262df0 55%,#203039eb 100%);user-select:text}
 .newsroom-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
 .newsroom-columns>div{min-width:0}
 .newsroom-menu-content>p{font-size:13px;line-height:1.7;color:#b8c7bd}
