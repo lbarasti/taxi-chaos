@@ -8,6 +8,7 @@ import { publicationsMarkup, finaleMarkup } from '../campaign/newspaper-view';
 import { creditsMarkup } from './credits';
 import { splashMarkup, shiftMarkup } from './splash';
 import { drawerHeading, menuItem, type DrawerPage } from './drawer-markup';
+import { menuHintMarkup } from './menu-hint';
 
 const pages = {
   home: { title: '', parent: null },
@@ -56,7 +57,7 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
       return drawerHeading('Load game.', 'home') + `<p class="intro-copy">${checkpoints.length ? 'Choose a morning to return to. Other saved days stay available; reaching a morning again replaces that day.' : 'No mornings saved yet. Mornings are saved automatically at 07:00, starting when you begin a New game.'}</p>
         ${loadFailed ? '<p class="campaign-hint" role="alert">This morning could not be loaded. The checkpoint may be unavailable or browser storage may be full.</p>' : ''}
         <nav class="game-menu" aria-label="Saved mornings">${checkpoints.map(({ day }) => menuItem(`Day ${day} · 07:00`, { id: `load-day-${day}` })).join('')}</nav>
-        <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p>`;
+        ${menuHintMarkup()}`;
     }
     case 'new-game': return `<div class="intro-eyebrow">TAXI CHAOS / NEW GAME</div><h2 id="modal-title">Start a new game?</h2>
       <p class="intro-copy">Your current progress will be replaced. Your settings will be kept.</p>
@@ -64,7 +65,7 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
       <nav class="game-menu" aria-label="New game confirmation">
         ${menuItem('Cancel', { id: 'cancel-new-game', page: 'home' })}
         ${menuItem('New game', { id: 'confirm-new-game' })}
-      </nav><p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p>`;
+      </nav>${menuHintMarkup()}`;
     case 'publications': return publicationsMarkup(game, editionDay, publicationBack, articleId);
     case 'finale': return finaleMarkup(game);
     case 'newsroom': return newsroomMarkup(game, newsroomSection);

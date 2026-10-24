@@ -3,6 +3,7 @@ import { campaignDays, calendarLabel } from './clock';
 import { editionArticle } from './editions';
 import { escape } from './view';
 import { menuItem, type DrawerPage } from '../ui/drawer-markup';
+import { menuHintMarkup } from '../ui/menu-hint';
 
 export function publicationsMarkup(game: Game, selectedDay?: number, back: DrawerPage = 'newsroom', selectedArticle?: string): string {
   const editions = [...game.save.campaign.editions].reverse();
@@ -41,5 +42,5 @@ export function finaleMarkup(game: Game): string {
     <div class="finale-outcomes">${milestones.map(milestone => { const achieved = game.campaignMatches(milestone.requires); return `<article data-achieved="${achieved}"><span aria-hidden="true">${achieved ? '✓' : '—'}</span><div><h3>${escape(achieved ? milestone.title : milestone.missedTitle)}</h3><p>${escape(achieved ? milestone.text : milestone.missedText)}</p></div></article>`; }).join('')}</div>
     <div class="finale-career"><span>Cash <strong>$${Math.floor(game.save.cash).toLocaleString('en-US')}</strong></span><span>Career deliveries <strong>${game.save.deliveries}</strong></span></div>
 
-    <p class="finale-continuation">Your cash, garage and upgrades carry on with you. Dispatcher calls, fares and vehicle progression continue in arcade mode. The campaign story is complete.</p><p class="menu-hint" id="menu-hint"></p></section>`;
+    <p class="finale-continuation">Your cash, garage and upgrades carry on with you. Dispatcher calls, fares and vehicle progression continue in arcade mode. The campaign story is complete.</p>${menuHintMarkup()}</section>`;
 }

@@ -1,9 +1,9 @@
 import { menuItem, type DrawerPage } from './drawer-markup';
+import { menuHintMarkup, type InputDevice } from './menu-hint';
 import type { Game } from '../game/game';
 import { readStorage, storageKeys } from '../game/storage';
 import titleCabBadge from '../assets/ui/title-cab-badge.webp?inline';
 
-export type InputDevice = 'keyboard' | 'touch' | 'xbox' | 'playstation';
 export function savedCampaignAvailable(): boolean {
   try {
     const save = JSON.parse(readStorage(storageKeys.save) ?? 'null');
@@ -60,5 +60,5 @@ export function splashMarkup(game: Game, saved: boolean): string {
     <nav class="game-menu" aria-label="${screen.menuLabel}">
       ${screen.items.filter(({ visible = true }) => visible).map(({ label, id, page }) => menuItem(label, { id, page })).join('\n      ')}
     </nav>
-    <p class="menu-hint" id="menu-hint">↑ ↓ Select · Enter Confirm</p><div class="intro-controls" id="splash-prompts"></div>`;
+    ${menuHintMarkup()}<div class="intro-controls" id="splash-prompts"></div>`;
 }
