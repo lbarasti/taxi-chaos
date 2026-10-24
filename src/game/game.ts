@@ -26,7 +26,7 @@ import { touchSteering } from '../ui/touch-controls';
 import { defaultPlayerRecords, MAX_TEXT_RECEIPTS, type NotebookEntry } from '../narrative/player-records';
 import { defaultCampaign, type ActiveRide, type RideStopover } from '../campaign/state';
 import { campaignDefinition } from '../campaign/content';
-import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent, EverydayJob, EverydayJourney } from '../campaign/model';
+import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent, EverydayJob, EverydayJourney, Stopover } from '../campaign/model';
 import { campaignCondition } from '../missions/conditions';
 import { dispatchCampaignEvent } from '../campaign/events';
 import { recordNote } from '../campaign/effects';
@@ -35,6 +35,7 @@ import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MI
 import { cityBulletin } from '../campaign/bulletin';
 import { ordinaryDuring, rideMessage, selectEverydayJourney } from '../campaign/ride-dialogue';
 import { pathLength } from '../world/countryside';
+import { selectProceduralStopover } from '../campaign/stopovers';
 import { RAIL_BREAK_SPEED } from '../world/world';
 import { defaultCompiledMap, type CompiledMap } from '../map/compile';
 import { upgradeInfo, stockUpgrades, hasUpgrades, type Upgrade, type VehicleUpgrades } from '../vehicles/vehicle-upgrades';
@@ -45,7 +46,7 @@ import { NotificationStack, type NotificationKind, type NotificationOptions } fr
 export type Vehicle = { upgrades: VehicleUpgrades; id: number; sourceId?: string; body: Body; dynamics: CarDynamics; readonly model: VehicleModel; readonly definition: VehicleDefinition; kind: VehicleRole; color: string; path: Vec[]; routeTimer: number; alive: boolean; parked: boolean; ai: AIState; damage: VehicleDamage; baseEngine: number; baseGrip: number; wreckAt: number; driverExited: boolean; door?: { side: ExitSide; at: number }; coastUntil?: number; exitSteer?: number; freight?: { waypoint: number }; sinking?: { elapsed: number; pool?: Body; entrySpeed: number }; cart?: { waypoint: number; crush: number; roll: number; targetRoll: number } };
 export type Feedback = { position: Vec; life: number; color: string; text: string };
 export type Skid = { a: Vec; b: Vec; life: number; blood?: boolean; sand?: boolean };
-export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; stopover?: RideStopover; everyday?: { character: CharacterId; family: string; line: string; journeyId?: string; during?: string; arrival?: string; roughArrival?: string } };
+export type Job = { type: 'fare' | 'parcel'; pickup: Vec; dropoff: Vec; name: string; destination: string; fare: number; time: number; elapsed: number; comfort: number; stage: 'pickup' | 'dropoff'; wait: number; customerId: number; missionId?: MissionId; stopover?: RideStopover; optionalStop?: Stopover; incidentalId?: string; everyday?: { character: CharacterId; family: string; line: string; journeyId?: string; during?: string; arrival?: string; roughArrival?: string } };
 export type Mode = 'intro' | 'playing' | 'paused' | 'garage' | 'arrested' | 'wasted';
 export type Tumble = { elapsed: number; duration: number; speed: number; side: ExitSide; bike: boolean; grounded: boolean };
 export { upgradeInfo, type Upgrade } from '../vehicles/vehicle-upgrades';
@@ -133,17 +134,21 @@ export class Game {
   private restoreRide(ride: ActiveRide): boolean {
     if (ride.missionId && this.missions.resumeRide(ride.missionId)) {
       this.job = this.makeMissionJob(ride.missionId);
-      if (ride.stopover && this.campaignContent.stopovers?.[ride.missionId]) {
-        this.job.stopover = { ...ride.stopover };
-        this.navToStopover = ride.stopover.routed && !ride.stopover.completed;
-        if (ride.stopover.completed) this.creditStopover(this.job);
-      }
     } else if (ride.ordinary) {
       const regular = this.campaignContent.everydayJobs.find(j => j.character === ride.ordinary!.character);
       const journey = (ride.type === 'parcel' ? regular?.parcelJourneys : regular?.journeys)?.find(j => j.id === ride.ordinary!.journeyId);
       if (!regular || !journey) return false;
       this.job = this.makeEverydayJob(regular, journey, ride.type);
+    } else if (ride.procedural && ride.incidentalId) {
+      this.job = { ...ride.procedural, type: ride.type, stage: 'dropoff', elapsed: 0, comfort: 100, wait: 0, customerId: -1 };
+      this.job.incidentalId = ride.incidentalId;
+      this.job.optionalStop = this.campaignContent.proceduralStopovers?.find(stop => stop.id === ride.incidentalId);
     } else return false;
+    if (ride.stopover && this.stopoverFor(this.job)) {
+      this.job.stopover = { ...ride.stopover };
+      this.navToStopover = ride.stopover.routed && !ride.stopover.completed;
+      if (ride.stopover.completed) this.creditStopover(this.job);
+    }
     this.job.type = ride.type; this.job.stage = 'dropoff'; this.job.elapsed = ride.elapsed; this.job.comfort = ride.comfort; this.rideBeat = ride.rideBeat; this.rideDistance = ride.rideDistance ?? 0;
     const rider = this.world.people.find(p => p.id === this.job.customerId); if (rider) { rider.alive = false; rider.aboard = true; }
     if (!this.save.garage) this.player.body.position = { ...this.job.pickup };
@@ -404,15 +409,18 @@ export class Game {
     if (this.navToStopover && this.stopoverStatus) return this.stopoverStatus.position;
     return this.job.stage === 'pickup' ? this.job.pickup : this.job.dropoff;
   }
+  private stopoverFor(job: Job): Stopover | undefined {
+    return job.optionalStop ?? (job.missionId ? this.campaignContent.stopovers?.[job.missionId] : undefined);
+  }
   get stopoverStatus() {
-    const j = this.job, spec = j?.missionId && j.stage === 'dropoff' ? this.campaignContent.stopovers?.[j.missionId] : undefined;
-    if (!this.campaignEnabled || !spec) return null;
+    const j = this.job, spec = j?.stage === 'dropoff' ? this.stopoverFor(j) : undefined;
+    if (!spec) return null;
     const position = this.missions.catalogue.stops.byId[spec.stop].position;
     const nearby = dist(this.actor.position, position) < 5.3;
     const completed = j.stopover?.completed ?? false;
     const available = !completed && this.mode === 'playing' && !this.onFoot && nearby && this.speed < 0.8 && !this.controls.throttle && !this.pendingExit
       && this.driverHealth > 0 && this.player.alive && !this.player.sinking && this.player.damage.status !== 'burning' && this.player.damage.status !== 'wreck';
-    return { title: spec.title, request: spec.request, position, nearby, available, started: j.stopover?.started ?? false, completed, remaining: Math.max(0, spec.seconds - (j.stopover?.elapsed ?? 0)), seconds: spec.seconds };
+    return { title: spec.title, request: spec.request, labels: spec.labels, position, nearby, available, started: j.stopover?.started ?? false, completed, remaining: Math.max(0, spec.seconds - (j.stopover?.elapsed ?? 0)), seconds: spec.seconds };
   }
   private ensureStopover(): RideStopover {
     return this.job.stopover ??= { started: false, completed: false, elapsed: 0, detourAllowance: 0, routed: false };
@@ -437,7 +445,7 @@ export class Game {
   }
   /** Paid once, on completion; merely toggling the route cannot increase tips. */
   private creditStopover(job: Job) {
-    const spec = job.missionId && this.campaignContent.stopovers?.[job.missionId];
+    const spec = this.stopoverFor(job);
     if (!spec || !job.stopover) return;
     job.time += job.stopover.detourAllowance;
     job.fare += Math.round(Math.max(0, job.stopover.detourAllowance - spec.seconds) * 3 * 0.7 + spec.seconds);
@@ -449,9 +457,11 @@ export class Game {
     if (stop.elapsed + 1e-8 < status.seconds) return;
     stop.elapsed = status.seconds; stop.completed = true; stop.started = false; stop.routed = this.navToStopover = false;
     this.creditStopover(this.job);
-    const id = this.job.missionId!, spec = this.campaignContent.stopovers![id], mission = this.missions.mission(id);
-    dispatchCampaignEvent(this.campaignContext, { type: 'stopover-completed', missionId: id });
-    this.speak(`ride-${id}-stopover`, { speaker: mission.passenger!, category: mission.category, channel: 'passenger', text: spec.completedText });
+    const job = this.job, spec = this.stopoverFor(job)!;
+    if (job.missionId) dispatchCampaignEvent(this.campaignContext, { type: 'stopover-completed', missionId: job.missionId });
+    const speaker = job.missionId ? this.missions.mission(job.missionId).passenger : job.everyday?.character;
+    if (speaker) this.speak(`ride-${job.missionId ?? job.everyday?.journeyId}-stopover`, { speaker, category: job.missionId ? this.missions.mission(job.missionId).category : 'lore', channel: 'passenger', text: spec.completedText });
+    else this.notify(spec.completedText, 'success', { category: 'dispatch' });
     this.persist();
   }
   get speed() { return length(this.actor.velocity); }
@@ -745,8 +755,9 @@ export class Game {
     this.save.garage = { version: 1, current: saveCar(this.player), parked: this.vehicles.filter(v => v !== this.player && v.alive && !v.sinking && v.damage.status !== 'wreck' && hasUpgrades(v.upgrades)).map(saveCar), onFoot: this.onFoot, driver: { ...this.driver.position }, driverHealth: this.driverHealth, boost: this.boost };
     if (this.campaignEnabled && this.job) {
       const j = this.job, ordinary = j.everyday?.journeyId ? { character: j.everyday.character, journeyId: j.everyday.journeyId } : undefined;
-      this.save.campaign.activeRide = j !== this.settledRide && j.stage === 'dropoff' && (j.missionId || ordinary) ? {
-        ...(j.missionId ? { missionId: j.missionId } : { ordinary }), type: j.type, elapsed: j.elapsed, comfort: j.comfort, rideBeat: this.rideBeat, rideDistance: this.rideDistance,
+      const procedural = !j.missionId && !ordinary && j.incidentalId ? { pickup: j.pickup, dropoff: j.dropoff, name: j.name, destination: j.destination, fare: j.fare, time: j.time } : undefined;
+      this.save.campaign.activeRide = j !== this.settledRide && j.stage === 'dropoff' && (j.missionId || ordinary || procedural) ? {
+        ...(j.missionId ? { missionId: j.missionId } : ordinary ? { ordinary } : { procedural, incidentalId: j.incidentalId }), type: j.type, elapsed: j.elapsed, comfort: j.comfort, rideBeat: this.rideBeat, rideDistance: this.rideDistance,
         ...(j.stopover ? { stopover: { ...j.stopover, routed: this.navToStopover } } : {}),
       } : null;
     }
@@ -799,6 +810,7 @@ export class Game {
     const distance = pathLength(this.world.navigation.roadPath(pickup, dropoff));
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
     return { type, pickup, dropoff, name: regular.name, destination: stops[journey.dropoff].name, fare: Math.round(55 + distance * 0.7), time: 28 + distance / 3, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1,
+      ...(journey.stopover ? { optionalStop: journey.stopover } : {}),
       everyday: { character: regular.character, family: type === 'parcel' ? 'Small deliveries' : regular.family, journeyId: journey.id, line: journey.line, during: journey.during, arrival: journey.arrival, ...(journey.roughArrival ? { roughArrival: journey.roughArrival } : {}) } };
   }
   get textMessageMinute() { return this.campaignEnabled ? this.save.campaign.minute : CAMPAIGN_START + this.save.story.campaignSeconds; }
@@ -941,6 +953,10 @@ export class Game {
     const customer = type === 'fare' ? this.world.addPerson(add(pickup, vec(3.4, 0)), 'customer', '#f7ce55') : undefined;
     const casualNames = this.campaignEnabled ? ['Jules', 'Ruby'] : PASSENGER_NAMES;
     this.job = { type, pickup: { ...pickup }, dropoff: { ...dropoff }, name: casualNames[this.offer % casualNames.length], destination, fare: Math.round(55 + distance * 0.7), time, elapsed: 0, comfort: 100, stage: 'pickup', wait: 0, customerId: customer?.id ?? -1 };
+    if (type === 'fare' && !regular && this.campaignEnabled) {
+      const option = selectProceduralStopover(this.campaignContent.proceduralStopovers, this.missions.catalogue.stops.byId, pickup, dropoff, this.offer);
+      if (option) { this.job.incidentalId = option.id; this.job.optionalStop = option; }
+    }
     if (regular) {
       this.job.name = regular.name;
       this.job.everyday = { character: regular.character, family: type === 'parcel' ? 'Small deliveries' : regular.family, line: type === 'parcel' ? `${regular.name}’s ordinary delivery. Please keep the signed slip.` : regular.lines[Math.min(regularRides, regular.lines.length - 1)] };
@@ -1494,7 +1510,8 @@ export class Game {
             this.pendingDispatch = null;
             this.speak(`ordinary-${this.save.story.deliveries + 1}-pickup`, { speaker: j.everyday.character, category: 'lore', channel: j.type === 'parcel' ? 'sender' : 'passenger', text: j.everyday.line });
           }
-          if (j.missionId || j.everyday) this.persist();
+          if (j.optionalStop) this.notify(j.optionalStop.request, '', { category: 'dispatch' });
+          if (j.missionId || j.everyday || j.incidentalId) this.persist();
           this.sounds.emit('pickup', this.time);
           this.floating(this.player.body.position, j.type === 'parcel' ? 'PARCEL LOADED!' : 'HOP IN!', '#f7ce55');
         }
