@@ -30,18 +30,17 @@
 .receipt-total{display:block;color:var(--mint);font-size:22px;font-weight:600;line-height:1.1;letter-spacing:-.9px;font-variant-numeric:tabular-nums}
 .receipt-breakdown{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;color:#b8c7bd;font-size:11px;line-height:1.4;font-variant-numeric:tabular-nums}
 .receipt-breakdown>span{white-space:nowrap}
-.receipt-scores{display:grid;gap:13px;margin-top:14px;max-width:150px}
-.fare-component{display:grid;grid-template-columns:24px minmax(0,1fr) max-content;align-items:center;gap:7px;min-width:0;color:#edcc7d;--fare-color:var(--mint);font-variant-numeric:tabular-nums}
+.receipt-scores{display:grid;grid-template-columns:24px minmax(0,1fr) max-content;gap:13px 7px;margin-top:14px;max-width:150px}
+.fare-component{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:center;gap:7px;min-width:0;color:#edcc7d;--fare-color:var(--mint);font-variant-numeric:tabular-nums}
 .receipt-comfort{color:#8fd3e0}
 .fare-component[data-sign="negative"]{--fare-color:#f2a18e}
 .fare-component[data-sign="neutral"]{--fare-color:#b8c7bd}
 .receipt-icon{width:24px;height:24px}
-.fare-component strong{color:var(--fare-color);font-size:10px;line-height:24px;font-weight:600;white-space:nowrap}
+.fare-component strong{text-align:right;color:var(--fare-color);font-size:10px;line-height:24px;font-weight:600;white-space:nowrap}
 .fare-meter{position:relative;height:24px}
 .fare-meter-track{position:absolute;inset:50% 0 auto;height:5px;transform:translateY(-50%);overflow:hidden;border-radius:2px;background:linear-gradient(to right,#f2a18e30 0 50%,#a3ddc230 50% 100%)}
 .fare-meter-track i{position:absolute;top:0;left:var(--meter-left,50%);width:var(--meter-width,0%);height:100%;background:var(--fare-color)}
 .fare-meter::after{content:'';position:absolute;left:50%;top:50%;width:1px;height:7px;background:#e8e9dc;transform:translate(-50%,-50%)}
-.fare-meter-zero{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:7px;line-height:8px;color:#c6d3c9}
 @container(min-width:220px){
   .receipt-money{float:left;width:52%;padding-right:10px}
   .receipt-total{font-size:44px;letter-spacing:-1.8px}

@@ -8,6 +8,9 @@ await mkdir(output, { recursive: true });
 const browser = await launchBrowser();
 const standalone = await readFile('dist/index.html', 'utf8');
 async function assertMeterAlignment(page, state) {
+  const widths = await page.locator('.fare-meter').evaluateAll(meters => meters.map(meter => meter.getBoundingClientRect().width));
+  assert(Math.max(...widths) - Math.min(...widths) < 0.5, `${state}: both bars share the same width`);
+  assert.equal(await page.locator('.fare-meter-zero').count(), 0, `${state}: only the centre tick marks zero`);
   for (const row of await page.locator('.fare-component').all()) {
     const centres = await row.evaluate(element => ['.receipt-icon', '.fare-meter-track', 'strong'].map(selector => {
       const bounds = element.querySelector(selector).getBoundingClientRect();
@@ -127,9 +130,6 @@ try {
       assert(size.width > 24 && size.width <= 200, `${name}: compact signed bars remain readable`);
       assert.equal(await bar.getAttribute('aria-valuemin'), '-100');
       assert.equal(await bar.getAttribute('aria-valuemax'), '100');
-      const zero = await bar.locator('.fare-meter-zero').boundingBox();
-      assert(Math.abs(zero.x + zero.width / 2 - size.x - size.width / 2) < 1, `${name}: zero is at the bar centre`);
-      assert.equal(await bar.locator('.fare-meter-zero').textContent(), '0');
     }
     assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--meter-left')), '50%');
     assert.equal(await page.locator('.receipt-speed [role=meter]').evaluate(e => e.style.getPropertyValue('--meter-width')), '37.5%');

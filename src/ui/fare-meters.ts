@@ -14,7 +14,7 @@ export function fareMetersMarkup() {
     return `<div class="fare-component receipt-${component}" data-fare-component="${component}">
       <svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg>
       <div class="fare-meter" role="meter" aria-label="${label} adjustment" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
-        <div class="fare-meter-track" aria-hidden="true"><i></i></div><span class="fare-meter-zero" aria-hidden="true">0</span>
+        <div class="fare-meter-track" aria-hidden="true"><i></i></div>
       </div>
       <strong data-receipt="${component}Bonus"></strong>
     </div>`;

@@ -126,7 +126,7 @@ when the stack is clear.
 
 Completed fares and deliveries show their base fare, signed Speed and Comfort
 adjustments and total cash earned on the completion card. Both meters have
-**0 in the centre**: green to the right adds money, red to the left deducts it.
+**a tick in the centre**: green to the right adds money, red to the left deducts it.
 Speed reaches zero at the trip's time target; Comfort reaches zero at 50% comfort.
 The signed dollar amounts show each adjustment, even if a very late trip pushes
 its speed deduction beyond the end of the meter. The total stays at **$0** when
