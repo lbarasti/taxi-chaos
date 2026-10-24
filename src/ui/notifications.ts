@@ -1,5 +1,6 @@
 import type { Game } from '../game/game';
 import type { NotificationCategory, TripReceipt } from '../game/notifications';
+import { bindFareMeters, fareMetersMarkup, money, signedMoney } from './fare-meters';
 
 const labels: Record<NotificationCategory, string> = {
   newsroom: 'Newsroom', movement: 'On the street', services: 'Roadside & services', danger: 'Warning', dispatch: 'Dispatch',
@@ -18,12 +19,9 @@ export const notificationsMarkup = `<section id="notifications" class="notificat
     <div class="notification-receipt" aria-label="Trip receipt" tabindex="0" hidden>
       <div class="receipt-money">
         <strong class="receipt-total" data-receipt="payout"></strong>
-        <div class="receipt-breakdown"><span class="receipt-base"></span><span>Tip <span data-receipt="tips"></span></span></div>
+        <div class="receipt-breakdown"><span class="receipt-base"></span><span title="Adjustment">Adj. <span data-receipt="adjustment"></span></span></div>
       </div>
-      <div class="receipt-scores">
-        <div class="receipt-score receipt-comfort"><svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 9 2 8h7 M8 6v.5 M7 9h3l2 6h5"/></svg><div class="receipt-meter" role="meter" aria-label="Comfort score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="comfortBonus"></small></div>
-        <div class="receipt-score receipt-speed"><svg class="receipt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M5 16a8 8 0 1 1 14 0 M12 5v2 M5 10l2 1 M19 10l-2 1 M12 13l4-5"/><circle cx="12" cy="13" r="1"/></svg><div class="receipt-meter" role="meter" aria-label="Speed score" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="receipt-bonus" data-receipt="speedBonus"></small></div>
-      </div>
+      <div class="receipt-scores">${fareMetersMarkup()}</div>
     </div>
     <footer><span class="notification-count"></span><span class="notification-lifetime"></span></footer>
     <div class="notification-timer" aria-hidden="true"><i></i></div>
@@ -37,10 +35,10 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
   const message = stack.querySelector<HTMLElement>('p')!;
   const receiptView = stack.querySelector<HTMLElement>('.notification-receipt')!;
   const footer = stack.querySelector<HTMLElement>('footer')!;
+  const refreshMeters = bindFareMeters(receiptView);
   let displayedId: number | undefined;
   let displayedCategory: NotificationCategory | undefined;
   let displayedReceipt: TripReceipt | undefined;
-  const money = (amount: number) => `$${amount.toLocaleString('en-US')}`;
   receiptView.addEventListener('keydown', event => {
     if (['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Space'].includes(event.code)) event.stopPropagation();
   });
@@ -77,18 +75,9 @@ export function bindNotifications(root: HTMLElement, currentGame: () => Game, fo
       if (displayedReceipt) {
         const receipt = displayedReceipt;
         receiptView.querySelector('.receipt-base')!.textContent = `Base ${money(receipt.baseFare)}`;
-        for (const key of ['payout', 'tips', 'speedBonus', 'comfortBonus'] as const) {
-          receiptView.querySelector(`[data-receipt="${key}"]`)!.textContent = key.endsWith('Bonus') ? `+${receipt[key]}` : money(receipt[key]);
-        }
-        for (const [selector, score] of [['.receipt-speed', receipt.speedScore], ['.receipt-comfort', receipt.comfortScore]] as const) {
-          const meter = receiptView.querySelector<HTMLElement>(`${selector} .receipt-meter`)!;
-          const label = selector === '.receipt-speed' ? 'Speed' : 'Comfort';
-          const bonus = selector === '.receipt-speed' ? receipt.speedBonus : receipt.comfortBonus;
-          meter.setAttribute('aria-valuenow', String(score));
-          meter.setAttribute('aria-valuetext', `${score} out of 100; ${money(bonus)} bonus`);
-          meter.parentElement!.title = `${label}: ${score}/100 · ${money(bonus)} bonus`;
-          meter.style.setProperty('--score', String(score / 100));
-        }
+        receiptView.querySelector('[data-receipt="payout"]')!.textContent = money(receipt.payout);
+        receiptView.querySelector('[data-receipt="adjustment"]')!.textContent = signedMoney(receipt.adjustment);
+        refreshMeters(receipt);
       }
     }
     dismiss.hidden = current.remaining !== null;
