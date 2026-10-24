@@ -62,6 +62,7 @@ describe('city building scale and access', () => {
     const game = new Game(undefined, false);
     expect(Object.fromEntries(Object.entries(game.campaignSites).map(([key, p]) => [key, p?.body.position]))).toEqual({
       cafe: vec(94, 54), newsroom: vec(14, 107), hotel: vec(174, 107),
+      'linen-hall': vec(67, 180.5), 'linen-laundry': vec(174, 107), 'linen-washroom': vec(214, 180.5),
     });
     expect(game.world.random()).toBe(new Game(undefined,false).world.random());
   });

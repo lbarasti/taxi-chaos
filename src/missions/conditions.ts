@@ -39,6 +39,7 @@ export function evaluateCondition(condition: Condition, ctx: ConditionContext): 
   if ('reacted' in condition) return !!s?.reactions[condition.reacted];
   if ('occurred' in condition) return !!s?.occurrences[condition.occurred];
   if ('relationshipAtLeast' in condition) return (p?.relationships[condition.relationshipAtLeast.character] ?? 0) >= condition.relationshipAtLeast.value;
+  if ('rideComfortAtLeast' in condition) return ctx.ride !== undefined && ctx.ride.comfort >= condition.rideComfortAtLeast;
   const exhaustive: never = condition; throw new Error(`Unknown condition: ${JSON.stringify(exhaustive)}`);
 }
 

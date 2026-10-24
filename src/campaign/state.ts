@@ -8,11 +8,18 @@ import { advanceCampaignTo } from './scheduler';
 import { compareCampaignBoundaries } from './history';
 import { restoreEditions } from './editions';
 import type { Occurrence } from './events';
+import type { CharacterId } from '../narrative/characters';
 
 export type PrintedEdition = { day: number; at: number; articles: string[]; briefs: string[]; read: boolean };
 export type Publication = { allegation: Allegation; submittedShift: number; publishedShift: number; at: number };
 export type EditorialCase = { verifiedAt: number; approvedAt: number | null; editionAt: number | null };
-export type ActiveRide = { missionId: string; type: 'fare' | 'parcel'; elapsed: number; comfort: number; rideBeat: number };
+export type RideStopover = { started: boolean; completed: boolean; elapsed: number; detourAllowance: number; routed: boolean };
+export type ActiveRide = {
+  missionId?: string; ordinary?: { character: CharacterId; journeyId: string };
+  procedural?: { pickup: { x: number; y: number }; dropoff: { x: number; y: number }; name: string; destination: string; fare: number; time: number };
+  incidentalId?: string;
+  type: 'fare' | 'parcel'; elapsed: number; comfort: number; rideBeat: number; rideDistance?: number; stopover?: RideStopover;
+};
 export type Campaign = {
   editions: PrintedEdition[]; endingSeen: boolean;
   version: 2; minute: number; shift: number; finished: boolean;
@@ -134,8 +141,41 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
   state.minute = minute; state.shift = campaignDay(minute, definition.timing); state.finished = minute === definition.timing.end;
   Object.assign(state.world, savedWorld);
   const active = object(s.activeRide);
-  if (typeof active.missionId === 'string' && Object.hasOwn(definition.missions.missions, active.missionId) && (active.type === 'fare' || active.type === 'parcel')) {
-    state.activeRide = { missionId: active.missionId, type: active.type, elapsed: typeof active.elapsed === 'number' && Number.isFinite(active.elapsed) ? Math.max(0, Math.min(1e6, active.elapsed)) : 0, comfort: typeof active.comfort === 'number' && Number.isFinite(active.comfort) ? Math.max(0, Math.min(100, active.comfort)) : 100, rideBeat: active.rideBeat === 1 ? 1 : 0 };
+  const finite = (v: unknown, max: number, fallback = 0): number => typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : fallback;
+  if (active.type === 'fare' || active.type === 'parcel') {
+    const ride: ActiveRide = { type: active.type, elapsed: finite(active.elapsed, 1e6), comfort: finite(active.comfort, 100, 100), rideBeat: active.rideBeat === 1 ? 1 : 0, rideDistance: finite(active.rideDistance, 1e6) };
+    if (typeof active.missionId === 'string' && Object.hasOwn(definition.missions.missions, active.missionId)) {
+      ride.missionId = active.missionId;
+      state.activeRide = ride;
+    } else {
+      const ordinary = object(active.ordinary), regular = definition.everydayJobs.find(job => job.character === ordinary.character);
+      const journeys = active.type === 'parcel' ? regular?.parcelJourneys : regular?.journeys;
+      if (regular && journeys?.some(journey => journey.id === ordinary.journeyId)) {
+        ride.ordinary = { character: regular.character, journeyId: ordinary.journeyId as string }; state.activeRide = ride;
+      } else if (typeof active.incidentalId === 'string' && definition.proceduralStopovers?.some(spec => spec.id === active.incidentalId)) {
+        const saved = object(active.procedural), p = object(saved.pickup), d = object(saved.dropoff);
+        if ([p.x, p.y, d.x, d.y].every(v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) < 1e5)
+          && typeof saved.name === 'string' && saved.name.length > 0 && saved.name.length <= 80
+          && typeof saved.destination === 'string' && saved.destination.length > 0 && saved.destination.length <= 120
+          && typeof saved.fare === 'number' && Number.isFinite(saved.fare) && saved.fare >= 0 && saved.fare < 1e6
+          && typeof saved.time === 'number' && Number.isFinite(saved.time) && saved.time >= 0 && saved.time < 1e6) {
+          ride.procedural = { pickup: { x: p.x as number, y: p.y as number }, dropoff: { x: d.x as number, y: d.y as number },
+            name: saved.name, destination: saved.destination, fare: saved.fare, time: saved.time };
+          ride.incidentalId = active.incidentalId; state.activeRide = ride;
+        }
+      }
+    }
+    const spec = ride.missionId ? definition.stopovers?.[ride.missionId]
+      : ride.ordinary ? (ride.type === 'parcel'
+          ? definition.everydayJobs.find(job => job.character === ride.ordinary!.character)?.parcelJourneys
+          : definition.everydayJobs.find(job => job.character === ride.ordinary!.character)?.journeys)?.find(j => j.id === ride.ordinary!.journeyId)?.stopover
+      : definition.proceduralStopovers?.find(stop => stop.id === ride.incidentalId);
+    const saved = object(active.stopover);
+    if (state.activeRide && spec && active.stopover) ride.stopover = {
+      started: saved.started === true && saved.completed !== true, completed: saved.completed === true,
+      elapsed: saved.completed === true ? spec.seconds : finite(saved.elapsed, spec.seconds),
+      detourAllowance: finite(saved.detourAllowance, 600), routed: saved.routed === true && saved.completed !== true,
+    };
   }
   for (const [name, count] of Object.entries(object(s.regularRides)).slice(0, definition.everydayJobs.length)) if (definition.everydayJobs.some(job => job.name === name) && typeof count === 'number' && Number.isInteger(count) && count >= 0) state.regularRides[name] = Math.min(1e6, count);
   state.ordinarySinceStory = typeof s.ordinarySinceStory === 'number' && Number.isInteger(s.ordinarySinceStory) ? Math.max(0, Math.min(2, s.ordinarySinceStory)) : 0;

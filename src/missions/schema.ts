@@ -30,7 +30,9 @@ export type Condition =
   | { published: string }
   | { reacted: string }
   | { occurred: string }
-  | { relationshipAtLeast: { character: string; value: number } };
+  | { relationshipAtLeast: { character: string; value: number } }
+  /** Only populated while handling a completed physical ride. */
+  | { rideComfortAtLeast: number };
 
 /** Authored outcome effects. Each list is bounded and applied atomically. */
 export type Effect =
@@ -138,6 +140,7 @@ export const assertCondition = (v: unknown, path: string): void => {
       return;
     }
     switch (key) {
+      case 'rideComfortAtLeast': num(obj[key], `${at}.${key}`, 0, 100); return;
       case 'not': return walk(obj.not, `${at}.not`, depth + 1);
       case 'missionCompleted': id(obj.missionCompleted, `${at}.missionCompleted`); return;
       case 'knows': case 'published': case 'reacted': case 'occurred': id(obj[key], `${at}.${key}`); return;

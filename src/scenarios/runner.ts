@@ -22,6 +22,7 @@ export type ScenarioCommand = (
   | { op: 'step'; seconds: number; keys?: string[] }
   | { op: 'mode'; mode: Mode }
   | { op: 'route'; mission: string; expected?: boolean }
+  | { op: 'stopover'; action: 'route' | 'begin'; expected?: boolean }
   | { op: 'pickup' | 'deliver' | 'read' | 'dispatch' | 'ordinary' | 'abandon' | 'reload' }
   | { op: 'photo'; observation?: string; expected?: boolean }
   | { op: 'sleep'; expected?: boolean }
@@ -71,7 +72,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   const c = object(value), op = string(c.op, 'op');
   const allowed: Record<string, string[]> = {
     facts: ['facts'], advance: ['minutes', 'to', 'event'], place: ['at', 'angle'], step: ['seconds', 'keys'], mode: ['mode'],
-    route: ['mission', 'expected'], pickup: [], deliver: [], read: [], dispatch: [], ordinary: [], abandon: [], reload: [],
+    route: ['mission', 'expected'], stopover: ['action', 'expected'], pickup: [], deliver: [], read: [], dispatch: [], ordinary: [], abandon: [], reload: [],
     photo: ['observation', 'expected'], sleep: ['expected'], submit: ['material', 'expected'], publish: ['allegation', 'expected'],
     expect: ['path', 'equals', 'includes', 'length', 'exists', 'gte', 'lte'], capture: ['name', 'view', 'panelOnly', 'focus', 'zoom'],
   };
@@ -100,6 +101,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   }
   if (op === 'mode' && !modes.includes(c.mode as Mode)) throw new Error(`mode must be one of: ${modes.join(', ')}`);
   if (op === 'route') string(c.mission, 'mission');
+  if (op === 'stopover' && !['route', 'begin'].includes(c.action as string)) throw new Error('stopover action must be route or begin');
   if (op === 'photo' && c.observation !== undefined && !campaignDefinition.observations.some(o => o.id === c.observation)) throw new Error('Unknown observation');
   if (op === 'submit') string(c.material, 'material');
   if (op === 'publish' && !Object.hasOwn(campaignDefinition.claims, c.allegation as string)) throw new Error('Unknown allegation');
@@ -153,7 +155,7 @@ export class ScenarioRunner {
     return { ...previewInputs(this.game.missions.catalogue), materials: Object.keys(this.game.campaignContent.materials), allegations: Object.keys(this.game.campaignContent.claims),
       events: this.game.campaignContent.operations.map(op => ({ id: op.id, at: op.at })), places: ['pickup', 'dropoff', 'garage', 'newsroom', ...this.game.missions.catalogue.stops.order],
       keys, options: this.options, limits: { commands: 500, secondsPerStep: 30, totalPhysicsSeconds: 120 },
-      commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'pickup', 'deliver', 'read', 'dispatch', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'publish', 'expect', 'capture'] };
+      commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'stopover', 'pickup', 'deliver', 'read', 'dispatch', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'publish', 'expect', 'capture'] };
   }
   snapshot() {
     return { ...this.game.snapshot(), flags: [...this.game.save.story.flags], choices: { ...this.game.save.story.choices },
@@ -241,6 +243,7 @@ export class ScenarioRunner {
         if (!Object.hasOwn(g.missions.catalogue.missions, c.mission)) throw new Error(`Unknown mission: ${c.mission}`);
         return this.boolean(g.routeMissionOffer(c.mission), c.expected);
       }
+      case 'stopover': return this.boolean(c.action === 'route' ? g.navigateStopover() : g.beginStopover(), c.expected);
       case 'pickup': {
         if (g.mode !== 'playing' || g.onFoot || g.job.stage !== 'pickup' || g.navToNewsroom) throw new Error('pickup requires a playing driver with a routed pickup and no newsroom navigation');
         const id = g.job.missionId ?? null; this.place('pickup'); this.step(0.9);

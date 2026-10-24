@@ -64,6 +64,8 @@ describe('destination symbols', () => {
     const route = { onFoot: false, stage: 'pickup' as const, navToGarage: false, navToHarbour: false, navToNewsroom: false, admitted: false, exchanged: false };
     expect(navigationTargetKind(route)).toBe('pickup');
     expect(navigationTargetKind({ ...route, stage: 'dropoff' })).toBe('delivery');
+    expect(navigationTargetKind({ ...route, stage: 'dropoff', navToStopover: true })).toBe('stopover');
+    expect(navigationTargetKind({ ...route, navToStopover: true, navToGarage: true })).toBe('garage');
     expect(navigationTargetKind({ ...route, navToGarage: true })).toBe('garage');
     expect(navigationTargetKind({ ...route, navToGarage: true, navToHarbour: true })).toBe('harbour');
     expect(navigationTargetKind({ ...route, navToNewsroom: true, navToGarage: true })).toBe('newsroom');
@@ -74,10 +76,11 @@ describe('destination symbols', () => {
     expect(navigationTargetKind({ ...route, admitted: true, navToGarage: true })).toBe('swap');
   });
   it('gives every destination symbol its own meaning and colour', () => {
-    const kinds = ['pickup', 'delivery', 'garage', 'newsroom', 'harbour', 'swap', 'exit', 'walk'] as const;
+    const kinds = ['pickup', 'delivery', 'stopover', 'garage', 'newsroom', 'harbour', 'swap', 'exit', 'walk'] as const;
     expect(Object.keys(navigationTargetColours).sort()).toEqual([...kinds].sort());
     for (const kind of kinds) expect(navigationTargetColours[kind]).toMatch(/^#[0-9a-f]{6}$/);
     expect(navigationTargetColours.pickup).not.toBe(navigationTargetColours.delivery);
+    expect(navigationTargetColours.stopover).not.toBe(navigationTargetColours.delivery);
     expect(navigationTargetColours.newsroom).not.toBe(navigationTargetColours.garage);
   });
 });

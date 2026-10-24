@@ -18,7 +18,7 @@ export type Claim = Readonly<{
   verifyRequires?: Condition; approveRequires?: Condition; publishRequires?: Condition;
   reactionEffects: readonly Effect[];
 }>;
-export type CampaignInputs = { progress?: MissionProgress; records?: PlayerRecords };
+export type CampaignInputs = { progress?: MissionProgress; records?: PlayerRecords; ride?: Readonly<{ comfort: number }> };
 export type CampaignContext = CampaignInputs & { state: Campaign; definition: CampaignDefinition };
 export type CampaignEvent =
   | MissionEvent
@@ -31,11 +31,19 @@ export type CampaignEvent =
   | { type: 'case-verified'; id: string; at: number }
   | { type: 'edition'; id: string; at: number }
   | { type: 'reaction'; id: string; at: number }
-  | { type: 'ride-completed'; missionId?: string; name: string; receipt: Omit<NotebookEntry, 'at' | 'shift'> };
+  | { type: 'stopover-completed'; missionId: string }
+  | { type: 'ride-completed'; missionId?: string; name: string; comfort?: number; receipt: Omit<NotebookEntry, 'at' | 'shift'> };
 export type EventHandler = Readonly<{
   on: CampaignEvent['type']; id?: string; requires?: Condition; effects: readonly Effect[];
 }>;
 export type ConditionalText = Readonly<{ requires?: Condition; text: string }>;
+export type Stopover = Readonly<{
+  stop: string; title: string; request: string; seconds: number; completedText: string; effects: readonly Effect[];
+  /** The HUD uses these only for this stop; its own vocabulary stays generic. */
+  labels?: Readonly<{ route?: string; begin?: string; active?: string; paused?: string }>;
+}>;
+/** A contextual stop usable by generated fares without a campaign mission. */
+export type ProceduralStopover = Stopover & Readonly<{ id: string }>;
 export type NewsArticle = Readonly<{
   id: string; title: string; deck: string; body: readonly string[];
   image?: string; imageAlt: string; caption: string; section: string;
@@ -61,6 +69,18 @@ export type ScenePrimitive =
 export type SceneLayer = Readonly<{
   site?: string; vehicle?: string; rotate?: boolean; requires?: Condition; shapes: readonly ScenePrimitive[];
 }>;
+/** One coherent ordinary booking; its dialogue travels with its actual route. */
+export type EverydayJourney = Readonly<{
+  id: string; pickup: string; dropoff: string;
+  line: string; during: string; arrival: string; roughArrival?: string;
+  requires?: Condition; stopover?: Stopover;
+}>;
+export type EverydayJob = Readonly<{
+  character: CharacterId; name: string; family: string;
+  /** Presentation fallback for independently authored campaign definitions. */
+  lines: readonly string[]; during: string;
+  journeys?: readonly EverydayJourney[]; parcelJourneys?: readonly EverydayJourney[];
+}>;
 export type CampaignDefinition = Readonly<{
   id: string; title: string; finishedLabel: string; completionText: string;
   timing: CampaignTiming; newspaper?: Newspaper; milestones?: readonly CampaignMilestone[];
@@ -74,6 +94,10 @@ export type CampaignDefinition = Readonly<{
   vehicles: readonly Readonly<{ id: string; model: VehicleModel; stop: string; offsets: readonly Readonly<{ x: number; y: number }>[]; angle: number; color: string; present: Condition; departTo: string }>[];
   scenes: readonly SceneLayer[]; bulletins: readonly ConditionalText[];
   rides: Readonly<Record<string, Readonly<{ during: string; arrival: string; channel?: 'passenger' | 'sender' }>>>;
-  everydayJobs: readonly Readonly<{ character: CharacterId; name: string; family: string; lines: readonly string[]; during: string }>[];
+  everydayJobs: readonly EverydayJob[];
   ordinaryResponses: readonly ConditionalText[]; dispatcher: CharacterId;
+  /** Optional local errands use the same physical ride and remain explicitly voluntary. */
+  stopovers?: Readonly<Record<string, Stopover>>;
+  proceduralStopovers?: readonly ProceduralStopover[];
+  rideVariants?: Readonly<Record<string, Readonly<{ during?: readonly ConditionalText[]; arrival?: readonly ConditionalText[] }>>>;
 }>;

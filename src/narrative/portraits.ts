@@ -47,10 +47,15 @@ export function validatePortraitRegistry(): void {
   }
 }
 
-export type ResolvedPortrait = Readonly<{ source: PortraitSourceId; src: string; format: PortraitFormat }>;
+export type ResolvedPortrait = Readonly<{ source: PortraitSourceId | null; src: string; format: PortraitFormat }>;
 
 /** Picks the first authored source that exists, so portraits can be swapped by format. */
 export function resolvePortrait(character: Character): ResolvedPortrait {
+  if (character.portrait.placeholder && !character.portrait.sources.length) {
+    const initial = character.name.trim().slice(0, 1).toUpperCase().replace(/[<>&"']/g, '');
+    const card = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="116" viewBox="0 0 100 116"><rect width="100" height="116" fill="#14232a"/><rect x="9" y="9" width="82" height="98" rx="6" fill="#1e343b" stroke="#486269"/><text x="50" y="73" fill="#e6dcc1" font-family="sans-serif" font-size="44" text-anchor="middle">${initial}</text></svg>`;
+    return Object.freeze({ source: null, format: 'svg', src: `data:image/svg+xml,${encodeURIComponent(card)}` });
+  }
   for (const source of character.portrait.sources) {
     const portrait = portraits[source];
     if (portrait) return Object.freeze({ source, src: portrait.src, format: portrait.format });

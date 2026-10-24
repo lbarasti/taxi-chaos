@@ -7,6 +7,7 @@ import { navigationHudMarkup, navigationHudState } from './navigation-hud';
 
 const routeOf = (game: Game) => navigationTargetKind({
   onFoot: game.onFoot, stage: game.job.stage, navToGarage: game.navToGarage, navToHarbour: game.navToHarbour, navToNewsroom: game.navToNewsroom,
+  navToStopover: game.navToStopover && !!game.stopoverStatus && !game.stopoverStatus.completed,
   admitted: game.harbour.vehicleId === game.player.id, exchanged: game.harbour.exchanged,
 });
 
@@ -135,6 +136,23 @@ describe('radar-first navigation HUD', () => {
     game.tumble = { elapsed: 0, duration: 1, speed: 10, side: -1, bike: false, grounded: false };
     const bracing = navigationHudState(game);
     expect(bracing).toMatchObject({ label: 'BRACE', caption: 'BRACE · Brace for impact' });
+  });
+
+  it('labels the optional wash independently and returns to the unchanged destination', () => {
+    const game = new Game(undefined, false); game.job.stage = 'dropoff';
+    const destination = game.job.destination, dropoff = { ...game.job.dropoff };
+    const wash = { title: 'East Village wash', request: 'A wash on the way back.', position: { x: 204, y: 164 }, nearby: false, available: false, started: false, completed: false, remaining: 12, seconds: 12 };
+    Object.defineProperty(game, 'stopoverStatus', { get: () => wash });
+    expect(navigationHudState(game)).toMatchObject({ kind: 'delivery', caption: `DELIVER · ${destination}` });
+    game.navToStopover = true;
+    expect(navigationHudState(game)).toMatchObject({ kind: 'stopover', caption: 'OPTIONAL STOP · East Village wash', load: 'passenger', routeVisible: true });
+    game.navToGarage = true;
+    expect(navigationHudState(game)).toMatchObject({ kind: 'garage', label: 'GARAGE' });
+    game.navToGarage = false;
+    wash.completed = true;
+    expect(navigationHudState(game)).toMatchObject({ kind: 'delivery', caption: `DELIVER · ${destination}` });
+    expect(game.job.dropoff).toEqual(dropoff);
+    expect(game.job.destination).toBe(destination);
   });
 
   it('returns to vacant after clearing newsroom guidance without cancelling the booking', () => {

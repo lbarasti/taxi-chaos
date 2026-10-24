@@ -102,6 +102,7 @@ describe('daily editions and campaign finale', () => {
   it('supports an independently authored three-day campaign and its own edition hour', () => {
     const definition: CampaignDefinition = { ...campaignDefinition, id: 'three-days', timing: { start: dayMinute(1), end: dayMinute(4), lastEdition: dayMinute(3, 5), editionHour: 5 },
       operations: [], claims: {}, materials: {}, missions: { schemaVersion: 1, dialogue: { welcome: { character: 'bea', category: 'lore', channel: 'passenger', text: 'A lift to the quay.' } }, missions: { 'quay-fare': { title: 'Quay fare', chapter: 1, category: 'lore', repeat: 'once', abandon: { retry: 'always' }, allowed: { jobs: ['fare'] }, requires: { minuteBefore: dayMinute(4) }, stops: { pickup: 'old-town-rank', dropoff: 'dockside-deli' }, beats: { pickup: 'welcome' } } } }, jobWindows: { 'quay-fare': { from: dayMinute(1), until: dayMinute(4) } }, observations: [], vehicles: [], scenes: [], bulletins: [], ordinaryResponses: [], milestones: [],
+      handlers: [], rides: {}, stopovers: {}, rideVariants: {},
       newspaper: { ...campaignDefinition.newspaper!, daily: campaignDefinition.newspaper!.daily.slice(0, 3), investigations: {}, briefs: [] } };
     expect(() => assertCampaignDefinition(definition)).not.toThrow();
     const state = defaultCampaign(definition); advanceCampaignTo(state, dayMinute(20), {}, definition);

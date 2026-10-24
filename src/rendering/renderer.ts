@@ -226,6 +226,8 @@ export class Renderer {
     if (!g.dispatchWaiting) {
       const target = g.job.stage === 'pickup' ? g.job.pickup : g.job.dropoff; this.marker(target, g.job.stage === 'pickup' ? GOLD : MINT, g.job.stage === 'pickup' ? 'PICK UP' : 'DROP OFF');
     }
+    const stop = g.stopoverStatus;
+    if (stop && !stop.completed) this.marker(stop.position, navigationTargetColours.stopover, stop.started ? `${stop.title.toUpperCase()} · ${Math.ceil(stop.remaining)} MIN` : `OPTIONAL · ${stop.title.toUpperCase()}`, true);
     if (g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
       this.marker(offer.pickup, '#8edbe8', `TEXT / ${offer.name.toUpperCase()}`, true);
     }
@@ -948,18 +950,23 @@ export class Renderer {
   /** Follow the same guidance priority as `Game.target`, so radar and routing never disagree. */
   private targetKind() {
     const g = this.game;
+    const stopover = g.navToStopover ? g.stopoverStatus : null;
     return navigationTargetKind({
       onFoot: g.onFoot, stage: g.job.stage, navToGarage: g.navToGarage, navToHarbour: g.navToHarbour, navToNewsroom: g.navToNewsroom,
+      navToStopover: !!stopover && !stopover.completed,
       admitted: g.harbour.vehicleId === g.player.id, exchanged: g.harbour.exchanged,
     });
   }
-  /** Compact destination symbols: ringed pickup, diamond delivery, garage, newsroom, harbour, container swap and parked rides. */
+  /** Compact destination symbols: pickup ring, delivery diamond, optional-stop clock and services. */
   private radarShape(c: CanvasRenderingContext2D, kind: NavigationTargetKind, x: number, y: number, size: number, colour: string) {
     c.save(); c.translate(x, y); c.lineWidth = Math.max(1, size * 0.26); c.strokeStyle = '#08161d'; c.fillStyle = colour;
     const shape = (path: () => void) => { c.beginPath(); path(); c.fill(); c.stroke(); };
     switch (kind) {
       case 'pickup': shape(() => c.arc(0, 0, size, 0, Math.PI * 2)); shape(() => c.arc(0, 0, size * 0.42, 0, Math.PI * 2)); break;
       case 'delivery': shape(() => { c.moveTo(0, -size); c.lineTo(size, 0); c.lineTo(0, size); c.lineTo(-size, 0); c.closePath(); }); break;
+      case 'stopover':
+        shape(() => c.arc(0, 0, size, 0, Math.PI * 2));
+        c.beginPath(); c.moveTo(0, -size * 0.6); c.lineTo(0, 0); c.lineTo(size * 0.45, size * 0.25); c.stroke(); break;
       case 'garage': shape(() => c.roundRect(-size, -size * 0.86, size * 2, size * 1.72, size * 0.3)); c.beginPath(); c.moveTo(-size * 0.42, -size * 0.12); c.lineTo(size * 0.42, -size * 0.12); c.stroke(); break;
       case 'newsroom':
         shape(() => c.roundRect(-size * 0.78, -size, size * 1.56, size * 2, size * 0.24));
@@ -1036,6 +1043,11 @@ export class Renderer {
     }
     const garage = radarPoint(GARAGE, view); this.radarShape(c, 'garage', garage.x, garage.y, 4.6 * markerScale, navigationTargetColours.garage);
     if (g.campaignEnabled) { const newsroom = radarPoint(g.newsroom, view); this.radarShape(c, 'newsroom', newsroom.x, newsroom.y, 4.6 * markerScale, navigationTargetColours.newsroom); }
+    const wash = g.stopoverStatus;
+    if (wash && !wash.completed) {
+      const point = radarPoint(g.navToStopover ? g.job.dropoff : wash.position, view), kind = g.navToStopover ? 'delivery' : 'stopover';
+      this.radarShape(c, kind, point.x, point.y, 4.6 * markerScale, navigationTargetColours[kind]);
+    }
     if (!g.onFoot && g.job.stage === 'pickup') for (const offer of g.missionOffers.values()) if (offer !== g.job) {
       const point = radarPoint(offer.pickup, view);
       c.beginPath(); c.arc(point.x, point.y, 4.4 * markerScale, 0, Math.PI * 2); c.strokeStyle = '#8edbe8'; c.lineWidth = 1.4; c.stroke();

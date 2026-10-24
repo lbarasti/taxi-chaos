@@ -28,7 +28,7 @@ describe('Open Shore world-driven campaign', () => {
     const compiled = campaignMissions(defaultCompiledMap);
     expect(campaignCast).toHaveLength(12); expect(compiled.warnings).toEqual([]); expect(Object.isFrozen(compiled)).toBe(true);
     expect(() => assertMissionCatalogue(openShoreCatalogue)).not.toThrow();
-    expect(new Set(Object.values(compiled.missions).map(m => m.passenger))).toEqual(new Set(campaignCast));
+    expect(new Set(Object.values(compiled.missions).filter(m => m.category !== 'side-quest').map(m => m.passenger))).toEqual(new Set(campaignCast));
     expect(new Set(rideDialogueIds)).toEqual(new Set(compiled.order));
     const authored = new Set(Object.values(jobMaterials).flat()); authored.add('cafe-photo');
     for (const routes of Object.values(corroboration)) for (const route of routes) {
@@ -59,6 +59,7 @@ describe('Open Shore world-driven campaign', () => {
 
   it.each(everydayJobs)('separates dispatch from $name at pickup and during the ride', regular => {
     const g = make();
+    g.player.body.position = { ...g.missions.catalogue.stops.byId[regular.journeys![0].pickup].position };
     g.offer = everydayJobs.indexOf(regular) - 1;
     g.newJob(false, 'replaced', true);
     expect(g.answerDispatch()).toBe(true);

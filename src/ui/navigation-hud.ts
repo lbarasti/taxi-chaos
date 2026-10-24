@@ -50,12 +50,15 @@ export function navigationHudState(g: Game, fareRouted = true) {
   const job = g.job, pickup = job.stage === 'pickup', parcel = job.type === 'parcel';
   const admitted = g.harbour.vehicleId === g.player.id;
   const harbour = !g.onFoot && (g.navToHarbour || admitted);
-  const detour = g.navToGarage || g.navToNewsroom || harbour;
+  const stopover = g.navToStopover ? g.stopoverStatus : null;
+  const washing = !!stopover && !stopover.completed;
+  const detour = g.navToGarage || g.navToNewsroom || harbour || washing;
   const vacant = pickup && (g.dispatchWaiting || !fareRouted) && !detour && !g.onFoot;
   let status: NavigationStatus = pickup ? 'ENGAGED' : 'ON BOARD';
   let label = pickup ? 'PICK UP' : 'DELIVER';
   let title = pickup ? parcel ? `${job.name}'s parcel.` : `Meet ${job.name}.` : `${job.destination}.`;
   if (parcel && !pickup) status = 'LOADED';
+  if (washing) { label = 'OPTIONAL STOP'; title = stopover.title; }
   if (g.navToGarage) { label = 'GARAGE'; title = 'Pit Stop.'; }
   if (g.navToNewsroom) { label = 'NEWSROOM'; title = `Newsroom · ${g.campaignContent.newsroom.name}`; }
   if (harbour) {
@@ -64,7 +67,7 @@ export function navigationHudState(g: Game, fareRouted = true) {
   }
   if (g.onFoot) { status = 'ON FOOT'; label = g.tumble ? 'BRACE' : ''; title = g.tumble ? 'Brace for impact.' : 'Find a ride.'; }
   if (vacant) { status = 'VACANT'; label = 'DISPATCH'; title = 'Route the next fare.'; }
-  const kind: NavigationTargetKind = navigationTargetKind({ onFoot: g.onFoot, stage: job.stage, navToGarage: g.navToGarage, navToHarbour: g.navToHarbour, navToNewsroom: g.navToNewsroom, admitted, exchanged: g.harbour.exchanged });
+  const kind: NavigationTargetKind = navigationTargetKind({ onFoot: g.onFoot, stage: job.stage, navToGarage: g.navToGarage, navToHarbour: g.navToHarbour, navToNewsroom: g.navToNewsroom, navToStopover: washing, admitted, exchanged: g.harbour.exchanged });
   return {
     status, label, title, vacant, kind, routeVisible: !vacant,
     // Guidance texts feed the map's accessible label only: the wheel carries no visible
@@ -102,7 +105,7 @@ export function bindNavigationHud(root: HTMLElement, currentGame: () => Game, ac
     const g = currentGame();
     if (g.mode !== 'playing' || g.onFoot || g.job.stage !== 'pickup') return false;
     g.answerDispatch();
-    g.navToGarage = g.navToHarbour = g.navToNewsroom = false; view().routed = true; return true;
+    g.navToGarage = g.navToHarbour = g.navToNewsroom = g.navToStopover = false; view().routed = true; return true;
   };
   /** Inbox entry point: engage the chosen booking and refresh the HUD. */
   const routeFare = () => { if (selectFare()) { refresh(); actions.focus(); } };

@@ -199,3 +199,24 @@ measurements remain authoritative for authored geometry.
 
 Vector ground tiles stay as authored. The final product is still one standalone
 offline HTML file, with no runtime external requests or lazy chunks.
+
+## 15. Let neighbourhood stories resolve independently of the investigation
+
+Compose optional local stories alongside Open Shore using their own named world
+facts, encounter prerequisites and scheduled outcomes. They do not grant evidence
+or alter the campaign's claims, publication gates or ending. Their events still
+happen without the driver, and late deliveries do not rewrite recorded history.
+Treat local fares as ordinary work for dispatch cadence. Avoid creating a second
+pickup for a character who is already aboard.
+
+Bind ordinary conversations to complete authored journeys: pickup, destination,
+in-car conversation and arrival belong to the same booking. Repeatable fares may
+cycle through everyday situations, but fare counts do not imply offscreen life
+milestones. Save an accepted journey by its stable content ID so a reload retains
+its route and voice.
+
+Optional stopovers use the same physical driving loop. Routing is reversible;
+waiting requires an explicit action at a stopped, usable cab. World time continues,
+progress pauses when the cab leaves or moves, and a completed stop earns its route
+and wait allowance once. Preserve partial progress in the active-ride snapshot.
+New characters can use explicit initial cards until portrait artwork is authored.
