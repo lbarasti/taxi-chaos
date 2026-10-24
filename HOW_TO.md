@@ -90,15 +90,15 @@ Publications** keeps the edition archive, including days when you did not pursue
 an investigation. Reading pauses the game. Each edition keeps the findings and
 public responses that were known when it printed; later events do not rewrite it.
 
-The **Pause → Dispatch notebook** keeps signed receipts, ride conversations
+The **This shift (Tab) → Dispatch notebook** keeps signed receipts, ride conversations
 and documents.
 The café changes on the calendar whether or not you visit it. Search your own
 records to revisit the details.
 
 Route to the newsroom at **Old Town South**, stop nearby and leave selected
 copies from the notebook. Source checks take **three game hours** and need
-independent material. Return to ask Ruth to run a ready story in the next
-**06:00 edition**. Publication and later public responses are separate; originals
+independent material. Complete stories are automatically scheduled for the next
+**06:00 edition**, without a return visit. Publication and later public responses are separate; originals
 remain in the notebook. The last edition is **Day 14 at 06:00**. The newsroom
 shortcut opens its panel; routing is an explicit action inside it. Sources are
 grouped into To submit, Being checked and Checked sources. General notes stay

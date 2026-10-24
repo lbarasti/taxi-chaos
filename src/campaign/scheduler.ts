@@ -7,7 +7,7 @@ import { campaignTransaction } from './effects';
 import { campaignCondition } from '../missions/conditions';
 import { defaultMissionProgress } from '../missions/progress';
 import { claimOrder, conditionTimes } from './validate';
-import type { Allegation, CampaignContext, CampaignDefinition, CampaignInputs, CampaignEvent, WorldOperation } from './model';
+import type { CampaignContext, CampaignDefinition, CampaignInputs, CampaignEvent, WorldOperation } from './model';
 import type { Campaign } from './state';
 
 export const VERIFICATION_MINUTES = 180;
@@ -16,9 +16,6 @@ const context = (state: Campaign, inputs: CampaignInputs, definition: CampaignDe
 
 export function receiveMaterial(state: Campaign, id: string, inputs: CampaignInputs = {}, definition = campaignDefinition): boolean {
   return dispatchCampaignEvent(context(state, inputs, definition), { type: 'material-submitted', id });
-}
-export function approvePublication(state: Campaign, allegation: Allegation, inputs: CampaignInputs = {}, definition = campaignDefinition): boolean {
-  return dispatchCampaignEvent(context(state, inputs, definition), { type: 'publication-requested', id: allegation });
 }
 export function operationOutcome(op: WorldOperation, ctx: CampaignContext) {
   const outcome = op.outcomes?.find(o => campaignCondition(o.requires, ctx.state, ctx));
@@ -35,7 +32,7 @@ export function advanceCampaignTo(state: Campaign, requested: number, inputs: Ca
     let changed = target !== s.minute;
     // Derived from validated content, rather than a story-specific event count.
     const times = [...new Set(claims.flatMap(id => conditionTimes(definition.claims[id].verifyRequires, definition.timing.start)))];
-    const budget = definition.operations.length + Object.keys(definition.materials).length + claims.length * 3 + times.length + campaignDays(definition.timing) + 2;
+    const budget = definition.operations.length + Object.keys(definition.materials).length + claims.length * (campaignDays(definition.timing) + 2) + times.length + campaignDays(definition.timing) + 2;
     for (let work = 0; work < budget; work++) {
       if (settleCases(ctx)) changed = true;
       const due: Boundary[] = [];

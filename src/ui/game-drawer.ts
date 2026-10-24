@@ -2,7 +2,6 @@ import type { Game } from '../game/game';
 import type { AudioFX } from '../audio/audio';
 import { createSettings, type SettingsControls } from './settings';
 import { bindSettingControls } from './setting-controls';
-import type { Allegation } from '../campaign/model';
 import { isNewsroomSection, type NewsroomSection } from '../campaign/newsroom-view';
 import { DrawerMenu } from './drawer-menu';
 import { drawerMarkup, drawerParent, isDrawerPage } from './drawer-view';
@@ -78,7 +77,6 @@ export class GameDrawer {
         case 'newsroom-menu': this.focusNewsroomMenu(); break;
       }
       if (button.dataset.submit && game.submitMaterial(button.dataset.submit)) this.refresh();
-      if (button.dataset.publish && game.requestPublication(button.dataset.publish as Allegation)) this.refresh();
     });
     root.addEventListener('input', event => {
       if ((event.target as HTMLElement).id === 'notebook-search') this.filterNotebook();

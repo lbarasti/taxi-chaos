@@ -32,7 +32,7 @@ describe('Taxi Chaos current-format storage', () => {
     previous.save.campaign.minute += 6000; previous.save.campaign.shift = 5;
     previous.save.campaign.finished = previous.save.campaign.endingSeen = true;
     previous.save.campaign.world.old = true;
-    previous.save.campaign.newsroom = { received: { old: { at: 500, verifiedAt: 680 } }, cases: { old: { verifiedAt: 680, approvedAt: 700, editionAt: 900 } } };
+    previous.save.campaign.newsroom = { received: { old: { at: 500, verifiedAt: 680 } }, cases: { old: { verifiedAt: 680, editionAt: 900 } } };
     previous.save.campaign.publications.push({ allegation: 'old', submittedShift: 1, publishedShift: 2, at: 900 });
     previous.save.campaign.editions.push({ day: 5, at: 6000, articles: ['old'], briefs: [], read: true });
     previous.save.campaign.reactions.old = { at: 1000 };

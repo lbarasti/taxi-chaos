@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultCampaign, parseCampaign } from './state';
 import { campaignDefinition, CAMPAIGN_END } from './content';
 import { campaignDays, dayMinute, displayDay, editionTime } from './clock';
-import { advanceCampaignTo, approvePublication, receiveMaterial } from './scheduler';
+import { advanceCampaignTo, receiveMaterial } from './scheduler';
 import { editionArticle } from './editions';
 import { assertCampaignDefinition } from './validate';
 import { Game, defaultSave } from '../game/game';
@@ -20,7 +20,6 @@ function reported(definition = campaignDefinition) {
   advanceCampaignTo(state, dayMinute(11, 9), {}, definition);
   for (const id of ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon']) receiveMaterial(state, id, {}, definition);
   advanceCampaignTo(state, dayMinute(11, 12), {}, definition);
-  for (const id of ['coordination', 'policing', 'knowledge']) expect(approvePublication(state, id, {}, definition)).toBe(true);
   return state;
 }
 
@@ -230,7 +229,6 @@ describe('daily editions and campaign finale', () => {
     for (let day = 1; day <= 11; day++) advanceCampaignTo(state, dayMinute(day, 9), inputs, definition);
     for (const id of ['eli-docket', 'contractor-register', 'patrol-register', 'complaint-log', 'hearing-copy', 'contract-carbon']) receiveMaterial(state, id, inputs, definition);
     advanceCampaignTo(state, dayMinute(11, 12), inputs, definition);
-    for (const id of ['coordination', 'policing', 'knowledge']) expect(approvePublication(state, id, inputs, definition)).toBe(true);
     advanceCampaignTo(state, definition.timing.end, inputs, definition);
     progress.flags = []; // Reconstruct the recorded branch, not its final prerequisite.
     const before = structuredClone(state);
@@ -249,7 +247,7 @@ describe('daily editions and campaign finale', () => {
 
   it.each<Condition>([
     { flag: 'mutable-flag' }, { knows: 'eli-docket' }, { materialState: { id: 'eli-docket', state: 'verified' } },
-    { caseState: { id: 'knowledge', state: 'approved' } }, { minDeliveries: 1 }, { minCareerDeliveries: 1 },
+    { caseState: { id: 'knowledge', state: 'verified' } }, { minDeliveries: 1 }, { minCareerDeliveries: 1 },
     { chapter: 2 }, { relationshipAtLeast: { character: 'bea', value: 1 } },
     { missionCompleted: Object.keys(campaignDefinition.missions.missions)[0] },
     { choiceUnset: Object.values(campaignDefinition.missions.missions).flatMap(mission => mission.choices ?? [])[0].id },

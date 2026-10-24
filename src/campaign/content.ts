@@ -111,12 +111,12 @@ export const worldOperations: readonly WorldOperation[] = freezeFacts([
   { id: 'preferred-operator', at: dayMinute(9, 10), effects: change({ operator: 'preferred' }) },
   { id: 'polls-open', at: dayMinute(14, 7), effects: change({ polls: true }) },
 ]);
-const dependencies = (state: 'verified' | 'approved'): Condition => ({ all: ['coordination', 'policing'].map(id => ({ caseState: { id, state } })) });
+const dependencies = (): Condition => ({ all: ['coordination', 'policing'].map(id => ({ caseState: { id, state: 'verified' } })) });
 export const claims: Readonly<Record<string, Claim>> = freezeFacts({
   coordination: { title: 'The café closure and contractor records', routes: corroboration.coordination, reactionEffects: change({ security: 'suspended' }) },
   policing: { title: 'The withdrawn waterfront patrols', routes: corroboration.policing, reactionEffects: change({ patrol: 'inquiry' }) },
   knowledge: { title: 'Vale’s warning and the retained agreement', routes: corroboration.knowledge,
-    verifyRequires: dependencies('verified'), approveRequires: dependencies('approved'),
+    verifyRequires: dependencies(),
     publishRequires: { all: [{ published: 'coordination' }, { published: 'policing' }] }, reactionEffects: change({ appearance: 'cancelled' }) },
 });
 export const CAMPAIGN_END = dayMinute(15);
@@ -131,7 +131,7 @@ export const campaignDefinition: CampaignDefinition = freezeFacts({
   missions: { schemaVersion: 1, dialogue: { ...openShoreCatalogue.dialogue, ...linenCatalogue.dialogue }, missions: { ...openShoreCatalogue.missions, ...linenCatalogue.missions } },
   jobWindows: { ...jobWindows, ...linenJobWindows }, jobNames, handlers: linenHandlers,
   dispatcher: 'bea',
-  newsroom: { stop: NEWSROOM_STOP, name: 'Old Town South', editor: 'Ruth', guide: 'Dispatch mixes ordinary work with recurring customers. Texts let you choose a booking; its deadline is for pickup. Stop near the boarded Garden Café and use the camera icon in the quick actions to record its frontage. A check mark means the observation is already in your Dispatch notebook. The newsroom is at Old Town South: stop nearby and choose material to leave. Source checks take three game hours. Return to ask Ruth to run a ready story in the next 06:00 edition. Public responses happen later. The last edition is Day 14 at 06:00.' },
+  newsroom: { stop: NEWSROOM_STOP, name: 'Old Town South', guide: 'Dispatch mixes ordinary work with recurring customers. Texts let you choose a booking; its deadline is for pickup. Stop near the boarded Garden Café and use the camera icon in the quick actions to record its frontage. A check mark means the observation is already in your Dispatch notebook. The newsroom is at Old Town South: stop nearby and choose material to leave. Source checks take three game hours. Complete stories are automatically scheduled for the next 06:00 edition. Public responses happen later. The last edition is Day 14 at 06:00.' },
   sites: { cafe: 'garden-cafe', newsroom: NEWSROOM_STOP, hotel: 'moonlight-hotel', ...linenSites },
   observations: [{ id: 'cafe-photo', stop: 'garden-cafe', radius: 16,
     requires: { any: ['boarded', 'tenancy-review', 'closed'].map(value => ({ worldEquals: { key: 'cafe', value } })) },

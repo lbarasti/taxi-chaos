@@ -158,7 +158,7 @@ describe('Open Shore world-driven campaign', () => {
     g.player.body.position = { ...g.newsroom };
     for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
     g.advanceNarrativeTo(g.save.campaign.minute + 180);
-    expect(g.requestPublication('coordination')).toBe(true);
+    expect(g.save.campaign.newsroom.cases.coordination?.editionAt).toEqual(expect.any(Number));
   });
 
   it('offers a during-ride exchange only after real movement and retains arrival dialogue across next dispatch', () => {
@@ -317,15 +317,17 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.missionOffers.has('eli-originals')).toBe(false); expect(g.missionOffers.has('nico-safe-ride')).toBe(true);
   });
 
-  it('uses a physical newsroom visit and distinguishes receipt, checks, editorial request, edition and response', () => {
+  it('automatically publishes after a physical submission, without a return visit', () => {
     const g = make(); deliver(g, 'celia-barriers'); advance(g, 3); deliver(g, 'nico-safe-ride');
     arrive(g, g.missions.catalogue.stops.byId['garden-cafe'].position); expect(g.observeScene()).toBe(true);
     expect(g.submitMaterial('barrier-receipt')).toBe(false); arrive(g, g.newsroom); g.setMode('paused');
     expect(g.submitMaterial('leila-warning')).toBe(false);
     for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
-    const received = g.save.campaign.minute; expect(g.requestPublication('coordination')).toBe(false);
-    g.advanceNarrativeTo(received + 180); expect(g.save.campaign.newsroom.cases.coordination?.approvedAt).toBeNull();
-    expect(g.save.campaign.publications).toEqual([]); expect(g.requestPublication('coordination')).toBe(true);
+    const received = g.save.campaign.minute;
+    arrive(g, g.missions.catalogue.stops.byId['garden-cafe'].position);
+    expect(g.newsroomNear).toBe(false);
+    g.advanceNarrativeTo(received + 180);
+    expect(g.save.campaign.publications).toEqual([]);
     const edition = g.save.campaign.newsroom.cases.coordination!.editionAt!;
     g.advanceNarrativeTo(edition); expect(g.save.campaign.publications).toHaveLength(1); expect(g.save.campaign.world.security).toBe('contracted');
     expect(g.campaignBulletin).toContain('pending a response');
@@ -353,7 +355,7 @@ describe('Open Shore world-driven campaign', () => {
     expect(g.target).toEqual(g.newsroom); expect(g.snapshot().navigation).toBe('newsroom');
   });
 
-  it('verifies fractional-time receipts during active play in time to approve the last edition', () => {
+  it('verifies fractional-time receipts during active play in time to automatically make the last edition', () => {
     const g = make(); deliver(g, 'celia-barriers'); advance(g, 3); deliver(g, 'nico-safe-ride');
     g.player.body.position = { ...g.missions.catalogue.stops.byId['garden-cafe'].position };
     expect(g.observeScene()).toBe(true);
@@ -362,11 +364,10 @@ describe('Open Shore world-driven campaign', () => {
     for (const id of ['barrier-receipt', 'cleaner-note', 'cafe-photo']) expect(g.submitMaterial(id)).toBe(true);
     g.advanceNarrativeTo(due - 0.02);
     g.update(0.01); expect(g.save.campaign.newsroom.cases.coordination).toBeUndefined();
-    expect(g.requestPublication('coordination')).toBe(false);
     g.update(0.02);
     expect(g.save.campaign.minute).toBeLessThan(LAST_EDITION);
     expect(g.save.campaign.newsroom.cases.coordination?.verifiedAt).toBe(due);
-    expect(g.requestPublication('coordination')).toBe(true);
+    expect(g.save.campaign.newsroom.cases.coordination?.editionAt).toBe(LAST_EDITION);
     step(g, 0.5);
     expect(g.save.campaign.publications).toMatchObject([{ allegation: 'coordination', at: LAST_EDITION }]);
   });

@@ -6,7 +6,6 @@ import { parsePlayerRecords } from '../narrative/player-records';
 import { parseCampaign } from '../campaign/state';
 import { dayMinute } from '../campaign/clock';
 import { campaignDefinition } from '../campaign/content';
-import type { Allegation } from '../campaign/model';
 import { GARAGE } from '../world/world';
 import { vec, type Vec } from '../physics/physics';
 
@@ -27,7 +26,6 @@ export type ScenarioCommand = (
   | { op: 'photo'; observation?: string; expected?: boolean }
   | { op: 'sleep'; expected?: boolean }
   | { op: 'submit'; material: string; expected?: boolean }
-  | { op: 'publish'; allegation: Allegation; expected?: boolean }
   | { op: 'expect'; path: string; equals?: unknown; includes?: unknown; length?: number; exists?: boolean; gte?: number; lte?: number }
   | ({ op: 'capture'; name: string; view?: CaptureView; panelOnly?: boolean } & CaptureFrame)
 ) & { label?: string };
@@ -73,7 +71,7 @@ export function parseCommand(value: unknown): ScenarioCommand {
   const allowed: Record<string, string[]> = {
     facts: ['facts'], advance: ['minutes', 'to', 'event'], place: ['at', 'angle'], step: ['seconds', 'keys'], mode: ['mode'],
     route: ['mission', 'expected'], stopover: ['action', 'expected'], pickup: [], deliver: [], read: [], dispatch: [], ordinary: [], abandon: [], reload: [],
-    photo: ['observation', 'expected'], sleep: ['expected'], submit: ['material', 'expected'], publish: ['allegation', 'expected'],
+    photo: ['observation', 'expected'], sleep: ['expected'], submit: ['material', 'expected'],
     expect: ['path', 'equals', 'includes', 'length', 'exists', 'gte', 'lte'], capture: ['name', 'view', 'panelOnly', 'focus', 'zoom'],
   };
   if (!Object.hasOwn(allowed, op)) throw new Error(`Unknown command: ${op}`);
@@ -104,7 +102,6 @@ export function parseCommand(value: unknown): ScenarioCommand {
   if (op === 'stopover' && !['route', 'begin'].includes(c.action as string)) throw new Error('stopover action must be route or begin');
   if (op === 'photo' && c.observation !== undefined && !campaignDefinition.observations.some(o => o.id === c.observation)) throw new Error('Unknown observation');
   if (op === 'submit') string(c.material, 'material');
-  if (op === 'publish' && !Object.hasOwn(campaignDefinition.claims, c.allegation as string)) throw new Error('Unknown allegation');
   if (op === 'expect') {
     const path = string(c.path, 'path');
     if (!/^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/.test(path)) throw new Error('path must use dotted property names or array indices');
@@ -155,7 +152,7 @@ export class ScenarioRunner {
     return { ...previewInputs(this.game.missions.catalogue), materials: Object.keys(this.game.campaignContent.materials), allegations: Object.keys(this.game.campaignContent.claims),
       events: this.game.campaignContent.operations.map(op => ({ id: op.id, at: op.at })), places: ['pickup', 'dropoff', 'garage', 'newsroom', ...this.game.missions.catalogue.stops.order],
       keys, options: this.options, limits: { commands: 500, secondsPerStep: 30, totalPhysicsSeconds: 120 },
-      commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'stopover', 'pickup', 'deliver', 'read', 'dispatch', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'publish', 'expect', 'capture'] };
+      commands: ['facts', 'advance', 'place', 'step', 'mode', 'route', 'stopover', 'pickup', 'deliver', 'read', 'dispatch', 'ordinary', 'abandon', 'reload', 'photo', 'sleep', 'submit', 'expect', 'capture'] };
   }
   snapshot() {
     return { ...this.game.snapshot(), flags: [...this.game.save.story.flags], choices: { ...this.game.save.story.choices },
@@ -263,7 +260,6 @@ export class ScenarioRunner {
       case 'photo': return this.boolean(g.observeScene(c.observation), c.expected);
       case 'sleep': return this.boolean(g.sleep(), c.expected);
       case 'submit': if (!Object.hasOwn(this.game.campaignContent.materials, c.material)) throw new Error(`Unknown material: ${c.material}`); return this.boolean(g.submitMaterial(c.material), c.expected);
-      case 'publish': return this.boolean(g.requestPublication(c.allegation), c.expected);
       case 'reload': {
         g.persist(); const save = JSON.parse(JSON.stringify(g.save));
         save.story = parseMissionProgress(save.story); save.playerRecords = parsePlayerRecords(save.playerRecords); save.campaign = parseCampaign(save.campaign);

@@ -7,12 +7,12 @@ import { campaignDay, nextEdition } from './clock';
 import { advanceCampaignTo } from './scheduler';
 import { compareCampaignBoundaries } from './history';
 import { restoreEditions } from './editions';
-import type { Occurrence } from './events';
+import { scheduledEdition, type Occurrence } from './events';
 import type { CharacterId } from '../narrative/characters';
 
 export type PrintedEdition = { day: number; at: number; articles: string[]; briefs: string[]; read: boolean };
 export type Publication = { allegation: Allegation; submittedShift: number; publishedShift: number; at: number };
-export type EditorialCase = { verifiedAt: number; approvedAt: number | null; editionAt: number | null };
+export type PublicationCase = { verifiedAt: number; editionAt: number | null };
 export type RideStopover = { started: boolean; completed: boolean; elapsed: number; detourAllowance: number; routed: boolean };
 export type ActiveRide = {
   missionId?: string; ordinary?: { character: CharacterId; journeyId: string };
@@ -24,7 +24,7 @@ export type Campaign = {
   editions: PrintedEdition[]; endingSeen: boolean;
   version: 2; minute: number; shift: number; finished: boolean;
   occurrences: Record<string, Occurrence>; world: WorldState;
-  newsroom: { received: Record<string, { at: number; verifiedAt: number | null }>; cases: Partial<Record<Allegation, EditorialCase>> };
+  newsroom: { received: Record<string, { at: number; verifiedAt: number | null }>; cases: Partial<Record<Allegation, PublicationCase>> };
   publications: Publication[]; reactions: Partial<Record<Allegation, { at: number }>>;
   regularRides: Record<string, number>; ordinarySinceStory: number; activeRide: ActiveRide | null;
 };
@@ -90,17 +90,11 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
     const verifiedAt = c.verifiedAt;
     timeline.push({ at: verifiedAt, phase: 3 + rank(id), id, apply: () => {
       if (!claim.routes.some(route => route.every(material => state.newsroom.received[material]?.verifiedAt != null)) || !matches(claim.verifyRequires)) return false;
-      state.newsroom.cases[id] = { verifiedAt, approvedAt: null, editionAt: null };
-    } });
-    if (!time(c.approvedAt, minute) || c.approvedAt < verifiedAt) continue;
-    const approvedAt = c.approvedAt;
-    timeline.push({ at: approvedAt, phase: 3 + allegations.length + rank(id), id, apply: () => {
-      const validated = state.newsroom.cases[id];
-      if (!validated || nextEdition(approvedAt, definition.timing) > definition.timing.lastEdition || !matches(claim.approveRequires)) return false;
-      {
-        validated.approvedAt = approvedAt;
-        validated.editionAt = time(c.editionAt, definition.timing.lastEdition) && c.editionAt === nextEdition(approvedAt, definition.timing) ? c.editionAt : null;
-      }
+      // Keep existing edition dates, including legacy saves whose player authorized
+      // publication later. Authorization itself is no longer campaign state.
+      const editionAt = time(c.editionAt, definition.timing.lastEdition) && c.editionAt >= nextEdition(verifiedAt, definition.timing)
+        && nextEdition(c.editionAt - 1, definition.timing) === c.editionAt ? c.editionAt : null;
+      state.newsroom.cases[id] = { verifiedAt, editionAt };
     } });
   }
   if (Array.isArray(s.publications)) for (const value of s.publications.slice(0, allegations.length)) {
@@ -112,6 +106,17 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
       if (!c || c.editionAt !== at || state.publications.some(p => p.allegation === id) || !matches(definition.claims[id].publishRequires)) return false;
       state.publications.push({ allegation: id, submittedShift: campaignDay(c.verifiedAt - 180, definition.timing), publishedShift: campaignDay(at, definition.timing), at });
       state.occurrences[`edition-${id}`] = { at, outcome: 'published' };
+    } });
+  }
+  for (const id of allegations) {
+    const held = object(occurrences[`edition-${id}`]);
+    if (held.outcome !== 'held' || !time(held.at, minute) || held.at > definition.timing.lastEdition) continue;
+    const at = held.at;
+    timeline.push({ at, phase: 3 + allegations.length * 2 + rank(id), id, apply: () => {
+      const c = state.newsroom.cases[id];
+      if (!c || at < nextEdition(c.verifiedAt, definition.timing) || nextEdition(at - 1, definition.timing) !== at
+        || c.editionAt !== scheduledEdition(at, definition.timing) || state.publications.some(p => p.allegation === id)) return false;
+      state.occurrences[`edition-${id}`] = { at, outcome: 'held' };
     } });
   }
   for (const [id, value] of Object.entries(object(s.reactions))) {
@@ -139,6 +144,11 @@ export function parseCampaign(raw: unknown, definition: CampaignDefinition = cam
     }
   }
   state.minute = minute; state.shift = campaignDay(minute, definition.timing); state.finished = minute === definition.timing.end;
+  // Never invent past publications when migrating a checked, unapproved legacy
+  // story or an overdue schedule. Resume unpublished work at the next edition.
+  for (const [id, c] of Object.entries(state.newsroom.cases)) {
+    if (c && !state.publications.some(p => p.allegation === id) && (c.editionAt === null || c.editionAt <= minute)) c.editionAt = scheduledEdition(minute, definition.timing);
+  }
   Object.assign(state.world, savedWorld);
   const active = object(s.activeRide);
   const finite = (v: unknown, max: number, fallback = 0): number => typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : fallback;

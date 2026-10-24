@@ -256,7 +256,7 @@ try {
     const booking = (await render()).job;
     await page.locator('#newsroom').click();
     await waitForDrawer(page, 'newsroom');
-    assert.match(await page.locator('#newsroom-summary').textContent(), /No stories ready for the editor/);
+    assert.match(await page.locator('#newsroom-summary').textContent(), /sources to submit.*sources being checked/);
     await page.locator('#notebook-route').click(); await render();
     assert.match(await mapLabel(), /NEWSROOM · /);
     assert.equal(await target(), 'newsroom');

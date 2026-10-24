@@ -26,7 +26,7 @@ export type Condition =
   | { worldAtLeast: { key: string; value: number } }
   | { knows: string }
   | { materialState: { id: string; state: 'received' | 'verified' } }
-  | { caseState: { id: string; state: 'verified' | 'approved' } }
+  | { caseState: { id: string; state: 'verified' } }
   | { published: string }
   | { reacted: string }
   | { occurred: string }
@@ -145,7 +145,7 @@ export const assertCondition = (v: unknown, path: string): void => {
       case 'missionCompleted': id(obj.missionCompleted, `${at}.missionCompleted`); return;
       case 'knows': case 'published': case 'reacted': case 'occurred': id(obj[key], `${at}.${key}`); return;
       case 'worldEquals': case 'worldAtLeast': { const p = object(obj[key], `${at}.${key}`, ['key', 'value']); id(p.key, `${at}.${key}.key`); if (key === 'worldAtLeast') num(p.value, `${at}.${key}.value`, -1e9, 1e9); else if (!['string', 'number', 'boolean'].includes(typeof p.value) || typeof p.value === 'number' && !Number.isFinite(p.value) || typeof p.value === 'string' && p.value.length > 160) fail(at, 'invalid world value'); return; }
-      case 'materialState': case 'caseState': { const p = object(obj[key], `${at}.${key}`, ['id', 'state']); id(p.id, `${at}.${key}.id`); oneOf(p.state, `${at}.${key}.state`, key === 'materialState' ? ['received', 'verified'] : ['verified', 'approved']); return; }
+      case 'materialState': case 'caseState': { const p = object(obj[key], `${at}.${key}`, ['id', 'state']); id(p.id, `${at}.${key}.id`); oneOf(p.state, `${at}.${key}.state`, key === 'materialState' ? ['received', 'verified'] : ['verified']); return; }
       case 'relationshipAtLeast': { const p = object(obj[key], `${at}.${key}`, ['character', 'value']); id(p.character, `${at}.${key}.character`); num(p.value, `${at}.${key}.value`, -1000, 1000); return; }
       case 'flag': id(obj.flag, `${at}.flag`); return;
       case 'choiceUnset': id(obj.choiceUnset, `${at}.choiceUnset`); return;

@@ -70,7 +70,7 @@ export const newspaper: Newspaper = {
       'This paper will not print a source’s destination to make an account sound more dramatic. An interview is checked independently; a safe address is allowed to remain private.',
     ], 'A suitcase beside a quiet shelter near temporary lodging', 'Illustration: protecting a destination is part of protecting a source.'),
     daily(13, day13, 'Last chance to make the morning edition', 'The city desk prepares its election-day printing deadline.', [
-      'The election-day edition is due tomorrow at 06:00. Source checks take three hours, and a complete story still needs the editor’s approval before it can be scheduled.',
+      'The election-day edition is due tomorrow at 06:00. Source checks take three hours. Complete stories are automatically scheduled for the next edition.',
       'A copy left on a desk is not a published finding. The original records will remain in the notebook even if the deadline passes. Tonight, a date matters in a very practical way.',
     ], 'An old printing press feeding a fresh stack of newspapers', 'Tomorrow’s election-day edition closes at 06:00.'),
     daily(14, day14, 'Polling day waits at the door', 'Stations prepare to open as the waterfront campaign reaches its last day.', [
