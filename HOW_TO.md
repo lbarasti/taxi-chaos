@@ -54,6 +54,18 @@ commit only when you stop at the deliberately selected pickup. This shift →
 continues during travel and at arrival. The HUD shows the calendar day alongside
 its clock; overnight booking shifts still turn over at 07:00.
 
+### Contextual optional stops
+
+Some fares include an optional collection or short errand. The destination does
+not change. The **F** key (or the on-screen optional-stop buttons) switches the
+route to the requested stop, then starts the activity when safely parked there.
+The label and time come from the booking: it may be bread, keys, a package,
+takeaway or a wash. Moving the cab or leaving it pauses the activity; return
+to resume. Extra travel and waiting compensation is paid only on completion.
+You can always deliver directly without taking the extra stop, and ordinary
+fares are not required to participate in the Open Shore investigation.
+The control is shown only when the current passenger actually has an errand.
+
 ### Neighbourhood lives
 
 Some regulars have plans of their own. Near Moonlight Hotel or Flower Market from
