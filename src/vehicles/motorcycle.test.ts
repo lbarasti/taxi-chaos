@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../game/game';
 import { loadScenario } from '../debug/lab';
 import { Body, contact, dist, length, vec, type Controls } from '../physics/physics';
-import { BIKE_ENGINE, MAX_LEAN, MotorcycleDynamics, cornerLean, leanProjection } from './motorcycle';
+import { BIKE_ENGINE, MAX_LEAN, MAX_WHEELIE_PITCH, MotorcycleDynamics, cornerLean, leanProjection, wheelieProjection } from './motorcycle';
 import { igniteVehicle } from './damage';
 
 const controls = (turn = 0, throttle = 0): Controls => ({ turn, throttle, handbrake: false });
@@ -62,6 +62,57 @@ describe('single-track handling and top-down roll', () => {
   });
 });
 
+describe('motorcycle wheelies', () => {
+  it('lifts progressively, holds and ignores steering until touchdown', () => {
+    const bike = motion();
+    bike.run(0.1, { ...controls(1, 1), boost: true });
+    expect(bike.dynamics.wheelie).toBeGreaterThan(0);
+    expect(bike.dynamics.wheelie).toBeLessThan(1);
+    bike.run(1, { ...controls(-1, 1), boost: true });
+    expect(bike.dynamics.wheelie).toBe(1);
+    expect(bike.body.angle).toBe(0); expect(bike.body.position.y).toBe(0);
+    expect(bike.dynamics.tyres[1].angle).toBe(0); expect(bike.dynamics.tyres[1].skidding).toBe(false);
+    bike.run(0.1, controls(1, 1));
+    expect(bike.dynamics.frontAirborne).toBe(true); expect(bike.body.angle).toBe(0);
+    bike.run(0.7, controls(1, 1));
+    expect(bike.dynamics.wheelie).toBe(0); expect(bike.body.angle).toBeGreaterThan(0.01);
+  });
+  it('lands when braking or losing engine power, and clears on crash or recovery', () => {
+    for (const stop of ['brake', 'rear-brake', 'engine', 'crash', 'recovery']) {
+      const bike = motion(); bike.run(0.5, { ...controls(0, 1), boost: true });
+      expect(bike.dynamics.wheelie).toBe(1);
+      if (stop === 'crash') bike.dynamics.crash(1, 10);
+      else if (stop === 'recovery') bike.dynamics.resetLean();
+      else {
+        if (stop === 'engine') bike.dynamics.engineForce = 0;
+        bike.run(0.4, { ...controls(0, stop === 'brake' ? -1 : 1), boost: true, handbrake: stop === 'rear-brake' });
+      }
+      expect(bike.dynamics.wheelie).toBe(0);
+    }
+  });
+  it('does not lift at rest, in reverse, or without boost', () => {
+    const stopped = motion(0); stopped.run(1 / 120, { ...controls(0, 1), boost: true });
+    expect(stopped.dynamics.frontAirborne).toBe(false);
+    const reverse = motion(-3); reverse.run(1, { ...controls(1, -1), boost: true });
+    expect(reverse.dynamics.wheelie).toBe(0);
+    const normal = motion(); normal.run(1, controls(0, 1)); expect(normal.dynamics.wheelie).toBe(0);
+  });
+  it('preserves collision yaw and lateral motion while the front tyre is lifted', () => {
+    const bike = motion(); bike.run(0.5, { ...controls(0, 1), boost: true });
+    bike.body.angularVelocity = 0.8; bike.body.velocity.y = 3;
+    bike.run(1 / 120, { ...controls(1, 1), boost: true });
+    expect(bike.body.angle).toBeGreaterThan(0); expect(bike.body.position.y).toBeGreaterThan(0);
+  });
+  it('anchors the rear axle and lifts/foreshortens the front in generated frames', () => {
+    const rear = wheelieProjection(MAX_WHEELIE_PITCH, -0.88, 0.28);
+    expect(rear.x).toBeCloseTo(-0.88); expect(rear.height).toBeCloseTo(0.28);
+    const front = wheelieProjection(MAX_WHEELIE_PITCH, 0.88, 0.28);
+    expect(front.height).toBeGreaterThan(1); expect(front.x).toBeLessThan(0.88);
+    expect(wheelieProjection(0, 0.32, 1.4).x).toBeCloseTo(0.32);
+    expect(wheelieProjection(0, 0.32, 1.4).height).toBeCloseTo(1.4);
+  });
+});
+
 describe('courier motorcycle integration', () => {
   it('spawns accessible parked bikes in the city, including beside Pit Stop', () => {
     const g = new Game(), bikes = g.vehicles.filter(v => v.model === 'motorcycle' && v.parked);
@@ -74,6 +125,17 @@ describe('courier motorcycle integration', () => {
     expect(g.job.type).toBe('parcel'); expect(g.job.customerId).toBe(-1); expect(g.world.people.some(p => p.role === 'customer')).toBe(false);
     g.player.upgrades.engine = 2; g.applyUpgrades(); expect(g.player.baseEngine).toBeCloseTo(BIKE_ENGINE * 1.44); expect(g.save.cash).toBe(cash);
     runGame(g, 0.5, ['KeyW']); expect(g.speed).toBeGreaterThan(3); expect(g.snapshot().vehicleModel).toBe('motorcycle');
+  });
+  it('uses the normal boost controls and tank for a wheelie, then lands on release', () => {
+    const g = takeBike(), dynamics = g.player.dynamics as MotorcycleDynamics;
+    runGame(g, 0.6, ['KeyW', 'ShiftLeft']);
+    expect(dynamics.wheelie).toBe(1); expect(g.snapshot().wheelie).toBe(1);
+    expect(g.boost).toBeCloseTo(100 - 29 * 0.6);
+    const heading = g.player.body.angle;
+    runGame(g, 0.1, ['KeyW', 'KeyD']);
+    expect(dynamics.frontAirborne).toBe(true); expect(g.player.body.angle).toBeCloseTo(heading, 6);
+    runGame(g, 0.4, ['KeyS']);
+    expect(dynamics.wheelie).toBe(0); expect(g.boost).toBeGreaterThan(100 - 29 * 0.6);
   });
   it('loads and delivers a real parcel, pays once, and dispatches another without a phantom passenger', () => {
     const g = takeBike(), cash = g.save.cash;

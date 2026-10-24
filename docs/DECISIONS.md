@@ -269,3 +269,12 @@ the next 07:00 and resets shift totals. Retain the finished story, acknowledged
 ending, city outcomes and printed archive; do not replay scheduled story events
 or create additional campaign morning checkpoints. Preserve later dates and fare
 records through reloads and recovery.
+
+## 20. Use wheelies for motorcycle boost
+
+Motorcycle boost raises the front wheel while retaining the rechargeable tank and
+acceleration. Lifting, holding and landing use deterministic physics state and
+procedural frames from the existing bike artwork. The airborne front tyre cannot
+steer or leave road tracks; steering resumes on touchdown. Preserve collision
+impulses and rear-tyre forces rather than locking the whole body's heading.
+Cars retain their nitro flame and glow; motorcycles show the wheelie instead.

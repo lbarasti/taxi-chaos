@@ -8,7 +8,7 @@ Taxi Chaos runs in a browser or as the standalone `dist/index.html`. It works of
 | --- | --- |
 | WASD / arrow keys | Drive; on foot, move in screen directions |
 | Space | Handbrake/drift in a car; rear brake on a motorbike |
-| Shift + accelerate | Rechargeable nitro boost |
+| Shift + accelerate | Rechargeable boost; wheelie on a motorbike |
 | E / mobile action | Exit or mount a nearby vehicle; pay at harbour security |
 | A or D while pressing E | Choose which side to exit a moving vehicle |
 | R | Optional tow and repair when near a wreck |
@@ -181,6 +181,8 @@ and returns to the fare.
 - **Sunset Beach and Ocean Walk:** head to the southern waterfront for soft sand, breakable beach furniture, and a promenade between the beach and hotels. Road tyres lose traction in sand; the beach patrol pickup has off-road tyres. Cars and bikes can cross Ocean Walk and the sand around the hotels, just like city pavements; hotel walls and beach furniture remain obstacles. Surf and pools can drown the actor or sink a vehicle. F2 → **Sunset Beach / soft sand**, **Beach / off-road pickup**, or **Ocean Walk / hotel promenade**.
 - **Northstar Harbour:** press **H** to navigate to security. In a healthy, non-burning car, stop out of police sight and pay **$75** with E or the mobile action. Follow cyan to **C-76**, drive fully inside and stay below 0.8 m/s for 2.5 seconds while concealed. The stock replacement clears police heat and retains your wallet and current fare; the exchanged car and its upgrades are no longer available. Another visit requires another payment. F2 → **Northstar Harbour / car exchange**.
 - **Commercial traffic:** delivery vans, flatbeds, freight trucks, and fuel trucks share the roads as NPCs. Fuel cargo can ignite and cause a larger chain explosion. These vehicles cannot be taken by the player. F2 → **Vans / freight traffic** or **Flammable cargo / impact**.
+
+Boosting a moving motorbike lifts its front wheel. Hold Shift (or the touch Boost button) while accelerating to hold the wheelie; release boost or brake to land. Steering returns when the front tyre touches down, so line up before lifting. Wheelies use the same rechargeable boost tank and acceleration.
 
 A hard motorbike crash can separate the rider and bike. A healthy fallen bike
 must be lifted before mounting; lifting does not repair it. A badly damaged or
