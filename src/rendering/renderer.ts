@@ -17,6 +17,7 @@ import { artworkFor, artRadiusFor, fallbackScale, renderOrderForArt, type PropAr
 import { InspectionState } from '../debug/inspection';
 import { drawInspection } from '../debug/inspection-renderer';
 import { defaultMap } from '../map/default';
+import { motorcycleArtwork } from './motorcycle-artwork';
 
 import { PORT_CONTAINERS, PORT_ENTRY, SWAP_CONTAINER } from '../world/harbour';
 import { drawLandGround, clipLand, drawTerrainGround, drawTerrainMiniMap } from './terrain-renderer';
@@ -891,6 +892,12 @@ export class Renderer {
     this.shadowRect(frameShadow.x + so.x * frameShadow.height, -0.3 + frame.offset + so.y * frameShadow.height,
       2.5 * Math.cos(pitch), 0.6, '#0e1a2290');
     if (occupied) this.shadowCircle(vec(headShadow.x + so.x * headShadow.height, helmet.offset + so.y * headShadow.height), 0.42, '#0e1a2270');
+    // Empty, fallen and wrecked bikes retain rider-free procedural geometry.
+    // Shadows stay on the road; do not draw procedural tyres over the sprite.
+    const parcel = v === g.player && !g.onFoot && g.job.type === 'parcel' && g.job.stage === 'dropoff';
+    if (occupied && !fallen && motorcycleArtwork.draw(c, lift, roll, parcel, rear)) {
+      c.restore(); return;
+    }
     for (const t of v.dynamics.tyres) {
       if (!t.steered || !dynamics.frontAirborne) this.circle(t.position, 0.16, '#0c161c');
       else {

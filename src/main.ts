@@ -12,6 +12,7 @@ import { MotorcycleDynamics, motorcycleEngineWorks } from './vehicles/motorcycle
 import { Renderer } from './rendering/renderer';
 import { MAX_ZOOM, MIN_ZOOM } from './rendering/zoom';
 import { artworkImages } from './artwork/images';
+import { motorcycleArtwork } from './rendering/motorcycle-artwork';
 import { add, dist, sub } from './physics/physics';
 import { PORT_FEE } from './world/harbour';
 import { setupLab, type LabAPI } from './debug/lab';
@@ -57,8 +58,8 @@ const roadsidePanel = roadsideElement;
 const dialoguePreviewMode = new URLSearchParams(location.search).has('dialogue-preview');
 const scenarioPreviewMode = new URLSearchParams(location.search).has('scenario-preview');
 const authoringPreviewMode = new URLSearchParams(location.search).has('authoring-preview');
-// Decode embedded map art before the first playable frame; failures keep procedural fallbacks.
-await artworkImages.load();
+// Decode embedded artwork before the first playable frame; failures keep procedural fallbacks.
+await Promise.all([artworkImages.load(), motorcycleArtwork.load()]);
 const hasSavedCampaign = !dialoguePreviewMode && !scenarioPreviewMode && !authoringPreviewMode && savedCampaignAvailable();
 let game = new Game(undefined, !dialoguePreviewMode && !scenarioPreviewMode && !authoringPreviewMode);
 const audio = new AudioFX();
