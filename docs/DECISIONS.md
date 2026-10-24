@@ -245,3 +245,18 @@ Round adjustments to whole dollars and cap each positive bonus at one quarter of
 the base fare rounded down, so combined bonuses never exceed 50% of base.
 Lateness deductions continue beyond the visual meter's minimum. Retain the neutral
 thresholds, zero payout floor and shared settlement/receipt calculation from section 16.
+
+## 18. Publish checked stories automatically
+
+Supersede section 5's separate editorial approval step. Leaving source copies at
+the newsroom expresses the driver's intent to pursue publication; once enough
+independent material is checked and the story's prerequisites hold, schedule it
+for the next 06:00 edition automatically. Preserve publication dependencies,
+final-edition deadlines and later public responses. Held stories retry at later
+editions without another player action.
+
+Remove the editor's story section and authorization controls from the newsroom,
+notebook and scenario commands. Keep physical source submission, source status
+and the printed publication archive. Preserve existing saved edition dates and
+printed history; migrate checked, unscheduled stories to the next future edition
+without inventing earlier publications or responses.

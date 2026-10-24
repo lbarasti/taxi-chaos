@@ -33,7 +33,7 @@ export function evaluateCondition(condition: Condition, ctx: ConditionContext): 
   }
   if ('caseState' in condition) {
     const c = s?.newsroom.cases[condition.caseState.id];
-    return !!c && (condition.caseState.state === 'verified' || c.approvedAt !== null);
+    return !!c;
   }
   if ('published' in condition) return s?.publications.some(p => p.allegation === condition.published) ?? false;
   if ('reacted' in condition) return !!s?.reactions[condition.reacted];

@@ -1,12 +1,11 @@
 import type { Game } from '../game/game';
 import { menuItem } from '../ui/drawer-markup';
 import { menuHintMarkup } from '../ui/menu-hint';
-import { canApprove } from './events';
-import { editorialMarkup, recordMarkup } from './view';
+import { recordMarkup } from './view';
 
 /** Route membership, not merely authored-material membership, makes a publication source. */
 const publicationSources = (game: Game) => new Set(Object.values(game.campaignContent.claims).flatMap(claim => claim.routes.flat()));
-const sections = { sources: 'Sources', stories: 'Stories at the editor' } as const;
+const sections = { sources: 'Sources' } as const;
 export type NewsroomSection = keyof typeof sections;
 export const isNewsroomSection = (id: string): id is NewsroomSection => Object.hasOwn(sections, id);
 
@@ -21,19 +20,17 @@ export function newsroomRecords(game: Game) {
   };
 }
 
-/** Only discovered publication sources and authoritative editorial eligibility count. */
+/** Count only discovered publication sources. */
 export function newsroomSummary(game: Game) {
   const campaign = game.save.campaign;
   const records = newsroomRecords(game);
   const toSubmit = records.toSubmit.length, checking = records.checking.length;
-  const ready = Object.keys(campaign.newsroom.cases).filter(id => canApprove(game.campaignContext, id)).length;
   const closed = campaign.finished || campaign.minute >= game.campaignContent.timing.lastEdition;
   const summary = [
     `${toSubmit} ${toSubmit === 1 ? 'source' : 'sources'} ${closed ? 'not submitted' : 'to submit'}`,
     `${checking} ${checking === 1 ? 'source' : 'sources'} being checked`,
-    ready ? `${ready} ${ready === 1 ? 'story' : 'stories'} ready for the editor` : 'No stories ready for the editor',
   ].join(' · ');
-  return { toSubmit, checking, ready, closed, summary };
+  return { toSubmit, checking, closed, summary };
 }
 
 export function newsroomMarkup(game: Game, selected: NewsroomSection | null = null): string {
@@ -48,14 +45,11 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
       body = group('to-submit', 'To submit', closed ? 'Final edition closed · unsubmitted copies retained.' : 'Bring copies to the newsroom.', records.toSubmit, 'No collected sources awaiting submission.')
         + group('checking', 'Being checked', 'Submitted copies · checks take three game hours.', records.checking, 'No source checks underway.')
         + group('checked', 'Checked sources', 'Verified material, not necessarily a complete story.', records.checked, 'No checked sources yet.'); break;
-    case 'stories':
-      copy = 'Editorial review, scheduled editions and publications.';
-      body = editorialMarkup(game) || '<p class="newsroom-empty">No stories at the editor’s desk yet.</p>'; break;
   }
   return `<div class="newsroom-columns"><div class="newsroom-menu-panel" data-menu-scope><div class="newsroom-menu-content">
     <div class="intro-eyebrow">DISPATCH / RECORDS</div><h2 id="modal-title">Newsroom.</h2>
     <p class="intro-copy" id="newsroom-summary">${summary}</p>
-    <p>${closed ? 'The final edition has closed. Your collected records are retained.' : 'A useful source is not necessarily a complete story. Bring copies to the newsroom for source checks, then visit the editor when a story is ready.'}</p>
+    <p>${closed ? 'The final edition has closed. Your collected records are retained.' : 'A useful source is not necessarily a complete story. Bring copies to the newsroom for source checks. Complete stories are automatically scheduled for the next edition.'}</p>
     <nav class="game-menu" aria-label="Newsroom actions">
       ${menuItem(game.navToNewsroom ? 'Cancel newsroom route' : 'Route to newsroom', { id: 'notebook-route' })}
       ${Object.entries(sections).map(([id, label]) => `<button class="menu-item" id="newsroom-open-${id}" data-newsroom-section="${id}" aria-controls="newsroom-detail" aria-pressed="${selected === id}"><span>${label}</span></button>`).join('')}
@@ -64,8 +58,8 @@ export function newsroomMarkup(game: Game, selected: NewsroomSection | null = nu
     </nav>${menuHintMarkup()}</div></div>
     <section class="newsroom-section" id="newsroom-detail" aria-labelledby="newsroom-detail-title" data-menu-scope tabindex="-1">
       ${selected ? menuItem('Back', { id: 'newsroom-menu' }) : ''}
-      <h3 id="newsroom-detail-title">${selected ? selected === 'stories' ? 'Stories' : sections[selected] : 'Your newsroom records'}</h3>
-      <p>${selected ? copy : 'Choose a section to view collected sources, source checks or stories.'}</p>
+      <h3 id="newsroom-detail-title">${selected ? sections[selected] : 'Your newsroom records'}</h3>
+      <p>${selected ? copy : 'Choose Sources to view collected material and source checks.'}</p>
       <div class="notebook-entries">${body}</div>
     </section></div>`;
 }

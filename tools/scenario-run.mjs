@@ -52,12 +52,11 @@ Commands and fields (each object starts with "op"):
   photo     observation?: id; collect through real proximity, speed and scene gates.
   sleep     Use safe Pit Stop sleep; place at garage and set paused first.
   submit    material: id; requires the possessed source and newsroom proximity.
-  publish   allegation: id; editorial approval still waits for the edition to print.
   expect    path: dotted snapshot field; exactly one of equals, includes, length,
             exists, gte, lte. Object/array comparisons use deep equality.
   capture   name: unique lowercase filename stem; view?: world|story|texts|notebook|pause,
             panelOnly?: boolean (panel views only), focus?: site-id|actor, zoom?: 5-24.
-route, stopover, photo, sleep, submit and publish may use expected:false for a rejected action;
+route, stopover, photo, sleep and submit may use expected:false for a rejected action;
 invalid IDs still fail. pickup/deliver/place are fixture placement, not evidence of
 a physically driven route. Use step with driving keys for that.
 Limits: 500 commands, 120 total physics seconds; advance handles longer calendar waits.

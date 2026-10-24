@@ -11,9 +11,9 @@ export const worldOperations = campaignDefinition.operations;
 export const defaultWorld = () => ({ ...campaignDefinition.initialWorld });
 export const assertWorldOperations = (operations: readonly WorldOperation[]) => assertCampaignDefinition({ ...campaignDefinition, operations });
 
-export function canApprove(ctx: CampaignContext, id: string): boolean {
-  const c = ctx.state.newsroom.cases[id], claim = ctx.definition.claims[id];
-  return !!claim && !!c && c.approvedAt === null && !ctx.state.finished && nextEdition(ctx.state.minute, ctx.definition.timing) <= ctx.definition.timing.lastEdition && campaignCondition(claim.approveRequires, ctx.state, ctx);
+export function scheduledEdition(at: number, timing: CampaignContext['definition']['timing']): number | null {
+  const edition = nextEdition(at, timing);
+  return edition <= timing.lastEdition ? edition : null;
 }
 
 /** Typed reducer. Authored handlers see the event's result, in author order. */
@@ -24,10 +24,6 @@ export function reduceCampaignEvent(ctx: CampaignContext, event: CampaignEvent):
     case 'material-submitted':
       if (s.finished || s.minute >= ctx.definition.timing.lastEdition || !Object.hasOwn(ctx.definition.materials, event.id) || Object.hasOwn(s.newsroom.received, event.id)) return false;
       s.newsroom.received[event.id] = { at: s.minute, verifiedAt: null }; break;
-    case 'publication-requested': {
-      if (!canApprove(ctx, event.id)) return false;
-      const c = s.newsroom.cases[event.id]!; c.approvedAt = s.minute; c.editionAt = nextEdition(s.minute, ctx.definition.timing); break;
-    }
     case 'operation':
       if (s.occurrences[event.id]) return false;
       s.occurrences[event.id] = { at: s.minute, outcome: event.outcome };
@@ -38,14 +34,14 @@ export function reduceCampaignEvent(ctx: CampaignContext, event: CampaignEvent):
     }
     case 'case-verified':
       if (s.newsroom.cases[event.id]) return false;
-      s.newsroom.cases[event.id] = { verifiedAt: event.at, approvedAt: null, editionAt: null }; break;
+      s.newsroom.cases[event.id] = { verifiedAt: event.at, editionAt: scheduledEdition(event.at, ctx.definition.timing) }; break;
     case 'edition': {
       const c = s.newsroom.cases[event.id], claim = ctx.definition.claims[event.id];
       if (!c || !claim || s.publications.some(p => p.allegation === event.id)) return false;
       const ready = campaignCondition(claim.publishRequires, s, ctx);
       s.occurrences[`edition-${event.id}`] = { at: event.at, outcome: ready ? 'published' : 'held' };
       if (ready) s.publications.push({ allegation: event.id, submittedShift: campaignDay(c.verifiedAt - 180, ctx.definition.timing), publishedShift: campaignDay(event.at, ctx.definition.timing), at: event.at });
-      else c.editionAt = null;
+      else c.editionAt = scheduledEdition(event.at, ctx.definition.timing);
       break;
     }
     case 'reaction':

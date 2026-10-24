@@ -26,12 +26,12 @@ import { touchSteering } from '../ui/touch-controls';
 import { defaultPlayerRecords, MAX_TEXT_RECEIPTS, type NotebookEntry } from '../narrative/player-records';
 import { defaultCampaign, type ActiveRide, type RideStopover } from '../campaign/state';
 import { campaignDefinition } from '../campaign/content';
-import type { Allegation, CampaignDefinition, CampaignContext, CampaignEvent, EverydayJob, EverydayJourney, Stopover } from '../campaign/model';
+import type { CampaignDefinition, CampaignContext, CampaignEvent, EverydayJob, EverydayJourney, Stopover } from '../campaign/model';
 import { campaignCondition } from '../missions/conditions';
 import { dispatchCampaignEvent } from '../campaign/events';
 import { recordNote } from '../campaign/effects';
 import { CAMPAIGN_START, campaignDays, calendarLabel, nextMorning } from '../campaign/clock';
-import { advanceCampaignTo, approvePublication, receiveMaterial, VERIFICATION_MINUTES } from '../campaign/scheduler';
+import { advanceCampaignTo, receiveMaterial, VERIFICATION_MINUTES } from '../campaign/scheduler';
 import { cityBulletin } from '../campaign/bulletin';
 import { ordinaryDuring, rideMessage, selectEverydayJourney } from '../campaign/ride-dialogue';
 import { pathLength } from '../world/countryside';
@@ -351,11 +351,7 @@ export class Game {
   submitMaterial(id: string): boolean {
     if (!this.newsroomNear || this.save.campaign.finished || !Object.hasOwn(this.campaignContent.materials, id) || !this.save.playerRecords.notebook.some(e => e.id === id) || Object.hasOwn(this.save.campaign.newsroom.received, id)) return false;
     if (!receiveMaterial(this.save.campaign, id, this.campaignContext, this.campaignContent)) return false; this.syncCampaignWorld(); this.persist();
-    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Return to the editor to request a ready story’s publication.', '', { category: 'newsroom', duration: null }); return true;
-  }
-  requestPublication(allegation: Allegation): boolean {
-    if (!this.newsroomNear || !approvePublication(this.save.campaign, allegation, this.campaignContext, this.campaignContent)) return false;
-    this.syncCampaignWorld(); this.persist(); this.notify(`Editor accepted the story for the next ${String(this.campaignContent.timing.editionHour).padStart(2, '0')}:00 edition. Any response will follow later.`, '', { category: 'newsroom', duration: null }); return true;
+    this.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Complete stories are automatically scheduled for the next edition.', '', { category: 'newsroom', duration: null }); return true;
   }
   recordDialogue() {
     const active = this.dialogue.active;

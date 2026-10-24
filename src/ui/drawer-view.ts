@@ -15,7 +15,7 @@ const pages = {
   'load-game': { title: 'Load game.', parent: 'home' },
   'new-game': { title: '', parent: 'home' },
   settings: { title: 'Settings.', parent: 'home' },
-  shift: { title: 'This shift.', parent: 'home' },
+  shift: { title: '', parent: 'home' },
   credits: { title: 'Credits.', parent: 'home' },
   newsroom: { title: '', parent: null },
   publications: { title: '', parent: 'newsroom' },
@@ -40,13 +40,15 @@ function settingsMarkup(settings: SettingsControls) {
 }
 function campaignMarkup(game: Game) {
   if (game.mode !== 'paused' || !game.campaignEnabled) return '';
+  return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${displayDay(game.save.campaign.minute, game.campaignContent.timing)} OF ${campaignDays(game.campaignContent.timing)} · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p></div>`;
+}
+function campaignActionsMarkup(game: Game) {
+  if (game.mode !== 'paused' || !game.campaignEnabled) return '';
   const preview = game.sleepPreview;
-  return `<div class="campaign-summary"><small>${game.save.campaign.finished ? game.campaignContent.finishedLabel : `${game.campaignContent.title.toUpperCase()} · DAY ${displayDay(game.save.campaign.minute, game.campaignContent.timing)} OF ${campaignDays(game.campaignContent.timing)} · ${calendarLabel(game.save.campaign.minute).split(' · ')[1]}`}</small><p>${game.campaignBulletin}</p>
-    ${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}
+  return `${menuItem('Dispatch notebook', { id: 'open-notebook', page: 'notebook' })}
     ${menuItem(game.sleepReason ?? `Sleep at Pit Stop · wake ${preview.label}`, { id: 'sleep', disabled: !!game.sleepReason })}
-    <p class="campaign-hint">The city clock advances while you drive. Sleep skips ${preview.hours.toFixed(1)} game hours; the world keeps changing. ${preview.expiring.length ? `Known bookings closing: ${preview.expiring.join(', ')}.` : 'No known bookings close during this sleep.'} Your parked car and cash stay as they are.</p>
     ${!game.garageNear && !game.save.campaign.finished ? menuItem('Route to Pit Stop', { id: 'sleep-route' }) : ''}
-    ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}</div>`;
+    ${game.job.stage === 'dropoff' ? menuItem('Abandon this ride', { id: 'abandon-ride' }) : menuItem('Ask dispatch for an ordinary fare', { id: 'ordinary-fare' })}`;
 }
 export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 'home', newsroomSection = null, editionDay, publicationBack = 'newsroom', articleId, loadFailed = false }: { game: Game; settings: SettingsControls; saved: boolean; entry?: 'home' | 'newsroom'; newsroomSection?: NewsroomSection | null; editionDay?: number; publicationBack?: DrawerPage; articleId?: string; loadFailed?: boolean }): string {
   let body: string;
@@ -71,7 +73,7 @@ export function drawerMarkup(page: DrawerPage, { game, settings, saved, entry = 
     case 'newsroom': return newsroomMarkup(game, newsroomSection);
     case 'notebook': return notebookMarkup(game, entry);
     case 'settings': body = settingsMarkup(settings); break;
-    case 'shift': return `<div class="intro-eyebrow">TAXI CHAOS / SHIFT</div><h2 id="modal-title">This shift.</h2>${menuItem('Resume your shift', { id: 'start' })}${shiftMarkup(game, campaignMarkup(game))}${game.canReturnToTitle ? menuItem('Return to title', { id: 'return-to-title' }) : ''}`;
+    case 'shift': return `<div class="intro-eyebrow">DISPATCH / SHIFT</div><h2 id="modal-title">Your shift.</h2>${campaignMarkup(game)}${shiftMarkup(game, campaignActionsMarkup(game))}${menuItem('Resume your shift', { id: 'start' })}`;
     case 'credits': body = creditsMarkup(); break;
     case 'notebook-guide': body = notebookGuideMarkup(game); break;
   }

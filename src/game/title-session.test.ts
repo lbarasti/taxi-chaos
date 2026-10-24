@@ -50,11 +50,11 @@ describe('suspended title sessions', () => {
     expect(sync).not.toHaveBeenCalled(); expect(game.eventLog).toEqual(startup); expect(values.get(morningKey)).toBe(archived);
   });
 
-  it('keeps Continue and both return entries current without an initial save, and explains failed persistence on the title', () => {
+  it('keeps Continue and the pause-menu return entry current without an initial save, and explains failed persistence on the title', () => {
     const { api } = storage(); const game = new Game().freshGame(); game.start(); game.setMode('paused');
     const settings = createSettings(() => game, new AudioFX());
     expect(splashMarkup(game, false)).toContain('id="return-to-title"');
-    expect(drawerMarkup('shift', { game, settings, saved: true })).toContain('id="return-to-title"');
+    expect(drawerMarkup('shift', { game, settings, saved: true })).not.toContain('id="return-to-title"');
     api.setItem.mockImplementation(() => { throw Error('quota'); });
     game.returnToTitle(); expect(game.titleSaveFailed).toBe(true);
     const html = splashMarkup(game, game.sessionStarted);

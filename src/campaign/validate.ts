@@ -32,7 +32,7 @@ export function claimOrder(def: CampaignDefinition): string[] {
     if (visiting.has(id)) throw new Error(`Claim dependency cycle: ${id}`);
     const claim = def.claims[id]; if (!claim) throw new Error(`Unknown claim: ${id}`);
     visiting.add(id);
-    for (const c of [claim.verifyRequires, claim.approveRequires, claim.publishRequires]) if (c) walk(c, node => {
+    for (const c of [claim.verifyRequires, claim.publishRequires]) if (c) walk(c, node => {
       const ref = 'caseState' in node ? node.caseState.id : 'published' in node ? node.published : 'reacted' in node ? node.reacted : null;
       if (ref) visit(ref);
     });
@@ -126,15 +126,15 @@ export function assertCampaignDefinition(def: CampaignDefinition): void {
     id(key);
     if (!claim.routes.length || claim.routes.length > 16 || claim.routes.some(route => !route.length || route.length > 16)) throw new Error(`Invalid corroboration routes: ${key}`);
     claim.routes.flat().forEach(material => ref(def.materials, material, 'material'));
-    condition(claim.verifyRequires); condition(claim.approveRequires); condition(claim.publishRequires); effects(claim.reactionEffects);
+    condition(claim.verifyRequires); condition(claim.publishRequires); effects(claim.reactionEffects);
   }
-  const eventTypes = ['clock', 'accepted', 'pickup', 'completed', 'abandoned', 'choice', 'missed', 'observation', 'material-submitted', 'publication-requested', 'operation', 'material-verified', 'case-verified', 'edition', 'reaction', 'ride-completed', 'stopover-completed'];
+  const eventTypes = ['clock', 'accepted', 'pickup', 'completed', 'abandoned', 'choice', 'missed', 'observation', 'material-submitted', 'operation', 'material-verified', 'case-verified', 'edition', 'reaction', 'ride-completed', 'stopover-completed'];
   for (const h of def.handlers) {
     if (!eventTypes.includes(h.on)) throw new Error(`Unknown domain event: ${h.on}`);
     if (h.id) {
       id(h.id);
       if (['accepted', 'pickup', 'completed', 'abandoned', 'missed', 'ride-completed', 'stopover-completed'].includes(h.on)) ref(def.missions.missions, h.id, 'mission');
-      if (['case-verified', 'publication-requested', 'edition', 'reaction'].includes(h.on)) ref(def.claims, h.id, 'claim');
+      if (['case-verified', 'edition', 'reaction'].includes(h.on)) ref(def.claims, h.id, 'claim');
       if (['material-submitted', 'material-verified', 'observation'].includes(h.on)) ref(def.materials, h.id, 'material');
       if (h.on === 'choice') choice(h.id);
       if (h.on === 'operation' && !ids.has(h.id)) throw new Error(`Unknown operation: ${h.id}`);

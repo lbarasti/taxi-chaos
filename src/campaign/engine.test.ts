@@ -10,7 +10,7 @@ import { campaignCondition } from '../missions/conditions';
 import { assertMissionCatalogue } from '../missions/schema';
 import { dayMinute } from './clock';
 import { defaultCampaign, parseCampaign } from './state';
-import { advanceCampaignTo, approvePublication, receiveMaterial } from './scheduler';
+import { advanceCampaignTo, receiveMaterial } from './scheduler';
 import { dispatchCampaignEvent } from './events';
 import { assertCampaignDefinition } from './validate';
 import type { CampaignContext, CampaignDefinition } from './model';
@@ -32,7 +32,7 @@ const festival: CampaignDefinition = {
   missions: { schemaVersion: 1, dialogue: { welcome: { character: 'bea', category: 'lore', channel: 'passenger', text: 'Take these lanterns to the quay.' } }, missions: {
     'lantern-run': { title: 'Lamp delivery', chapter: 1, category: 'lore', repeat: 'once', abandon: { retry: 'always' }, passenger: 'bea', requires: { all: [] }, allowed: { jobs: ['fare'] }, stops: { pickup: 'the-arcade', dropoff: 'east-village' }, beats: { pickup: 'welcome' }, choices: [{ id: 'dispatch-slot', commit: 'pickup', options: [{ id: 'first' }, { id: 'other' }] }], effects: [{ acquireMaterial: 'lamp-log' }, { setWorld: { key: 'quay', value: 'open' } }] },
     'ferry-run': { title: 'Ferry shift', chapter: 1, category: 'lore', repeat: 'once', abandon: { retry: 'always' }, passenger: 'bea',
-      requires: { all: [{ worldEquals: { key: 'quay', value: 'open' } }, { knows: 'lamp-log' }, { materialState: { id: 'lamp-log', state: 'verified' } }, { caseState: { id: 'lanterns', state: 'approved' } }, { published: 'lanterns' }, { relationshipAtLeast: { character: 'bea', value: 1 } }] },
+      requires: { all: [{ worldEquals: { key: 'quay', value: 'open' } }, { knows: 'lamp-log' }, { materialState: { id: 'lamp-log', state: 'verified' } }, { caseState: { id: 'lanterns', state: 'verified' } }, { published: 'lanterns' }, { relationshipAtLeast: { character: 'bea', value: 1 } }] },
       allowed: { jobs: ['fare'] }, stops: { pickup: 'east-village', dropoff: 'the-arcade' }, beats: { pickup: 'welcome' } },
   } },
   jobWindows: { 'lantern-run': { from: 420, until: dayMinute(4) }, 'ferry-run': { from: 420, until: dayMinute(4) } }, jobNames: {},
@@ -41,10 +41,10 @@ const festival: CampaignDefinition = {
     { on: 'completed', id: 'lantern-run', requires: { knows: 'lamp-log' }, effects: [{ setWorld: { key: 'attendance', value: 10 } }, { relationship: { character: 'bea', delta: 1 } }] },
   ],
   operations: [{ id: 'ferry-inspection', at: dayMinute(2, 7), effects: [], outcomes: [
-    { id: 'passed', requires: { all: [{ worldEquals: { key: 'quay', value: 'open' } }, { knows: 'lamp-log' }, { materialState: { id: 'lamp-log', state: 'verified' } }, { caseState: { id: 'lanterns', state: 'approved' } }, { published: 'lanterns' }] }, effects: [{ setWorld: { key: 'ferry', value: 'inspected' } }] },
+    { id: 'passed', requires: { all: [{ worldEquals: { key: 'quay', value: 'open' } }, { knows: 'lamp-log' }, { materialState: { id: 'lamp-log', state: 'verified' } }, { caseState: { id: 'lanterns', state: 'verified' } }, { published: 'lanterns' }] }, effects: [{ setWorld: { key: 'ferry', value: 'inspected' } }] },
     { id: 'deferred', effects: [{ setWorld: { key: 'ferry', value: 'delayed' } }] },
   ] }],
-  newsroom: { stop: 'east-village', name: 'Quay office', editor: 'Festival editor', guide: 'Bring your records here.' },
+  newsroom: { stop: 'east-village', name: 'Quay office', guide: 'Bring your records here.' },
   sites: { office: 'east-village' }, observations: [], vehicles: [], scenes: [], bulletins: [{ text: 'The lantern festival is underway.' }],
   rides: {}, everydayJobs: [{ character: 'eli', name: 'Ash', family: 'Festival staff', lines: ['Off to work.'], during: 'The lamps look lovely.' }], ordinaryResponses: [],
 };
@@ -86,7 +86,7 @@ describe('content-independent campaign engine', () => {
     expect({ state: f.state, records: f.records, progress: f.progress }).toEqual(before);
     expect(f.director.evaluate(festival.missions.missions['ferry-run'].requires, driving)).toBe(false);
     receiveMaterial(f.state, 'lamp-log', f.ctx, festival); receiveMaterial(f.state, 'ferry-report', f.ctx, festival);
-    advanceCampaignTo(f.state, 650, f.ctx, festival); approvePublication(f.state, 'lanterns', f.ctx, festival);
+    advanceCampaignTo(f.state, 650, f.ctx, festival);
     advanceCampaignTo(f.state, dayMinute(2, 6), f.ctx, festival);
     expect(f.director.evaluate(festival.missions.missions['ferry-run'].requires, driving)).toBe(true);
     expect(campaignCondition({ caseState: { id: 'crossings', state: 'verified' } }, f.state, f.ctx)).toBe(true);
@@ -102,7 +102,7 @@ describe('content-independent campaign engine', () => {
     for (let minute = 420; minute <= dayMinute(2, 7); minute++) advanceCampaignTo(live.state, minute, live.ctx, festival);
     expect(skipped.state).toEqual(live.state);
     expect(skipped.state.newsroom.cases.lanterns?.verifiedAt).toBe(650);
-    expect(skipped.state.occurrences['ferry-inspection'].outcome).toBe('deferred');
+    expect(skipped.state.occurrences['ferry-inspection'].outcome).toBe('passed');
     const unobserved = setup(); advanceCampaignTo(unobserved.state, dayMinute(2, 7), unobserved.ctx, festival);
     expect(unobserved.records.notebook).toEqual([]);
     expect(unobserved.state.newsroom.received).toEqual({});
@@ -111,10 +111,9 @@ describe('content-independent campaign engine', () => {
   it('preserves publication-based unlocks, reactions and latched admissions across reload', () => {
     const f = setup(); finishLampRide(f);
     for (const id of ['lamp-log', 'ferry-report']) receiveMaterial(f.state, id, f.ctx, festival);
-    advanceCampaignTo(f.state, 650, f.ctx, festival); approvePublication(f.state, 'lanterns', f.ctx, festival);
+    advanceCampaignTo(f.state, 650, f.ctx, festival);
     advanceCampaignTo(f.state, dayMinute(2, 6), f.ctx, festival);
     expect(f.state.newsroom.cases.crossings?.verifiedAt).toBe(dayMinute(2, 6));
-    approvePublication(f.state, 'crossings', f.ctx, festival);
     advanceCampaignTo(f.state, dayMinute(3, 8), f.ctx, festival);
     f.state.world.attendance = 0; // Later world changes must not revoke a checked case.
     expect(parseCampaign(f.state, festival, f.ctx)).toEqual(f.state);

@@ -15,7 +15,7 @@ export type Outcome = Readonly<{ id: string; requires?: Condition; effects: read
 export type WorldOperation = Readonly<{ id: string; at: number; effects: readonly Effect[]; outcomes?: readonly Outcome[] }>;
 export type Claim = Readonly<{
   title: string; routes: readonly (readonly string[])[];
-  verifyRequires?: Condition; approveRequires?: Condition; publishRequires?: Condition;
+  verifyRequires?: Condition; publishRequires?: Condition;
   reactionEffects: readonly Effect[];
 }>;
 export type CampaignInputs = { progress?: MissionProgress; records?: PlayerRecords; ride?: Readonly<{ comfort: number }> };
@@ -25,7 +25,6 @@ export type CampaignEvent =
   | { type: 'clock'; at: number }
   | { type: 'observation'; id: string }
   | { type: 'material-submitted'; id: string }
-  | { type: 'publication-requested'; id: string }
   | { type: 'operation'; id: string; outcome: string; effects: readonly Effect[] }
   | { type: 'material-verified'; id: string; at: number }
   | { type: 'case-verified'; id: string; at: number }
@@ -88,7 +87,7 @@ export type CampaignDefinition = Readonly<{
   materials: Readonly<Record<string, Material>>; claims: Readonly<Record<string, Claim>>;
   missions: MissionCatalogue; jobWindows: Readonly<Record<string, Readonly<{ from: number; until: number }>>>;
   jobNames: Readonly<Record<string, string>>; handlers: readonly EventHandler[];
-  newsroom: Readonly<{ stop: string; name: string; editor: string; guide: string }>;
+  newsroom: Readonly<{ stop: string; name: string; guide: string }>;
   sites: Readonly<Record<string, string>>;
   observations: readonly Readonly<{ id: string; stop: string; radius: number; requires: Condition; label: string; unavailable: string; success: string }>[];
   vehicles: readonly Readonly<{ id: string; model: VehicleModel; stop: string; offsets: readonly Readonly<{ x: number; y: number }>[]; angle: number; color: string; present: Condition; departTo: string }>[];

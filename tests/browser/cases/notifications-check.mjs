@@ -37,7 +37,7 @@ try {
       __taxi.step(5);
       __taxi.notify('First fare is just ahead. Stop inside the yellow ring.');
       __taxi.step(1.25);
-      __taxi.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Return to the editor to request a ready story’s publication.', '', { category: 'newsroom', duration: null });
+      __taxi.notify('Copy left at the newsroom. Originals stay in your Notebook. Source checks take three game hours. Complete stories are automatically scheduled for the next edition.', '', { category: 'newsroom', duration: null });
       __taxi.step(10);
       __taxi.notify('Exit blocked. Move your ride to make room.', 'danger', { category: 'movement' });
     });
