@@ -14,7 +14,7 @@ describe('cab jobs and economy', () => {
     const paid = g.save.cash; step(g, 0.9); expect(g.save.cash).toBe(paid); expect(g.jobsDone).toBe(1);
   });
   it('finishes a late uncomfortable trip once without deducting money from the existing balance', () => {
-    const g = make(); g.job.stage = 'dropoff'; g.job.elapsed = g.job.time + 50; g.job.comfort = 0;
+    const g = make(); g.job.stage = 'dropoff'; g.job.elapsed = g.job.time * 6; g.job.comfort = 0;
     const cash = g.save.cash, deliveries = g.save.deliveries, earnings = g.save.shiftStats.earnings;
     g.player.body.position = { ...g.job.dropoff }; step(g, 0.9);
     expect(g.save.cash).toBe(cash); expect(g.jobsDone).toBe(1);

@@ -235,3 +235,13 @@ comfort meters only on the completed-fare card, with a visible zero in the centr
 green bonuses and red deductions. Bound the visual meter without capping the
 lateness deduction, and identify the minimum payout when raw adjustments exceed
 the fare.
+
+## 17. Bound service bonuses by the base fare
+
+Supersede section 16's fixed-dollar service adjustment rates. Speed now earns or
+loses 25% of the base fare multiplied by the fraction of the target time remaining;
+comfort earns or loses 25% multiplied by its signed score around 50% comfort.
+Round adjustments to whole dollars and cap each positive bonus at one quarter of
+the base fare rounded down, so combined bonuses never exceed 50% of base.
+Lateness deductions continue beyond the visual meter's minimum. Retain the neutral
+thresholds, zero payout floor and shared settlement/receipt calculation from section 16.

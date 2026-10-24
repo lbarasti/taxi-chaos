@@ -58,12 +58,12 @@ describe('notification display time', () => {
 
 describe('game notification lifecycle', () => {
   it.each([
-    { type: 'fare' as const, baseFare: 20, elapsed: 25, comfort: 80, payout: 98, adjustment: 78, speed: 75, comfortScore: 60, speedBonus: 60, comfortBonus: 18 },
-    { type: 'parcel' as const, baseFare: 20, elapsed: 25, comfort: 80, payout: 98, adjustment: 78, speed: 75, comfortScore: 60, speedBonus: 60, comfortBonus: 18 },
+    { type: 'fare' as const, baseFare: 20, elapsed: 25, comfort: 80, payout: 27, adjustment: 7, speed: 75, comfortScore: 60, speedBonus: 4, comfortBonus: 3 },
+    { type: 'parcel' as const, baseFare: 20, elapsed: 25, comfort: 80, payout: 27, adjustment: 7, speed: 75, comfortScore: 60, speedBonus: 4, comfortBonus: 3 },
     { type: 'fare' as const, baseFare: 20, elapsed: 100, comfort: 50, payout: 20, adjustment: 0, speed: 0, comfortScore: 0, speedBonus: 0, comfortBonus: 0 },
-    { type: 'fare' as const, baseFare: 100, elapsed: 150, comfort: 0, payout: 30, adjustment: -70, speed: -50, comfortScore: -100, speedBonus: -40, comfortBonus: -30 },
-    { type: 'fare' as const, baseFare: 20, elapsed: 150, comfort: 0, payout: 0, adjustment: -70, speed: -50, comfortScore: -100, speedBonus: -40, comfortBonus: -30 },
-    { type: 'parcel' as const, baseFare: 20, elapsed: 150, comfort: 0, payout: 0, adjustment: -70, speed: -50, comfortScore: -100, speedBonus: -40, comfortBonus: -30 },
+    { type: 'fare' as const, baseFare: 100, elapsed: 160, comfort: 0, payout: 60, adjustment: -40, speed: -60, comfortScore: -100, speedBonus: -15, comfortBonus: -25 },
+    { type: 'fare' as const, baseFare: 20, elapsed: 500, comfort: 0, payout: 0, adjustment: -25, speed: -100, comfortScore: -100, speedBonus: -20, comfortBonus: -5 },
+    { type: 'parcel' as const, baseFare: 20, elapsed: 500, comfort: 0, payout: 0, adjustment: -25, speed: -100, comfortScore: -100, speedBonus: -20, comfortBonus: -5 },
   ])('keeps a $payout completion receipt for a $type with the actual signed adjustments', expected => {
     const game = new Game(undefined, false, false);
     game.vehicles = [game.player]; game.trafficTarget = 0; game.settings.noPolice = true; game.start();
@@ -90,7 +90,7 @@ describe('game notification lifecycle', () => {
     source.player.body.position = { ...source.job.pickup }; source.player.body.velocity = { x: 0, y: 0 };
     for (let tick = 0; tick < 108; tick++) source.update(1 / 120);
     expect(source.job.stage).toBe('dropoff');
-    const missionId = source.job.missionId!, elapsed = source.job.time + 100;
+    const missionId = source.job.missionId!, elapsed = source.job.time * 6;
     source.job.elapsed = elapsed; source.job.comfort = 0; source.save.cash = 400;
     source.shiftEarnings = 17; source.save.shiftStats.earnings = 17;
     const quoted = calculateFare(source.job);
@@ -112,7 +112,7 @@ describe('game notification lifecycle', () => {
     expect(receipt).toMatchObject({ ...quoted, type: 'fare', payout: 0 });
     const notebook = game.save.playerRecords.notebook.find(entry => entry.id === `fare-${before.storyDeliveries + 1}`)!;
     expect(notebook.text).toContain('Paid $0 (minimum payout)');
-    expect(notebook.text).toContain('Speed −$'); expect(notebook.text).toContain('Comfort −$30');
+    expect(notebook.text).toContain('Speed −$'); expect(notebook.text).toContain(`Comfort −$${-quoted.comfortBonus}`);
     expect(notebook.text).not.toMatch(/\$-|\+-|tips/);
     for (let tick = 0; tick < 108; tick++) game.update(1 / 120);
     expect(game.save.cash).toBe(before.cash); expect(game.jobsDone).toBe(1);
