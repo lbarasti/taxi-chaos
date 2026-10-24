@@ -16,8 +16,8 @@
   "ravi": { "id": "ravi", "name": "Ravi", "portrait": { "sources": ["ravi.png"], "objectPosition": "50% 10%" }, "attribution": "Portrait art generated for Taxi Chaos with OpenAI image generation (ravi.png); seated in the taxi rear cabin." },
   "cleo": { "id": "cleo", "name": "Cleo", "portrait": { "sources": ["cleo.png"], "objectPosition": "50% 10%" }, "attribution": "Portrait art generated for Taxi Chaos with OpenAI image generation (cleo.png); seated in the taxi rear cabin." },
   "oscar": { "id": "oscar", "name": "Oscar", "portrait": { "sources": ["oscar.png"], "objectPosition": "50% 10%" }, "attribution": "Portrait art generated for Taxi Chaos with OpenAI image generation (oscar.png); seated in the taxi rear cabin." },
-  "mags": { "id": "mags", "name": "Mags", "portrait": { "sources": [], "placeholder": true }, "attribution": "Text-only character card for Taxi Chaos; portrait artwork deferred." },
-  "nell": { "id": "nell", "name": "Nell", "portrait": { "sources": [], "placeholder": true }, "attribution": "Text-only character card for Taxi Chaos; portrait artwork deferred." },
+  "mags": { "id": "mags", "name": "Mags", "portrait": { "sources": ["mags.png"], "objectPosition": "50% 10%" }, "attribution": "Original illustrated portrait created for Taxi Chaos (mags.png); seated in the taxi rear cabin." },
+  "nell": { "id": "nell", "name": "Nell", "portrait": { "sources": ["nell.png"], "objectPosition": "50% 10%" }, "attribution": "Original illustrated portrait created for Taxi Chaos (nell.png); seated in the taxi rear cabin." },
   "mia": { "id": "mia", "name": "Mia", "portrait": { "sources": ["legacy-mia.png"] }, "attribution": "Neutral legacy placeholder card created for Taxi Chaos (legacy-mia.png); the supplied mia.png portrait is not shipped." },
   "frankie": { "id": "frankie", "name": "Frankie", "portrait": { "sources": ["legacy-frankie.png"] }, "attribution": "Neutral legacy placeholder card created for Taxi Chaos (legacy-frankie.png); the supplied frankie.png portrait is not shipped." }
 }
